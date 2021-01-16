@@ -13,6 +13,11 @@
 #include <rm_msgs/GimbalCmd.h>
 
 namespace rm_gimbal_controller {
+enum StandardState {
+  PASSIVE,
+  RATE,
+  TRACK,
+};
 
 class GimbalStandardController :
     public controller_interface::MultiInterfaceController<
@@ -21,13 +26,25 @@ class GimbalStandardController :
   GimbalStandardController() = default;
   bool init(hardware_interface::RobotHW *robot_hw,
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
-  void update(const ros::Time &time, const ros::Duration & /*period*/) override;
+  void update(const ros::Time &time, const ros::Duration &period) override;
  private:
+  void passive();
+  void rate(const ros::Time &time, const ros::Duration &period);
+  void track();
+  void setDes(const ros::Time &time, double yaw, double pitch);
+  void moveJoint(const ros::Duration &period);
+  void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
+
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
+  hardware_interface::RobotStateHandle robot_state_handle_;
+  geometry_msgs::TransformStamped word2pitch_des_;
 
+  bool state_changed_;
+  StandardState state_;
   ros::Subscriber sub_command_;
-  void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
+  realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
+  rm_msgs::GimbalCmd cmd_;
 };
 }
 
