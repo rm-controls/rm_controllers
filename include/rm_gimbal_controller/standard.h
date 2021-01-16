@@ -2,8 +2,8 @@
 // Created by qiayuan on 1/16/21.
 //
 
-#ifndef RM_GIMBAL_CONTROLLER_INCLUDE_STANDARD_H_
-#define RM_GIMBAL_CONTROLLER_INCLUDE_STANDARD_H_
+#ifndef RM_GIMBAL_CONTROLLER_STANDARD_H
+#define RM_GIMBAL_CONTROLLER_STANDARD_H
 
 #include <control_toolbox/pid.h>
 #include <controller_interface/multi_interface_controller.h>
@@ -40,12 +40,12 @@ class GimbalStandardController :
   hardware_interface::RobotStateHandle robot_state_handle_;
   geometry_msgs::TransformStamped word2pitch_des_;
 
-  bool state_changed_;
-  StandardState state_;
-  ros::Subscriber sub_command_;
+  bool state_changed_{};
+  StandardState state_ = PASSIVE;
+  ros::Subscriber cmd_subscriber_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   rm_msgs::GimbalCmd cmd_;
 };
 }
 
-#endif //RM_GIMBAL_CONTROLLER_INCLUDE_STANDARD_H_
+#endif  //RM_GIMBAL_CONTROLLER_STANDARD_H

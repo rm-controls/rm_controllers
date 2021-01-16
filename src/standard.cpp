@@ -3,6 +3,7 @@
 //
 
 #include <ros_utilities.h>
+#include <string>
 #include <tf/transform_datatypes.h>
 #include <angles/angles.h>
 #include <ori_tool.h>
@@ -27,9 +28,8 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
       !pid_pitch_.init(ros::NodeHandle(controller_nh, "pid_pitch")))
     return false;
 
-  sub_command_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
-  state_ = PASSIVE;
-  state_changed_ = true;
+  cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
+
   return true;
 }
 
@@ -79,7 +79,7 @@ void GimbalStandardController::track() {
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter TRACK");
   }
-  // TODO add bullet solver
+  //TODO(qiayuan) add bullet solver
 }
 
 void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
