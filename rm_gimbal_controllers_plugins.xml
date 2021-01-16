@@ -1,0 +1,11 @@
+<library path="lib/libeffort_controllers">
+
+  <class name="rm_gimbal_controller/GimbalStandardController" type="rm_gimbal_controller::GimbalStandardController"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+      The GimbalStandardController is RoboMaster standard robot Gimbal controller. It expects a EffortJointInterface
+      type of hardware interface.
+    </description>
+  </class>
+
+</library>

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>rm_gimbal_controller</name>
+  <name>rm_gimbal_controllers</name>
   <version>0.1.0</version>
   <description>RoboMaster standard robot Gimbal controller</description>
   <maintainer email="liaoqiayuan@gmail.com">Qiayuan Liao</maintainer>
