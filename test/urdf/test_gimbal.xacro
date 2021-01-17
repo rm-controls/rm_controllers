@@ -1,0 +1,41 @@
+<robot name="test_robot">
+  <link name="world"/>
+  <link name="link_yaw"/>
+  <link name="link_pitch"/>
+
+  <joint name="joint_yaw" type="continuous">
+    <parent link="world"/>
+    <child link="link_yaw"/>
+    <axis xyz="0 0 1"/>
+  </joint>
+  <joint name="joint_pitch" type="revolute">
+    <parent link="link_yaw"/>
+    <child link="link_pitch"/>
+    <axis xyz="0 1 0"/>
+    <origin xyz="0 0 0.25"/>
+    <limit upper="6.28" lower="-6.28" effort="1000" velocity="1000.00"/>
+  </joint>
+
+  <transmission name="yaw_trans">
+    <type>transmission_interface/RevoluteTransmission</type>
+    <joint name="joint_yaw">
+      <offset>-0.42189619999999994</offset>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="actuator_yaw">
+      <mechanicalReduction>1</mechanicalReduction>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </actuator>
+  </transmission>
+  <transmission name="pitch_trans">
+    <type>transmission_interface/RevoluteTransmission</type>
+    <joint name="joint_pitch">
+      <offset>2.8182666160000003</offset>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="actuator_pitch">
+      <mechanicalReduction>-1</mechanicalReduction>
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </actuator>
+  </transmission>
+</robot>
