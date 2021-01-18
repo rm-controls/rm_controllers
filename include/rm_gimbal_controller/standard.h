@@ -12,7 +12,7 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_msgs/GimbalCmd.h>
 
-namespace rm_gimbal_controller {
+namespace rm_gimbal_controllers {
 enum StandardState {
   PASSIVE,
   RATE,
@@ -48,4 +48,4 @@ class GimbalStandardController :
 };
 }
 
-#endif  //RM_GIMBAL_CONTROLLER_STANDARD_H
+#endif  // RM_GIMBAL_CONTROLLER_STANDARD_H

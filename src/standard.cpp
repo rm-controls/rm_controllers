@@ -11,7 +11,7 @@
 
 #include "rm_gimbal_controller/standard.h"
 
-namespace rm_gimbal_controller {
+namespace rm_gimbal_controllers {
 bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
                                     ros::NodeHandle &root_nh,
                                     ros::NodeHandle &controller_nh) {
@@ -63,7 +63,9 @@ void GimbalStandardController::passive() {
 }
 
 void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &period) {
-  if (state_changed_) { //on enter
+  if (state_changed_) {
+#include<string>
+//on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
   }
@@ -113,6 +115,6 @@ void GimbalStandardController::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) 
   cmd_rt_buffer_.writeFromNonRT(*msg);
 }
 
-}// namespace rm_gimbal_controller
+} // namespace rm_gimbal_controllers
 
-PLUGINLIB_EXPORT_CLASS(rm_gimbal_controller::GimbalStandardController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(rm_gimbal_controllers::GimbalStandardController, controller_interface::ControllerBase)
