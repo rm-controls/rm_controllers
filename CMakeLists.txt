@@ -43,7 +43,6 @@ catkin_package(
     INCLUDE_DIRS
     include
     LIBRARIES
-    ${PROJECT_NAME}_loader_plugins
     CATKIN_DEPENDS
     roscpp
 
