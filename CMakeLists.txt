@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(ros_package_template)
+project(rm_chassis_controllers)
 
 ## Use C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -74,7 +74,7 @@ target_compile_features(${PROJECT_NAME}_core INTERFACE cxx_std_11)
 add_executable(${PROJECT_NAME}
     src/${PROJECT_NAME}_node.cpp
     src/RosPackageTemplate.cpp
-    )
+    include/rm_chassis_controller/standard.h src/standard.cpp)
 target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_11)
 
 ## Add dependencies to exported targets, like ROS msgs or srvs
