@@ -99,12 +99,15 @@ void ShooterStandardBaseController::ready(const ros::Duration &period) {
     ROS_INFO("[Shooter] Enter READY");
   }
 
-  double wheel_l_error =
-      angles::shortest_angular_distance(joint_wheel_l_.getVelocity(),
-                                        fric_qd_des_);
-  double wheel_r_error =
-      angles::shortest_angular_distance(joint_wheel_r_.getVelocity(),
-                                        fric_qd_des_);
+//  double wheel_l_error =
+//      angles::shortest_angular_distance(joint_wheel_l_.getVelocity(),
+//                                        fric_qd_des_);
+//  double wheel_r_error =
+//      angles::shortest_angular_distance(joint_wheel_r_.getVelocity(),
+//                                        fric_qd_des_);
+
+  double wheel_l_error = fric_qd_des_ - joint_wheel_l_.getVelocity();
+  double wheel_r_error = fric_qd_des_ - joint_wheel_r_.getVelocity();
   pid_wheel_l_.computeCommand(wheel_l_error, period);
   pid_wheel_r_.computeCommand(wheel_r_error, period);
   joint_wheel_l_.setCommand(pid_wheel_l_.getCurrentCmd());
@@ -131,12 +134,15 @@ void ShooterStandardBaseController::push(const ros::Duration &period) {
     // double l_ff = ff_coff_ * joint_wheel_l_.getVelocity();
     // double r_ff = ff_coff_ * joint_wheel_r_.getVelocity();
 
-    double wheel_l_error =
-        angles::shortest_angular_distance(joint_wheel_l_.getVelocity(),
-                                          fric_qd_des_);
-    double wheel_r_error =
-        angles::shortest_angular_distance(joint_wheel_r_.getVelocity(),
-                                          fric_qd_des_);
+//    double wheel_l_error =
+//        angles::shortest_angular_distance(joint_wheel_l_.getVelocity(),
+//                                          fric_qd_des_);
+//    double wheel_r_error =
+//        angles::shortest_angular_distance(joint_wheel_r_.getVelocity(),
+//                                          fric_qd_des_);
+
+    double wheel_l_error = fric_qd_des_ - joint_wheel_l_.getVelocity();
+    double wheel_r_error = fric_qd_des_ - joint_wheel_r_.getVelocity();
     double trigger_error =
         angles::shortest_angular_distance(joint_trigger_.getPosition(),
                                           trigger_des);
