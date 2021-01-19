@@ -10,6 +10,7 @@
         output="screen" args="
         rm_base/robot_state_controller
         rm_base/joint_state_controller
+        rm_base/joint1_position_controller
 "/>
 
   <!--  <node name="rm_base" pkg="rm_base" type="rm_base" respawn="false"/>-->
