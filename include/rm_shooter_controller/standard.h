@@ -10,6 +10,8 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_base/hardware_interface/robot_state_interface.h>
 #include <realtime_tools/realtime_publisher.h>
+#include <dynamic_reconfigure/server.h>
+#include <rm_shooter_controllers/ShooterStandardConfig.h>
 #include <rm_msgs/ShootCmd.h>
 
 namespace rm_shooter_controllers {
@@ -31,15 +33,18 @@ class ShooterStandardBaseController
             ros::NodeHandle &root_nh, ros::NodeHandle &conctroller_nh) override;
   void update(const ros::Time &time, const ros::Duration &period) override;
   void shoot(int num, double freq);
-  viod setSpeed(double speed);
+  void setSpeed(double speed);
  protected:
   void passive();
-  void ready();
-  void push();
-  void block();
+  void ready(const ros::Duration &period);
+  void push(const ros::Duration &period);
+//  void block();
   void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
+  void setDes(double q_des, double ff);
+  void reconfigCB(const rm_shooter_controllers::ShooterStandardConfig &config,
+                  uint32_t level);
 
-  control_toolbox::Pid pid_wheel_, pid_trigger_;
+  control_toolbox::Pid pid_wheel_l_, pid_wheel_r_, pid_trigger_;
   hardware_interface::JointHandle joint_wheel_l_, joint_wheel_r_,
       joint_trigger_;
   hardware_interface::RobotStateHandle robot_state_handle_;
@@ -56,6 +61,8 @@ class ShooterStandardBaseController
   double anti_block_duration_{};
   int shoot_num_{};
   double shoot_freq_{};
+  ros::Time push_time_;
+  ros::Time last_shoot_time_;
 
   bool state_changed_{};
   StandardState state_ = PASSIVE;
@@ -65,5 +72,5 @@ class ShooterStandardBaseController
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterStandardConfig>
       *d_srv_;
 };
-}
+} // namespace rm_shooter_controllers
 #endif //SRC_RM_SHOOTER_CONTROLLERS_INCLUDE_RM_SHOOTER_CONTROLLER_STANDARD_H_
