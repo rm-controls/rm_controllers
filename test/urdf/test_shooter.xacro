@@ -1,0 +1,4 @@
+<robot name="test_robot">
+    <joint name="joint_fiction_l" type="">
+    </joint>
+</robot>
