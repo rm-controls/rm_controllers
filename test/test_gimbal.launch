@@ -1,9 +1,9 @@
 <launch>
 
   <rosparam file="$(find rm_base)/config/actuator_coefficient.yaml" command="load" ns="rm_base"/>
-  <rosparam file="$(find rm_gimbal_controllers)/test/config/test_gimbal.yaml" command="load"/>
+  <rosparam file="$(find rm_gimbal_controllers)/test/test_gimbal.yaml" command="load"/>
 
-  <rosparam file="$(find rm_gimbal_controllers)/test/urdf/test_gimbal.xacro" command="load" ns="robot_description"/>
+  <rosparam file="$(find rm_gimbal_controllers)/test/test_gimbal.xacro" command="load" ns="robot_description"/>
 
   <!-- load the controllers -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
