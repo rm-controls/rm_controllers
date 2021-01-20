@@ -1,0 +1,44 @@
+rm_base:
+  bus:
+    - can1
+
+  loop_frequency: 1000
+  cycle_time_error_threshold: 0.001
+
+  # Configurations of the actuators
+  actuators:
+    actuator_pitch:
+      bus: can1
+      id: 0x206
+      type: rm_6020
+      lp_cutoff_frequency: 100
+
+    actuator_fiction_left:
+      bus: can1
+      id: 0x201
+      type: rm_3508_dir
+      lp_cutoff_frequency: 100
+
+    actuator_fiction_right:
+      bus: can1
+      id: 0x202
+      type: rm_3508_dir
+      lp_cutoff_frequency: 100
+
+    actuator_trigger:
+      bus: can1
+      id: 0x203
+      type: rm_2006
+      lp_cutoff_frequency: 200
+
+  robot_state_controller:
+    type: robot_state_controller/RobotStateController
+    publish_rate: 100
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50
+  shooter_standardBase_controller:
+    type: rm_shooter_controllers/ShooterStandardBaseController
+    pid_fiction_l: { p: 0.25, d: 0.02, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
+    pid_fiction_r: { p: 0.25, d: 0.02, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
+    pid_trigger: { p: 0.25, d: 0.02, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
