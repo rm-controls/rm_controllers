@@ -28,8 +28,10 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
       !pid_pitch_.init(ros::NodeHandle(controller_nh, "pid_pitch")))
     return false;
 
-  cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
+  world2pitch_des_.header.frame_id = "world";
+  world2pitch_des_.child_frame_id = "gimbal_des";
 
+  cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
   return true;
 }
 
@@ -64,13 +66,12 @@ void GimbalStandardController::passive() {
 
 void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) {
-#include<string>
-//on enter
+    //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
   }
   double roll{}, pitch{}, yaw{};
-  quatToRPY(word2pitch_des_.transform.rotation, roll, pitch, yaw);
+  quatToRPY(world2pitch_des_.transform.rotation, roll, pitch, yaw);
   setDes(time,
          yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_yaw,
          pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
@@ -86,16 +87,16 @@ void GimbalStandardController::track() {
 
 void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
   //pitch = minAbs(pitch, M_PI_2 - 0.1); //avoid gimbal lock
-  word2pitch_des_.transform.rotation =
+  world2pitch_des_.transform.rotation =
       tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
-  word2pitch_des_.header.stamp = time;
-  robot_state_handle_.setTransform(word2pitch_des_, "rm_gimbal_controller");
+  world2pitch_des_.header.stamp = time;
+  robot_state_handle_.setTransform(world2pitch_des_, "rm_gimbal_controller");
 }
 
 void GimbalStandardController::moveJoint(const ros::Duration &period) {
   geometry_msgs::TransformStamped pitch2des;
   try {
-    pitch2des = robot_state_handle_.lookupTransform("base_link", "pitch_des", ros::Time(0));
+    pitch2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());

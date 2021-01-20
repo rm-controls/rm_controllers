@@ -38,7 +38,7 @@ class GimbalStandardController :
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
   hardware_interface::RobotStateHandle robot_state_handle_;
-  geometry_msgs::TransformStamped word2pitch_des_;
+  geometry_msgs::TransformStamped world2pitch_des_;
 
   bool state_changed_{};
   StandardState state_ = PASSIVE;
