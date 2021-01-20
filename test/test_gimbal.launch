@@ -5,6 +5,9 @@
 
   <rosparam file="$(find rm_gimbal_controllers)/test/test_gimbal.xacro" command="load" ns="robot_description"/>
 
+  <node pkg="tf" type="static_transform_publisher" name=""
+        args="0 0 0 0 0 0 1 world base_link 10"/>
+
   <!-- load the controllers -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
         output="screen" args="
