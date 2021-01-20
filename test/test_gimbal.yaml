@@ -12,6 +12,7 @@ rm_base:
       id: 0x205
       type: rm_6020
       lp_cutoff_frequency: 100
+      lp_debug: true
     actuator_pitch:
       bus: can1
       id: 0x206
@@ -24,6 +25,10 @@ rm_base:
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
+  gimbal_standard_controller:
+    type: rm_gimbal_controllers/GimbalStandardController
+    pid_yaw: { p: 0.25, d: 0.02, i: 0.0 ,i_max:0.0, i_min: 0.0, antiwindup: true }
+    pid_pitch: { p: 0.25, d: 0.02, i: 0.0 ,i_max:0.0, i_min: 0.0, antiwindup: true }
 
 joint_limits:
 #  joint_yaw:
