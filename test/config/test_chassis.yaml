@@ -1,0 +1,74 @@
+rm_base:
+  bus:
+    - can0
+
+  loop_frequency: 1000
+  cycle_time_error_threshold: 0.001
+
+  # Configurations of the actuators
+  actuators:
+    actuator_rf:
+      bus: can0
+      id: 0x201
+      type: rm_3508
+      lp_cutoff_frequency: 100
+    actuator_lf:
+      bus: can0
+      id: 0x202
+      type: rm_3508
+      lp_cutoff_frequency: 100
+    actuator_lb:
+      bus: can0
+      id: 0x203
+      type: rm_3508
+      lp_cutoff_frequency: 100
+    actuator_rb:
+      bus: can0
+      id: 0x204
+      type: rm_3508
+      lp_cutoff_frequency: 100
+
+  robot_state_controller:
+    type: robot_state_controller/RobotStateController
+    publish_rate: 100
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50
+  standard_chassis_controller:
+    type: rm_chassis_controller/ChassisStandardController
+    joint_rf: "joint_rf"
+    joint_rb: "joint_rb"
+    joint_lf: "joint_lf"
+    joint_lb: "joint_lb"
+    pid_rf: { p: 0.7, i: 0.0, d: 1.6 }
+    pid_rb: { p: 0.7, i: 0.0, d: 1.6 }
+    pid_lf: { p: 0.7, i: 0.0, d: 1.6 }
+    pid_lb: { p: 0.7, i: 0.0, d: 1.6 }
+    pid_follow: { p: 0.7, i: 0.0, d: 1.6 }
+    pid_twist: { p: 0.7, i: 0.0, d: 1.6 }
+    wheel_base: 0.38
+    wheel_track: 0.39
+    wheel_radius: 0.07625
+
+joint_limits:
+#  joint_yaw:
+#    has_soft_limits: true
+#    k_position: 100
+#    k_velocity: 1.5
+#    soft_lower_limit: 0
+#    soft_upper_limit: 0.40
+#    has_velocity_limits: true
+#    max_velocity: 10.0
+#  joint_pitch:
+#    has_soft_limits: false
+#    k_position: 100
+#    k_velocity: 1.5
+#    soft_lower_limit: -0.65
+#    soft_upper_limit: 0.40
+#    has_velocity_limits: true
+#    max_velocity: 100.0
+#    #    has_acceleration_limits: true
+#    #    max_acceleration: 5.0
+#    has_effort_limits: true
+#    max_effort: 3
+
