@@ -72,8 +72,8 @@ void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &
   double roll{}, pitch{}, yaw{};
   quatToRPY(word2pitch_des_.transform.rotation, roll, pitch, yaw);
   setDes(time,
-         yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->yaw_rate,
-         pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->pitch_rate);
+         yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_yaw,
+         pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
 }
 
 void GimbalStandardController::track() {
