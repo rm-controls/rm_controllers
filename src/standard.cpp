@@ -14,14 +14,14 @@ bool ShooterStandardBaseController::init(hardware_interface::RobotHW *robot_hw,
                                          ros::NodeHandle &controller_nh) {
   auto *effort_jnt_interface =
       robot_hw->get<hardware_interface::EffortJointInterface>();
-  joint_wheel_l_ = effort_jnt_interface->getHandle(getParam(controller_nh,
-                                                            "joint_wheel_l_name",
-                                                            std::string(
-                                                                "joint_wheel_l")));
-  joint_wheel_r_ = effort_jnt_interface->getHandle(getParam(controller_nh,
-                                                            "joint_wheel_r_name",
-                                                            std::string(
-                                                                "joint_wheel_r")));
+  joint_fiction_l_ = effort_jnt_interface->getHandle(getParam(controller_nh,
+                                                              "joint_fiction_left_name",
+                                                              std::string(
+                                                                  "joint_fiction_left")));
+  joint_fiction_r_ = effort_jnt_interface->getHandle(getParam(controller_nh,
+                                                              "joint_fiction_right_name",
+                                                              std::string(
+                                                                  "joint_fiction_right")));
   joint_trigger_ = effort_jnt_interface->getHandle(getParam(controller_nh,
                                                             "joint_trigger_name",
                                                             std::string(
@@ -30,8 +30,8 @@ bool ShooterStandardBaseController::init(hardware_interface::RobotHW *robot_hw,
       robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle(
           "robot_state");
 
-  if (!pid_wheel_l_.init(ros::NodeHandle(controller_nh, "pid_wheel_l"))
-      || !pid_wheel_r_.init(ros::NodeHandle(controller_nh, "pid_wheel_r"))
+  if (!pid_fiction_l_.init(ros::NodeHandle(controller_nh, "pid_fiction_l"))
+      || !pid_fiction_r_.init(ros::NodeHandle(controller_nh, "pid_fiction_r"))
       || !pid_trigger_.init(ros::NodeHandle(controller_nh, "pid_trigger")))
     return false;
 
@@ -84,11 +84,11 @@ void ShooterStandardBaseController::passive() {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PASSIVE");
 
-    joint_wheel_l_.setCommand(0);
-    joint_wheel_r_.setCommand(0);
+    joint_fiction_l_.setCommand(0);
+    joint_fiction_r_.setCommand(0);
     joint_trigger_.setCommand(0);
-    pid_wheel_l_.reset();
-    pid_wheel_r_.reset();
+    pid_fiction_l_.reset();
+    pid_fiction_r_.reset();
     pid_trigger_.reset();
   }
 }
@@ -106,12 +106,12 @@ void ShooterStandardBaseController::ready(const ros::Duration &period) {
 //      angles::shortest_angular_distance(joint_wheel_r_.getVelocity(),
 //                                        fric_qd_des_);
 
-  double wheel_l_error = fric_qd_des_ - joint_wheel_l_.getVelocity();
-  double wheel_r_error = fric_qd_des_ - joint_wheel_r_.getVelocity();
-  pid_wheel_l_.computeCommand(wheel_l_error, period);
-  pid_wheel_r_.computeCommand(wheel_r_error, period);
-  joint_wheel_l_.setCommand(pid_wheel_l_.getCurrentCmd());
-  joint_wheel_r_.setCommand(pid_wheel_r_.getCurrentCmd());
+  double wheel_l_error = fric_qd_des_ - joint_fiction_l_.getVelocity();
+  double wheel_r_error = fric_qd_des_ - joint_fiction_r_.getVelocity();
+  pid_fiction_l_.computeCommand(wheel_l_error, period);
+  pid_fiction_r_.computeCommand(wheel_r_error, period);
+  joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
+  joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
   joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
 
   if (shoot_num_ > 0 &&
@@ -141,16 +141,16 @@ void ShooterStandardBaseController::push(const ros::Duration &period) {
 //        angles::shortest_angular_distance(joint_wheel_r_.getVelocity(),
 //                                          fric_qd_des_);
 
-    double wheel_l_error = fric_qd_des_ - joint_wheel_l_.getVelocity();
-    double wheel_r_error = fric_qd_des_ - joint_wheel_r_.getVelocity();
+    double wheel_l_error = fric_qd_des_ - joint_fiction_l_.getVelocity();
+    double wheel_r_error = fric_qd_des_ - joint_fiction_r_.getVelocity();
     double trigger_error =
         angles::shortest_angular_distance(joint_trigger_.getPosition(),
                                           trigger_des);
-    pid_wheel_l_.computeCommand(wheel_l_error, period);
-    pid_wheel_r_.computeCommand(wheel_r_error, period);
+    pid_fiction_l_.computeCommand(wheel_l_error, period);
+    pid_fiction_r_.computeCommand(wheel_r_error, period);
     pid_trigger_.computeCommand(trigger_error, period);
-    joint_wheel_l_.setCommand(pid_wheel_l_.getCurrentCmd());
-    joint_wheel_r_.setCommand(pid_wheel_r_.getCurrentCmd());
+    joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
+    joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
     joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
 
     shoot_num_--;

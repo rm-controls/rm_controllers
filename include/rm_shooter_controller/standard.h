@@ -44,8 +44,8 @@ class ShooterStandardBaseController
   void reconfigCB(const rm_shooter_controllers::ShooterStandardConfig &config,
                   uint32_t level);
 
-  control_toolbox::Pid pid_wheel_l_, pid_wheel_r_, pid_trigger_;
-  hardware_interface::JointHandle joint_wheel_l_, joint_wheel_r_,
+  control_toolbox::Pid pid_fiction_l_, pid_fiction_r_, pid_trigger_;
+  hardware_interface::JointHandle joint_fiction_l_, joint_fiction_r_,
       joint_trigger_;
   hardware_interface::RobotStateHandle robot_state_handle_;
 

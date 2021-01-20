@@ -2,7 +2,7 @@
 <package format="2">
   <name>rm_shooter_controllers</name>
   <version>0.1.0</version>
-  <description>A template for ROS packages.</description>
+  <description>RoboMaster standard robot Shooter controller</description>
   <maintainer email="pfankhauser@anybotics.com">Peter Fankhauser</maintainer>
   <license>BSD</license>
   <!--  <url type="website">https://github.com/ethz-asl/ros_best_practices</url>-->
@@ -11,8 +11,6 @@
 
   <!-- buildtool_depend: dependencies of the build process -->
   <buildtool_depend>catkin</buildtool_depend>
-  <!-- build_depend: dependencies only used in source files -->
-  <build_depend>boost</build_depend>
   <!-- depend: build, export, and execution dependency -->
   <depend>roscpp</depend>
   <depend>roslint</depend>
@@ -28,4 +26,9 @@
   <depend>pluginlib</depend>
   <depend>realtime_tools</depend>
   <depend>dynamic_reconfigure</depend>
+
+  <export>
+    <controller_interface
+            plugin="${prefix}/rm_shooter_controllers_plugins.xml"/>
+  </export>
 </package>

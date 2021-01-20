@@ -1,7 +1,7 @@
-<library path="lib/libeffort_controllers">
+<library path="lib/librm_shooter_controllers">
 
-    <class name="rm_shooter_controller/ShooterStandardBaseController"
-           type="rm_shooter_controller::ShooterStandardBaseController"
+    <class name="rm_shooter_controllers/ShooterStandardBaseController"
+           type="rm_shooter_controllers::ShooterStandardBaseController"
            base_class_type="controller_interface::ControllerBase">
         <description>
             The ShooterStandardBaseController is RoboMaster standard robot
