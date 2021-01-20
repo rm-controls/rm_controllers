@@ -21,7 +21,7 @@ enum StandardState {
   FOLLOW,
   TWIST,
   GYRO,
-  FLY,
+//  FLY,
 };
 
 class ChassisStandardController :
@@ -45,7 +45,7 @@ class ChassisStandardController :
   void setVel();
   void moveJoint(const ros::Duration &period);
 //  void setDes(const ros::Time &time, double x, double y, double z);  //????????
-  void commandCB(const rm_msgs::ChassisCmdPtr &msg);
+  void commandCB(const rm_msgs::ChassisCmdConstPtr &msg);
   void velCmdCB(const geometry_msgs::Twist::ConstPtr &cmd);
   void setTrans();
   geometry_msgs::Twist getVel();

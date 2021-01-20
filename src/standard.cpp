@@ -8,6 +8,9 @@
 #include <angles/angles.h>
 #include <ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
+#include <rm_msgs/ChassisCmd.h>
+#include <tf2/convert.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include "rm_chassis_controller/standard.h"
 
@@ -254,7 +257,8 @@ void ChassisStandardController::transformTwistVel(const ros::Duration &period) {
     ros::Time now = ros::Time::now();
     double t = now.toSec();
     //    yaw = -yaw;
-    double twist_error = 0.3 * sin(t) - yaw;
+    double twist_error = angles::shortest_angular_distance(yaw, (0.3 * sin(t) - yaw));
+
     pid_twist_.computeCommand(twist_error, period);
     vel_tfed_.vector.z = pid_twist_.getCurrentCmd();
   }
