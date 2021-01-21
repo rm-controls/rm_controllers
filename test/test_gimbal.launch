@@ -2,7 +2,6 @@
 
   <rosparam file="$(find rm_base)/config/actuator_coefficient.yaml" command="load" ns="rm_base"/>
   <rosparam file="$(find rm_gimbal_controllers)/test/test_gimbal.yaml" command="load"/>
-
   <rosparam file="$(find rm_gimbal_controllers)/test/test_gimbal.xacro" command="load" ns="robot_description"/>
 
   <node pkg="tf" type="static_transform_publisher" name=""
@@ -16,6 +15,6 @@
         rm_base/gimbal_standard_controller
 "/>
 
-  <node name="rm_base" pkg="rm_base" type="rm_base" respawn="false"/>
+    <node name="rm_base" pkg="rm_base" type="rm_base" respawn="false"/>
 
 </launch>
