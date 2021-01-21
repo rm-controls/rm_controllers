@@ -36,21 +36,27 @@ rm_base:
     publish_rate: 50
   standard_chassis_controller:
     type: rm_chassis_controller/ChassisStandardController
-    joint_rf: "joint_rf"
-    joint_rb: "joint_rb"
-    joint_lf: "joint_lf"
-    joint_lb: "joint_lb"
-    pid_rf: { p: 0.7, i: 0.0, d: 1.6 }
-    pid_rb: { p: 0.7, i: 0.0, d: 1.6 }
-    pid_lf: { p: 0.7, i: 0.0, d: 1.6 }
-    pid_lb: { p: 0.7, i: 0.0, d: 1.6 }
-    pid_follow: { p: 0.7, i: 0.0, d: 1.6 }
-    pid_twist: { p: 0.7, i: 0.0, d: 1.6 }
+    joint_rf_name: "joint_rf"
+    joint_rb_name: "joint_rb"
+    joint_lf_name: "joint_lf"
+    joint_lb_name: "joint_lb"
+    #    pid_rf: { p: 0.7, i: 0.0, d: 1.6 }
+    #    pid_rb: { p: 0.7, i: 0.0, d: 1.6 }
+    #    pid_lf: { p: 0.7, i: 0.0, d: 1.6 }
+    #    pid_lb: { p: 0.7, i: 0.0, d: 1.6 }
+    #    pid_follow: { p: 0.7, i: 0.0, d: 1.6 }
+    #    pid_twist: { p: 0.7, i: 0.0, d: 1.6 }
+    pid_rf: { p: 0, i: 0, d: 0.0 }
+    pid_rb: { p: 0, i: 0, d: 0.0 }
+    pid_lf: { p: 0, i: 0, d: 0.0 }
+    pid_lb: { p: 0, i: 0, d: 0.0 }
+    pid_follow: { p: 0, i: 0, d: 0.0 }
+    pid_twist: { p: 0, i: 0, d: 0.0 }
     wheel_base: 0.38
     wheel_track: 0.39
     wheel_radius: 0.07625
 
-joint_limits:
+#  joint_limits:
 #  joint_yaw:
 #    has_soft_limits: true
 #    k_position: 100

@@ -1,7 +1,10 @@
 <robot name="test_robot">
   <link name="world"/>
-  <link name="link_base"/>
-  <link name="link_yaw"/>
+  <link name="base_link"/>
+  <link name="link_rf"/>
+  <link name="link_rb"/>
+  <link name="link_lf"/>
+  <link name="link_lb"/>
 
   <joint name="joint_rf" type="continuous">
     <parent link="base_link"/>
