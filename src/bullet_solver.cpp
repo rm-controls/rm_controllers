@@ -4,6 +4,10 @@
 
 #include "rm_gimbal_controller/bullet_solver.h"
 #include <cmath>
+#include <rm_base/hardware_interface/robot_state_interface.h>
+#include <tf2/exceptions.h>
+#include <tf/transform_datatypes.h>
+#include "rm_gimbal_controller/standard.h"
 ///////////////////////////BulletSolver/////////////////////////////
 template
 class BulletSolver<double>;
@@ -170,6 +174,62 @@ std::vector<Vec3<T>> Bullet3DSolver<T>::getPointData3D() {
     model_data.push_back(point_data);
   }
   return model_data;
+}
+template<typename T>
+void Bullet3DSolver<T>::modelRviz(double x_deviation, double y_deviation, double z_deviation) {
+  geometry_msgs::Point point;
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "map";
+  marker.ns = "model";
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.type = visualization_msgs::Marker::POINTS;
+  marker.scale.x = 0.02;
+  marker.scale.y = 0.02;
+  marker.scale.z = 0.02;
+  marker.color.r = 0.0;
+  marker.color.g = 1.0;
+  marker.color.b = 0.0;
+  marker.color.a = 1.0;
+
+  for (int i = 0; i < 20; i++) {
+    point.x = model_data_[i][0] + x_deviation;
+    point.y = model_data_[i][1] + y_deviation;
+    point.z = model_data_[i][2] + z_deviation;
+    marker.points.push_back(point);
+  }
+  marker.header.stamp = ros::Time::now();
+  this->path_pub_.publish(marker);
+}
+
+template<typename T>
+geometry_msgs::TransformStamped Bullet3DSolver<T>::run(const ros::Time &time,
+                                                       realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) {
+  geometry_msgs::TransformStamped world2pitch;
+  geometry_msgs::TransformStamped world2gimbal_des;
+  hardware_interface::RobotStateHandle robot_state_handle;
+  world2pitch = robot_state_handle.lookupTransform("world", "pitch", ros::Time(0));
+
+  pos_[0] = cmd_track_rt_buffer.readFromRT()->target_position_x - world2pitch.transform.translation.x;
+  pos_[1] = cmd_track_rt_buffer.readFromRT()->target_position_y - world2pitch.transform.translation.y;
+  pos_[2] = cmd_track_rt_buffer.readFromRT()->target_position_z - world2pitch.transform.translation.z;
+  vel_[0] = cmd_track_rt_buffer.readFromRT()->target_speed_x;
+  vel_[1] = cmd_track_rt_buffer.readFromRT()->target_speed_y;
+  vel_[2] = cmd_track_rt_buffer.readFromRT()->target_speed_z;
+
+  this->setBulletSpeed(cmd_track_rt_buffer.readFromRT()->bullet_speed);
+  setTarget(pos_, vel_);
+  solve(angle_init_);
+  output(angle_solved_);
+  model_data_ = getPointData3D();
+
+  world2gimbal_des.transform.rotation =
+      tf::createQuaternionMsgFromRollPitchYaw(0, angle_solved_[0], -angle_solved_[1]);
+  world2gimbal_des.header.stamp = time;
+
+  modelRviz(world2pitch.transform.translation.x,
+            world2pitch.transform.translation.y,
+            world2pitch.transform.translation.z);
+  return world2gimbal_des;
 }
 
 template
