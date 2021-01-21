@@ -42,7 +42,7 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
       !pid_lb_.init(ros::NodeHandle(controller_nh, "pid_lb")))
     return false;
 
-  cmd_subscriber_ =
+  chassis_cmd_subscriber_ =
       root_nh.subscribe<rm_msgs::ChassisCmd>("cmd_chassis", 1, &ChassisStandardController::commandCB, this);
   vel_cmd_subscriber_ =
       root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisStandardController::velCmdCB, this);
@@ -51,7 +51,7 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
 }
 
 void ChassisStandardController::update(const ros::Time &time, const ros::Duration &period) {
-  cmd_ = *cmd_rt_buffer_.readFromRT();
+  cmd_ = *chassis_rt_buffer_.readFromRT();
 
   if (state_ != cmd_.mode) {
     state_ = StandardState(cmd_.mode);
@@ -299,13 +299,16 @@ void ChassisStandardController::setTrans() {
 //}
 
 void ChassisStandardController::commandCB(const rm_msgs::ChassisCmdConstPtr &msg) {
-  cmd_rt_buffer_.writeFromNonRT(*msg);
+  chassis_rt_buffer_.writeFromNonRT(*msg);
 }
 
 void ChassisStandardController::velCmdCB(const geometry_msgs::Twist::ConstPtr &cmd) {
-  vel_cmd_.vector.x = cmd->linear.x;
-  vel_cmd_.vector.y = cmd->linear.y;
-  vel_cmd_.vector.z = cmd->angular.z;
+  vel_rt_buffer_.writeFromNonRT(*cmd);
+  geometry_msgs::Twist vel_cmd;
+  vel_cmd = *vel_rt_buffer_.readFromRT();
+  vel_cmd_.vector.x = vel_cmd.linear.x;
+  vel_cmd_.vector.y = vel_cmd.linear.y;
+  vel_cmd_.vector.z = vel_cmd.angular.z;
 }
 
 }// namespace rm_chassis_controller

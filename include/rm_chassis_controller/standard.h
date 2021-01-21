@@ -64,9 +64,10 @@ class ChassisStandardController :
 
   bool state_changed_{};
   StandardState state_ = PASSIVE;
-  ros::Subscriber cmd_subscriber_;
+  ros::Subscriber chassis_cmd_subscriber_;
   ros::Subscriber vel_cmd_subscriber_;
-  realtime_tools::RealtimeBuffer<rm_msgs::ChassisCmd> cmd_rt_buffer_;
+  realtime_tools::RealtimeBuffer<rm_msgs::ChassisCmd> chassis_rt_buffer_;
+  realtime_tools::RealtimeBuffer<geometry_msgs::Twist> vel_rt_buffer_;
   rm_msgs::ChassisCmd cmd_;
 };
 }
