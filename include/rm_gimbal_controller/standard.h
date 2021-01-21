@@ -11,6 +11,10 @@
 #include <rm_base/hardware_interface/robot_state_interface.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_msgs/GimbalCmd.h>
+#include <rm_msgs/GimbalTrackCmd.h>
+#include <rm_gimbal_controllers/GimbalConfig.h>
+#include <rm_gimbal_controller/bullet_solver.h>
+#include <visualization_msgs/Marker.h>
 
 namespace rm_gimbal_controllers {
 enum StandardState {
@@ -30,21 +34,41 @@ class GimbalStandardController :
  private:
   void passive();
   void rate(const ros::Time &time, const ros::Duration &period);
-  void track();
+  void track(const ros::Time &time);
   void setDes(const ros::Time &time, double yaw, double pitch);
   void moveJoint(const ros::Duration &period);
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
+  void cmdTrackCB(const rm_msgs::GimbalTrackCmdConstPtr &msg);
+  void modelRviz(double x_deviation, double y_deviation, double z_deviation);
+  void reconfigCB(const rm_gimbal_controllers::GimbalConfig &config, uint32_t level);
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
   hardware_interface::RobotStateHandle robot_state_handle_;
   geometry_msgs::TransformStamped world2pitch_des_;
 
+  BulletSolver<double> *bullet_solver_{};
+  Vec2<double> angle_init_{};
+  Vec2<double> angle_solved_{};
+  Vec3<double> pos_{};
+  Vec3<double> vel_{};
+  double target_speed_x_{}, target_speed_y_{}, target_speed_z_{},
+      target_position_x_{}, target_position_y_{}, target_position_z_{};
+  double bullet_speed_{};
+  double resistance_coff_{}, delay_{}, dt_{}, timeout_{};
+  double g_ = 9.8;
+  std::vector<Vec3<double>> model_data_;
+  double *chassis_angular_z_{};
+
   bool state_changed_{};
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_subscriber_;
+  ros::Subscriber cmd_sub_track_;
+  ros::Publisher path_pub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
+  realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer_;
   rm_msgs::GimbalCmd cmd_;
+  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
 };
 }
 
