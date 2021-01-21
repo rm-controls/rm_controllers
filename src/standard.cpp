@@ -52,6 +52,11 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
 
 void ChassisStandardController::update(const ros::Time &time, const ros::Duration &period) {
   cmd_ = *chassis_rt_buffer_.readFromRT();
+  geometry_msgs::Twist vel_cmd;
+  vel_cmd = *vel_rt_buffer_.readFromRT();
+  vel_cmd_.vector.x = vel_cmd.linear.x;
+  vel_cmd_.vector.y = vel_cmd.linear.y;
+  vel_cmd_.vector.z = vel_cmd.angular.z;
 
   if (state_ != cmd_.mode) {
     state_ = StandardState(cmd_.mode);
@@ -256,7 +261,6 @@ void ChassisStandardController::transformTwistVel(const ros::Duration &period) {
 
     ros::Time now = ros::Time::now();
     double t = now.toSec();
-    //    yaw = -yaw;
     double twist_error = angles::shortest_angular_distance(yaw, (0.3 * sin(t) - yaw));
 
     pid_twist_.computeCommand(twist_error, period);
@@ -304,11 +308,6 @@ void ChassisStandardController::commandCB(const rm_msgs::ChassisCmdConstPtr &msg
 
 void ChassisStandardController::velCmdCB(const geometry_msgs::Twist::ConstPtr &cmd) {
   vel_rt_buffer_.writeFromNonRT(*cmd);
-  geometry_msgs::Twist vel_cmd;
-  vel_cmd = *vel_rt_buffer_.readFromRT();
-  vel_cmd_.vector.x = vel_cmd.linear.x;
-  vel_cmd_.vector.y = vel_cmd.linear.y;
-  vel_cmd_.vector.z = vel_cmd.angular.z;
 }
 
 }// namespace rm_chassis_controller
