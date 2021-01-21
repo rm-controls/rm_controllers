@@ -127,10 +127,21 @@ void ChassisStandardController::moveJoint(const ros::Duration &period) {
   pid_lf_.computeCommand(joint_lf_error, period);
   pid_lb_.computeCommand(joint_lb_error, period);
 
-  joint_rf_.setCommand(pid_rf_.getCurrentCmd());
-  joint_rb_.setCommand(pid_rb_.getCurrentCmd());
-  joint_lf_.setCommand(pid_lf_.getCurrentCmd());
-  joint_lb_.setCommand(pid_lb_.getCurrentCmd());
+  double coef = 1.0;
+  double real_current =
+      coef * (pid_rf_.getCurrentCmd() + pid_rb_.getCurrentCmd() + pid_lf_.getCurrentCmd() + pid_lb_.getCurrentCmd());
+  if (real_current > cmd_.current_up_limit) {
+    double prop = cmd_.current_up_limit / real_current;
+    joint_rf_.setCommand(prop * pid_rb_.getCurrentCmd());
+    joint_rb_.setCommand(prop * pid_rb_.getCurrentCmd());
+    joint_lf_.setCommand(prop * pid_lf_.getCurrentCmd());
+    joint_lb_.setCommand(prop * pid_lb_.getCurrentCmd());
+  } else {
+    joint_rf_.setCommand(pid_rf_.getCurrentCmd());
+    joint_rb_.setCommand(pid_rb_.getCurrentCmd());
+    joint_lf_.setCommand(pid_lf_.getCurrentCmd());
+    joint_lb_.setCommand(pid_lb_.getCurrentCmd());
+  }
 }
 
 geometry_msgs::Twist ChassisStandardController::getVel() {
