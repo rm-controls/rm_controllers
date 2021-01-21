@@ -19,6 +19,9 @@ find_package(catkin REQUIRED
     rm_common
     rm_base
 
+    tf2
+    tf2_geometry_msgs
+
     control_toolbox
     angles
     controller_interface
@@ -45,7 +48,6 @@ catkin_package(
     LIBRARIES
     CATKIN_DEPENDS
     roscpp
-
     roslint
 
     rm_msgs
@@ -74,7 +76,7 @@ include_directories(
 )
 
 ## Declare cpp executables
-add_executable(${PROJECT_NAME}
+add_library(${PROJECT_NAME}
     src/standard.cpp
     )
 
