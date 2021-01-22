@@ -37,6 +37,7 @@ class ShooterStandardController
   void passive();
   void ready(const ros::Duration &period);
   void push(const ros::Time &time, const ros::Duration &period);
+  void block(const ros::Time &time, const ros::Duration &period);
   void moveJoint(const ros::Duration &period);
   void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
   void reconfigCB(const rm_shooter_controllers::ShooterStandardConfig &config,
@@ -52,6 +53,9 @@ class ShooterStandardController
   double friction_radius_{};
   double bullet_speed_{};
   double trigger_des_{};
+  double block_coff_{};
+//  double anti_block_duration_{};
+//  ros::Time anti_block_time_;
 
   int shoot_num_{};
   double shoot_freq_{};

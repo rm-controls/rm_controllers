@@ -65,6 +65,8 @@ void ShooterStandardController::update(const ros::Time &time,
       ready(period);
     else if (state_ == PUSH)
       push(time, period);
+    else if (state_ == BLOCK)
+      block(time, period);
     moveJoint(period);
   }
 }
@@ -123,14 +125,23 @@ void ShooterStandardController::push(const ros::Time &time,
     pid_trigger_.reset();
 
     trigger_des_ = joint_trigger_.getPosition() + push_angle_;
+  }
+}
 
-    shoot_num_--;
-    shoot_num_change_ = true;
-    last_shoot_time_ = time;
+void ShooterStandardController::block(const ros::Time &time,
+                                      const ros::Duration &period) {
+  if (state_changed_) { //on enter
+    state_changed_ = false;
+    ROS_INFO("[Shooter] Enter BLOCK");
 
-    state_ = READY;
+    pid_fiction_l_.reset();
+    pid_fiction_r_.reset();
+    pid_trigger_.reset();
+    trigger_des_ = joint_trigger_.getPosition() - push_angle_ / 3;
+
+    state_ = PUSH;
     state_changed_ = true;
-    ROS_INFO("[Shooter] Exit PUSH");
+    ROS_INFO("[Shooter] Exit BLOCK");
   }
 }
 
@@ -145,6 +156,7 @@ void ShooterStandardController::reconfigCB(const rm_shooter_controllers::Shooter
   (void) level;
   push_angle_ = config.push_angle;
   friction_radius_ = config.friction_radius;
+  block_coff_ = config.ff_coff;
   setSpeed(config.bullet_speed);
 }
 
@@ -159,6 +171,20 @@ void ShooterStandardController::moveJoint(const ros::Duration &period) {
   joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
   joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
   joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
+
+  if (block_coff_ * joint_trigger_.getEffort()
+      > joint_trigger_.getVelocity()) {
+    state_ = BLOCK;
+    state_changed_ = true;
+    ROS_INFO("[Shooter] Exit PUSH");
+  } else {
+    shoot_num_--;
+    shoot_num_change_ = true;
+    last_shoot_time_ = ros::Time::now();
+    state_ = READY;
+    state_changed_ = true;
+    ROS_INFO("[Shooter] Exit PUSH");
+  }
 }
 
 } // namespace rm_shooter_controllers
