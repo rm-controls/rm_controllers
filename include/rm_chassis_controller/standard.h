@@ -38,17 +38,15 @@ class ChassisStandardController :
   void follow(const ros::Duration &period);
   void twist(const ros::Duration &period);
   void gyro();
-//  void fly();
   void transformGyroVel();
   void transformTwistVel(const ros::Duration &period);
   void transformFollowVel(const ros::Duration &period);
-  void setVel();
+  void recovery();
   void moveJoint(const ros::Duration &period);
-//  void setDes(const ros::Time &time, double x, double y, double z);  //????????
   void commandCB(const rm_msgs::ChassisCmdConstPtr &msg);
   void velCmdCB(const geometry_msgs::Twist::ConstPtr &cmd);
-  void setTrans();
-  geometry_msgs::Twist getVel();
+  void updateOdom(const ros::Time &time, const ros::Duration &period);
+  geometry_msgs::Twist iKine();
 
   control_toolbox::Pid pid_rf_, pid_lf_, pid_rb_, pid_lb_;
   control_toolbox::Pid pid_follow_, pid_twist_;
@@ -56,7 +54,7 @@ class ChassisStandardController :
 
   double wheel_base_{}, wheel_track_{}, wheel_radius_{};
   hardware_interface::RobotStateHandle robot_state_handle_;
-  geometry_msgs::TransformStamped word2base_;
+  geometry_msgs::TransformStamped odom2base_;
   geometry_msgs::Vector3Stamped vel_cmd_;
   geometry_msgs::Vector3Stamped vel_tfed_;
 

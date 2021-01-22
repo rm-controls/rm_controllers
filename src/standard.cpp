@@ -75,26 +75,7 @@ void ChassisStandardController::update(const ros::Time &time, const ros::Duratio
     else if (state_ == TWIST)
       twist(period);
     moveJoint(period);
-    setTrans();
   }
-
-//  switch (state_) {
-//    case PASSIVE: passive();
-//      break;
-//    case RAW: raw(time);
-//      break;
-//    case FOLLOW: follow(time);
-//      break;
-//    case TWIST: twist(time);
-//      break;
-//    case GYRO: gyro(time);
-//      break;
-// //    case FLY: fly(time);
-// //      break;
-//    default: break;
-//  }
-// //  if (state_ != FLY)
-//    moveJoint(period);
 }
 
 void ChassisStandardController::moveJoint(const ros::Duration &period) {
@@ -103,19 +84,10 @@ void ChassisStandardController::moveJoint(const ros::Duration &period) {
   ramp_w->input(vel_tfed_.vector.z);
 
   double a = wheel_base_ + wheel_track_;
-  double joint_rf_des{}, joint_lf_des{}, joint_lb_des{}, joint_rb_des{};
-  joint_rf_des =
-      (ramp_x->output() + ramp_y->output() + ramp_w->output() * a)
-          / wheel_radius_;
-  joint_lf_des =
-      (ramp_x->output() - ramp_y->output() - ramp_w->output() * a)
-          / wheel_radius_;
-  joint_lb_des =
-      (ramp_x->output() + ramp_y->output() - ramp_w->output() * a)
-          / wheel_radius_;
-  joint_rb_des =
-      (ramp_x->output() - ramp_y->output() + ramp_w->output() * a)
-          / wheel_radius_;
+  double joint_rf_des = (ramp_x->output() + ramp_y->output() + ramp_w->output() * a) / wheel_radius_;
+  double joint_lf_des = (ramp_x->output() - ramp_y->output() - ramp_w->output() * a) / wheel_radius_;
+  double joint_lb_des = (ramp_x->output() + ramp_y->output() - ramp_w->output() * a) / wheel_radius_;
+  double joint_rb_des = (ramp_x->output() - ramp_y->output() + ramp_w->output() * a) / wheel_radius_;
 
   double joint_rf_error = joint_rf_des - joint_rf_.getPosition();
   double joint_rb_error = joint_rb_des - joint_rb_.getPosition();
@@ -127,27 +99,28 @@ void ChassisStandardController::moveJoint(const ros::Duration &period) {
   pid_lf_.computeCommand(joint_lf_error, period);
   pid_lb_.computeCommand(joint_lb_error, period);
 
-  double coef = 1.0;
+  // Power limit
+  double scaler = 1.0;
   double real_current =
-      coef * (pid_rf_.getCurrentCmd() + pid_rb_.getCurrentCmd() + pid_lf_.getCurrentCmd() + pid_lb_.getCurrentCmd());
-  if (real_current > cmd_.current_up_limit) {
-    double prop = cmd_.current_up_limit / real_current;
-    joint_rf_.setCommand(prop * pid_rb_.getCurrentCmd());
-    joint_rb_.setCommand(prop * pid_rb_.getCurrentCmd());
-    joint_lf_.setCommand(prop * pid_lf_.getCurrentCmd());
-    joint_lb_.setCommand(prop * pid_lb_.getCurrentCmd());
-  } else {
-    joint_rf_.setCommand(pid_rf_.getCurrentCmd());
-    joint_rb_.setCommand(pid_rb_.getCurrentCmd());
-    joint_lf_.setCommand(pid_lf_.getCurrentCmd());
-    joint_lb_.setCommand(pid_lb_.getCurrentCmd());
-  }
+      scaler * (pid_rf_.getCurrentCmd() + pid_rb_.getCurrentCmd() + pid_lf_.getCurrentCmd() + pid_lb_.getCurrentCmd());
+
+  double prop;
+
+  if (real_current > cmd_.current_limit)
+    prop = cmd_.current_limit / real_current;
+  else
+    prop = 1.;
+
+  joint_rf_.setCommand(prop * pid_rb_.getCurrentCmd());
+  joint_rb_.setCommand(prop * pid_rb_.getCurrentCmd());
+  joint_lf_.setCommand(prop * pid_lf_.getCurrentCmd());
+  joint_lb_.setCommand(prop * pid_lb_.getCurrentCmd());
 }
 
-geometry_msgs::Twist ChassisStandardController::getVel() {
+geometry_msgs::Twist ChassisStandardController::iKine() {
   geometry_msgs::Twist vel_data;
   double k = wheel_radius_ / 4.0;
-  double joint_rf_position{}, joint_rb_position{}, joint_lf_position{}, joint_lb_position{};
+  double joint_rf_position, joint_rb_position, joint_lf_position, joint_lb_position;
   joint_rf_position = joint_rf_.getPosition();
   joint_rb_position = joint_rb_.getPosition();
   joint_lf_position = joint_lf_.getPosition();
@@ -162,8 +135,8 @@ geometry_msgs::Twist ChassisStandardController::getVel() {
   return vel_data;
 }
 
-void ChassisStandardController::setVel() {
-  geometry_msgs::Twist vel = getVel();
+void ChassisStandardController::recovery() {
+  geometry_msgs::Twist vel = iKine();
 
   ramp_x->clear(vel.linear.x);
   ramp_y->clear(vel.linear.y);
@@ -187,7 +160,7 @@ void ChassisStandardController::raw() {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enther RAW");
 
-    setVel();
+    recovery();
   }
 
   vel_tfed_ = vel_cmd_;
@@ -198,7 +171,7 @@ void ChassisStandardController::follow(const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enther FOLLOW");
 
-    setVel();
+    recovery();
   }
 
   transformFollowVel(period);
@@ -209,7 +182,7 @@ void ChassisStandardController::twist(const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enther TWIST");
 
-    setVel();
+    recovery();
   }
 
   transformTwistVel(period);
@@ -220,18 +193,11 @@ void ChassisStandardController::gyro() {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enther GYRO");
 
-    setVel();
+    recovery();
   }
 
   transformGyroVel();
 }
-
-//void ChassisStandardController::fly() {
-//  if(state_changed_) {
-//    state_changed_ = false;
-//    ROS_INFO("[Chassis] Enther FLY");
-//  }
-//}
 
 void ChassisStandardController::transformGyroVel() {
   try {
@@ -246,7 +212,7 @@ void ChassisStandardController::transformGyroVel() {
 void ChassisStandardController::transformFollowVel(const ros::Duration &period) {
   geometry_msgs::TransformStamped transformStamped;
   try {
-    transformStamped = robot_state_handle_.lookupTransform("base_link", "yaw_link", ros::Time(0));
+    transformStamped = robot_state_handle_.lookupTransform("base_link", "link_yaw", ros::Time(0));
     tf2::doTransform(vel_cmd_, vel_tfed_, transformStamped);
     double roll{}, pitch{}, yaw{};
 
@@ -264,7 +230,7 @@ void ChassisStandardController::transformFollowVel(const ros::Duration &period) 
 void ChassisStandardController::transformTwistVel(const ros::Duration &period) {
   geometry_msgs::TransformStamped transformStamped;
   try {
-    transformStamped = robot_state_handle_.lookupTransform("base_link", "yaw_link", ros::Time(0));
+    transformStamped = robot_state_handle_.lookupTransform("base_link", "link_yaw", ros::Time(0));
     tf2::doTransform(vel_cmd_, vel_tfed_, transformStamped);
     double roll{}, pitch{}, yaw{};
 
@@ -282,36 +248,29 @@ void ChassisStandardController::transformTwistVel(const ros::Duration &period) {
   }
 }
 
-void ChassisStandardController::setTrans() {
-  geometry_msgs::Twist vel = getVel(); //on base_link frame
+void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Duration &period) {
+  geometry_msgs::Twist vel = iKine(); //on base_link frame
   geometry_msgs::Vector3Stamped trans;
-  trans.vector.x = vel.linear.x * 0.001;
-  trans.vector.y = vel.linear.y * 0.001;
+  trans.vector.x = vel.linear.x * period.toSec();
+  trans.vector.y = vel.linear.y * period.toSec();
 
   try {
-    word2base_ = robot_state_handle_.lookupTransform("word", "base_link", ros::Time(0));
-    tf2::doTransform(trans, trans, word2base_);
+    odom2base_ = robot_state_handle_.lookupTransform("odom", "base_link", time);
+    tf2::doTransform(trans, trans, odom2base_);
   }
-  catch (tf2::TransformException &ex) {
-    ROS_WARN("%s", ex.what());
-  }
+  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
   ros::Time now = ros::Time::now();
-  word2base_.header.stamp = now;
-  word2base_.transform.translation.x += trans.vector.x;
-  word2base_.transform.translation.y += trans.vector.y;
-  word2base_.transform.translation.z += trans.vector.z;
+  odom2base_.header.stamp = now;
+  odom2base_.transform.translation.x += trans.vector.x;
+  odom2base_.transform.translation.y += trans.vector.y;
+  odom2base_.transform.translation.z += trans.vector.z;
 
   double roll, pitch, yaw;
-  quatToRPY(word2base_.transform.rotation, roll, pitch, yaw);
-
-  word2base_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(
-      roll, pitch, yaw + 0.001 * vel.angular.z);
-  robot_state_handle_.setTransform(word2base_, "rm_base");
+  quatToRPY(odom2base_.transform.rotation, roll, pitch, yaw);
+  odom2base_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(
+      roll, pitch, yaw + period.toSec() * vel.angular.z);
+  robot_state_handle_.setTransform(odom2base_, "rm_base");
 }
-
-//void ChassisStandardController::setDes(const ros::Time &time, double x, double y, double z) {
-//
-//}
 
 void ChassisStandardController::commandCB(const rm_msgs::ChassisCmdConstPtr &msg) {
   chassis_rt_buffer_.writeFromNonRT(*msg);
