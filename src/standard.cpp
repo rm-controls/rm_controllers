@@ -156,7 +156,8 @@ void ShooterStandardController::reconfigCB(const rm_shooter_controllers::Shooter
   (void) level;
   push_angle_ = config.push_angle;
   friction_radius_ = config.friction_radius;
-  block_coff_ = config.ff_coff;
+  block_coff_ = config.block_coff;
+  ff_coff_ = config.ff_coff;
   setSpeed(config.bullet_speed);
 }
 
@@ -168,6 +169,11 @@ void ShooterStandardController::moveJoint(const ros::Duration &period) {
   pid_fiction_l_.computeCommand(wheel_l_error, period);
   pid_fiction_r_.computeCommand(wheel_r_error, period);
   pid_trigger_.computeCommand(trigger_error, period);
+  if (state_ == PUSH) {
+    double ff = ff_coff_ * fric_qd_des_;
+    joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd() + ff);
+    joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd() + ff);
+  }
   joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
   joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
   joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());

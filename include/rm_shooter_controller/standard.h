@@ -53,6 +53,7 @@ class ShooterStandardController
   double friction_radius_{};
   double bullet_speed_{};
   double trigger_des_{};
+  double ff_coff_{};
   double block_coff_{};
 //  double anti_block_duration_{};
 //  ros::Time anti_block_time_;
