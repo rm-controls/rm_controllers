@@ -9,23 +9,20 @@
 #include "rm_shooter_controller/standard.h"
 
 namespace rm_shooter_controllers {
-bool ShooterStandardBaseController::init(hardware_interface::RobotHW *robot_hw,
-                                         ros::NodeHandle &root_nh,
-                                         ros::NodeHandle &controller_nh) {
+bool ShooterStandardController::init(hardware_interface::RobotHW *robot_hw,
+                                     ros::NodeHandle &root_nh,
+                                     ros::NodeHandle &controller_nh) {
   auto *effort_jnt_interface =
       robot_hw->get<hardware_interface::EffortJointInterface>();
-  joint_fiction_l_ = effort_jnt_interface->getHandle(getParam(controller_nh,
-                                                              "joint_fiction_left_name",
-                                                              std::string(
-                                                                  "joint_fiction_left")));
-  joint_fiction_r_ = effort_jnt_interface->getHandle(getParam(controller_nh,
-                                                              "joint_fiction_right_name",
-                                                              std::string(
-                                                                  "joint_fiction_right")));
-  joint_trigger_ = effort_jnt_interface->getHandle(getParam(controller_nh,
-                                                            "joint_trigger_name",
-                                                            std::string(
-                                                                "joint_trigger")));
+  joint_fiction_l_ = effort_jnt_interface->getHandle(
+      getParam(controller_nh, "joint_fiction_left_name",
+               std::string("joint_fiction_left")));
+  joint_fiction_r_ = effort_jnt_interface->getHandle(
+      getParam(controller_nh, "joint_fiction_right_name",
+               std::string("joint_fiction_right")));
+  joint_trigger_ = effort_jnt_interface->getHandle(
+      getParam(controller_nh, "joint_trigger_name",
+               std::string("joint_trigger")));
   robot_state_handle_ =
       robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle(
           "robot_state");
@@ -36,22 +33,21 @@ bool ShooterStandardBaseController::init(hardware_interface::RobotHW *robot_hw,
     return false;
 
   cmd_subscriber_ = root_nh.subscribe<rm_msgs::ShootCmd>("cmd_shooter", 1,
-                                                         &ShooterStandardBaseController::commandCB,
+                                                         &ShooterStandardController::commandCB,
                                                          this);
-  ros::NodeHandle private_nh("~/shooter");
   d_srv_ =
       new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterStandardConfig>(
-          private_nh);
+          controller_nh);
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterStandardConfig>::CallbackType
       cb =
-      boost::bind(&ShooterStandardBaseController::reconfigCB, this, _1, _2);
+      boost::bind(&ShooterStandardController::reconfigCB, this, _1, _2);
   d_srv_->setCallback(cb);
 
   return true;
 }
 
-void ShooterStandardBaseController::update(const ros::Time &time,
-                                           const ros::Duration &period) {
+void ShooterStandardController::update(const ros::Time &time,
+                                       const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
   setSpeed(cmd_.speed);
   if (!shoot_num_change_) {
@@ -65,24 +61,25 @@ void ShooterStandardBaseController::update(const ros::Time &time,
   if (state_ == PASSIVE)
     passive();
   else {
-    if (state_ == READY) {
+    if (state_ == READY)
       ready(period);
-    } else if (state_ == PUSH)
-      push(period);
+    else if (state_ == PUSH)
+      push(time, period);
+    moveJoint(period);
   }
 }
 
-void ShooterStandardBaseController::shoot(int num, double freq) {
+void ShooterStandardController::shoot(int num, double freq) {
   shoot_num_ = num;
   shoot_freq_ = freq;
 }
 
-void ShooterStandardBaseController::setSpeed(double speed) {
+void ShooterStandardController::setSpeed(double speed) {
   bullet_speed_ = speed;
   fric_qd_des_ = bullet_speed_ / friction_radius_;
 }
 
-void ShooterStandardBaseController::passive() {
+void ShooterStandardController::passive() {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PASSIVE");
@@ -90,13 +87,10 @@ void ShooterStandardBaseController::passive() {
     joint_fiction_l_.setCommand(0);
     joint_fiction_r_.setCommand(0);
     joint_trigger_.setCommand(0);
-    pid_fiction_l_.reset();
-    pid_fiction_r_.reset();
-    pid_trigger_.reset();
   }
 }
 
-void ShooterStandardBaseController::ready(const ros::Duration &period) {
+void ShooterStandardController::ready(const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter READY");
@@ -118,33 +112,21 @@ void ShooterStandardBaseController::ready(const ros::Duration &period) {
   }
 }
 
-void ShooterStandardBaseController::push(const ros::Duration &period) {
+void ShooterStandardController::push(const ros::Time &time,
+                                     const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PUSH");
 
-    //Turn trigger
-    double trigger_des = joint_trigger_.getPosition() + push_angle_;
-    //Add impulse to bullet
-    double l_ff = ff_coff_ * fric_qd_des_;
-    double r_ff = ff_coff_ * fric_qd_des_;
+    pid_fiction_l_.reset();
+    pid_fiction_r_.reset();
+    pid_trigger_.reset();
 
-    double wheel_l_error = fric_qd_des_ - joint_fiction_l_.getVelocity();
-    double wheel_r_error = fric_qd_des_ - joint_fiction_r_.getVelocity();
-    double trigger_error =
-        angles::shortest_angular_distance(joint_trigger_.getPosition(),
-                                          trigger_des);
-    pid_fiction_l_.computeCommand(wheel_l_error, period);
-    pid_fiction_r_.computeCommand(wheel_r_error, period);
-    pid_trigger_.computeCommand(trigger_error, period);
-    joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
-    joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
-    joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
+    trigger_des_ = joint_trigger_.getPosition() + push_angle_;
 
     shoot_num_--;
     shoot_num_change_ = true;
-    last_shoot_time_ = ros::Time::now();
-    push_time_ = ros::Time::now();
+    last_shoot_time_ = time;
 
     state_ = READY;
     state_changed_ = true;
@@ -152,23 +134,34 @@ void ShooterStandardBaseController::push(const ros::Duration &period) {
   }
 }
 
-void ShooterStandardBaseController::commandCB(const rm_msgs::ShootCmdConstPtr &msg) {
+void ShooterStandardController::commandCB(const rm_msgs::ShootCmdConstPtr &msg) {
   cmd_rt_buffer_.writeFromNonRT(*msg);
   shoot_num_change_ = false;
 }
 
-void ShooterStandardBaseController::reconfigCB(const rm_shooter_controllers::ShooterStandardConfig &config,
-                                               uint32_t level) {
+void ShooterStandardController::reconfigCB(const rm_shooter_controllers::ShooterStandardConfig &config,
+                                           uint32_t level) {
   ROS_INFO("[Shooter] Dynamic params change");
   (void) level;
-  block_coff_ = config.block_coff;
   push_angle_ = config.push_angle;
-  ff_coff_ = config.ff_coff;
-  ff_duration_ = config.ff_duration;
   friction_radius_ = config.friction_radius;
   setSpeed(config.bullet_speed);
 }
+
+void ShooterStandardController::moveJoint(const ros::Duration &period) {
+  double wheel_l_error = fric_qd_des_ - joint_fiction_l_.getVelocity();
+  double wheel_r_error = fric_qd_des_ - joint_fiction_r_.getVelocity();
+  double trigger_error = trigger_des_ - joint_trigger_.getPosition();
+
+  pid_fiction_l_.computeCommand(wheel_l_error, period);
+  pid_fiction_r_.computeCommand(wheel_r_error, period);
+  pid_trigger_.computeCommand(trigger_error, period);
+  joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
+  joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
+  joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
+}
+
 } // namespace rm_shooter_controllers
 
-PLUGINLIB_EXPORT_CLASS(rm_shooter_controllers::ShooterStandardBaseController,
+PLUGINLIB_EXPORT_CLASS(rm_shooter_controllers::ShooterStandardController,
                        controller_interface::ControllerBase)

@@ -22,24 +22,23 @@ enum StandardState {
   BLOCK
 };
 
-class ShooterStandardBaseController
+class ShooterStandardController
     : public controller_interface::MultiInterfaceController<
         hardware_interface::EffortJointInterface,
         hardware_interface::RobotStateInterface> {
  public:
-  ShooterStandardBaseController() = default;
+  ShooterStandardController() = default;
   bool init(hardware_interface::RobotHW *robot_hw,
-            ros::NodeHandle &root_nh, ros::NodeHandle &conctroller_nh) override;
+            ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
   void update(const ros::Time &time, const ros::Duration &period) override;
   void shoot(int num, double freq);
   void setSpeed(double speed);
  protected:
   void passive();
   void ready(const ros::Duration &period);
-  void push(const ros::Duration &period);
-//  void block();
+  void push(const ros::Time &time, const ros::Duration &period);
+  void moveJoint(const ros::Duration &period);
   void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
-  void setDes(double q_des, double ff);
   void reconfigCB(const rm_shooter_controllers::ShooterStandardConfig &config,
                   uint32_t level);
 
@@ -51,16 +50,11 @@ class ShooterStandardBaseController
   double fric_qd_des_{};
   double push_angle_{};
   double friction_radius_{};
-  double ff_coff_{};
-  double ff_duration_{};
   double bullet_speed_{};
-  double block_coff_{};
-  double block_duration_{};
-  double anti_block_speed_{};
-  double anti_block_duration_{};
+  double trigger_des_{};
+
   int shoot_num_{};
   double shoot_freq_{};
-  ros::Time push_time_;
   ros::Time last_shoot_time_;
 
   bool state_changed_{};

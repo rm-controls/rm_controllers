@@ -1,10 +1,10 @@
 <library path="lib/librm_shooter_controllers">
 
-    <class name="rm_shooter_controllers/ShooterStandardBaseController"
-           type="rm_shooter_controllers::ShooterStandardBaseController"
+    <class name="rm_shooter_controllers/ShooterStandardController"
+           type="rm_shooter_controllers::ShooterStandardController"
            base_class_type="controller_interface::ControllerBase">
         <description>
-            The ShooterStandardBaseController is RoboMaster standard robot
+            The ShooterStandardController is RoboMaster standard robot
             Shooter controller. It expects a EffortJointInterface
             type of hardware interface.
         </description>
