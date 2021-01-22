@@ -35,7 +35,7 @@
             </hardwareInterface>
         </joint>
         <actuator name="actuator_fiction_left">
-            <mechanicalReduction>1</mechanicalReduction>
+            <mechanicalReduction>-1</mechanicalReduction>
             <hardwareInterface>hardware_interface/EffortJointInterface
             </hardwareInterface>
         </actuator>
@@ -59,7 +59,7 @@
             </hardwareInterface>
         </joint>
         <actuator name="actuator_trigger">
-            <mechanicalReduction>1</mechanicalReduction>
+            <mechanicalReduction>-1</mechanicalReduction>
             <hardwareInterface>hardware_interface/EffortJointInterface
             </hardwareInterface>
         </actuator>

@@ -79,8 +79,7 @@ include_directories(
 
 ## Declare a cpp library
 add_library(${PROJECT_NAME}
-        src/standard.cpp
-        )
+    src/standard.cpp)
 
 ## Declare cpp executables
 #add_executable(${PROJECT_NAME}
@@ -90,8 +89,7 @@ add_library(${PROJECT_NAME}
 
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME}
-        ${catkin_LIBRARIES}
-        )
+    ${catkin_LIBRARIES})
 
 #############
 ## Install ##

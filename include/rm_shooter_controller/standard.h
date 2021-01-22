@@ -17,7 +17,6 @@
 namespace rm_shooter_controllers {
 enum StandardState {
   PASSIVE,
-  FEED,
   READY,
   PUSH,
   BLOCK
@@ -65,6 +64,7 @@ class ShooterStandardBaseController
   ros::Time last_shoot_time_;
 
   bool state_changed_{};
+  bool shoot_num_change_ = false;
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_subscriber_;
   realtime_tools::RealtimeBuffer<rm_msgs::ShootCmd> cmd_rt_buffer_;

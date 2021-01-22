@@ -35,8 +35,7 @@ bool ShooterStandardBaseController::init(hardware_interface::RobotHW *robot_hw,
       || !pid_trigger_.init(ros::NodeHandle(controller_nh, "pid_trigger")))
     return false;
 
-  cmd_subscriber_ = root_nh.subscribe<rm_msgs::ShootCmd>("cmd_shooter",
-                                                         1,
+  cmd_subscriber_ = root_nh.subscribe<rm_msgs::ShootCmd>("cmd_shooter", 1,
                                                          &ShooterStandardBaseController::commandCB,
                                                          this);
   ros::NodeHandle private_nh("~/shooter");
@@ -54,17 +53,21 @@ bool ShooterStandardBaseController::init(hardware_interface::RobotHW *robot_hw,
 void ShooterStandardBaseController::update(const ros::Time &time,
                                            const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
+  setSpeed(cmd_.speed);
+  if (!shoot_num_change_) {
+    shoot(cmd_.num, cmd_.hz);
+  }
 
-  if (state_ != cmd_.mode) {
+  if (state_ != cmd_.mode && state_ != PUSH) {
     state_ = StandardState(cmd_.mode);
     state_changed_ = true;
   }
   if (state_ == PASSIVE)
     passive();
   else {
-    if (state_ == READY)
+    if (state_ == READY) {
       ready(period);
-    else if (state_ == PUSH)
+    } else if (state_ == PUSH)
       push(period);
   }
 }
@@ -99,20 +102,12 @@ void ShooterStandardBaseController::ready(const ros::Duration &period) {
     ROS_INFO("[Shooter] Enter READY");
   }
 
-//  double wheel_l_error =
-//      angles::shortest_angular_distance(joint_wheel_l_.getVelocity(),
-//                                        fric_qd_des_);
-//  double wheel_r_error =
-//      angles::shortest_angular_distance(joint_wheel_r_.getVelocity(),
-//                                        fric_qd_des_);
-
   double wheel_l_error = fric_qd_des_ - joint_fiction_l_.getVelocity();
   double wheel_r_error = fric_qd_des_ - joint_fiction_r_.getVelocity();
   pid_fiction_l_.computeCommand(wheel_l_error, period);
   pid_fiction_r_.computeCommand(wheel_r_error, period);
   joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
   joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
-  joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
 
   if (shoot_num_ > 0 &&
       (ros::Time::now() - last_shoot_time_).toSec()
@@ -131,15 +126,8 @@ void ShooterStandardBaseController::push(const ros::Duration &period) {
     //Turn trigger
     double trigger_des = joint_trigger_.getPosition() + push_angle_;
     //Add impulse to bullet
-    // double l_ff = ff_coff_ * joint_wheel_l_.getVelocity();
-    // double r_ff = ff_coff_ * joint_wheel_r_.getVelocity();
-
-//    double wheel_l_error =
-//        angles::shortest_angular_distance(joint_wheel_l_.getVelocity(),
-//                                          fric_qd_des_);
-//    double wheel_r_error =
-//        angles::shortest_angular_distance(joint_wheel_r_.getVelocity(),
-//                                          fric_qd_des_);
+    double l_ff = ff_coff_ * fric_qd_des_;
+    double r_ff = ff_coff_ * fric_qd_des_;
 
     double wheel_l_error = fric_qd_des_ - joint_fiction_l_.getVelocity();
     double wheel_r_error = fric_qd_des_ - joint_fiction_r_.getVelocity();
@@ -154,6 +142,7 @@ void ShooterStandardBaseController::push(const ros::Duration &period) {
     joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
 
     shoot_num_--;
+    shoot_num_change_ = true;
     last_shoot_time_ = ros::Time::now();
     push_time_ = ros::Time::now();
 
@@ -165,8 +154,7 @@ void ShooterStandardBaseController::push(const ros::Duration &period) {
 
 void ShooterStandardBaseController::commandCB(const rm_msgs::ShootCmdConstPtr &msg) {
   cmd_rt_buffer_.writeFromNonRT(*msg);
-  setSpeed(cmd_.speed);
-  shoot(cmd_.num, cmd_.hz);
+  shoot_num_change_ = false;
 }
 
 void ShooterStandardBaseController::reconfigCB(const rm_shooter_controllers::ShooterStandardConfig &config,
