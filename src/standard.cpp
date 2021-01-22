@@ -173,9 +173,10 @@ void ShooterStandardController::moveJoint(const ros::Duration &period) {
     double ff = ff_coff_ * fric_qd_des_;
     joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd() + ff);
     joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd() + ff);
+  } else {
+    joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
+    joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
   }
-  joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
-  joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
   joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
 
   if (block_coff_ * joint_trigger_.getEffort()
