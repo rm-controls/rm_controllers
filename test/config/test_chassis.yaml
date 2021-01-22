@@ -35,7 +35,7 @@ rm_base:
     type: joint_state_controller/JointStateController
     publish_rate: 50
   standard_chassis_controller:
-    type: rm_chassis_controller/ChassisStandardController
+    type: rm_chassis_controllers/ChassisStandardController
     joint_rf_name: "joint_rf"
     joint_rb_name: "joint_rb"
     joint_lf_name: "joint_lf"
@@ -46,10 +46,10 @@ rm_base:
     #    pid_lb: { p: 0.7, i: 0.0, d: 1.6 }
     #    pid_follow: { p: 0.7, i: 0.0, d: 1.6 }
     #    pid_twist: { p: 0.7, i: 0.0, d: 1.6 }
-    pid_rf: { p: 0, i: 0, d: 0.0 }
-    pid_rb: { p: 0, i: 0, d: 0.0 }
-    pid_lf: { p: 0, i: 0, d: 0.0 }
-    pid_lb: { p: 0, i: 0, d: 0.0 }
+    pid_rf: { p: 0.8, i: 0, d: 0.0 }
+    pid_rb: { p: 0.8, i: 0, d: 0.0 }
+    pid_lf: { p: 0.8, i: 0, d: 0.0 }
+    pid_lb: { p: 0.8, i: 0, d: 0.0 }
     pid_follow: { p: 0, i: 0, d: 0.0 }
     pid_twist: { p: 0, i: 0, d: 0.0 }
     wheel_base: 0.38

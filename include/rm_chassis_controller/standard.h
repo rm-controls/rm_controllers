@@ -14,7 +14,7 @@
 #include <filters.h>
 #include <geometry_msgs/TwistStamped.h>
 
-namespace rm_chassis_controller {
+namespace rm_chassis_controllers {
 enum StandardState {
   PASSIVE,
   RAW,
@@ -31,16 +31,14 @@ class ChassisStandardController :
   ChassisStandardController() = default;
   bool init(hardware_interface::RobotHW *robot_hw,
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
-  void update(const ros::Time &time, const ros::Duration & /*period*/) override;
+  void update(const ros::Time &time, const ros::Duration &period) override;
  private:
   void passive();
   void raw();
-  void follow(const ros::Duration &period);
-  void twist(const ros::Duration &period);
-  void gyro();
-  void transformGyroVel();
-  void transformTwistVel(const ros::Duration &period);
-  void transformFollowVel(const ros::Duration &period);
+  void follow(const ros::Time &time, const ros::Duration &period);
+  void twist(const ros::Time &time, const ros::Duration &period);
+  void gyro(const ros::Time &time);
+  void tfVelFromYawToBase(const ros::Time &time);
   void recovery();
   void moveJoint(const ros::Duration &period);
   void commandCB(const rm_msgs::ChassisCmdConstPtr &msg);
@@ -66,7 +64,7 @@ class ChassisStandardController :
   ros::Subscriber vel_cmd_subscriber_;
   realtime_tools::RealtimeBuffer<rm_msgs::ChassisCmd> chassis_rt_buffer_;
   realtime_tools::RealtimeBuffer<geometry_msgs::Twist> vel_rt_buffer_;
-  rm_msgs::ChassisCmd cmd_;
+  rm_msgs::ChassisCmd cmd_chassis_;
 };
 }
 #endif //RM_CHASSIS_CONTROLLER_STANDARD_H

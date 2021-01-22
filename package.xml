@@ -28,4 +28,8 @@
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
   <depend>realtime_tools</depend>
+
+  <export>
+    <controller_interface plugin="${prefix}/rm_chassis_controllers_plugins.xml"/>
+  </export>
 </package>
