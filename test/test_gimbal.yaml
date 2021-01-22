@@ -27,8 +27,8 @@ rm_base:
     publish_rate: 50
   gimbal_standard_controller:
     type: rm_gimbal_controllers/GimbalStandardController
-    pid_yaw: { p: 0.25, d: 0.02, i: 0.0 ,i_max: 0.0, i_min: 0.0, antiwindup: true }
-    pid_pitch: { p: 0.25, d: 0.02, i: 0.0 ,i_max: 0.0, i_min: 0.0, antiwindup: true }
+    pid_yaw: { p: 1, d: 0.02, i: 0.0 ,i_max: 0.0, i_min: 0.0, antiwindup: true }
+    pid_pitch: { p: 1, d: 0.02, i: 0.0 ,i_max: 0.0, i_min: 0.0, antiwindup: true }
 
 #joint_limits:
 #  joint_yaw:

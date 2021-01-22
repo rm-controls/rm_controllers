@@ -19,7 +19,7 @@
   <transmission name="yaw_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="joint_yaw">
-      <offset>-0.42189619999999994</offset>
+      <offset>0.4</offset>
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="actuator_yaw">

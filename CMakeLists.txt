@@ -83,7 +83,7 @@ add_executable(test_bullet_solver test/test_bullet_solver.cpp)
 
 ## Specify libraries to link executable targets against
 target_link_libraries(bullet_solver ${catkin_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} bullet_solver ${catkin_LIBRARIES})
 target_link_libraries(test_bullet_solver bullet_solver ${catkin_LIBRARIES})
 
 #############

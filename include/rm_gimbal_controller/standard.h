@@ -39,29 +39,24 @@ class GimbalStandardController :
   void moveJoint(const ros::Duration &period);
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void cmdTrackCB(const rm_msgs::GimbalTrackCmdConstPtr &msg);
-  void reconfigCB(const rm_gimbal_controllers::GimbalConfig &config, uint32_t level);
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
   hardware_interface::RobotStateHandle robot_state_handle_;
   geometry_msgs::TransformStamped world2gimbal_des_;
 
-  BulletSolver<double> *bullet_solver_{};
-  double target_speed_x_{}, target_speed_y_{}, target_speed_z_{},
-      target_position_x_{}, target_position_y_{}, target_position_z_{};
-  double bullet_speed_{};
-  double resistance_coff_{}, delay_{}, dt_{}, timeout_{};
-  double g_ = 9.8;
+  Bullet3DSolver *bullet_solver_{};
 
   double *chassis_angular_z_{};
   bool state_changed_{};
+  bool track_msgs_comming_{};
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_subscriber_;
   ros::Subscriber cmd_sub_track_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer_;
   rm_msgs::GimbalCmd cmd_;
-  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
+
 };
 }
 
