@@ -17,13 +17,15 @@ rm_base:
       bus: can1
       id: 0x201
       type: rm_3508_dir
-      lp_cutoff_frequency: 60
+      lp_cutoff_frequency: 100
+      lp_debug: true
 
     actuator_fiction_right:
       bus: can1
       id: 0x202
       type: rm_3508_dir
-      lp_cutoff_frequency: 60
+      lp_cutoff_frequency: 100
+      lp_debug: true
 
     actuator_trigger:
       bus: can1
@@ -39,6 +41,6 @@ rm_base:
     publish_rate: 50
   shooter_standard_controller:
     type: rm_shooter_controllers/ShooterStandardController
-    pid_fiction_l: { p: 0.0001, d: 0.0, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
-    pid_fiction_r: { p: 0.0001, d: 0.0, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
+    pid_fiction_l: { p: 0.001, d: 0.0, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
+    pid_fiction_r: { p: 0.001, d: 0.0, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
     pid_trigger: { p: 7.2, d: 0.22, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }

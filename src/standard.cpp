@@ -54,7 +54,7 @@ void ShooterStandardController::update(const ros::Time &time,
     shoot(cmd_.num, cmd_.hz);
   }
 
-  if (state_ != cmd_.mode && state_ != PUSH) {
+  if (state_ != cmd_.mode && state_ != PUSH && state_ != BLOCK) {
     state_ = StandardState(cmd_.mode);
     state_changed_ = true;
   }
@@ -123,11 +123,23 @@ void ShooterStandardController::push(const ros::Time &time,
     pid_fiction_l_.reset();
     pid_fiction_r_.reset();
     pid_trigger_.reset();
-
+  }
+  if (joint_fiction_l_.getVelocity() >= 0.9 * fric_qd_des_) {
     trigger_des_ = joint_trigger_.getPosition() + push_angle_;
+    if (joint_trigger_.getEffort() > block_effort_) {
+      state_ = BLOCK;
+      state_changed_ = true;
+      ROS_INFO("[Shooter] Exit PUSH");
+    } else {
+      shoot_num_--;
+      shoot_num_change_ = true;
+      last_shoot_time_ = time;
+      state_ = READY;
+      state_changed_ = true;
+      ROS_INFO("[Shooter] Exit PUSH");
+    }
   }
 }
-
 void ShooterStandardController::block(const ros::Time &time,
                                       const ros::Duration &period) {
   if (state_changed_) { //on enter
@@ -137,11 +149,7 @@ void ShooterStandardController::block(const ros::Time &time,
     pid_fiction_l_.reset();
     pid_fiction_r_.reset();
     pid_trigger_.reset();
-    trigger_des_ = joint_trigger_.getPosition() - push_angle_ / 3;
-
-    state_ = PUSH;
-    state_changed_ = true;
-    ROS_INFO("[Shooter] Exit BLOCK");
+    trigger_des_ = joint_trigger_.getPosition() - anti_block_angle_;
   }
 }
 
@@ -156,8 +164,9 @@ void ShooterStandardController::reconfigCB(const rm_shooter_controllers::Shooter
   (void) level;
   push_angle_ = config.push_angle;
   friction_radius_ = config.friction_radius;
-  block_coff_ = config.block_coff;
-  ff_coff_ = config.ff_coff;
+  block_effort_ = config.block_effort;
+  anti_block_angle_ = config.anti_block_angle;
+  anti_block_error_ = config.anti_block_error;
   setSpeed(config.bullet_speed);
 }
 
@@ -169,28 +178,16 @@ void ShooterStandardController::moveJoint(const ros::Duration &period) {
   pid_fiction_l_.computeCommand(wheel_l_error, period);
   pid_fiction_r_.computeCommand(wheel_r_error, period);
   pid_trigger_.computeCommand(trigger_error, period);
-  if (state_ == PUSH) {
-    double ff = ff_coff_ * fric_qd_des_;
-    joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd() + ff);
-    joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd() + ff);
-  } else {
-    joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
-    joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
-  }
+  joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
+  joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
   joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
 
-  if (block_coff_ * joint_trigger_.getEffort()
-      > joint_trigger_.getVelocity()) {
-    state_ = BLOCK;
+  if (state_ == BLOCK
+      && fabs(trigger_des_ - joint_trigger_.getPosition())
+          <= anti_block_error_) {
+    state_ = PUSH;
     state_changed_ = true;
-    ROS_INFO("[Shooter] Exit PUSH");
-  } else {
-    shoot_num_--;
-    shoot_num_change_ = true;
-    last_shoot_time_ = ros::Time::now();
-    state_ = READY;
-    state_changed_ = true;
-    ROS_INFO("[Shooter] Exit PUSH");
+    ROS_INFO("[Shooter] Exit BLOCK");
   }
 }
 
