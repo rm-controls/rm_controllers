@@ -50,7 +50,8 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
   odom2base_.header.frame_id = "odom";
   odom2base_.child_frame_id = "base_link";
   odom2base_.transform.rotation.w = 1;
-  robot_state_handle_.pubTransform(odom2base_);
+  tf_broadcaster_.init(root_nh);
+  tf_broadcaster_.sendTransform(odom2base_);
 
   chassis_cmd_subscriber_ =
       root_nh.subscribe<rm_msgs::ChassisCmd>("cmd_chassis", 1, &ChassisStandardController::commandCB, this);
@@ -242,7 +243,7 @@ void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Dur
       roll, pitch, yaw + period.toSec() * vel.angular.z);
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
-    robot_state_handle_.pubTransform(odom2base_);
+    tf_broadcaster_.sendTransform(odom2base_);
     last_publish_time_ = time;
   } else
     robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");

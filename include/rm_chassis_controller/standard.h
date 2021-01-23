@@ -9,6 +9,7 @@
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_base/hardware_interface/robot_state_interface.h>
+#include <rm_base/robot_state_controller/tf_rt_broadcaster.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_msgs/ChassisCmd.h>
 #include <filters.h>
@@ -66,6 +67,7 @@ class ChassisStandardController :
   realtime_tools::RealtimeBuffer<rm_msgs::ChassisCmd> chassis_rt_buffer_;
   realtime_tools::RealtimeBuffer<geometry_msgs::Twist> vel_rt_buffer_;
   rm_msgs::ChassisCmd cmd_chassis_;
+  robot_state_controller::TfRtBroadcaster tf_broadcaster_;
 };
 }
 #endif //RM_CHASSIS_CONTROLLER_STANDARD_H

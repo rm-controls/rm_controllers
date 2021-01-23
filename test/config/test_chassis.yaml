@@ -40,37 +40,15 @@ rm_base:
     joint_rb_name: "joint_rb"
     joint_lf_name: "joint_lf"
     joint_lb_name: "joint_lb"
+    publish_rate_: 100
+    wheel_base: 0.38
+    wheel_track: 0.39
+    wheel_radius: 0.07625
+    current_coeff: 1.
     pid_rf: { p: 0.8, i: 0, d: 0.0 }
     pid_rb: { p: 0.8, i: 0, d: 0.0 }
     pid_lf: { p: 0.8, i: 0, d: 0.0 }
     pid_lb: { p: 0.8, i: 0, d: 0.0 }
     pid_follow: { p: 0, i: 0, d: 0.0 }
     pid_twist: { p: 0, i: 0, d: 0.0 }
-
-    publish_rate_: 50
-    wheel_base: 0.38
-    wheel_track: 0.39
-    wheel_radius: 0.07625
-    current_coeff: 1.
-#  joint_limits:
-#  joint_yaw:
-#    has_soft_limits: true
-#    k_position: 100
-#    k_velocity: 1.5
-#    soft_lower_limit: 0
-#    soft_upper_limit: 0.40
-#    has_velocity_limits: true
-#    max_velocity: 10.0
-#  joint_pitch:
-#    has_soft_limits: false
-#    k_position: 100
-#    k_velocity: 1.5
-#    soft_lower_limit: -0.65
-#    soft_upper_limit: 0.40
-#    has_velocity_limits: true
-#    max_velocity: 100.0
-#    #    has_acceleration_limits: true
-#    #    max_acceleration: 5.0
-#    has_effort_limits: true
-#    max_effort: 3
 
