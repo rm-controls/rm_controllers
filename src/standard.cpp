@@ -32,7 +32,7 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
   wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
 
-  publish_rate_ = getParam(controller_nh, "publish_rate_", 100);
+  publish_rate_ = getParam(controller_nh, "publish_rate_", 50);
   current_coeff_ = getParam(controller_nh, "current_coeff_", 1.0);
 
   ramp_x = new RampFilter<double>(0, 0.001);
