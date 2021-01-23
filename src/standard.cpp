@@ -27,9 +27,13 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
       getParam(controller_nh, "joint_lb_name", std::string("joint_lb")));
   joint_lf_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_lf_name", std::string("joint_lf")));
+
   wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
   wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
+
+  publish_rate_ = getParam(controller_nh, "publish_rate_", 100);
+  current_coeff_ = getParam(controller_nh, "current_coeff_", 1.0);
 
   ramp_x = new RampFilter<double>(0, 0.001);
   ramp_y = new RampFilter<double>(0, 0.001);
@@ -46,7 +50,7 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
   odom2base_.header.frame_id = "odom";
   odom2base_.child_frame_id = "base_link";
   odom2base_.transform.rotation.w = 1;
-  robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
+  robot_state_handle_.pubTransform(odom2base_);
 
   chassis_cmd_subscriber_ =
       root_nh.subscribe<rm_msgs::ChassisCmd>("cmd_chassis", 1, &ChassisStandardController::commandCB, this);
@@ -112,16 +116,11 @@ void ChassisStandardController::moveJoint(const ros::Duration &period) {
   pid_lb_.computeCommand(joint_lb_error, period);
 
   // Power limit
-  double scaler = 1.0;
+  double coeff = 1.0;
   double real_current =
-      scaler * (pid_rf_.getCurrentCmd() + pid_rb_.getCurrentCmd() + pid_lf_.getCurrentCmd() + pid_lb_.getCurrentCmd());
+      coeff * (pid_rf_.getCurrentCmd() + pid_rb_.getCurrentCmd() + pid_lf_.getCurrentCmd() + pid_lb_.getCurrentCmd());
 
-  double prop;
-
-  if (real_current > cmd_chassis_.current_limit)
-    prop = cmd_chassis_.current_limit / real_current;
-  else
-    prop = 1.;
+  double prop = real_current > cmd_chassis_.current_limit ? cmd_chassis_.current_limit / real_current : 1.;
 
   joint_rf_.setCommand(prop * pid_rf_.getCurrentCmd());
   joint_rb_.setCommand(prop * pid_rb_.getCurrentCmd());
@@ -133,10 +132,10 @@ geometry_msgs::Twist ChassisStandardController::iKine() {
   geometry_msgs::Twist vel_data;
   double k = wheel_radius_ / 4.0;
   double joint_rf_position, joint_rb_position, joint_lf_position, joint_lb_position;
-  joint_rf_position = joint_rf_.getPosition();
-  joint_rb_position = joint_rb_.getPosition();
-  joint_lf_position = joint_lf_.getPosition();
-  joint_lb_position = joint_lb_.getPosition();
+  joint_rf_position = joint_rf_.getVelocity();
+  joint_rb_position = joint_rb_.getVelocity();
+  joint_lf_position = joint_lf_.getVelocity();
+  joint_lb_position = joint_lb_.getVelocity();
   vel_data.linear.x =
       (joint_rf_position + joint_lf_position + joint_lb_position + joint_rb_position) * k;
   vel_data.linear.y =
@@ -241,7 +240,13 @@ void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Dur
   quatToRPY(odom2base_.transform.rotation, roll, pitch, yaw);
   odom2base_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(
       roll, pitch, yaw + period.toSec() * vel.angular.z);
-  robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
+
+  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
+    robot_state_handle_.pubTransform(odom2base_);
+    last_publish_time_ = time;
+  } else
+    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
+
 }
 
 void ChassisStandardController::commandCB(const rm_msgs::ChassisCmdConstPtr &msg) {
