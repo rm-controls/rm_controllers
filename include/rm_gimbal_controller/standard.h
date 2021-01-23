@@ -50,6 +50,7 @@ class GimbalStandardController :
   double *chassis_angular_z_{};
   bool state_changed_{};
   bool track_msgs_comming_{};
+  Vec2<double> angle_init_{};
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_subscriber_;
   ros::Subscriber cmd_sub_track_;

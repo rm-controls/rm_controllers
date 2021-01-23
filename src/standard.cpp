@@ -75,8 +75,7 @@ void GimbalStandardController::passive() {
 }
 
 void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &period) {
-  if (state_changed_) {
-    //on enter
+  if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
   }
@@ -92,15 +91,17 @@ void GimbalStandardController::track(const ros::Time &time) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter TRACK");
-
   }
   geometry_msgs::TransformStamped world2pitch;
-  geometry_msgs::TransformStamped world2gimbal_des;
   world2pitch = robot_state_handle_.lookupTransform("world", "link_pitch", ros::Time(0));
-  world2gimbal_des = robot_state_handle_.lookupTransform("world", "gimbal_des", ros::Time(0));
 
-  if (bullet_solver_->run(time, world2pitch, cmd_track_rt_buffer_))
-    robot_state_handle_.setTransform(bullet_solver_->getResult(), "rm_gimbal_controllers");
+  if (bullet_solver_->solve(angle_init_, world2pitch, cmd_track_rt_buffer_))
+    robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
+  else {
+    double roll{}, pitch{}, yaw{};
+    quatToRPY(world2gimbal_des_.transform.rotation, roll, pitch, yaw);
+    setDes(time, yaw, pitch);
+  }
 }
 
 void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {

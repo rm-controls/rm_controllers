@@ -5,13 +5,13 @@
 #include "rm_gimbal_controller/bullet_solver.h"
 #include <cmath>
 #include <rm_base/hardware_interface/robot_state_interface.h>
-#include <tf2/exceptions.h>
 #include <tf/transform_datatypes.h>
-#include <rm_gimbal_controllers/GimbalConfig.h>
 ///////////////////////////BulletSolver/////////////////////////////
 
 ///////////////////////////Bullet2DSolver/////////////////////////////
-bool Bullet2DSolver::solve(const DVec<double> &angle_init) {
+//2D solver need to make some changes to use it
+bool Bullet2DSolver::solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped world2pitch,
+                           realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) {
   double pitch_point = std::atan2(target_z_, target_x_);
   double error_point = computeError(pitch_point);
   double error_init = computeError(angle_init[0]);
@@ -81,14 +81,26 @@ double Approx2DSolver::computeError(double pitch) {
 }
 
 ///////////////////////////Bullet3DSolver/////////////////////////////
-bool Bullet3DSolver::solve(const DVec<double> &angle_init) {
+bool Bullet3DSolver::solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped world2pitch,
+                           realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) {
+  world2pitch_offset_x_ = world2pitch.transform.translation.x;
+  world2pitch_offset_y_ = world2pitch.transform.translation.y;
+  world2pitch_offset_z_ = world2pitch.transform.translation.z;
+  pos_[0] = cmd_track_rt_buffer.readFromRT()->target_position_x - world2pitch_offset_x_;
+  pos_[1] = cmd_track_rt_buffer.readFromRT()->target_position_y - world2pitch_offset_y_;
+  pos_[2] = cmd_track_rt_buffer.readFromRT()->target_position_z - world2pitch_offset_z_;
+  vel_[0] = cmd_track_rt_buffer.readFromRT()->target_speed_x;
+  vel_[1] = cmd_track_rt_buffer.readFromRT()->target_speed_y;
+  vel_[2] = cmd_track_rt_buffer.readFromRT()->target_speed_z;
+
+  this->setBulletSpeed(cmd_track_rt_buffer.readFromRT()->bullet_speed);
+  setTarget(pos_, vel_);
+
   double error_theta_z_init[2]{}, error_theta_z_point[2]{};
-
-  double error_init = computeError(angle_init[0], angle_init[1], error_theta_z_init);
-
   double yaw_point = std::atan2(target_y_, target_x_);
   double pitch_point = std::atan2(
       target_z_, std::sqrt(std::pow(target_x_, 2) + std::pow(target_y_, 2)));
+  double error_init = computeError(angle_init[0], angle_init[1], error_theta_z_init);
   double error_point = computeError(yaw_point, pitch_point, error_theta_z_point);
 
   //compare pitch and yaw angle which direct pointing to target and angle provide by user
@@ -115,10 +127,11 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init) {
     temp_z = temp_z + error_theta_z[1];
     pitch_solved_ = std::atan2(temp_z, std::sqrt(std::pow(target_x_, 2)
                                                      + std::pow(target_y_, 2)));
-    if (count >= 20)
+    if (count >= 20 || std::isnan(error))
       return false;
     count++;
   }
+
   return true;
 }
 
@@ -150,7 +163,7 @@ std::vector<Vec3<double>> Bullet3DSolver::getPointData3D() {
   return model_data;
 }
 
-void Bullet3DSolver::modelRviz(double x_deviation, double y_deviation, double z_deviation) {
+void Bullet3DSolver::modelRviz(double x_offset, double y_offset, double z_offset) {
   geometry_msgs::Point point;
   visualization_msgs::Marker marker;
   marker.header.frame_id = "world";
@@ -166,37 +179,26 @@ void Bullet3DSolver::modelRviz(double x_deviation, double y_deviation, double z_
   marker.color.a = 1.0;
 
   for (int i = 0; i < 20; i++) {
-    point.x = model_data_[i][0] + x_deviation;
-    point.y = model_data_[i][1] + y_deviation;
-    point.z = model_data_[i][2] + z_deviation;
+    point.x = model_data_[i][0] + x_offset;
+    point.y = model_data_[i][1] + y_offset;
+    point.z = model_data_[i][2] + z_offset;
     marker.points.push_back(point);
   }
   marker.header.stamp = ros::Time::now();
   this->path_pub_.publish(marker);
 }
 
-bool Bullet3DSolver::run(const ros::Time &time, geometry_msgs::TransformStamped world2pitch,
-                         realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) {
-  pos_[0] = cmd_track_rt_buffer.readFromRT()->target_position_x - world2pitch.transform.translation.x;
-  pos_[1] = cmd_track_rt_buffer.readFromRT()->target_position_y - world2pitch.transform.translation.y;
-  pos_[2] = cmd_track_rt_buffer.readFromRT()->target_position_z - world2pitch.transform.translation.z;
-  vel_[0] = cmd_track_rt_buffer.readFromRT()->target_speed_x;
-  vel_[1] = cmd_track_rt_buffer.readFromRT()->target_speed_y;
-  vel_[2] = cmd_track_rt_buffer.readFromRT()->target_speed_z;
-
-  this->setBulletSpeed(cmd_track_rt_buffer.readFromRT()->bullet_speed);
-  setTarget(pos_, vel_);
-  bool is_success_ = solve(angle_init_);
-  if (is_success_)
-    modelRviz(world2pitch.transform.translation.x,
-              world2pitch.transform.translation.y,
-              world2pitch.transform.translation.z);
-  return is_success_;
-}
-
-geometry_msgs::TransformStamped Bullet3DSolver::getResult() {
-  output(angle_solved_);
-  model_data_ = getPointData3D();
+geometry_msgs::TransformStamped Bullet3DSolver::getResult(const ros::Time &time) {
+  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
+    model_data_ = getPointData3D();
+    modelRviz(world2pitch_offset_x_,
+              world2pitch_offset_y_,
+              world2pitch_offset_z_);
+    last_publish_time_ = time;
+  }
+  world2gimbal_des_.transform.rotation =
+      tf::createQuaternionMsgFromRollPitchYaw(0, -pitch_solved_, yaw_solved_);
+  world2gimbal_des_.header.stamp = time;
   return world2gimbal_des_;
 }
 

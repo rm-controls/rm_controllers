@@ -21,6 +21,7 @@ class BulletSolver {
 
     world2gimbal_des_.header.frame_id = "world";
     world2gimbal_des_.child_frame_id = "gimbal_des";
+    nh.param("publish_rate", publish_rate_, 50.0);
     d_srv_ =
         new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig>(nh);
     dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig>::CallbackType
@@ -41,12 +42,9 @@ class BulletSolver {
     dt_ = config.dt;
     timeout_ = config.timeout;
   };
-  virtual bool solve(const DVec<double> &angle_init) = 0;
-  virtual void output(Vec2<double> &angle_solved) = 0;
-  virtual bool run(const ros::Time &time, geometry_msgs::TransformStamped world2pitch,
-                   realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) = 0;
-  virtual void modelRviz(double x_deviation, double y_deviation, double z_deviation) = 0;
-  virtual std::vector<Vec3<double>> getPointData3D() = 0;
+  virtual bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped world2pitch,
+                     realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) = 0;
+  virtual void modelRviz(double x_offset, double y_offset, double z_offset) = 0;
 
  protected:
   double bullet_speed_{};
@@ -54,6 +52,8 @@ class BulletSolver {
   ros::Publisher path_pub_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
   geometry_msgs::TransformStamped world2gimbal_des_;
+  double publish_rate_{};
+  ros::Time last_publish_time_;
 };
 
 class Bullet2DSolver : public BulletSolver {
@@ -65,10 +65,8 @@ class Bullet2DSolver : public BulletSolver {
     target_dx_ = vel[0];
     target_dz_ = vel[1];
   };
-  bool solve(const DVec<double> &angle_init) override;
-  void output(Vec2<double> &angle_solved) override {
-    angle_solved[0] = pitch_solved_;
-  }
+  bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped world2pitch,
+             realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) override;
  protected:
   virtual double computeError(double pitch) = 0;
   double target_x_{}, target_z_{}, target_dx_{}, target_dz_{};
@@ -103,27 +101,23 @@ class Bullet3DSolver : public BulletSolver {
     target_dy_ = vel[1];
     target_dz_ = vel[2];
   };
-  bool solve(const DVec<double> &angle_init) override;
-  bool run(const ros::Time &time, geometry_msgs::TransformStamped world2pitch,
-           realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) override;
-  void modelRviz(double x_deviation, double y_deviation, double z_deviation) override;
-  void output(Vec2<double> &angle_solved) override {
-    angle_solved[0] = pitch_solved_;
-    angle_solved[1] = yaw_solved_;
-  }
-  geometry_msgs::TransformStamped getResult();
-  std::vector<Vec3<double>> getPointData3D() override;
+  bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped world2pitch,
+             realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) override;
+  void modelRviz(double x_offset, double y_offset, double z_offset) override;
+  geometry_msgs::TransformStamped getResult(const ros::Time &time);
+  std::vector<Vec3<double>> getPointData3D();
  protected:
   virtual double computeError(double yaw, double pitch, double *error_polar) = 0;
   double target_x_{}, target_y_{}, target_z_{},
       target_dx_{}, target_dy_{}, target_dz_{};
   double fly_time_{};
   double pitch_solved_, yaw_solved_;
-  Vec2<double> angle_init_{};
-  Vec2<double> angle_solved_{};
   Vec3<double> pos_{};
   Vec3<double> vel_{};
   std::vector<Vec3<double>> model_data_;
+  double world2pitch_offset_x_{};
+  double world2pitch_offset_y_{};
+  double world2pitch_offset_z_{};
 };
 
 class Iter3DSolver : public Bullet3DSolver {
@@ -131,6 +125,7 @@ class Iter3DSolver : public Bullet3DSolver {
   using Bullet3DSolver::Bullet3DSolver;
   using Bullet3DSolver::solve;
   using Bullet3DSolver::getPointData3D;
+  using Bullet3DSolver::getResult;
  private:
   double computeError(double yaw, double pitch, double *error_polar) override;
 };
