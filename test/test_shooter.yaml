@@ -43,4 +43,4 @@ rm_base:
     type: rm_shooter_controllers/ShooterStandardController
     pid_fiction_l: { p: 0.001, d: 0.0, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
     pid_fiction_r: { p: 0.001, d: 0.0, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
-    pid_trigger: { p: 7.2, d: 0.22, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
+    pid_trigger: { p: 7.4, d: 0.22, i: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }

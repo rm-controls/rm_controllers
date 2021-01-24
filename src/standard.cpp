@@ -138,7 +138,8 @@ void ShooterStandardController::push(const ros::Time &time,
       state_changed_ = true;
       ROS_INFO("[Shooter] Exit PUSH");
     }
-  }
+  } else
+    ROS_DEBUG("[Shooter] wait.");
 }
 void ShooterStandardController::block(const ros::Time &time,
                                       const ros::Duration &period) {
