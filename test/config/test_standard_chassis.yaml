@@ -7,9 +7,24 @@ rm_base:
 
   # Configurations of the actuators
   actuators:
-    actuator_wheel:
+    actuator_rf:
       bus: can0
       id: 0x201
+      type: rm_3508
+      lp_cutoff_frequency: 100
+    actuator_lf:
+      bus: can0
+      id: 0x202
+      type: rm_3508
+      lp_cutoff_frequency: 100
+    actuator_lb:
+      bus: can0
+      id: 0x203
+      type: rm_3508
+      lp_cutoff_frequency: 100
+    actuator_rb:
+      bus: can0
+      id: 0x204
       type: rm_3508
       lp_cutoff_frequency: 100
 
@@ -19,11 +34,21 @@ rm_base:
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
-  sentry_chassis_controller:
-    type: rm_chassis_controllers/ChassisSentryController
-    joint_name: "joint_wheel"
+  standard_chassis_controller:
+    type: rm_chassis_controllers/ChassisStandardController
+    joint_rf_name: "joint_rf"
+    joint_rb_name: "joint_rb"
+    joint_lf_name: "joint_lf"
+    joint_lb_name: "joint_lb"
     publish_rate_: 100
+    wheel_base: 0.38
+    wheel_track: 0.39
     wheel_radius: 0.07625
     current_coeff: 1.
-    pid_wheel: { p: 0.8, i: 0, d: 0.0 }
+    pid_rf: { p: 0.8, i: 0, d: 0.0 }
+    pid_rb: { p: 0.8, i: 0, d: 0.0 }
+    pid_lf: { p: 0.8, i: 0, d: 0.0 }
+    pid_lb: { p: 0.8, i: 0, d: 0.0 }
+    pid_follow: { p: 0, i: 0, d: 0.0 }
+    pid_twist: { p: 0, i: 0, d: 0.0 }
 

@@ -1,73 +1,23 @@
 <robot name="test_robot">
   <link name="base_link"/>
-  <link name="link_rf"/>
-  <link name="link_rb"/>
-  <link name="link_lf"/>
-  <link name="link_lb"/>
+  <link name="link_wheel"/>
 
-  <joint name="joint_rf" type="continuous">
+  <joint name="joint_wheel" type="continuous">
     <parent link="base_link"/>
-    <child link="link_rf"/>
+    <child link="link_wheel"/>
     <origin xyz="0.38 -0.39 0"/>
     <axis xyz="0 1 0"/>
   </joint>
-  <joint name="joint_rb" type="continuous">
-    <parent link="base_link"/>
-    <child link="link_rb"/>
-    <origin xyz="-0.38 -0.39 0"/>
-    <axis xyz="0 1 0"/>
-  </joint>
-  <joint name="joint_lf" type="continuous">
-    <parent link="base_link"/>
-    <child link="link_lf"/>
-    <origin xyz="0.38 0.39 0"/>
-    <axis xyz="0 1 0"/>
-  </joint>
-  <joint name="joint_lb" type="continuous">
-    <parent link="base_link"/>
-    <child link="link_lb"/>
-    <origin xyz="-0.38 0.39 0"/>
-    <axis xyz="0 1 0"/>
-  </joint>
 
-  <transmission name="joint_rf_trans">
+  <transmission name="joint_wheel_trans">
     <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_rf">
+    <joint name="joint_wheel">
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
-    <actuator name="actuator_rf">
+    <actuator name="actuator_wheel">
       <mechanicalReduction>-1</mechanicalReduction>
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </actuator>
   </transmission>
-  <transmission name="joint_rb_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_rb">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="actuator_rb">
-      <mechanicalReduction>-1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
-  <transmission name="joint_lf_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_lf">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="actuator_lf">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
-  <transmission name="joint_lb_trans">
-    <type>transmission_interface/SimpleTransmission</type>
-    <joint name="joint_lb">
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </joint>
-    <actuator name="actuator_lb">
-      <mechanicalReduction>1</mechanicalReduction>
-      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-    </actuator>
-  </transmission>
+
 </robot>
