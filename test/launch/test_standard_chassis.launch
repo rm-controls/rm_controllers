@@ -1,9 +1,10 @@
 <launch>
   <rosparam file="$(find rm_base)/config/actuator_coefficient.yaml" command="load" ns="rm_base"/>
-  <rosparam file="test_standard_chassis.yaml" command="load"/>
+  <rosparam file="$(find rm_chassis_controllers)/test/config/test_standard_chassis.yaml" command="load"/>
 
-  <rosparam file="test_standard_chassis.xacro" command="load" ns="robot_description"/>
-  <!--    <rosparam file="$(find rm_gimbal_controllers)/test/test_gimbal.xacro" command="load" ns="robot_description"/>-->
+  <rosparam file="$(find rm_chassis_controllers)/test/urdf/test_standard_chassis.xacro" command="load"
+            ns="robot_description"/>
+  <!--  <rosparam file="$(find rm_gimbal_controllers)/test/test_gimbal.xacro" command="load" ns="robot_description"/>-->
 
   <node pkg="tf" type="static_transform_publisher" name=""
         args="0 0 0 0 0 0 1 world odom 500"/>
