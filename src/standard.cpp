@@ -133,7 +133,7 @@ void ShooterStandardController::push(const ros::Time &time,
   if (joint_trigger_.getEffort() > config_.block_effort) {
     state_ = BLOCK;
     state_changed_ = true;
-    ROS_INFO("[Shooter] Exit READY");
+    ROS_INFO("[Shooter] Exit PUSH");
   }
 }
 
@@ -163,7 +163,7 @@ void ShooterStandardController::reconfigCB(rm_shooter_controllers::ShooterStanda
     Config init_config = *config_rt_buffer.readFromNonRT(); // config init use yaml
     config.anti_block_angle = init_config.anti_block_angle;
     config.anti_block_error = init_config.anti_block_error;
-    config.block_coff = init_config.block_effort;
+    config.block_effort = init_config.block_effort;
     config.push_angle = init_config.push_angle;
     config.qd_10 = init_config.qd_10;
     config.qd_15 = init_config.qd_15;
@@ -173,7 +173,8 @@ void ShooterStandardController::reconfigCB(rm_shooter_controllers::ShooterStanda
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{
-      .block_effort = config.block_coff,
+      .push_angle = config.push_angle,
+      .block_effort = config.block_effort,
       .anti_block_angle = config.anti_block_angle,
       .anti_block_error = config.anti_block_error,
       .qd_10 = config.qd_10,
