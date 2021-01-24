@@ -1,0 +1,29 @@
+rm_base:
+  bus:
+    - can0
+
+  loop_frequency: 1000
+  cycle_time_error_threshold: 0.001
+
+  # Configurations of the actuators
+  actuators:
+    actuator_wheel:
+      bus: can0
+      id: 0x201
+      type: rm_3508
+      lp_cutoff_frequency: 100
+
+  robot_state_controller:
+    type: robot_state_controller/RobotStateController
+    publish_rate: 100
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50
+  sentry_chassis_controller:
+    type: rm_chassis_controllers/ChassisSentryController
+    joint_name: "joint_wheel"
+    publish_rate_: 100
+    wheel_radius: 0.07625
+    current_coeff: 1.
+    pid_wheel: { p: 0.8, i: 0, d: 0.0 }
+

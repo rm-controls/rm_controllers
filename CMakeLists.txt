@@ -78,6 +78,7 @@ include_directories(
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
     src/standard.cpp
+    src/sentry.cpp
     )
 
 ## Specify libraries to link executable targets against
