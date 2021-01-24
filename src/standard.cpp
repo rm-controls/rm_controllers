@@ -220,26 +220,35 @@ void ChassisStandardController::gyro(const ros::Time &time) {
 }
 
 void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Duration &period) {
-  geometry_msgs::Twist vel = iKine(); //on base_link frame
-  geometry_msgs::Vector3Stamped trans;
-  trans.vector.x = vel.linear.x * period.toSec();
-  trans.vector.y = vel.linear.y * period.toSec();
-
+  geometry_msgs::Twist vel_base = iKine(); //on base_link frame
+  geometry_msgs::Vector3 linear_vel{}, angular_vel{};
+  linear_vel.x = vel_base.linear.x;
+  linear_vel.y = vel_base.linear.y;
+  angular_vel.z = vel_base.angular.z;
   try {
     odom2base_ = robot_state_handle_.lookupTransform("odom", "base_link", ros::Time(0));
-    tf2::doTransform(trans, trans, odom2base_);
+    tf2::doTransform(linear_vel, linear_vel, odom2base_);
+    tf2::doTransform(angular_vel, angular_vel, odom2base_);
   }
-  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
-  ros::Time now = ros::Time::now();
-  odom2base_.header.stamp = now;
-  odom2base_.transform.translation.x += trans.vector.x;
-  odom2base_.transform.translation.y += trans.vector.y;
-  odom2base_.transform.translation.z += trans.vector.z;
-
-  double roll, pitch, yaw;
-  quatToRPY(odom2base_.transform.rotation, roll, pitch, yaw);
-  odom2base_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(
-      roll, pitch, yaw + period.toSec() * vel.angular.z);
+  catch (tf2::TransformException &ex) {
+    ROS_WARN("%s", ex.what());
+    return;
+  }
+  odom2base_.header.stamp = time;
+  // integral vel to pos and angle
+  odom2base_.transform.translation.x += linear_vel.x * period.toSec();
+  odom2base_.transform.translation.y += linear_vel.y * period.toSec();
+  odom2base_.transform.translation.z += linear_vel.z * period.toSec();
+  double angle =
+      std::sqrt(std::pow(angular_vel.x, 2) + std::pow(angular_vel.y, 2) + std::pow(angular_vel.z, 2)) * period.toSec();
+  tf2::Quaternion odom2base_quat, trans_quat;
+  tf2::fromMsg(odom2base_.transform.rotation, odom2base_quat);
+  trans_quat.setRotation(tf2::Vector3(angular_vel.x * period.toSec(),
+                                      angular_vel.y * period.toSec(),
+                                      angular_vel.z * period.toSec()), angle);
+  odom2base_quat = trans_quat * odom2base_quat; // Apply rot
+  odom2base_quat.normalize();
+  odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
     tf_broadcaster_.sendTransform(odom2base_);
@@ -266,6 +275,6 @@ void ChassisStandardController::tfVelFromYawToBase(const ros::Time &time) {
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }
 
-}// namespace rm_chassis_controller
+} // namespace rm_chassis_controller
 
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::ChassisStandardController, controller_interface::ControllerBase)

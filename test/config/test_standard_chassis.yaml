@@ -34,7 +34,7 @@ rm_base:
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
-  standard_chassis_controller:
+  chassis_standard_controller:
     type: rm_chassis_controllers/ChassisStandardController
     joint_rf_name: "joint_rf"
     joint_rb_name: "joint_rb"

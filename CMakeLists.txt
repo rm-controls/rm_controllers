@@ -31,8 +31,6 @@ find_package(catkin REQUIRED
     realtime_tools
     )
 
-
-
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -53,6 +51,9 @@ catkin_package(
     rm_msgs
     rm_common
     rm_base
+
+    tf2
+    tf2_geometry_msgs
 
     control_toolbox
     angles

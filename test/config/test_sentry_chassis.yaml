@@ -19,7 +19,7 @@ rm_base:
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
-  sentry_chassis_controller:
+  chassis_sentry_controller:
     type: rm_chassis_controllers/ChassisSentryController
     joint_name: "joint_wheel"
     publish_rate_: 100
