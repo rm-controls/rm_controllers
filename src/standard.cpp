@@ -26,7 +26,7 @@ bool ShooterStandardController::init(hardware_interface::RobotHW *robot_hw,
   config_ = {.push_angle = getParam(controller_nh, "push_angle", 0.),
       .block_effort = getParam(controller_nh, "block_effort", 0.),
       .anti_block_angle = getParam(controller_nh, "anti_block_angle", 0.),
-      .anti_block_error = getParam(controller_nh, "anti_block_error_", 0.),
+      .anti_block_error = getParam(controller_nh, "anti_block_error", 0.),
       .qd_10 = getParam(controller_nh, "qd_10", 0.),
       .qd_15 = getParam(controller_nh, "qd_15", 0.),
       .qd_16 = getParam(controller_nh, "qd_16", 0.),
@@ -57,10 +57,24 @@ void ShooterStandardController::update(const ros::Time &time,
   cmd_ = *cmd_rt_buffer_.readFromRT();
   config_ = *config_rt_buffer.readFromRT();
 
-  if (state_ != cmd_.mode) {
+  if (state_ != cmd_.mode && state_ != BLOCK) {
     state_ = State(cmd_.mode);
     state_changed_ = true;
   }
+
+  if (cmd_.speed == cmd_.SPEED_10M_PER_SECOND)
+    friction_qd_des_ = config_.qd_10;
+  else if (cmd_.speed == cmd_.SPEED_15M_PER_SECOND)
+    friction_qd_des_ = config_.qd_15;
+  else if (cmd_.speed == cmd_.SPEED_16M_PER_SECOND)
+    friction_qd_des_ = config_.qd_16;
+  else if (cmd_.speed == cmd_.SPEED_18M_PER_SECOND)
+    friction_qd_des_ = config_.qd_18;
+  else if (cmd_.speed == cmd_.SPEED_30M_PER_SECOND)
+    friction_qd_des_ = config_.qd_30;
+  else
+    friction_qd_des_ = 0.;
+
   if (state_ == PASSIVE)
     passive();
   else {
@@ -91,19 +105,6 @@ void ShooterStandardController::ready(const ros::Duration &period) {
     ROS_INFO("[Shooter] Enter READY");
     pid_fiction_l_.reset();
     pid_fiction_r_.reset();
-
-    if (cmd_.speed == cmd_.SPEED_10M_PER_SECOND)
-      friction_qd_des_ = config_.qd_10;
-    else if (cmd_.speed == cmd_.SPEED_15M_PER_SECOND)
-      friction_qd_des_ = config_.qd_15;
-    else if (cmd_.speed == cmd_.SPEED_16M_PER_SECOND)
-      friction_qd_des_ = config_.qd_16;
-    else if (cmd_.speed == cmd_.SPEED_18M_PER_SECOND)
-      friction_qd_des_ = config_.qd_18;
-    else if (cmd_.speed == cmd_.SPEED_30M_PER_SECOND)
-      friction_qd_des_ = config_.qd_30;
-    else
-      friction_qd_des_ = 0.;
   }
 
   if (joint_trigger_.getEffort() > config_.block_effort) {
