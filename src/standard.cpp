@@ -18,6 +18,47 @@ namespace rm_chassis_controllers {
 bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
                                      ros::NodeHandle &root_nh,
                                      ros::NodeHandle &controller_nh) {
+
+  wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
+  wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
+  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
+
+  publish_rate_ = getParam(controller_nh, "publish_rate_", 50);
+  current_coeff_ = getParam(controller_nh, "current_coeff_", 1.0);
+  // Get and check params for covariances
+  XmlRpc::XmlRpcValue pose_cov_list;
+  controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
+  ROS_ASSERT(pose_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+  ROS_ASSERT(pose_cov_list.size() == 6);
+  for (int i = 0; i < pose_cov_list.size(); ++i)
+    ROS_ASSERT(pose_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+
+  XmlRpc::XmlRpcValue twist_cov_list;
+  controller_nh.getParam("twist_covariance_diagonal", twist_cov_list);
+  ROS_ASSERT(twist_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
+  ROS_ASSERT(twist_cov_list.size() == 6);
+  for (int i = 0; i < twist_cov_list.size(); ++i)
+    ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+
+  // Setup odometry realtime publisher + odom message constant fields
+  odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(controller_nh, "odom", 100));
+  odom_pub_->msg_.header.frame_id = "odom";
+  odom_pub_->msg_.child_frame_id = "base_link";
+  odom_pub_->msg_.pose.covariance = {
+      static_cast<double>(pose_cov_list[0]), 0., 0., 0., 0., 0.,
+      0., static_cast<double>(pose_cov_list[1]), 0., 0., 0., 0.,
+      0., 0., static_cast<double>(pose_cov_list[2]), 0., 0., 0.,
+      0., 0., 0., static_cast<double>(pose_cov_list[3]), 0., 0.,
+      0., 0., 0., 0., static_cast<double>(pose_cov_list[4]), 0.,
+      0., 0., 0., 0., 0., static_cast<double>(pose_cov_list[5])};
+  odom_pub_->msg_.twist.covariance = {
+      static_cast<double>(twist_cov_list[0]), 0., 0., 0., 0., 0.,
+      0., static_cast<double>(twist_cov_list[1]), 0., 0., 0., 0.,
+      0., 0., static_cast<double>(twist_cov_list[2]), 0., 0., 0.,
+      0., 0., 0., static_cast<double>(twist_cov_list[3]), 0., 0.,
+      0., 0., 0., 0., static_cast<double>(twist_cov_list[4]), 0.,
+      0., 0., 0., 0., 0., static_cast<double>(twist_cov_list[5])};
+
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_rf_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_rf_name", std::string("joint_rf")));
@@ -27,13 +68,6 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
       getParam(controller_nh, "joint_lb_name", std::string("joint_lb")));
   joint_lf_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_lf_name", std::string("joint_lf")));
-
-  wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
-  wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
-  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
-
-  publish_rate_ = getParam(controller_nh, "publish_rate_", 50);
-  current_coeff_ = getParam(controller_nh, "current_coeff_", 1.0);
 
   ramp_x = new RampFilter<double>(0, 0.001);
   ramp_y = new RampFilter<double>(0, 0.001);
@@ -239,23 +273,33 @@ void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Dur
   odom2base_.transform.translation.x += linear_vel.x * period.toSec();
   odom2base_.transform.translation.y += linear_vel.y * period.toSec();
   odom2base_.transform.translation.z += linear_vel.z * period.toSec();
-  double angle =
-      std::sqrt(std::pow(angular_vel.x, 2) + std::pow(angular_vel.y, 2) + std::pow(angular_vel.z, 2)) * period.toSec();
-  tf2::Quaternion odom2base_quat, trans_quat;
-  tf2::fromMsg(odom2base_.transform.rotation, odom2base_quat);
-  trans_quat.setRotation(tf2::Vector3(angular_vel.x * period.toSec(),
-                                      angular_vel.y * period.toSec(),
-                                      angular_vel.z * period.toSec()), angle);
-  odom2base_quat = trans_quat * odom2base_quat; // Apply rot
-  odom2base_quat.normalize();
-  odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
+  double length =
+      std::sqrt(std::pow(angular_vel.x, 2) + std::pow(angular_vel.y, 2) + std::pow(angular_vel.z, 2));
+  if (length > 0.001) { // avoid nan quat
+    tf2::Quaternion odom2base_quat, trans_quat;
+    tf2::fromMsg(odom2base_.transform.rotation, odom2base_quat);
+    trans_quat.setRotation(tf2::Vector3(angular_vel.x / length,
+                                        angular_vel.y / length,
+                                        angular_vel.z / length), length * period.toSec());
+    odom2base_quat = trans_quat * odom2base_quat;
+    odom2base_quat.normalize();
+    odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
+  }
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
-    tf_broadcaster_.sendTransform(odom2base_);
     last_publish_time_ = time;
+    tf_broadcaster_.sendTransform(odom2base_);
+    // publish odom message
+    if (odom_pub_->trylock()) {
+      odom_pub_->msg_.header.stamp = time;
+      odom_pub_->msg_.pose.pose.position.x = odom2base_.transform.translation.x;
+      odom_pub_->msg_.pose.pose.position.y = odom2base_.transform.translation.y;
+      odom_pub_->msg_.pose.pose.position.z = odom2base_.transform.translation.z;
+      odom_pub_->msg_.pose.pose.orientation = odom2base_.transform.rotation;
+      odom_pub_->unlockAndPublish();
+    }
   } else
     robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
-
 }
 
 void ChassisStandardController::commandCB(const rm_msgs::ChassisCmdConstPtr &msg) {

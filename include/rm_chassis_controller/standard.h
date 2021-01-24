@@ -14,6 +14,7 @@
 #include <rm_msgs/ChassisCmd.h>
 #include <filters.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <nav_msgs/Odometry.h>
 
 namespace rm_chassis_controllers {
 enum StandardState {
@@ -66,6 +67,7 @@ class ChassisStandardController :
   ros::Subscriber vel_cmd_subscriber_;
   realtime_tools::RealtimeBuffer<rm_msgs::ChassisCmd> chassis_rt_buffer_;
   realtime_tools::RealtimeBuffer<geometry_msgs::Twist> vel_rt_buffer_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
   rm_msgs::ChassisCmd cmd_chassis_;
   robot_state_controller::TfRtBroadcaster tf_broadcaster_;
 };
