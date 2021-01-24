@@ -262,7 +262,7 @@ void ChassisStandardController::tfVelFromYawToBase(const ros::Time &time) {
   try {
     tf2::doTransform(
         vel_cmd_, vel_tfed_,
-        robot_state_handle_.lookupTransform("base_link", "yaw_link", ros::Time(0)));
+        robot_state_handle_.lookupTransform("base_link", "link_yaw", ros::Time(0)));
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }
