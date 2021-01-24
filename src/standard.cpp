@@ -12,50 +12,53 @@ namespace rm_shooter_controllers {
 bool ShooterStandardController::init(hardware_interface::RobotHW *robot_hw,
                                      ros::NodeHandle &root_nh,
                                      ros::NodeHandle &controller_nh) {
+  // init joint
   auto *effort_jnt_interface =
       robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_fiction_l_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_fiction_left_name",
-               std::string("joint_fiction_left")));
+      getParam(controller_nh, "joint_fiction_left_name", std::string("joint_fiction_left")));
   joint_fiction_r_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_fiction_right_name",
-               std::string("joint_fiction_right")));
+      getParam(controller_nh, "joint_fiction_right_name", std::string("joint_fiction_right")));
   joint_trigger_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_trigger_name",
-               std::string("joint_trigger")));
-  robot_state_handle_ =
-      robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle(
-          "robot_state");
+      getParam(controller_nh, "joint_trigger_name", std::string("joint_trigger")));
+
+  // init config
+  config_ = {.push_angle = getParam(controller_nh, "push_angle", 0.),
+      .block_effort = getParam(controller_nh, "block_effort", 0.),
+      .anti_block_angle = getParam(controller_nh, "anti_block_angle", 0.),
+      .anti_block_error = getParam(controller_nh, "anti_block_error_", 0.),
+      .qd_10 = getParam(controller_nh, "qd_10", 0.),
+      .qd_15 = getParam(controller_nh, "qd_15", 0.),
+      .qd_16 = getParam(controller_nh, "qd_16", 0.),
+      .qd_18 = getParam(controller_nh, "qd_18", 0.),
+      .qd_30 = getParam(controller_nh, "qd_30", 0.)};
+  config_rt_buffer.initRT(config_);
+
+  // init dynamic reconfigure
+  d_srv_ = new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterStandardConfig>(controller_nh);
+  dynamic_reconfigure::Server<rm_shooter_controllers::ShooterStandardConfig>::CallbackType cb =
+      [this](auto &&PH1, auto &&PH2) {
+        reconfigCB(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
+      };
+  d_srv_->setCallback(cb);
 
   if (!pid_fiction_l_.init(ros::NodeHandle(controller_nh, "pid_fiction_l"))
       || !pid_fiction_r_.init(ros::NodeHandle(controller_nh, "pid_fiction_r"))
       || !pid_trigger_.init(ros::NodeHandle(controller_nh, "pid_trigger")))
     return false;
 
-  cmd_subscriber_ = root_nh.subscribe<rm_msgs::ShootCmd>("cmd_shooter", 1,
-                                                         &ShooterStandardController::commandCB,
-                                                         this);
-  d_srv_ =
-      new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterStandardConfig>(
-          controller_nh);
-  dynamic_reconfigure::Server<rm_shooter_controllers::ShooterStandardConfig>::CallbackType
-      cb =
-      boost::bind(&ShooterStandardController::reconfigCB, this, _1, _2);
-  d_srv_->setCallback(cb);
-
+  cmd_subscriber_ = root_nh.subscribe<rm_msgs::ShootCmd>(
+      "cmd_shooter", 1, &ShooterStandardController::commandCB, this);
   return true;
 }
 
 void ShooterStandardController::update(const ros::Time &time,
                                        const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
-  setSpeed(cmd_.speed);
-  if (!shoot_num_change_) {
-    shoot(cmd_.num, cmd_.hz);
-  }
+  config_ = *config_rt_buffer.readFromRT();
 
-  if (state_ != cmd_.mode && state_ != PUSH && state_ != BLOCK) {
-    state_ = StandardState(cmd_.mode);
+  if (state_ != cmd_.mode) {
+    state_ = State(cmd_.mode);
     state_changed_ = true;
   }
   if (state_ == PASSIVE)
@@ -69,16 +72,6 @@ void ShooterStandardController::update(const ros::Time &time,
       block(time, period);
     moveJoint(period);
   }
-}
-
-void ShooterStandardController::shoot(int num, double freq) {
-  shoot_num_ = num;
-  shoot_freq_ = freq;
-}
-
-void ShooterStandardController::setSpeed(double speed) {
-  bullet_speed_ = speed;
-  fric_qd_des_ = bullet_speed_ / friction_radius_;
 }
 
 void ShooterStandardController::passive() {
@@ -96,19 +89,27 @@ void ShooterStandardController::ready(const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter READY");
+    pid_fiction_l_.reset();
+    pid_fiction_r_.reset();
+
+    switch (cmd_.speed) {
+      case SPEED_10M_PER_SECOND: friction_qd_des_ = config_.qd_10;
+        break;
+      case SPEED_15M_PER_SECOND: friction_qd_des_ = config_.qd_15;
+        break;
+      case SPEED_16M_PER_SECOND: friction_qd_des_ = config_.qd_16;
+        break;
+      case SPEED_18M_PER_SECOND: friction_qd_des_ = config_.qd_18;
+        break;
+      case SPEED_30M_PER_SECOND: friction_qd_des_ = config_.qd_30;
+        break;
+      default: friction_qd_des_ = 0;
+        break;
+    }
   }
 
-  double wheel_l_error = fric_qd_des_ - joint_fiction_l_.getVelocity();
-  double wheel_r_error = fric_qd_des_ - joint_fiction_r_.getVelocity();
-  pid_fiction_l_.computeCommand(wheel_l_error, period);
-  pid_fiction_r_.computeCommand(wheel_r_error, period);
-  joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
-  joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
-
-  if (shoot_num_ > 0 &&
-      (ros::Time::now() - last_shoot_time_).toSec()
-          >= 1. / shoot_freq_) {//Time to shoot!!!
-    state_ = PUSH;
+  if (joint_trigger_.getEffort() > config_.block_effort) {
+    state_ = BLOCK;
     state_changed_ = true;
     ROS_INFO("[Shooter] Exit READY");
   }
@@ -120,79 +121,85 @@ void ShooterStandardController::push(const ros::Time &time,
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PUSH");
 
-    pid_fiction_l_.reset();
-    pid_fiction_r_.reset();
     pid_trigger_.reset();
   }
-  if (joint_fiction_l_.getVelocity() >= 0.9 * fric_qd_des_) {
-    trigger_des_ = joint_trigger_.getPosition() + push_angle_;
-    if (joint_trigger_.getEffort() > block_effort_) {
-      state_ = BLOCK;
-      state_changed_ = true;
-      ROS_INFO("[Shooter] Exit PUSH");
-    } else {
-      shoot_num_--;
-      shoot_num_change_ = true;
-      last_shoot_time_ = time;
-      state_ = READY;
-      state_changed_ = true;
-      ROS_INFO("[Shooter] Exit PUSH");
-    }
+
+  if (joint_fiction_l_.getVelocity() >= 0.95 * friction_qd_des_ && joint_fiction_l_.getVelocity() > 8.0 &&
+      joint_fiction_r_.getVelocity() >= 0.95 * friction_qd_des_ && joint_fiction_r_.getVelocity() > 8.0 &&
+      (ros::Time::now() - last_shoot_time_).toSec() >= 1. / cmd_.hz) { // Time to shoot!!!
+    trigger_q_des_ = joint_trigger_.getPosition() + config_.push_angle;
+    last_shoot_time_ = time;
   } else
-    ROS_DEBUG("[Shooter] wait.");
+    ROS_DEBUG("[Shooter] wait for friction wheel");
+
+  if (joint_trigger_.getEffort() > config_.block_effort) {
+    state_ = BLOCK;
+    state_changed_ = true;
+    ROS_INFO("[Shooter] Exit READY");
+  }
 }
-void ShooterStandardController::block(const ros::Time &time,
-                                      const ros::Duration &period) {
+
+void ShooterStandardController::block(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter BLOCK");
 
-    pid_fiction_l_.reset();
-    pid_fiction_r_.reset();
-    pid_trigger_.reset();
-    trigger_des_ = joint_trigger_.getPosition() - anti_block_angle_;
+    trigger_q_des_ = joint_trigger_.getPosition() - config_.anti_block_angle;
   }
-}
-
-void ShooterStandardController::commandCB(const rm_msgs::ShootCmdConstPtr &msg) {
-  cmd_rt_buffer_.writeFromNonRT(*msg);
-  shoot_num_change_ = false;
-}
-
-void ShooterStandardController::reconfigCB(const rm_shooter_controllers::ShooterStandardConfig &config,
-                                           uint32_t level) {
-  ROS_INFO("[Shooter] Dynamic params change");
-  (void) level;
-  push_angle_ = config.push_angle;
-  friction_radius_ = config.friction_radius;
-  block_effort_ = config.block_effort;
-  anti_block_angle_ = config.anti_block_angle;
-  anti_block_error_ = config.anti_block_error;
-  setSpeed(config.bullet_speed);
-}
-
-void ShooterStandardController::moveJoint(const ros::Duration &period) {
-  double wheel_l_error = fric_qd_des_ - joint_fiction_l_.getVelocity();
-  double wheel_r_error = fric_qd_des_ - joint_fiction_r_.getVelocity();
-  double trigger_error = trigger_des_ - joint_trigger_.getPosition();
-
-  pid_fiction_l_.computeCommand(wheel_l_error, period);
-  pid_fiction_r_.computeCommand(wheel_r_error, period);
-  pid_trigger_.computeCommand(trigger_error, period);
-  joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
-  joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
-  joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
-
-  if (state_ == BLOCK
-      && fabs(trigger_des_ - joint_trigger_.getPosition())
-          <= anti_block_error_) {
+  if (fabs(trigger_q_des_ - joint_trigger_.getPosition()) < config_.anti_block_error) {
     state_ = PUSH;
     state_changed_ = true;
     ROS_INFO("[Shooter] Exit BLOCK");
   }
 }
 
+void ShooterStandardController::commandCB(const rm_msgs::ShootCmdConstPtr &msg) {
+  cmd_rt_buffer_.writeFromNonRT(*msg);
+}
+
+void ShooterStandardController::reconfigCB(rm_shooter_controllers::ShooterStandardConfig &config,
+                                           uint32_t /*level*/) {
+
+  ROS_INFO("[Shooter] Dynamic params change");
+  if (!dynamic_reconfig_initialized_) {
+    Config init_config = *config_rt_buffer.readFromNonRT(); // config init use yaml
+    config.anti_block_angle = init_config.anti_block_angle;
+    config.anti_block_error = init_config.anti_block_error;
+    config.block_coff = init_config.block_effort;
+    config.push_angle = init_config.push_angle;
+    config.qd_10 = init_config.qd_10;
+    config.qd_15 = init_config.qd_15;
+    config.qd_16 = init_config.qd_16;
+    config.qd_18 = init_config.qd_18;
+    config.qd_30 = init_config.qd_30;
+    dynamic_reconfig_initialized_ = true;
+  }
+  Config config_non_rt{
+      .block_effort = config.block_coff,
+      .anti_block_angle = config.anti_block_angle,
+      .anti_block_error = config.anti_block_error,
+      .qd_10 = config.qd_10,
+      .qd_15 = config.qd_15,
+      .qd_16 = config.qd_16,
+      .qd_18 = config.qd_18,
+      .qd_30 = config.qd_30
+  };
+  config_rt_buffer.writeFromNonRT(config_non_rt);
+}
+
+void ShooterStandardController::moveJoint(const ros::Duration &period) {
+  double friction_l_error = friction_qd_des_ - joint_fiction_l_.getVelocity();
+  double friction_r_error = friction_qd_des_ - joint_fiction_r_.getVelocity();
+  double trigger_error = trigger_q_des_ - joint_trigger_.getPosition();
+
+  pid_fiction_l_.computeCommand(friction_l_error, period);
+  pid_fiction_r_.computeCommand(friction_r_error, period);
+  pid_trigger_.computeCommand(trigger_error, period);
+  joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
+  joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
+  joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
+}
+
 } // namespace rm_shooter_controllers
 
-PLUGINLIB_EXPORT_CLASS(rm_shooter_controllers::ShooterStandardController,
-                       controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(rm_shooter_controllers::ShooterStandardController, controller_interface::ControllerBase)

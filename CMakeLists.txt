@@ -11,28 +11,27 @@ add_definitions(-Wall -Werror)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED
-        COMPONENTS
-        roscpp
-        roslint
+    COMPONENTS
+    roscpp
+    roslint
 
-        rm_msgs
-        rm_common
-        rm_base
+    rm_msgs
+    rm_common
+    rm_base
 
-        control_toolbox
-        angles
-        controller_interface
-        forward_command_controller
-        hardware_interface
-        pluginlib
-        realtime_tools
-        dynamic_reconfigure
-        )
+    control_toolbox
+    angles
+    controller_interface
+    forward_command_controller
+    hardware_interface
+    pluginlib
+    realtime_tools
+    dynamic_reconfigure
+    )
 
 generate_dynamic_reconfigure_options(
-        cfg/shooter/ShooterStandard.cfg
+    cfg/ShooterStandard.cfg
 )
-
 
 ###################################
 ## catkin specific configuration ##
@@ -44,26 +43,26 @@ generate_dynamic_reconfigure_options(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-        INCLUDE_DIRS
-        include
-        LIBRARIES
-        CATKIN_DEPENDS
-        roscpp
-        roslint
+    INCLUDE_DIRS
+    include
+    LIBRARIES
+    CATKIN_DEPENDS
+    roscpp
+    roslint
 
-        rm_msgs
-        rm_common
-        rm_base
+    rm_msgs
+    rm_common
+    rm_base
 
-        control_toolbox
-        angles
-        controller_interface
-        forward_command_controller
-        hardware_interface
-        pluginlib
-        realtime_tools
-        dynamic_reconfigure
-        DEPENDS
+    control_toolbox
+    angles
+    controller_interface
+    forward_command_controller
+    hardware_interface
+    pluginlib
+    realtime_tools
+    dynamic_reconfigure
+    DEPENDS
 )
 
 ###########
@@ -73,8 +72,8 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-        include
-        ${catkin_INCLUDE_DIRS}
+    include
+    ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
