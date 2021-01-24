@@ -43,20 +43,20 @@ double Iter2DSolver::computeError(double pitch) {
 
   this->fly_time_ = 0;
   while (rt_bullet_x <= rt_target_x) {
-    this->fly_time_ += this->dt_;
-    rt_bullet_x = (1 / this->resistance_coff_) * bullet_v_x
-        * (1 - std::exp(-this->fly_time_ * this->resistance_coff_));
-    rt_target_x += this->target_dx_ * this->dt_;
+    this->fly_time_ += config_.dt;
+    rt_bullet_x = (1 / config_.resistance_coff) * bullet_v_x
+        * (1 - std::exp(-this->fly_time_ * config_.resistance_coff));
+    rt_target_x += this->target_dx_ * config_.dt;
 
     //avoid keep looping cause by null solution
-    if (this->fly_time_ > this->timeout_) {
+    if (this->fly_time_ > config_.timeout) {
       return 999999.;
     }
   }
-  rt_bullet_z = (1 / this->resistance_coff_)
-      * (bullet_v_z + this->g_ / this->resistance_coff_)
-      * (1 - std::exp(-this->fly_time_ * this->resistance_coff_))
-      - this->fly_time_ * this->g_ / this->resistance_coff_;
+  rt_bullet_z = (1 / config_.resistance_coff)
+      * (bullet_v_z + config_.g / config_.resistance_coff)
+      * (1 - std::exp(-this->fly_time_ * config_.resistance_coff))
+      - this->fly_time_ * config_.g / config_.resistance_coff;
   rt_target_z = this->target_z_ + this->target_dz_ * this->fly_time_;
 
   return rt_target_z - rt_bullet_z;
@@ -65,17 +65,17 @@ double Iter2DSolver::computeError(double pitch) {
 ///////////////////////////Approx2DSolver/////////////////////////////
 double Approx2DSolver::computeError(double pitch) {
 
-  this->fly_time_ = (-log(1 - this->target_x_ * this->resistance_coff_
+  this->fly_time_ = (-log(1 - this->target_x_ * config_.resistance_coff
       / (this->bullet_speed_ * cos(pitch) - this->target_dx_)))
-      / this->resistance_coff_;
+      / config_.resistance_coff;
   if (std::isnan(this->fly_time_))
     return 999999.;
   double rt_bullet_z =
       ((this->bullet_speed_ * sin(pitch) - this->target_dz_)
-          + (this->g_ / this->resistance_coff_))
-          * (1 - std::exp(-this->resistance_coff_ * this->fly_time_))
-          / this->resistance_coff_ - this->g_ * this->fly_time_
-          / this->resistance_coff_;
+          + (config_.g / config_.resistance_coff))
+          * (1 - std::exp(-config_.resistance_coff * this->fly_time_))
+          / config_.resistance_coff - config_.g * this->fly_time_
+          / config_.resistance_coff;
 
   return this->target_z_ - rt_bullet_z;
 }
@@ -83,6 +83,7 @@ double Approx2DSolver::computeError(double pitch) {
 ///////////////////////////Bullet3DSolver/////////////////////////////
 bool Bullet3DSolver::solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
                            realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) {
+  config_ = *config_rt_buffer_.readFromRT();
   map2pitch_offset_x_ = map2pitch.transform.translation.x;
   map2pitch_offset_y_ = map2pitch.transform.translation.y;
   map2pitch_offset_z_ = map2pitch.transform.translation.z;
@@ -148,13 +149,13 @@ std::vector<Vec3<double>> Bullet3DSolver::getPointData3D() {
   std::vector<Vec3<double>> model_data{};
   for (int i = 0; i < 20; i++) {
     double rt_bullet_rho = target_rho * i / 19;
-    this->fly_time_ = (-std::log(1 - rt_bullet_rho * this->resistance_coff_
-        / bullet_v_rho)) / this->resistance_coff_;
+    this->fly_time_ = (-std::log(1 - rt_bullet_rho * config_.resistance_coff
+        / bullet_v_rho)) / config_.resistance_coff;
     double rt_bullet_z =
-        (bullet_v_z + (this->g_ / this->resistance_coff_))
-            * (1 - std::exp(-this->resistance_coff_ * this->fly_time_))
-            / this->resistance_coff_ - this->g_ * this->fly_time_
-            / this->resistance_coff_;
+        (bullet_v_z + (config_.g / config_.resistance_coff))
+            * (1 - std::exp(-config_.resistance_coff * this->fly_time_))
+            / config_.resistance_coff - config_.g * this->fly_time_
+            / config_.resistance_coff;
     point_data[0] = rt_bullet_rho * std::cos(yaw_solved_);
     point_data[1] = rt_bullet_rho * std::sin(yaw_solved_);
     point_data[2] = rt_bullet_z;
@@ -215,18 +216,18 @@ double Iter3DSolver::computeError(double yaw, double pitch, double *error) {
 
   this->fly_time_ = 0;
   while (rt_bullet_rho <= rt_target_rho) {
-    this->fly_time_ += this->dt_;
+    this->fly_time_ += config_.dt;
 
-    rt_bullet_rho = (1 / this->resistance_coff_) * bullet_v_rho
-        * (1 - std::exp(-this->fly_time_ * this->resistance_coff_));
+    rt_bullet_rho = (1 / config_.resistance_coff) * bullet_v_rho
+        * (1 - std::exp(-this->fly_time_ * config_.resistance_coff));
 
-    rt_target_x += this->target_dx_ * this->dt_;
-    rt_target_y += this->target_dy_ * this->dt_;
+    rt_target_x += this->target_dx_ * config_.dt;
+    rt_target_y += this->target_dy_ * config_.dt;
     rt_target_rho =
         std::sqrt(std::pow(rt_target_x, 2) + std::pow(rt_target_y, 2));
 
     //avoid keep looping cause by null solution
-    if (this->fly_time_ > this->timeout_)
+    if (this->fly_time_ > config_.timeout)
       return 999999.;
 
   }
@@ -235,10 +236,10 @@ double Iter3DSolver::computeError(double yaw, double pitch, double *error) {
   double rt_target_z = this->target_z_ + this->target_dz_ * this->fly_time_;
 
   double rt_bullet_theta = yaw;
-  rt_bullet_z = (1 / this->resistance_coff_)
-      * (bullet_v_z + this->g_ / this->resistance_coff_)
-      * (1 - std::exp(-this->fly_time_ * this->resistance_coff_))
-      - this->fly_time_ * this->g_ / this->resistance_coff_;
+  rt_bullet_z = (1 / config_.resistance_coff)
+      * (bullet_v_z + config_.g / config_.resistance_coff)
+      * (1 - std::exp(-this->fly_time_ * config_.resistance_coff))
+      - this->fly_time_ * config_.g / config_.resistance_coff;
 
   error[0] = rt_target_theta - rt_bullet_theta;
   error[1] = rt_target_z - rt_bullet_z;
@@ -258,15 +259,15 @@ double Approx3DSolver::computeError(double yaw, double pitch, double *error) {
   double bullet_v_rho = this->bullet_speed_ * std::cos(pitch) - target_v_rho;
   double bullet_v_z = this->bullet_speed_ * std::sin(pitch) - this->target_dz_;
 
-  this->fly_time_ = (-std::log(1 - rt_target_rho * this->resistance_coff_
-      / bullet_v_rho)) / this->resistance_coff_;
+  this->fly_time_ = (-std::log(1 - rt_target_rho * config_.resistance_coff
+      / bullet_v_rho)) / config_.resistance_coff;
   if (std::isnan(this->fly_time_))
     return 999999.;
   double rt_bullet_z =
-      (bullet_v_z + (this->g_ / this->resistance_coff_))
-          * (1 - std::exp(-this->resistance_coff_ * this->fly_time_))
-          / this->resistance_coff_ - this->g_ * this->fly_time_
-          / this->resistance_coff_;
+      (bullet_v_z + (config_.g / config_.resistance_coff))
+          * (1 - std::exp(-config_.resistance_coff * this->fly_time_))
+          / config_.resistance_coff - config_.g * this->fly_time_
+          / config_.resistance_coff;
 
   double rt_target_theta =
       std::atan2(this->target_y_ + this->target_dy_ * this->fly_time_,
