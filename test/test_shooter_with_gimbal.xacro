@@ -1,5 +1,5 @@
 <robot name="test_robot">
-    <link name="world"/>
+    <link name="map"/>
     <link name="link_yaw"/>
     <link name="link_pitch"/>
     <link name="link_fiction_left"/>
@@ -7,7 +7,7 @@
     <link name="link_trigger"/>
 
     <joint name="joint_yaw" type="continuous">
-        <parent link="world"/>
+        <parent link="map"/>
         <child link="link_yaw"/>
         <axis xyz="0 0 1"/>
         <origin xyz="0 0 0.12"/>
@@ -60,7 +60,7 @@
     <transmission name="pitch_trans">
         <type>transmission_interface/SimpleTransmission</type>
         <joint name="joint_pitch">
-            <offset>0</offset>
+            <offset>2.7</offset>
             <hardwareInterface>hardware_interface/EffortJointInterface
             </hardwareInterface>
         </joint>
