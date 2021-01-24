@@ -27,8 +27,8 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
       !pid_pitch_.init(ros::NodeHandle(controller_nh, "pid_pitch")))
     return false;
 
-  world2gimbal_des_.header.frame_id = "world";
-  world2gimbal_des_.child_frame_id = "gimbal_des";
+  map2gimbal_des_.header.frame_id = "map";
+  map2gimbal_des_.child_frame_id = "gimbal_des";
 
   cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
   cmd_sub_track_ = root_nh.subscribe<rm_msgs::GimbalTrackCmd>
@@ -81,7 +81,7 @@ void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &
   }
 
   double roll{}, pitch{}, yaw{};
-  quatToRPY(world2gimbal_des_.transform.rotation, roll, pitch, yaw);
+  quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
   setDes(time,
          yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_yaw,
          pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
@@ -92,24 +92,24 @@ void GimbalStandardController::track(const ros::Time &time) {
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter TRACK");
   }
-  geometry_msgs::TransformStamped world2pitch;
-  world2pitch = robot_state_handle_.lookupTransform("world", "link_pitch", ros::Time(0));
+  geometry_msgs::TransformStamped map2pitch;
+  map2pitch = robot_state_handle_.lookupTransform("map", "link_pitch", ros::Time(0));
 
-  if (bullet_solver_->solve(angle_init_, world2pitch, cmd_track_rt_buffer_))
+  if (bullet_solver_->solve(angle_init_, map2pitch, cmd_track_rt_buffer_))
     robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
   else {
     double roll{}, pitch{}, yaw{};
-    quatToRPY(world2gimbal_des_.transform.rotation, roll, pitch, yaw);
+    quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
     setDes(time, yaw, pitch);
   }
 }
 
 void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
   //pitch = minAbs(pitch, M_PI_2 - 0.1); //avoid gimbal lock
-  world2gimbal_des_.transform.rotation =
+  map2gimbal_des_.transform.rotation =
       tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
-  world2gimbal_des_.header.stamp = time;
-  robot_state_handle_.setTransform(world2gimbal_des_, "rm_gimbal_controller");
+  map2gimbal_des_.header.stamp = time;
+  robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
 }
 
 void GimbalStandardController::moveJoint(const ros::Duration &period) {

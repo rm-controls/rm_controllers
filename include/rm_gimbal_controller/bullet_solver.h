@@ -19,8 +19,8 @@ class BulletSolver {
  public:
   explicit BulletSolver(ros::NodeHandle &nh) {
 
-    world2gimbal_des_.header.frame_id = "world";
-    world2gimbal_des_.child_frame_id = "gimbal_des";
+    map2gimbal_des_.header.frame_id = "map";
+    map2gimbal_des_.child_frame_id = "gimbal_des";
     nh.param("publish_rate", publish_rate_, 50.0);
     d_srv_ =
         new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig>(nh);
@@ -42,7 +42,7 @@ class BulletSolver {
     dt_ = config.dt;
     timeout_ = config.timeout;
   };
-  virtual bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped world2pitch,
+  virtual bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
                      realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) = 0;
   virtual void modelRviz(double x_offset, double y_offset, double z_offset) = 0;
 
@@ -51,7 +51,7 @@ class BulletSolver {
   double resistance_coff_{}, g_{}, delay_{}, dt_{}, timeout_{};
   ros::Publisher path_pub_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
-  geometry_msgs::TransformStamped world2gimbal_des_;
+  geometry_msgs::TransformStamped map2gimbal_des_;
   double publish_rate_{};
   ros::Time last_publish_time_;
 };
@@ -65,7 +65,7 @@ class Bullet2DSolver : public BulletSolver {
     target_dx_ = vel[0];
     target_dz_ = vel[1];
   };
-  bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped world2pitch,
+  bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
              realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) override;
  protected:
   virtual double computeError(double pitch) = 0;
@@ -101,7 +101,7 @@ class Bullet3DSolver : public BulletSolver {
     target_dy_ = vel[1];
     target_dz_ = vel[2];
   };
-  bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped world2pitch,
+  bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
              realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) override;
   void modelRviz(double x_offset, double y_offset, double z_offset) override;
   geometry_msgs::TransformStamped getResult(const ros::Time &time);
@@ -115,9 +115,9 @@ class Bullet3DSolver : public BulletSolver {
   Vec3<double> pos_{};
   Vec3<double> vel_{};
   std::vector<Vec3<double>> model_data_;
-  double world2pitch_offset_x_{};
-  double world2pitch_offset_y_{};
-  double world2pitch_offset_z_{};
+  double map2pitch_offset_x_{};
+  double map2pitch_offset_y_{};
+  double map2pitch_offset_z_{};
 };
 
 class Iter3DSolver : public Bullet3DSolver {

@@ -10,7 +10,7 @@
 
 ///////////////////////////Bullet2DSolver/////////////////////////////
 //2D solver need to make some changes to use it
-bool Bullet2DSolver::solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped world2pitch,
+bool Bullet2DSolver::solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
                            realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) {
   double pitch_point = std::atan2(target_z_, target_x_);
   double error_point = computeError(pitch_point);
@@ -81,14 +81,14 @@ double Approx2DSolver::computeError(double pitch) {
 }
 
 ///////////////////////////Bullet3DSolver/////////////////////////////
-bool Bullet3DSolver::solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped world2pitch,
+bool Bullet3DSolver::solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
                            realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) {
-  world2pitch_offset_x_ = world2pitch.transform.translation.x;
-  world2pitch_offset_y_ = world2pitch.transform.translation.y;
-  world2pitch_offset_z_ = world2pitch.transform.translation.z;
-  pos_[0] = cmd_track_rt_buffer.readFromRT()->target_position_x - world2pitch_offset_x_;
-  pos_[1] = cmd_track_rt_buffer.readFromRT()->target_position_y - world2pitch_offset_y_;
-  pos_[2] = cmd_track_rt_buffer.readFromRT()->target_position_z - world2pitch_offset_z_;
+  map2pitch_offset_x_ = map2pitch.transform.translation.x;
+  map2pitch_offset_y_ = map2pitch.transform.translation.y;
+  map2pitch_offset_z_ = map2pitch.transform.translation.z;
+  pos_[0] = cmd_track_rt_buffer.readFromRT()->target_position_x - map2pitch_offset_x_;
+  pos_[1] = cmd_track_rt_buffer.readFromRT()->target_position_y - map2pitch_offset_y_;
+  pos_[2] = cmd_track_rt_buffer.readFromRT()->target_position_z - map2pitch_offset_z_;
   vel_[0] = cmd_track_rt_buffer.readFromRT()->target_speed_x;
   vel_[1] = cmd_track_rt_buffer.readFromRT()->target_speed_y;
   vel_[2] = cmd_track_rt_buffer.readFromRT()->target_speed_z;
@@ -166,7 +166,7 @@ std::vector<Vec3<double>> Bullet3DSolver::getPointData3D() {
 void Bullet3DSolver::modelRviz(double x_offset, double y_offset, double z_offset) {
   geometry_msgs::Point point;
   visualization_msgs::Marker marker;
-  marker.header.frame_id = "world";
+  marker.header.frame_id = "map";
   marker.ns = "model";
   marker.action = visualization_msgs::Marker::ADD;
   marker.type = visualization_msgs::Marker::POINTS;
@@ -191,15 +191,15 @@ void Bullet3DSolver::modelRviz(double x_offset, double y_offset, double z_offset
 geometry_msgs::TransformStamped Bullet3DSolver::getResult(const ros::Time &time) {
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
     model_data_ = getPointData3D();
-    modelRviz(world2pitch_offset_x_,
-              world2pitch_offset_y_,
-              world2pitch_offset_z_);
+    modelRviz(map2pitch_offset_x_,
+              map2pitch_offset_y_,
+              map2pitch_offset_z_);
     last_publish_time_ = time;
   }
-  world2gimbal_des_.transform.rotation =
+  map2gimbal_des_.transform.rotation =
       tf::createQuaternionMsgFromRollPitchYaw(0, -pitch_solved_, yaw_solved_);
-  world2gimbal_des_.header.stamp = time;
-  return world2gimbal_des_;
+  map2gimbal_des_.header.stamp = time;
+  return map2gimbal_des_;
 }
 
 ///////////////////////////Iter3DSolver/////////////////////////////

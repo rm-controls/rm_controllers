@@ -43,7 +43,7 @@ class GimbalStandardController :
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
   hardware_interface::RobotStateHandle robot_state_handle_;
-  geometry_msgs::TransformStamped world2gimbal_des_;
+  geometry_msgs::TransformStamped map2gimbal_des_;
 
   Bullet3DSolver *bullet_solver_{};
 
