@@ -132,17 +132,16 @@ void ChassisStandardController::moveJoint(const ros::Duration &period) {
 geometry_msgs::Twist ChassisStandardController::iKine() {
   geometry_msgs::Twist vel_data;
   double k = wheel_radius_ / 4.0;
-  double joint_rf_position, joint_rb_position, joint_lf_position, joint_lb_position;
-  joint_rf_position = joint_rf_.getVelocity();
-  joint_rb_position = joint_rb_.getVelocity();
-  joint_lf_position = joint_lf_.getVelocity();
-  joint_lb_position = joint_lb_.getVelocity();
+  double joint_rf_velocity = joint_rf_.getVelocity();
+  double joint_rb_velocity = joint_rb_.getVelocity();
+  double joint_lf_velocity = joint_lf_.getVelocity();
+  double joint_lb_velocity = joint_lb_.getVelocity();
   vel_data.linear.x =
-      (joint_rf_position + joint_lf_position + joint_lb_position + joint_rb_position) * k;
+      (joint_rf_velocity + joint_lf_velocity + joint_lb_velocity + joint_rb_velocity) * k;
   vel_data.linear.y =
-      (joint_rf_position - joint_lf_position + joint_lb_position - joint_rb_position) * k;
+      (joint_rf_velocity - joint_lf_velocity + joint_lb_velocity - joint_rb_velocity) * k;
   vel_data.angular.z =
-      2 * (joint_rf_position - joint_lf_position - joint_lb_position + joint_rb_position) * k
+      2 * (joint_rf_velocity - joint_lf_velocity - joint_lb_velocity + joint_rb_velocity) * k
           / (wheel_base_ + wheel_track_);
   return vel_data;
 }
