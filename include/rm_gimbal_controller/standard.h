@@ -49,13 +49,13 @@ class GimbalStandardController :
 
   double *chassis_angular_z_{};
   bool state_changed_{};
-  bool track_msgs_comming_{};
   Vec2<double> angle_init_{};
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_subscriber_;
   ros::Subscriber cmd_sub_track_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer_;
+  realtime_tools::RealtimeBuffer<bool> cmd_msgs_type_rt_buffer_;//false is GimbalCmd,ture is GimbalTrackCmd
   rm_msgs::GimbalCmd cmd_;
 
 };

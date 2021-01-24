@@ -40,7 +40,7 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
 void GimbalStandardController::update(const ros::Time &time, const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
 
-  if (!track_msgs_comming_) {
+  if (!*cmd_msgs_type_rt_buffer_.readFromRT()) {
     if (state_ != cmd_.mode) {
       state_ = StandardState(cmd_.mode);
       state_changed_ = true;
@@ -133,11 +133,11 @@ void GimbalStandardController::moveJoint(const ros::Duration &period) {
 
 void GimbalStandardController::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
   cmd_rt_buffer_.writeFromNonRT(*msg);
-  track_msgs_comming_ = false;
+  cmd_msgs_type_rt_buffer_.writeFromNonRT(false);
 }
 void GimbalStandardController::cmdTrackCB(const rm_msgs::GimbalTrackCmdConstPtr &msg) {
   cmd_track_rt_buffer_.writeFromNonRT(*msg);
-  track_msgs_comming_ = true;
+  cmd_msgs_type_rt_buffer_.writeFromNonRT(true);
 }
 
 } // namespace rm_gimbal_controllers
