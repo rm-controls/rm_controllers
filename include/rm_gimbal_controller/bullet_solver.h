@@ -28,7 +28,7 @@ class BulletSolver {
         cb = boost::bind(&BulletSolver::reconfigCB, this, _1, _2);
     d_srv_->setCallback(cb);
 
-    path_pub_ = nh.advertise<visualization_msgs::Marker>("bullet_model", 200);
+    path_pub_ = nh.advertise<visualization_msgs::Marker>("bullet_model", 10);
   };
   virtual ~BulletSolver() = default;
   virtual void setTarget(const DVec<double> &pos, const DVec<double> &vel) = 0;
