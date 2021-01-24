@@ -16,19 +16,11 @@
 
 namespace rm_shooter_controllers {
 
-enum BulletSpeed {
-  SPEED_10M_PER_SECOND = 0,
-  SPEED_15M_PER_SECOND = 1,
-  SPEED_16M_PER_SECOND = 2,
-  SPEED_18M_PER_SECOND = 3,
-  SPEED_30M_PER_SECOND = 4
-};
-
 enum State {
   PASSIVE = 0,
   READY = 1,
-  PUSH = 6,
-  BLOCK = 7
+  PUSH = 2,
+  BLOCK = 3
 };
 
 struct Config {

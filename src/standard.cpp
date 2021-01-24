@@ -92,20 +92,18 @@ void ShooterStandardController::ready(const ros::Duration &period) {
     pid_fiction_l_.reset();
     pid_fiction_r_.reset();
 
-    switch (cmd_.speed) {
-      case SPEED_10M_PER_SECOND: friction_qd_des_ = config_.qd_10;
-        break;
-      case SPEED_15M_PER_SECOND: friction_qd_des_ = config_.qd_15;
-        break;
-      case SPEED_16M_PER_SECOND: friction_qd_des_ = config_.qd_16;
-        break;
-      case SPEED_18M_PER_SECOND: friction_qd_des_ = config_.qd_18;
-        break;
-      case SPEED_30M_PER_SECOND: friction_qd_des_ = config_.qd_30;
-        break;
-      default: friction_qd_des_ = 0;
-        break;
-    }
+    if (cmd_.speed == cmd_.SPEED_10M_PER_SECOND)
+      friction_qd_des_ = config_.qd_10;
+    else if (cmd_.speed == cmd_.SPEED_15M_PER_SECOND)
+      friction_qd_des_ = config_.qd_15;
+    else if (cmd_.speed == cmd_.SPEED_16M_PER_SECOND)
+      friction_qd_des_ = config_.qd_16;
+    else if (cmd_.speed == cmd_.SPEED_18M_PER_SECOND)
+      friction_qd_des_ = config_.qd_18;
+    else if (cmd_.speed == cmd_.SPEED_30M_PER_SECOND)
+      friction_qd_des_ = config_.qd_30;
+    else
+      friction_qd_des_ = 0.;
   }
 
   if (joint_trigger_.getEffort() > config_.block_effort) {
