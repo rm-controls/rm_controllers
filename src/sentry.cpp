@@ -19,9 +19,9 @@ bool ChassisSentryController::init(hardware_interface::RobotHW *robot_hw,
                                    ros::NodeHandle &controller_nh) {
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_wheel_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_rf_name", std::string("joint_rf")));
+      getParam(controller_nh, "joint_name", std::string("actuator_wheel")));
 
-  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
+  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.0250);
 
   publish_rate_ = getParam(controller_nh, "publish_rate_", 50);
   current_coeff_ = getParam(controller_nh, "current_coeff_", 1.0);
@@ -29,7 +29,7 @@ bool ChassisSentryController::init(hardware_interface::RobotHW *robot_hw,
   ramp_x = new RampFilter<double>(0, 0.001);
 
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
-  if (!pid_wheel_.init(ros::NodeHandle(controller_nh, "pid_rf")))
+  if (!pid_wheel_.init(ros::NodeHandle(controller_nh, "pid_wheel")))
     return false;
 
   // init odom tf

@@ -9,7 +9,7 @@ rm_base:
   actuators:
     actuator_wheel:
       bus: can0
-      id: 0x201
+      id: 0x203
       type: rm_3508
       lp_cutoff_frequency: 100
 
@@ -23,7 +23,7 @@ rm_base:
     type: rm_chassis_controllers/ChassisSentryController
     joint_name: "joint_wheel"
     publish_rate_: 100
-    wheel_radius: 0.07625
+    wheel_radius: 0.0250
     current_coeff: 1.
     pid_wheel: { p: 0.8, i: 0, d: 0.0 }
 
