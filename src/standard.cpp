@@ -25,6 +25,8 @@ bool ShooterStandardController::init(hardware_interface::RobotHW *robot_hw,
   // init config
   config_ = {.push_angle = getParam(controller_nh, "push_angle", 0.),
       .block_effort = getParam(controller_nh, "block_effort", 0.),
+      .block_duration = getParam(controller_nh, "block_duration", 0.),
+      .block_speed = getParam(controller_nh, "block_speed", 0.),
       .anti_block_angle = getParam(controller_nh, "anti_block_angle", 0.),
       .anti_block_error = getParam(controller_nh, "anti_block_error", 0.),
       .qd_10 = getParam(controller_nh, "qd_10", 0.),
@@ -131,10 +133,13 @@ void ShooterStandardController::push(const ros::Time &time,
   } else
     ROS_DEBUG("[Shooter] wait for friction wheel");
 
-  if (joint_trigger_.getEffort() > config_.block_effort) {
-    state_ = BLOCK;
-    state_changed_ = true;
-    ROS_INFO("[Shooter] Exit PUSH");
+  if (joint_trigger_.getEffort() > config_.block_effort && joint_trigger_.getVelocity() < config_.block_speed) {
+    block_time_ = time;
+    if ((ros::Time::now() - block_time_).toSec() >= config_.block_duration) {
+      state_ = BLOCK;
+      state_changed_ = true;
+      ROS_INFO("[Shooter] Exit PUSH");
+    }
   }
 }
 
@@ -165,6 +170,8 @@ void ShooterStandardController::reconfigCB(rm_shooter_controllers::ShooterStanda
     config.anti_block_angle = init_config.anti_block_angle;
     config.anti_block_error = init_config.anti_block_error;
     config.block_effort = init_config.block_effort;
+    config.block_duration = init_config.block_duration;
+    config.block_speed = init_config.block_speed;
     config.push_angle = init_config.push_angle;
     config.qd_10 = init_config.qd_10;
     config.qd_15 = init_config.qd_15;
@@ -176,6 +183,8 @@ void ShooterStandardController::reconfigCB(rm_shooter_controllers::ShooterStanda
   Config config_non_rt{
       .push_angle = config.push_angle,
       .block_effort = config.block_effort,
+      .block_duration = config.block_duration,
+      .block_speed = config.block_speed,
       .anti_block_angle = config.anti_block_angle,
       .anti_block_error = config.anti_block_error,
       .qd_10 = config.qd_10,

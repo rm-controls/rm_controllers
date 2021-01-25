@@ -24,7 +24,7 @@ enum State {
 };
 
 struct Config {
-  double push_angle, block_effort, anti_block_angle, anti_block_error;
+  double push_angle, block_effort, block_duration, block_speed, anti_block_angle, anti_block_error;
   double qd_10, qd_15, qd_16, qd_18, qd_30;
 };
 
@@ -55,6 +55,7 @@ class ShooterStandardController
   bool state_changed_ = false;
 
   ros::Time last_shoot_time_;
+  ros::Time block_time_;
 
   State state_ = PASSIVE;
   Config config_{};
