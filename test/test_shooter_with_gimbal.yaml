@@ -53,13 +53,14 @@ rm_base:
     block_duration: 0.05
     block_speed: 0.5
     anti_block_angle: 0.35
-    anti_block_error: 0.05
-    qd_10: 369.0
-    qd_15: 498.0
+    anti_block_error: 0.1
+    qd_10: 370.0
+    qd_15: 494.0
+    qd_16: 498.0
 
-    pid_fiction_l: { p: 0.001, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
-    pid_fiction_r: { p: 0.001, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
-    pid_trigger: { p: 7.4, i: 0.0, d: 0.22, i_max: 0.0, i_min: 0.0, antiwindup: true }
+    pid_fiction_l: { p: 0.001, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    pid_fiction_r: { p: 0.001, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    pid_trigger: { p: 7.4, i: 0.0, d: 0.22, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     publish_state: true
   gimbal_standard_controller:
     type: rm_gimbal_controllers/GimbalStandardController
