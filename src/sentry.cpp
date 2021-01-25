@@ -81,8 +81,7 @@ void ChassisSentryController::moveJoint(const ros::Duration &period) {
   pid_wheel_.computeCommand(joint_wheel_error, period);
 
   // Power limit
-  double coeff = 1.0;
-  double real_current = coeff * pid_wheel_.getCurrentCmd();
+  double real_current = current_coeff_ * std::abs(pid_wheel_.getCurrentCmd());
 
   double prop = real_current > cmd_chassis_.current_limit ? cmd_chassis_.current_limit / real_current : 1.;
   joint_wheel_.setCommand(prop * pid_wheel_.getCurrentCmd());
