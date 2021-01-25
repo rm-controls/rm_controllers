@@ -151,9 +151,9 @@ void ChassisStandardController::moveJoint(const ros::Duration &period) {
   pid_lb_.computeCommand(joint_lb_error, period);
 
   // Power limit
-  double coeff = 1.0;
-  double real_current =
-      coeff * (pid_rf_.getCurrentCmd() + pid_rb_.getCurrentCmd() + pid_lf_.getCurrentCmd() + pid_lb_.getCurrentCmd());
+  double real_current = current_coeff_
+      * (std::abs(pid_rf_.getCurrentCmd()) + std::abs(pid_rb_.getCurrentCmd()) +
+          std::abs(pid_lf_.getCurrentCmd()) + std::abs(pid_lb_.getCurrentCmd()));
 
   double prop = real_current > cmd_chassis_.current_limit ? cmd_chassis_.current_limit / real_current : 1.;
 
