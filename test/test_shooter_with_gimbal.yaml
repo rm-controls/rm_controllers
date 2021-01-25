@@ -48,14 +48,14 @@ rm_base:
     publish_rate: 50
   shooter_standard_controller:
     type: rm_shooter_controllers/ShooterStandardController
-    push_angle: 0.785
-    block_effort: 1.5
+    push_angle: 0.8
+    block_effort: 1.2
     block_duration: 0.05
     block_speed: 0.5
     anti_block_angle: 0.35
     anti_block_error: 0.05
-    qd_10: 374
-    qd_15: 495.0
+    qd_10: 369.0
+    qd_15: 498.0
 
     pid_fiction_l: { p: 0.001, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
     pid_fiction_r: { p: 0.001, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }

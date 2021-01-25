@@ -105,14 +105,9 @@ void ShooterStandardController::ready(const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter READY");
+    trigger_q_des_ = joint_trigger_.getPosition();
     pid_fiction_l_.reset();
     pid_fiction_r_.reset();
-  }
-
-  if (joint_trigger_.getEffort() > config_.block_effort) {
-    state_ = BLOCK;
-    state_changed_ = true;
-    ROS_INFO("[Shooter] Exit READY");
   }
 }
 
@@ -133,13 +128,22 @@ void ShooterStandardController::push(const ros::Time &time,
   } else
     ROS_DEBUG("[Shooter] wait for friction wheel");
 
-  if (joint_trigger_.getEffort() > config_.block_effort && joint_trigger_.getVelocity() < config_.block_speed) {
-    block_time_ = time;
-    if ((ros::Time::now() - block_time_).toSec() >= config_.block_duration) {
-      state_ = BLOCK;
-      state_changed_ = true;
-      ROS_INFO("[Shooter] Exit PUSH");
+  bool is_block_now =
+      joint_trigger_.getEffort() > config_.block_effort && joint_trigger_.getVelocity() < config_.block_speed;
+  if (is_block_now) {
+    if (!is_start_block_time_) {
+      block_time_ = time;
+      is_start_block_time_ = true;
     }
+  } else {
+    block_time_ = time;
+    is_start_block_time_ = false;
+  }
+
+  if ((time - block_time_).toSec() >= config_.block_duration) {
+    state_ = BLOCK;
+    state_changed_ = true;
+    ROS_INFO("[Shooter] Exit PUSH");
   }
 }
 

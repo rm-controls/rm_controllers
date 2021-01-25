@@ -53,6 +53,7 @@ class ShooterStandardController
   double trigger_q_des_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
+  bool is_start_block_time_ = false;
 
   ros::Time last_shoot_time_;
   ros::Time block_time_;
