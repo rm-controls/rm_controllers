@@ -23,8 +23,8 @@ bool ChassisSentryController::init(hardware_interface::RobotHW *robot_hw,
 
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.0250);
 
-  publish_rate_ = getParam(controller_nh, "publish_rate_", 50);
-  current_coeff_ = getParam(controller_nh, "current_coeff_", 1.0);
+  publish_rate_ = getParam(controller_nh, "publish_rate", 50);
+  current_coeff_ = getParam(controller_nh, "current_coeff", 1.0);
 
   ramp_x = new RampFilter<double>(0, 0.001);
 
