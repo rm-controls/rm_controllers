@@ -50,7 +50,7 @@ bool ShooterStandardController::init(hardware_interface::RobotHW *robot_hw,
     return false;
 
   cmd_subscriber_ = root_nh.subscribe<rm_msgs::ShootCmd>(
-      "cmd_shooter", 1, &ShooterStandardController::commandCB, this);
+      "cmd_shoot", 1, &ShooterStandardController::commandCB, this);
   return true;
 }
 
