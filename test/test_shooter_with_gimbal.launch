@@ -24,6 +24,6 @@
         rm_base/gimbal_standard_controller
    "/>
 
-  <!--<node name="rm_base" pkg="rm_base" type="rm_base" respawn="false"/>-->
+  <node name="rm_base" pkg="rm_base" type="rm_base" respawn="false"/>
 
 </launch>

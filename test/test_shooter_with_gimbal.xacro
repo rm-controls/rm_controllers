@@ -47,7 +47,7 @@
     <transmission name="yaw_trans">
         <type>transmission_interface/SimpleTransmission</type>
         <joint name="joint_yaw">
-            <offset>0.4</offset>
+            <offset>0.4096</offset>
             <hardwareInterface>hardware_interface/EffortJointInterface
             </hardwareInterface>
         </joint>
