@@ -24,7 +24,7 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
 
   publish_rate_ = getParam(controller_nh, "publish_rate_", 50);
-  current_coeff_ = getParam(controller_nh, "current_coeff_", 1.0);
+
   // Get and check params for covariances
   XmlRpc::XmlRpcValue pose_cov_list;
   controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
@@ -151,11 +151,10 @@ void ChassisStandardController::moveJoint(const ros::Duration &period) {
   pid_lb_.computeCommand(joint_lb_error, period);
 
   // Power limit
-  double real_current = current_coeff_
-      * (std::abs(pid_rf_.getCurrentCmd()) + std::abs(pid_rb_.getCurrentCmd()) +
-          std::abs(pid_lf_.getCurrentCmd()) + std::abs(pid_lb_.getCurrentCmd()));
+  double real_effort = (std::abs(pid_rf_.getCurrentCmd()) + std::abs(pid_rb_.getCurrentCmd()) +
+      std::abs(pid_lf_.getCurrentCmd()) + std::abs(pid_lb_.getCurrentCmd()));
 
-  double prop = real_current > cmd_chassis_.current_limit ? cmd_chassis_.current_limit / real_current : 1.;
+  double prop = real_effort > cmd_chassis_.effort_limit ? cmd_chassis_.effort_limit / real_effort : 1.;
 
   joint_rf_.setCommand(prop * pid_rf_.getCurrentCmd());
   joint_rb_.setCommand(prop * pid_rb_.getCurrentCmd());
