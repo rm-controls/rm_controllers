@@ -68,7 +68,9 @@ class BulletSolver {
     config_rt_buffer_.writeFromNonRT(config_non_rt);
   };
   virtual bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
-                     realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) = 0;
+                     double target_position_x, double target_position_y, double target_position_z,
+                     double target_speed_x, double target_speed_y, double target_speed_z,
+                     double bullet_speed) = 0;
   virtual void modelRviz(double x_offset, double y_offset, double z_offset) = 0;
 
  protected:
@@ -83,40 +85,6 @@ class BulletSolver {
   Config config_{};
 };
 
-class Bullet2DSolver : public BulletSolver {
- public:
-  using BulletSolver::BulletSolver;
-  void setTarget(const DVec<double> &pos, const DVec<double> &vel) override {
-    target_x_ = pos[0] + vel[0] * config_.delay;
-    target_z_ = pos[1] + vel[1] * config_.delay;
-    target_dx_ = vel[0];
-    target_dz_ = vel[1];
-  };
-  bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
-             realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) override;
- protected:
-  virtual double computeError(double pitch) = 0;
-  double target_x_{}, target_z_{}, target_dx_{}, target_dz_{};
-  double fly_time_{};
-  double pitch_solved_;
-};
-
-class Iter2DSolver : public Bullet2DSolver {
- public:
-  using Bullet2DSolver::Bullet2DSolver;
-  using Bullet2DSolver::solve;
- private:
-  double computeError(double pitch) override;
-};
-
-class Approx2DSolver : public Bullet2DSolver {
- public:
-  using Bullet2DSolver::Bullet2DSolver;
-  using Bullet2DSolver::solve;
- private:
-  double computeError(double pitch) override;
-};
-
 class Bullet3DSolver : public BulletSolver {
  public:
   using BulletSolver::BulletSolver;
@@ -128,8 +96,11 @@ class Bullet3DSolver : public BulletSolver {
     target_dy_ = vel[1];
     target_dz_ = vel[2];
   };
-  bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
-             realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) override;
+  bool solve(const DVec<double> &angle_init,
+             geometry_msgs::TransformStamped map2pitch,
+             double target_position_x, double target_position_y, double target_position_z,
+             double target_speed_x, double target_speed_y, double target_speed_z,
+             double bullet_speed) override;
   void modelRviz(double x_offset, double y_offset, double z_offset) override;
   geometry_msgs::TransformStamped getResult(const ros::Time &time);
   std::vector<Vec3<double>> getPointData3D();

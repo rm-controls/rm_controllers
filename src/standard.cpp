@@ -31,8 +31,8 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   map2gimbal_des_.child_frame_id = "gimbal_des";
 
   cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
-  cmd_sub_track_ = root_nh.subscribe<rm_msgs::GimbalTrackCmd>
-      ("cmd_gimbal_track", 1, &GimbalStandardController::cmdTrackCB, this);
+  cmd_sub_track_ =
+      root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &GimbalStandardController::detectionCB, this);
   bullet_solver_ = new Approx3DSolver(controller_nh);
   return true;
 }
@@ -40,16 +40,9 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
 void GimbalStandardController::update(const ros::Time &time, const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
 
-  if (!*cmd_msgs_type_rt_buffer_.readFromRT()) {
-    if (state_ != cmd_.mode) {
-      state_ = StandardState(cmd_.mode);
-      state_changed_ = true;
-    }
-  } else {
-    if (state_ != TRACK) {
-      state_ = TRACK;
-      state_changed_ = true;
-    }
+  if (state_ != cmd_.mode) {
+    state_ = StandardState(cmd_.mode);
+    state_changed_ = true;
   }
 
   if (state_ == PASSIVE)
@@ -92,15 +85,22 @@ void GimbalStandardController::track(const ros::Time &time) {
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter TRACK");
   }
-  geometry_msgs::TransformStamped map2pitch;
-  map2pitch = robot_state_handle_.lookupTransform("map", "link_pitch", ros::Time(0));
-
-  if (bullet_solver_->solve(angle_init_, map2pitch, cmd_track_rt_buffer_))
-    robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
-  else {
-    double roll{}, pitch{}, yaw{};
-    quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
-    setDes(time, yaw, pitch);
+  for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
+    if (detection.target_id == cmd_.target_id) {
+      geometry_msgs::TransformStamped
+          map2pitch = robot_state_handle_.lookupTransform("map", "link_pitch", ros::Time(0));
+      if (bullet_solver_->solve(angle_init_, map2pitch,
+                                detection.pose.pose.position.x,
+                                detection.pose.pose.position.y,
+                                detection.pose.pose.position.z,
+                                0, 0, 0, cmd_.bullet_speed))
+        robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
+      else {
+        double roll{}, pitch{}, yaw{};
+        quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
+        setDes(time, yaw, pitch);
+      }
+    }
   }
 }
 
@@ -133,11 +133,10 @@ void GimbalStandardController::moveJoint(const ros::Duration &period) {
 
 void GimbalStandardController::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
   cmd_rt_buffer_.writeFromNonRT(*msg);
-  cmd_msgs_type_rt_buffer_.writeFromNonRT(false);
 }
-void GimbalStandardController::cmdTrackCB(const rm_msgs::GimbalTrackCmdConstPtr &msg) {
-  cmd_track_rt_buffer_.writeFromNonRT(*msg);
-  cmd_msgs_type_rt_buffer_.writeFromNonRT(true);
+
+void GimbalStandardController::detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg) {
+  detection_rt_buffer_.writeFromNonRT(*msg);
 }
 
 } // namespace rm_gimbal_controllers
