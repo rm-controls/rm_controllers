@@ -68,15 +68,15 @@ rm_base:
     qd_15: 495.0
     qd_16: 498.0
     qd_30: 772.0
-    pid_fiction_l: { p: 0.001, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
-    pid_fiction_r: { p: 0.001, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    pid_fiction_l: { p: 0.002, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    pid_fiction_r: { p: 0.002, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     pid_trigger: { p: 7.4, i: 0.0, d: 0.22, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     publish_state: true
   gimbal_standard_controller:
     type: rm_gimbal_controllers/GimbalStandardController
     pid_yaw: { p: 6, i: 0.08, d: 0.08 ,i_clamp_max: 0.2, i_clamp_min: -0.2, antiwindup: true, publish_state: true }
     pid_pitch: { p: 10, i: 7.0, d: 0.08 ,i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
-    resistance_coff: 0.35
+    resistance_coff: 0.65
     g: 9.81
     delay: 0.2
     dt: 0.001
