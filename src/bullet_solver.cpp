@@ -122,7 +122,7 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init, geometry_msgs::Transf
 
   int count = 0;
   double error = 999999;
-  while (error >= 0.00001) {
+  while (error >= 0.001) {
     error = computeError(yaw_solved_, pitch_solved_, error_theta_z);
     yaw_solved_ = yaw_solved_ + error_theta_z[0];
     temp_z = temp_z + error_theta_z[1];
