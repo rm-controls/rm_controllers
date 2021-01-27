@@ -12,21 +12,33 @@ rm_base:
       id: 0x201
       type: rm_3508
       lp_cutoff_frequency: 100
+      wc: 200
+      ts: 0.005
+      lp_debug: true
     actuator_lf:
       bus: can0
       id: 0x202
       type: rm_3508
       lp_cutoff_frequency: 100
+      wc: 200
+      ts: 0.005
+      lp_debug: true
     actuator_lb:
       bus: can0
       id: 0x203
       type: rm_3508
       lp_cutoff_frequency: 100
+      wc: 200
+      ts: 0.005
+      lp_debug: true
     actuator_rb:
       bus: can0
       id: 0x204
       type: rm_3508
       lp_cutoff_frequency: 100
+      wc: 200
+      ts: 0.005
+      lp_debug: true
 
   robot_state_controller:
     type: robot_state_controller/RobotStateController
