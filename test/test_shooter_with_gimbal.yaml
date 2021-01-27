@@ -74,9 +74,9 @@ rm_base:
     publish_state: true
   gimbal_standard_controller:
     type: rm_gimbal_controllers/GimbalStandardController
-    pid_yaw: { p: 6, i: 0.08, d: 0.08 ,i_max: 0.2, i_min: -0.2, antiwindup: true, publish_state: true }
-    pid_pitch: { p: 10, i: 0.1, d: 0.08 ,i_max: 0.2, i_min: -0.2, antiwindup: true, publish_state: true }
-    resistance_coff: 0.4
+    pid_yaw: { p: 6, i: 0.08, d: 0.08 ,i_clamp_max: 0.2, i_clamp_min: -0.2, antiwindup: true, publish_state: true }
+    pid_pitch: { p: 10, i: 7.0, d: 0.08 ,i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
+    resistance_coff: 0.35
     g: 9.81
     delay: 0.2
     dt: 0.001
