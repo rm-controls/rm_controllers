@@ -10,7 +10,7 @@
         <parent link="map"/>
         <child link="link_yaw"/>
         <axis xyz="0 0 1"/>
-        <origin xyz="0 0 0.12"/>
+        <origin xyz="0 0 0.16"/>
     </joint>
     <joint name="joint_pitch" type="continuous">
         <parent link="link_yaw"/>
