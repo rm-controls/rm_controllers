@@ -1,0 +1,84 @@
+rm_base:
+  bus:
+    - can1
+
+  loop_frequency: 1000
+  cycle_time_error_threshold: 0.001
+
+  # Configurations of the actuators
+  actuators:
+    actuator_yaw:
+      bus: can1
+      id: 0x205
+      type: rm_6020
+      lp_cutoff_frequency: 100
+      wc: 200
+      ts: 0.001
+      lp_debug: true
+
+    actuator_pitch:
+      bus: can1
+      id: 0x206
+      type: rm_6020
+      lp_cutoff_frequency: 100
+      wc: 200
+      ts: 0.001
+
+    actuator_fiction_left:
+      bus: can1
+      id: 0x201
+      type: rm_3508_dir
+      lp_cutoff_frequency: 100
+      wc: 200
+      ts: 0.001
+      lp_debug: true
+
+    actuator_fiction_right:
+      bus: can1
+      id: 0x202
+      type: rm_3508_dir
+      lp_cutoff_frequency: 100
+      wc: 200
+      ts: 0.001
+      lp_debug: true
+
+    actuator_trigger:
+      bus: can1
+      id: 0x203
+      type: rm_2006
+      lp_cutoff_frequency: 200
+      wc: 200
+      ts: 0.001
+
+  robot_state_controller:
+    type: robot_state_controller/RobotStateController
+    publish_rate: 100
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50
+  shooter_standard_controller:
+    type: rm_shooter_controllers/ShooterStandardController
+    push_angle: 0.8
+    block_effort: 1.2
+    block_duration: 0.05
+    block_speed: 0.5
+    anti_block_angle: 0.35
+    anti_block_error: 0.1
+    qd_10: 370.0
+    qd_15: 495.0
+    qd_16: 498.0
+    qd_30: 772.0
+    pid_fiction_l: { p: 0.002, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    pid_fiction_r: { p: 0.002, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    pid_trigger: { p: 7.4, i: 0.0, d: 0.22, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    publish_state: true
+  gimbal_standard_controller:
+    type: rm_gimbal_controllers/GimbalStandardController
+    pid_yaw: { p: 6, i: 0.08, d: 0.08 ,i_clamp_max: 0.2, i_clamp_min: -0.2, antiwindup: true, publish_state: true }
+    pid_pitch: { p: 10, i: 7.0, d: 0.08 ,i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
+    resistance_coff: 0.65
+    g: 9.81
+    delay: 0.2
+    dt: 0.001
+    timeout: 0.001
+    publish_rate: 50

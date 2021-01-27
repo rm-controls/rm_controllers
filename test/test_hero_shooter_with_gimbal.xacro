@@ -1,0 +1,110 @@
+<robot name="test_robot">
+  <link name="map"/>
+  <link name="link_yaw"/>
+  <link name="link_pitch"/>
+  <link name="link_fiction_left"/>
+  <link name="link_fiction_right"/>
+  <link name="link_trigger"/>
+
+  <joint name="joint_yaw" type="continuous">
+    <parent link="map"/>
+    <child link="link_yaw"/>
+    <axis xyz="0 0 1"/>
+    <origin xyz="0 0 0.185"/>
+  </joint>
+  <joint name="joint_pitch" type="continuous">
+    <parent link="link_yaw"/>
+    <child link="link_pitch"/>
+    <axis xyz="0 1 0"/>
+    <origin xyz="0 0 0.285"/>
+    <!--    <limit lower="0.0" upper="6.0" effort="1000" velocity="1000.00"/>-->
+  </joint>
+
+  <joint name="joint_fiction_left" type="continuous">
+    <parent link="link_pitch"/>
+    <child link="link_fiction_left"/>
+    <axis xyz="0 1 0"/>
+    <origin xyz="0 0 0.25"/>
+    <!--<limit upper="6.28" lower="-6.28" effort="1000" velocity="1000.00"/>-->
+  </joint>
+
+  <joint name="joint_fiction_right" type="continuous">
+    <parent link="link_pitch"/>
+    <child link="link_fiction_right"/>
+    <axis xyz="0 1 0"/>
+    <origin xyz="0 0 0.25"/>
+    <!--<limit upper="6.28" lower="-6.28" effort="1000" velocity="1000.00"/>-->
+  </joint>
+
+  <joint name="joint_trigger" type="continuous">
+    <parent link="link_pitch"/>
+    <child link="link_trigger"/>
+    <axis xyz="0 1 0"/>
+    <origin xyz="0 0 0.25"/>
+    <!--<limit upper="6.28" lower="-6.28" effort="1000" velocity="1000.00"/>-->
+  </joint>
+
+  <transmission name="yaw_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_yaw">
+      <offset>0.901</offset>
+      <hardwareInterface>hardware_interface/EffortJointInterface
+      </hardwareInterface>
+    </joint>
+    <actuator name="actuator_yaw">
+      <mechanicalReduction>1</mechanicalReduction>
+      <hardwareInterface>hardware_interface/EffortJointInterface
+      </hardwareInterface>
+    </actuator>
+  </transmission>
+  <transmission name="pitch_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_pitch">
+      <offset>-2.3</offset>
+      <hardwareInterface>hardware_interface/EffortJointInterface
+      </hardwareInterface>
+    </joint>
+    <actuator name="actuator_pitch">
+      <mechanicalReduction>1</mechanicalReduction>
+      <hardwareInterface>hardware_interface/EffortJointInterface
+      </hardwareInterface>
+    </actuator>
+  </transmission>
+
+  <transmission name="fiction_left_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_fiction_left">
+      <hardwareInterface>hardware_interface/EffortJointInterface
+      </hardwareInterface>
+    </joint>
+    <actuator name="actuator_fiction_left">
+      <mechanicalReduction>1</mechanicalReduction>
+      <hardwareInterface>hardware_interface/EffortJointInterface
+      </hardwareInterface>
+    </actuator>
+  </transmission>
+  <transmission name="fiction_right_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_fiction_right">
+      <hardwareInterface>hardware_interface/EffortJointInterface
+      </hardwareInterface>
+    </joint>
+    <actuator name="actuator_fiction_right">
+      <mechanicalReduction>-1</mechanicalReduction>
+      <hardwareInterface>hardware_interface/EffortJointInterface
+      </hardwareInterface>
+    </actuator>
+  </transmission>
+  <transmission name="trigger_trans">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="joint_trigger">
+      <hardwareInterface>hardware_interface/EffortJointInterface
+      </hardwareInterface>
+    </joint>
+    <actuator name="actuator_trigger">
+      <mechanicalReduction>1</mechanicalReduction>
+      <hardwareInterface>hardware_interface/EffortJointInterface
+      </hardwareInterface>
+    </actuator>
+  </transmission>
+</robot>
