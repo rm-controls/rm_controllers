@@ -16,7 +16,7 @@
     <parent link="link_yaw"/>
     <child link="link_pitch"/>
     <axis xyz="0 1 0"/>
-    <origin xyz="0 0 0.285"/>
+    <origin xyz="0 0 0.315"/>
     <!--    <limit lower="0.0" upper="6.0" effort="1000" velocity="1000.00"/>-->
   </joint>
 
@@ -60,7 +60,7 @@
   <transmission name="pitch_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="joint_pitch">
-      <offset>-2.3</offset>
+      <offset>-2.426</offset>
       <hardwareInterface>hardware_interface/EffortJointInterface
       </hardwareInterface>
     </joint>
