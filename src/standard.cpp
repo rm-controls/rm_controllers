@@ -86,13 +86,26 @@ void GimbalStandardController::track(const ros::Time &time) {
     ROS_INFO("[Gimbal] Enter TRACK");
   }
   for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
-    if (detection.target_id == cmd_.target_id) {
-      geometry_msgs::TransformStamped
-          map2pitch = robot_state_handle_.lookupTransform("map", "link_pitch", ros::Time(0));
+    if (detection.id == cmd_.target_id) {
+      geometry_msgs::TransformStamped map2pitch, map2detection;
+      try {
+        map2pitch = robot_state_handle_.lookupTransform("map", "link_pitch", ros::Time(0));
+        geometry_msgs::TransformStamped camera2detection;
+        camera2detection.transform.translation.x = detection.pose.pose.position.x;
+        camera2detection.transform.translation.y = detection.pose.pose.position.y;
+        camera2detection.transform.translation.z = detection.pose.pose.position.z;
+        camera2detection.header.stamp = detection_rt_buffer_.readFromRT()->header.stamp;
+        camera2detection.header.frame_id = "camera";
+        camera2detection.child_frame_id = "detection" + std::to_string(detection.id);
+        robot_state_handle_.setTransform(camera2detection, "rm_gimbal_controller");
+        map2detection = robot_state_handle_.lookupTransform("map", "detection", ros::Time(0));
+      }
+      catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+
       if (bullet_solver_->solve(angle_init_, map2pitch,
-                                detection.pose.pose.position.x,
-                                detection.pose.pose.position.y,
-                                detection.pose.pose.position.z,
+                                map2detection.transform.translation.x,
+                                map2detection.transform.translation.y,
+                                map2detection.transform.translation.z,
                                 0, 0, 0, cmd_.bullet_speed))
         robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
       else {
