@@ -27,7 +27,7 @@ class BulletSolver {
 
     map2gimbal_des_.header.frame_id = "map";
     map2gimbal_des_.child_frame_id = "gimbal_des";
-    controller_nh.param("publish_rate", publish_rate_, 50.0);
+    controller_nh.param("publish_rate_model", publish_rate_, 50.0);
 
     // init config
     config_ = {.resistance_coff_qd_10 = getParam(controller_nh, "resistance_coff_qd_10", 0.),

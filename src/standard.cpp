@@ -30,9 +30,12 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   map2gimbal_des_.header.frame_id = "map";
   map2gimbal_des_.child_frame_id = "gimbal_des";
 
+  controller_nh.param("publish_rate_error", publish_rate_, 100.0);
+
   cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
   cmd_sub_track_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &GimbalStandardController::detectionCB, this);
+  error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
   bullet_solver_ = new Approx3DSolver(controller_nh);
   return true;
 }
@@ -83,6 +86,8 @@ void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &
 void GimbalStandardController::track(const ros::Time &time) {
   if (state_changed_) { //on enter
     state_changed_ = false;
+    error_yaw_ = 999;
+    error_pitch_ = 999;
     ROS_INFO("[Gimbal] Enter TRACK");
   }
   for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
@@ -93,12 +98,28 @@ void GimbalStandardController::track(const ros::Time &time) {
                                 detection.pose.pose.position.x,
                                 detection.pose.pose.position.y,
                                 detection.pose.pose.position.z,
-                                0, 0, 0, cmd_.bullet_speed))
+                                0, 0, 0, cmd_.bullet_speed)) {
         robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
-      else {
+        if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
+          if (error_pub_->trylock()) {
+            error_pub_->msg_.error_pitch = error_pitch_;
+            error_pub_->msg_.error_yaw = error_yaw_;
+            error_pub_->unlockAndPublish();
+          }
+          last_publish_time_ = time;
+        }
+      } else {
         double roll{}, pitch{}, yaw{};
         quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
         setDes(time, yaw, pitch);
+        if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
+          if (error_pub_->trylock()) {
+            error_pub_->msg_.error_pitch = 999;
+            error_pub_->msg_.error_yaw = 999;
+            error_pub_->unlockAndPublish();
+          }
+          last_publish_time_ = time;
+        }
       }
     }
   }
