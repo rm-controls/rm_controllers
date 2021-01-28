@@ -123,10 +123,10 @@ void GimbalStandardController::moveJoint(const ros::Duration &period) {
   }
   double roll_des, pitch_des, yaw_des;  // desired position
   quatToRPY(pitch2des.transform.rotation, roll_des, pitch_des, yaw_des);
-  double yaw_error = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
-  double pitch_error = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
-  pid_yaw_.computeCommand(yaw_error, period);
-  pid_pitch_.computeCommand(pitch_error, period);
+  error_yaw_ = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
+  error_pitch_ = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
+  pid_yaw_.computeCommand(error_yaw_, period);
+  pid_pitch_.computeCommand(error_pitch_, period);
   joint_yaw_.setCommand(pid_yaw_.getCurrentCmd());
   joint_pitch_.setCommand(pid_pitch_.getCurrentCmd());
 }

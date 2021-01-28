@@ -57,6 +57,8 @@ class GimbalStandardController :
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> detection_rt_buffer_;
   rm_msgs::GimbalCmd cmd_;
+  double error_yaw_;
+  double error_pitch_;
 
 };
 }

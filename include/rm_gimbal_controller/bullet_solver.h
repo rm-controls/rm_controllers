@@ -17,7 +17,8 @@
 #include <ros_utilities.h>
 
 struct Config {
-  double resistance_coff, g, delay, dt, timeout;
+  double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
+      resistance_coff_qd_30, g, delay, dt, timeout;
 };
 
 class BulletSolver {
@@ -29,7 +30,11 @@ class BulletSolver {
     controller_nh.param("publish_rate", publish_rate_, 50.0);
 
     // init config
-    config_ = {.resistance_coff = getParam(controller_nh, "resistance_coff", 0.),
+    config_ = {.resistance_coff_qd_10 = getParam(controller_nh, "resistance_coff_qd_10", 0.),
+        .resistance_coff_qd_15 = getParam(controller_nh, "resistance_coff_qd_15", 0.),
+        .resistance_coff_qd_16 = getParam(controller_nh, "resistance_coff_qd_16", 0.),
+        .resistance_coff_qd_18 = getParam(controller_nh, "resistance_coff_qd_18", 0.),
+        .resistance_coff_qd_30 = getParam(controller_nh, "resistance_coff_qd_30", 0.),
         .g = getParam(controller_nh, "g", 0.),
         .delay = getParam(controller_nh, "delay", 0.),
         .dt = getParam(controller_nh, "dt", 0.),
@@ -51,7 +56,11 @@ class BulletSolver {
     ROS_INFO("[Gimbal] Dynamic params change");
     if (!dynamic_reconfig_initialized_) {
       Config init_config = *config_rt_buffer_.readFromNonRT(); // config init use yaml
-      config.resistance_coff = init_config.resistance_coff;
+      config.resistance_coff_qd_10 = init_config.resistance_coff_qd_10;
+      config.resistance_coff_qd_15 = init_config.resistance_coff_qd_15;
+      config.resistance_coff_qd_16 = init_config.resistance_coff_qd_16;
+      config.resistance_coff_qd_18 = init_config.resistance_coff_qd_18;
+      config.resistance_coff_qd_30 = init_config.resistance_coff_qd_30;
       config.g = init_config.g;
       config.delay = init_config.delay;
       config.dt = init_config.dt;
@@ -59,7 +68,11 @@ class BulletSolver {
       dynamic_reconfig_initialized_ = true;
     }
     Config config_non_rt{
-        .resistance_coff=config.resistance_coff,
+        .resistance_coff_qd_10=config.resistance_coff_qd_10,
+        .resistance_coff_qd_15=config.resistance_coff_qd_15,
+        .resistance_coff_qd_16=config.resistance_coff_qd_16,
+        .resistance_coff_qd_18=config.resistance_coff_qd_18,
+        .resistance_coff_qd_30=config.resistance_coff_qd_30,
         .g = config.g,
         .delay = config.delay,
         .dt=config.dt,
@@ -72,6 +85,7 @@ class BulletSolver {
                      double target_speed_x, double target_speed_y, double target_speed_z,
                      double bullet_speed) = 0;
   virtual void modelRviz(double x_offset, double y_offset, double z_offset) = 0;
+  void setResistanceCoefficient(double bullet_speed, Config config);
 
  protected:
   double bullet_speed_{};
@@ -83,6 +97,7 @@ class BulletSolver {
   bool dynamic_reconfig_initialized_ = false;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   Config config_{};
+  double resistance_coff_{};
 };
 
 class Bullet3DSolver : public BulletSolver {
