@@ -48,8 +48,8 @@ rm_base:
       id: 0x203
       type: rm_2006
       lp_cutoff_frequency: 200
-      wc: 200
-      ts: 0.005
+      wc: 300
+      ts: 0.001
       lp_debug: true
 
   robot_state_controller:
