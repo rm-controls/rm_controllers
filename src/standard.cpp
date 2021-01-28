@@ -98,7 +98,8 @@ void GimbalStandardController::track(const ros::Time &time) {
         camera2detection.header.frame_id = "camera";
         camera2detection.child_frame_id = "detection" + std::to_string(detection.id);
         robot_state_handle_.setTransform(camera2detection, "rm_gimbal_controller");
-        map2detection = robot_state_handle_.lookupTransform("map", "detection", ros::Time(0));
+        map2detection =
+            robot_state_handle_.lookupTransform("map", "detection" + std::to_string(detection.id), ros::Time(0));
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
