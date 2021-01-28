@@ -4,10 +4,10 @@
               command="load" ns="rm_base"/>
 
     <rosparam
-            file="$(find rm_shooter_controllers)/test/hero/test_hero_shooter_with_gimbal.yaml"
+            file="$(find rm_shooter_controllers)/test/test_sentry_shooter_with_gimbal.yaml"
             command="load"/>
     <rosparam
-            file="$(find rm_shooter_controllers)/test/test_shooter_with_gimbal.xacro"
+            file="$(find rm_shooter_controllers)/test/test_sentry_shooter_with_gimbal.xacro"
             command="load" ns="robot_description"/>
 
     <node pkg="tf" type="static_transform_publisher" name=""
