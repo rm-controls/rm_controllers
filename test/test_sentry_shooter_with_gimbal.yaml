@@ -60,14 +60,14 @@ rm_base:
     publish_rate: 50
   shooter_standard_controller:
     type: rm_shooter_controllers/ShooterStandardController
-    push_angle: 0.8
+    push_angle: 0.785
     block_effort: 1.2
     block_duration: 0.05
     block_speed: 0.5
-    anti_block_angle: 0.35
+    anti_block_angle: 0.25
     anti_block_error: 0.1
     qd_10: 388.0
-    qd_15: 492.0
+    qd_15: 470.0
     qd_16: 498.0
     qd_18: 540.0
     qd_30: 772.0
