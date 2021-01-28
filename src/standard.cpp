@@ -29,7 +29,7 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
 
   map2gimbal_des_.header.frame_id = "map";
   map2gimbal_des_.child_frame_id = "gimbal_des";
-
+  map2gimbal_des_.transform.rotation.w = 1.;
   controller_nh.param("publish_rate_error", publish_rate_, 100.0);
 
   cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
@@ -109,9 +109,9 @@ void GimbalStandardController::track(const ros::Time &time) {
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
       if (bullet_solver_->solve(angle_init_, map2pitch,
-                                detection.pose.pose.position.x,
-                                detection.pose.pose.position.y,
-                                detection.pose.pose.position.z,
+                                map2detection.transform.translation.x,
+                                map2detection.transform.translation.y,
+                                map2detection.transform.translation.z,
                                 0, 0, 0, cmd_.bullet_speed)) {
         robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
         if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
@@ -135,8 +135,12 @@ void GimbalStandardController::track(const ros::Time &time) {
           last_publish_time_ = time;
         }
       }
+      return;
     }
   }
+  // Update des(tf_buffer only 1.0s)
+  map2gimbal_des_.header.stamp = time;
+  robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
 }
 
 void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
@@ -148,16 +152,16 @@ void GimbalStandardController::setDes(const ros::Time &time, double yaw, double 
 }
 
 void GimbalStandardController::moveJoint(const ros::Duration &period) {
-  geometry_msgs::TransformStamped pitch2des;
+  geometry_msgs::TransformStamped base2des;
   try {
-    pitch2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
+    base2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
     return;
   }
   double roll_des, pitch_des, yaw_des;  // desired position
-  quatToRPY(pitch2des.transform.rotation, roll_des, pitch_des, yaw_des);
+  quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
   error_yaw_ = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
   error_pitch_ = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
   pid_yaw_.computeCommand(error_yaw_, period);
