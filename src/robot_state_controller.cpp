@@ -139,5 +139,4 @@ void RobotStateController::addChildren(const KDL::SegmentMap::const_iterator seg
 }
 }
 
-PLUGINLIB_EXPORT_CLASS(robot_state_controller::RobotStateController, controller_interface::ControllerBase
-)
+PLUGINLIB_EXPORT_CLASS(robot_state_controller::RobotStateController, controller_interface::ControllerBase)

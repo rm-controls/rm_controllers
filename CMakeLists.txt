@@ -16,6 +16,7 @@ find_package(catkin REQUIRED
     roslint
 
     hardware_interface
+    controller_interface
     realtime_tools
     tf2_ros
     kdl_parser
@@ -39,6 +40,7 @@ catkin_package(
     roscpp
     roslint
     hardware_interface
+    controller_interface
     realtime_tools
     tf2_ros
     kdl_parser
