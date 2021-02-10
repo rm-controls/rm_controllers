@@ -12,7 +12,7 @@
 #include <visualization_msgs/Marker.h>
 #include <rm_gimbal_controllers/GimbalConfig.h>
 #include <dynamic_reconfigure/server.h>
-#include <rm_base/hardware_interface/robot_state_interface.h>
+#include <robot_state_controller/robot_state_interface.h>
 #include "cpp_types.h"
 #include <ros_utilities.h>
 

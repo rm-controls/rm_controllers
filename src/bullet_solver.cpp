@@ -4,7 +4,6 @@
 
 #include "rm_gimbal_controller/bullet_solver.h"
 #include <cmath>
-#include <rm_base/hardware_interface/robot_state_interface.h>
 #include <tf/transform_datatypes.h>
 ///////////////////////////BulletSolver/////////////////////////////
 
