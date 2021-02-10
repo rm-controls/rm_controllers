@@ -15,9 +15,10 @@
 
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>
-  <depend>realtime_tools</depend>
+  <depend>urdf</depend>
   <depend>kdl_parser</depend>
   <depend>tf2_ros</depend>
+  <depend>realtime_tools</depend>
   <depend>pluginlib</depend>
 
   <export>

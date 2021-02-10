@@ -17,9 +17,10 @@ find_package(catkin REQUIRED
 
     hardware_interface
     controller_interface
-    realtime_tools
+    urdf
     tf2_ros
     kdl_parser
+    realtime_tools
     )
 
 ###################################
@@ -39,11 +40,13 @@ catkin_package(
     CATKIN_DEPENDS
     roscpp
     roslint
+
     hardware_interface
     controller_interface
-    realtime_tools
+    urdf
     tf2_ros
     kdl_parser
+    realtime_tools
     DEPENDS
 )
 

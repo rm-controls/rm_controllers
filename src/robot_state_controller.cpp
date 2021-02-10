@@ -1,7 +1,6 @@
 //
 // Created by qiayuan on 1/3/21.
 //
-#include <urdf/model.h>
 #include <kdl/tree.hpp>
 #include <kdl_parser/kdl_parser.hpp>
 #include <tf2_kdl/tf2_kdl.h>
@@ -21,8 +20,10 @@ bool RobotStateController::init(hardware_interface::RobotHW *robot_hw,
   double duration;
   controller_nh.param("buffer_duration", duration, 1.);
 
-  if (!model_.initParam("robot_description"))
+  if (!model_.initParam("robot_description")) {
+    ROS_ERROR("Failed to init URDF from robot description");
     return false;
+  }
   KDL::Tree tree;
   if (!kdl_parser::treeFromUrdfModel(model_, tree)) {
     ROS_ERROR("Failed to extract kdl tree from xml robot description");
@@ -44,11 +45,9 @@ bool RobotStateController::init(hardware_interface::RobotHW *robot_hw,
 
   tf_broadcaster_.init(root_nh);
   static_tf_broadcaster_.init(root_nh);
-
   tf_buffer_ = new tf2_ros::Buffer(ros::Duration(duration));
   tf_listener_ = new tf2_ros::TransformListener(*tf_buffer_);
-  hardware_interface::RobotStateHandle
-      robot_state_handle("robot_state", tf_buffer_);
+  hardware_interface::RobotStateHandle robot_state_handle("robot_state", tf_buffer_);
   robot_hw->get<hardware_interface::RobotStateInterface>()->registerHandle(robot_state_handle);
 
   return true;
