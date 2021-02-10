@@ -1,57 +1,16 @@
-rm_base:
-  bus:
-    - can0
-
-  loop_frequency: 1000
-  cycle_time_error_threshold: 0.001
-
-  # Configurations of the actuators
-  actuators:
-    actuator_rf:
-      bus: can0
-      id: 0x201
-      type: rm_3508
-      lp_cutoff_frequency: 100
-      wc: 900
-      ts: 0.001
-      lp_debug: true
-    actuator_lf:
-      bus: can0
-      id: 0x202
-      type: rm_3508
-      lp_cutoff_frequency: 100
-      wc: 900
-      ts: 0.001
-      lp_debug: true
-    actuator_lb:
-      bus: can0
-      id: 0x203
-      type: rm_3508
-      lp_cutoff_frequency: 100
-      wc: 900
-      ts: 0.001
-      lp_debug: true
-    actuator_rb:
-      bus: can0
-      id: 0x204
-      type: rm_3508
-      lp_cutoff_frequency: 100
-      wc: 900
-      ts: 0.001
-      lp_debug: true
-
+controllers:
   robot_state_controller:
     type: robot_state_controller/RobotStateController
-    publish_rate: 100
+    publish_rate: 50
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
   chassis_standard_controller:
     type: rm_chassis_controllers/ChassisStandardController
-    joint_rf_name: "joint_rf"
-    joint_rb_name: "joint_rb"
-    joint_lf_name: "joint_lf"
-    joint_lb_name: "joint_lb"
+    joint_lf_name: "front_left_wheel_joint"
+    joint_rf_name: "front_right_wheel_joint"
+    joint_lb_name: "back_left_wheel_joint"
+    joint_rb_name: "back_right_wheel_joint"
     publish_rate_: 100
     wheel_base: 0.38
     wheel_track: 0.39
