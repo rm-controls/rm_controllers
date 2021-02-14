@@ -25,9 +25,8 @@ enum StandardState {
   GYRO,
 };
 
-class ChassisStandardController :
-    public controller_interface::MultiInterfaceController<
-        hardware_interface::EffortJointInterface, hardware_interface::RobotStateInterface> {
+class ChassisStandardController : public controller_interface::MultiInterfaceController
+    <hardware_interface::EffortJointInterface, hardware_interface::RobotStateInterface> {
  public:
   ChassisStandardController() = default;
   bool init(hardware_interface::RobotHW *robot_hw,
@@ -52,7 +51,7 @@ class ChassisStandardController :
   hardware_interface::JointHandle joint_rf_, joint_lf_, joint_rb_, joint_lb_;
   hardware_interface::RobotStateHandle robot_state_handle_{};
 
-  double publish_rate_{}, wheel_base_{}, wheel_track_{}, wheel_radius_{}, current_coeff_{};
+  double publish_rate_{}, wheel_base_{}, wheel_track_{}, wheel_radius_{};
   ros::Time last_publish_time_;
   geometry_msgs::TransformStamped odom2base_{};
   geometry_msgs::Vector3Stamped vel_cmd_{};
