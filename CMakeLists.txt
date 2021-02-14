@@ -117,11 +117,11 @@ target_link_libraries(${PROJECT_NAME}
 #############
 
 if (${CATKIN_ENABLE_TESTING})
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
   ## Add gtest based cpp test target and link libraries
-  catkin_add_gtest(${PROJECT_NAME}-test
+  add_rostest_gtest(standard_chassis_test
+      test/test_standard_chassis.test
       test/test_standard_chassis.cpp)
-  target_link_libraries(${PROJECT_NAME}-test ${catkin_LIBRARIES})
+  target_link_libraries(standard_chassis_test ${catkin_LIBRARIES})
 endif ()
 
 ##########################

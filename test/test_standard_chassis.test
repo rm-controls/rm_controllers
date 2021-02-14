@@ -1,0 +1,11 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find rm_chassis_controllers)/test/test_standard_chassis.launch"/>
+
+  <!-- Controller test -->
+  <test test-name="standard_chassis_test"
+        pkg="rm_chassis_controllers"
+        type="standard_chassis_test"
+        time-limit="80.0">
+  </test>
+</launch>
