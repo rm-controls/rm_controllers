@@ -87,10 +87,10 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
   tf_broadcaster_.init(root_nh);
   tf_broadcaster_.sendTransform(odom2base_);
 
-  chassis_cmd_subscriber_ =
-      root_nh.subscribe<rm_msgs::ChassisCmd>("cmd_chassis", 1, &ChassisStandardController::commandCB, this);
-  vel_cmd_subscriber_ =
-      root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisStandardController::velCmdCB, this);
+  cmd_chassis_sub_ =
+      root_nh.subscribe<rm_msgs::ChassisCmd>("cmd_chassis", 1, &ChassisStandardController::cmdChassisCallback, this);
+  cmd_vel_sub_ =
+      root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisStandardController::cmdVelCallback, this);
 
   return true;
 }
@@ -301,11 +301,11 @@ void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Dur
     robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 }
 
-void ChassisStandardController::commandCB(const rm_msgs::ChassisCmdConstPtr &msg) {
+void ChassisStandardController::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg) {
   chassis_rt_buffer_.writeFromNonRT(*msg);
 }
 
-void ChassisStandardController::velCmdCB(const geometry_msgs::Twist::ConstPtr &cmd) {
+void ChassisStandardController::cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd) {
   vel_rt_buffer_.writeFromNonRT(*cmd);
 }
 

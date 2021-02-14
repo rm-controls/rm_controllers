@@ -23,7 +23,6 @@ enum StandardState {
   FOLLOW,
   TWIST,
   GYRO,
-//  FLY,
 };
 
 class ChassisStandardController :
@@ -43,8 +42,8 @@ class ChassisStandardController :
   void tfVelFromYawToBase(const ros::Time &time);
   void recovery();
   void moveJoint(const ros::Duration &period);
-  void commandCB(const rm_msgs::ChassisCmdConstPtr &msg);
-  void velCmdCB(const geometry_msgs::Twist::ConstPtr &cmd);
+  void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
+  void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd);
   void updateOdom(const ros::Time &time, const ros::Duration &period);
   geometry_msgs::Twist iKine();
 
@@ -63,8 +62,8 @@ class ChassisStandardController :
 
   bool state_changed_{};
   StandardState state_ = PASSIVE;
-  ros::Subscriber chassis_cmd_subscriber_;
-  ros::Subscriber vel_cmd_subscriber_;
+  ros::Subscriber cmd_chassis_sub_;
+  ros::Subscriber cmd_vel_sub_;
   realtime_tools::RealtimeBuffer<rm_msgs::ChassisCmd> chassis_rt_buffer_;
   realtime_tools::RealtimeBuffer<geometry_msgs::Twist> vel_rt_buffer_;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
@@ -72,4 +71,5 @@ class ChassisStandardController :
   robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
 };
 }
-#endif //RM_CHASSIS_CONTROLLER_STANDARD_H
+
+#endif // RM_CHASSIS_CONTROLLER_STANDARD_H
