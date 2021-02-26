@@ -19,6 +19,7 @@ find_package(catkin REQUIRED
     controller_interface
     urdf
     tf2_ros
+    tf2_kdl
     kdl_parser
     realtime_tools
     )
