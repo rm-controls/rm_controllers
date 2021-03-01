@@ -1,10 +1,4 @@
 controllers:
-  robot_state_controller:
-    type: robot_state_controller/RobotStateController
-    publish_rate: 50
-  joint_state_controller:
-    type: joint_state_controller/JointStateController
-    publish_rate: 50
   chassis_standard_controller:
     type: rm_chassis_controllers/ChassisStandardController
     joint_lf_name: "front_left_wheel_joint"
@@ -15,7 +9,6 @@ controllers:
     wheel_base: 0.47
     wheel_track: 0.50
     wheel_radius: 0.07625
-    current_coeff: 1.
     pid_rf: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
     pid_rb: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
     pid_lf: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
@@ -24,3 +17,9 @@ controllers:
     pid_twist: { p: 0, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
     pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
     twist_covariance_diagonal: [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1.0]
+  robot_state_controller:
+    type: robot_state_controller/RobotStateController
+    publish_rate: 100
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 100
