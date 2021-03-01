@@ -1,11 +1,16 @@
 <launch>
   <!-- Load common test stuff -->
-  <include file="$(find rm_chassis_controllers)/test/test_standard_chassis.launch"/>
+  <include file="$(find rm_chassis_controllers)/launch/standard.launch">
+    <arg name="use_simulation" value="true"/>
+    <arg name="load_description" value="true"/>
+    <arg name="load_controller" value="true"/>
+    <arg name="odom_tf" value="true"/>
+  </include>
 
   <!-- Controller test -->
   <test test-name="standard_chassis_test"
         pkg="rm_chassis_controllers"
         type="standard_chassis_test"
-        time-limit="80.0">
+        time-limit="40.0">
   </test>
 </launch>
