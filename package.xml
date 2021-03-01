@@ -14,6 +14,7 @@
   <!-- depend: build, export, and execution dependency -->
   <depend>roscpp</depend>
   <depend>roslint</depend>
+  <depend>rostest</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
   <depend>rm_msgs</depend>
