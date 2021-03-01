@@ -240,6 +240,16 @@ void ChassisStandardController::twist(const ros::Time &time, const ros::Duration
   }
 
   tfVelFromYawToBase(time);
+  try {
+    double roll{}, pitch{}, yaw{};
+    quatToRPY(robot_state_handle_.lookupTransform("base_link", "link_yaw", time).transform.rotation, roll, pitch, yaw);
+    ros::Time now = ros::Time::now();
+    double t = now.toSec();
+    double follow_error = angles::shortest_angular_distance(yaw, 1 * sin(t) - yaw);
+    pid_follow_.computeCommand(follow_error, period);
+    vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
+  }
+  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }
 
 void ChassisStandardController::gyro(const ros::Time &time) {
