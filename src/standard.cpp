@@ -8,7 +8,6 @@
 #include <angles/angles.h>
 #include <ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
-
 #include "rm_gimbal_controller/standard.h"
 
 namespace rm_gimbal_controllers {
@@ -28,27 +27,38 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
       !pid_pitch_.init(ros::NodeHandle(controller_nh, "pid_pitch")))
     return false;
 
-  world2pitch_des_.header.frame_id = "world";
-  world2pitch_des_.child_frame_id = "gimbal_des";
+  map2gimbal_des_.header.frame_id = "map";
+  map2gimbal_des_.child_frame_id = "gimbal_des";
 
   cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
+  cmd_sub_track_ = root_nh.subscribe<rm_msgs::GimbalTrackCmd>
+      ("cmd_gimbal_track", 1, &GimbalStandardController::cmdTrackCB, this);
+  bullet_solver_ = new Approx3DSolver(controller_nh);
   return true;
 }
 
 void GimbalStandardController::update(const ros::Time &time, const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
 
-  if (state_ != cmd_.mode) {
-    state_ = StandardState(cmd_.mode);
-    state_changed_ = true;
+  if (!*cmd_msgs_type_rt_buffer_.readFromRT()) {
+    if (state_ != cmd_.mode) {
+      state_ = StandardState(cmd_.mode);
+      state_changed_ = true;
+    }
+  } else {
+    if (state_ != TRACK) {
+      state_ = TRACK;
+      state_changed_ = true;
+    }
   }
+
   if (state_ == PASSIVE)
     passive();
   else {
     if (state_ == RATE)
       rate(time, period);
     else if (state_ == TRACK)
-      track();
+      track(time);
     moveJoint(period);
   }
 }
@@ -65,32 +75,41 @@ void GimbalStandardController::passive() {
 }
 
 void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &period) {
-  if (state_changed_) {
-    //on enter
+  if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
   }
+
   double roll{}, pitch{}, yaw{};
-  quatToRPY(world2pitch_des_.transform.rotation, roll, pitch, yaw);
+  quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
   setDes(time,
          yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_yaw,
          pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
 }
 
-void GimbalStandardController::track() {
+void GimbalStandardController::track(const ros::Time &time) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter TRACK");
   }
-  //TODO(qiayuan) add bullet solver
+  geometry_msgs::TransformStamped map2pitch;
+  map2pitch = robot_state_handle_.lookupTransform("map", "link_pitch", ros::Time(0));
+
+  if (bullet_solver_->solve(angle_init_, map2pitch, cmd_track_rt_buffer_))
+    robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
+  else {
+    double roll{}, pitch{}, yaw{};
+    quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
+    setDes(time, yaw, pitch);
+  }
 }
 
 void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
   //pitch = minAbs(pitch, M_PI_2 - 0.1); //avoid gimbal lock
-  world2pitch_des_.transform.rotation =
+  map2gimbal_des_.transform.rotation =
       tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
-  world2pitch_des_.header.stamp = time;
-  robot_state_handle_.setTransform(world2pitch_des_, "rm_gimbal_controller");
+  map2gimbal_des_.header.stamp = time;
+  robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
 }
 
 void GimbalStandardController::moveJoint(const ros::Duration &period) {
@@ -114,6 +133,11 @@ void GimbalStandardController::moveJoint(const ros::Duration &period) {
 
 void GimbalStandardController::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
   cmd_rt_buffer_.writeFromNonRT(*msg);
+  cmd_msgs_type_rt_buffer_.writeFromNonRT(false);
+}
+void GimbalStandardController::cmdTrackCB(const rm_msgs::GimbalTrackCmdConstPtr &msg) {
+  cmd_track_rt_buffer_.writeFromNonRT(*msg);
+  cmd_msgs_type_rt_buffer_.writeFromNonRT(true);
 }
 
 } // namespace rm_gimbal_controllers

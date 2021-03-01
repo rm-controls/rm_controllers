@@ -1,10 +1,10 @@
 <robot name="test_robot">
-  <link name="world"/>
+  <link name="map"/>
   <link name="link_yaw"/>
   <link name="link_pitch"/>
 
   <joint name="joint_yaw" type="continuous">
-    <parent link="world"/>
+    <parent link="map"/>
     <child link="link_yaw"/>
     <axis xyz="0 0 1"/>
   </joint>
@@ -19,7 +19,7 @@
   <transmission name="yaw_trans">
     <type>transmission_interface/SimpleTransmission</type>
     <joint name="joint_yaw">
-      <offset>-0.42189619999999994</offset>
+      <offset>0.0</offset>
       <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
     </joint>
     <actuator name="actuator_yaw">

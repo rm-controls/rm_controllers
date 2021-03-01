@@ -11,22 +11,27 @@ add_definitions(-Wall -Werror)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED
-    COMPONENTS
-    roscpp
-    roslint
+        COMPONENTS
+        roscpp
+        roslint
 
-    rm_msgs
-    rm_common
-    rm_base
+        rm_msgs
+        rm_common
+        rm_base
 
-    control_toolbox
-    angles
-    controller_interface
-    forward_command_controller
-    hardware_interface
-    pluginlib
-    realtime_tools
-    )
+        control_toolbox
+        angles
+        controller_interface
+        forward_command_controller
+        hardware_interface
+        pluginlib
+        realtime_tools
+        dynamic_reconfigure
+        )
+
+generate_dynamic_reconfigure_options(
+        cfg/Gimbal.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -65,19 +70,21 @@ catkin_package(
 
 ## Specify additional locations of header files
 include_directories(
-    include
-    ${catkin_INCLUDE_DIRS}
+        include
+        ${catkin_INCLUDE_DIRS}
 )
 
+## Declare a cpp library
+add_library(bullet_solver src/bullet_solver.cpp)
+add_library(${PROJECT_NAME} src/standard.cpp)
+
 ## Declare cpp executables
-add_library(${PROJECT_NAME}
-    src/standard.cpp
-    )
+add_executable(test_bullet_solver test/test_bullet_solver.cpp)
 
 ## Specify libraries to link executable targets against
-target_link_libraries(${PROJECT_NAME}
-    ${catkin_LIBRARIES}
-    )
+target_link_libraries(bullet_solver ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} bullet_solver ${catkin_LIBRARIES})
+target_link_libraries(test_bullet_solver bullet_solver ${catkin_LIBRARIES})
 
 #############
 ## Install ##
