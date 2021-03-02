@@ -1,12 +1,13 @@
 <launch>
-    <arg name="use_simulation" default="false"/>
+    <arg name="use_simulation" default="true"/>
     <arg name="load_description" default="true"/>
     <arg name="load_controller" default="true"/>
+    <arg name="base_link_tf" default="true"/>
 
     <rosparam file="$(find rm_gimbal_controllers)/config/standard.yaml" command="load"/>
 
-    <include if="$(arg load_description)" file="$(find rm_description)/launch/hero.launch">
-        <arg name="load_chassis" value="false"/>
+    <include if="$(arg load_description)" file="$(find rm_description)/launch/standard.launch">
+        <arg name="load_chassis" value="true"/>
         <arg name="load_gimbal" value="true"/>
         <arg name="load_shooter" value="false"/>
         <arg name="use_simulation" value="$(arg use_simulation)"/>
@@ -23,5 +24,8 @@
           controllers/joint_state_controller
           controllers/gimbal_standard_controller
     "/>
+
+    <node if="$(arg base_link_tf)" pkg="tf" type="static_transform_publisher" name=""
+          args="0 0 0 0 0 0 1 map base_link 100"/>
 
 </launch>
