@@ -7,7 +7,7 @@
   <rosparam file="$(find rm_chassis_controllers)/config/standard.yaml" command="load"/>
   <rosparam unless="use_simulation" file="$(find rm_base)/config/standard.yaml" command="load"/>
 
-  <include if="$(arg load_description)" file="$(find rm_description)/launch/hero.launch">
+  <include if="$(arg load_description)" file="$(find rm_description)/launch/standard.launch">
     <arg name="load_chassis" value="true"/>
     <arg name="load_gimbal" value="false"/>
     <arg name="load_shooter" value="false"/>
