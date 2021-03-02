@@ -1,9 +1,10 @@
 <launch>
-    <arg name="use_simulation" default="true"/>
+    <arg name="use_simulation" default="false"/>
     <arg name="load_description" default="true"/>
     <arg name="load_controller" default="true"/>
 
     <rosparam file="$(find rm_shooter_controllers)/config/hero.yaml" command="load"/>
+    <rosparam unless="$(arg use_simulation)" file="$(find rm_base)/config/hero.yaml" command="load"/>
 
     <include if="$(arg load_description)" file="$(find rm_description)/launch/hero.launch">
         <arg name="load_chassis" value="false"/>
@@ -14,6 +15,7 @@
         <arg name="roller_type" value="simple"/>
         <arg name="paused" value="false"/>
     </include>
+    <include unless="$(arg use_simulation)" file="$(find rm_base)/launch/rm_base.launch"/>
 
     <!-- load the controllers -->
     <node if="$(arg load_controller)" name="controller_spawner" pkg="controller_manager" type="spawner"
