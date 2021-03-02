@@ -18,7 +18,6 @@ find_package(catkin REQUIRED
     rm_msgs
     rm_common
     rm_base
-    robot_state_controller
 
     control_toolbox
     angles
@@ -54,7 +53,6 @@ catkin_package(
     rm_msgs
     rm_common
     rm_base
-    robot_state_controller
 
     control_toolbox
     angles
