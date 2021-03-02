@@ -5,7 +5,7 @@
   <arg name="odom_tf" default="true"/>
 
   <rosparam file="$(find rm_chassis_controllers)/config/standard.yaml" command="load"/>
-  <rosparam unless="use_simulation" file="$(find rm_base)/config/standard.yaml" command="load"/>
+  <rosparam unless="$(arg use_simulation)" file="$(find rm_base)/config/standard.yaml" command="load"/>
 
   <include if="$(arg load_description)" file="$(find rm_description)/launch/standard.launch">
     <arg name="load_chassis" value="true"/>
@@ -16,7 +16,7 @@
     <arg name="roller_type" value="simple"/>
     <arg name="paused" value="false"/>
   </include>
-  <include unless="use_simulation" file="$(find rm_base)/launch/rm_base.launch"/>
+  <include unless="$(arg use_simulation)" file="$(find rm_base)/launch/rm_base.launch"/>
 
   <!-- load the controllers -->
   <node if="$(arg load_controller)" name="controller_spawner" pkg="controller_manager" type="spawner"
