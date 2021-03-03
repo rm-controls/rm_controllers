@@ -13,8 +13,7 @@ bool ShooterStandardController::init(hardware_interface::RobotHW *robot_hw,
                                      ros::NodeHandle &root_nh,
                                      ros::NodeHandle &controller_nh) {
   // init joint
-  auto *effort_jnt_interface =
-      robot_hw->get<hardware_interface::EffortJointInterface>();
+  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_fiction_l_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_fiction_left_name", std::string("joint_fiction_left")));
   joint_fiction_r_ = effort_jnt_interface->getHandle(
@@ -202,7 +201,7 @@ void ShooterStandardController::reconfigCB(rm_shooter_controllers::ShooterStanda
 
 void ShooterStandardController::moveJoint(const ros::Duration &period) {
   double friction_l_error = friction_qd_des_ - joint_fiction_l_.getVelocity();
-  double friction_r_error = friction_qd_des_ - joint_fiction_r_.getVelocity();
+  double friction_r_error = -friction_qd_des_ - joint_fiction_r_.getVelocity();
   double trigger_error = trigger_q_des_ - joint_trigger_.getPosition();
 
   pid_fiction_l_.computeCommand(friction_l_error, period);
