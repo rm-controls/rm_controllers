@@ -1,14 +1,14 @@
 <launch>
-    <arg name="use_simulation" default="false"/>
+    <arg name="use_simulation" default="true"/>
     <arg name="load_description" default="true"/>
     <arg name="load_controller" default="true"/>
 
     <rosparam file="$(find rm_shooter_controllers)/config/standard.yaml" command="load"/>
-    <rosparam unless="$(arg use_simulation)" file="$(find rm_base)/config/hero.yaml" command="load"/>
+    <rosparam unless="$(arg use_simulation)" file="$(find rm_base)/config/standard.yaml" command="load"/>
 
     <include if="$(arg load_description)" file="$(find rm_description)/launch/standard.launch">
-        <arg name="load_chassis" value="false"/>
-        <arg name="load_gimbal" value="false"/>
+        <arg name="load_chassis" value="true"/>
+        <arg name="load_gimbal" value="true"/>
         <arg name="load_shooter" value="true"/>
         <arg name="use_simulation" value="$(arg use_simulation)"/>
         <arg name="use_rm_gazebo" value="true"/>
