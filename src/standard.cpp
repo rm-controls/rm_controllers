@@ -93,8 +93,13 @@ void GimbalStandardController::track(const ros::Time &time) {
     ROS_INFO("[Gimbal] Enter TRACK");
   }
   geometry_msgs::TransformStamped map2pitch;
-  map2pitch = robot_state_handle_.lookupTransform("map", "link_pitch", ros::Time(0));
-
+  try {
+    map2pitch = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
+  }
+  catch (tf2::TransformException &ex) {
+    ROS_WARN("%s", ex.what());
+    return;
+  }
   if (bullet_solver_->solve(angle_init_, map2pitch, cmd_track_rt_buffer_))
     robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
   else {
