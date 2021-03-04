@@ -94,8 +94,8 @@ void GimbalStandardController::track(const ros::Time &time) {
     if (detection.id == cmd_.target_id) {
       geometry_msgs::TransformStamped map2pitch, map2detection;
       try {
-        map2pitch = robot_state_handle_.lookupTransform("map", "link_pitch", ros::Time(0));
-        ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
+        map2pitch = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
+        ros::Time detection_time = time;
         if (last_detection_time_ != detection_time) {
           last_detection_time_ = detection_time;
           geometry_msgs::TransformStamped camera2detection;
