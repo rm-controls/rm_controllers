@@ -2,9 +2,8 @@
   <arg name="use_simulation" default="false"/>
   <arg name="load_description" default="true"/>
   <arg name="load_controller" default="true"/>
-  <arg name="odom_tf" default="true"/>
+  <arg name="enable_ekf" default="true"/>
 
-  <rosparam file="$(find rm_chassis_controllers)/config/standard.yaml" command="load"/>
   <rosparam unless="$(arg use_simulation)" file="$(find rm_base)/config/standard.yaml" command="load"/>
 
   <include if="$(arg load_description)" file="$(find rm_description)/launch/standard.launch">
@@ -19,12 +18,14 @@
   <include unless="$(arg use_simulation)" file="$(find rm_base)/launch/rm_base.launch"/>
 
   <!-- load the controllers -->
+  <rosparam file="$(find rm_chassis_controllers)/config/standard.yaml" command="load"/>
   <node if="$(arg load_controller)" name="controller_spawner" pkg="controller_manager" type="spawner"
         respawn="false" output="screen"
         args="
           controllers/robot_state_controller
-          controllers/joint_state_controller
+          controllers/imu_sensor_controller
           controllers/chassis_standard_controller
+          controllers/joint_state_controller
   "/>
 
   <node if="$(arg odom_tf)" pkg="tf" type="static_transform_publisher" name=""
