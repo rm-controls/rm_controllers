@@ -76,7 +76,7 @@ class StandardChassisTest : public ::testing::Test {
 
   void linkStatesCallback(const gazebo_msgs::LinkStates &link_states) {
     for (size_t i = 0; i < link_states.name.size(); ++i) {
-      if (link_states.name[i] == static_cast<std::string>("hero::base_link")) {
+      if (link_states.name[i] == static_cast<std::string>("standard::base_link")) {
         // TODO: Add ROS_DEBUG for debugging
         base_link_pose_ = link_states.pose[i];
         base_link_twist_ = link_states.twist[i];
