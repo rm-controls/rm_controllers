@@ -3,6 +3,7 @@
     <arg name="load_description" default="true"/>
     <arg name="load_controller" default="true"/>
     <arg name="base_link_tf" default="true"/>
+    <arg name="camera_tf" default="true"/>
 
     <rosparam file="$(find rm_gimbal_controllers)/config/standard.yaml" command="load"/>
     <rosparam unless="$(arg use_simulation)" file="$(find rm_base)/config/standard.yaml" command="load"/>
@@ -29,5 +30,7 @@
 
     <node if="$(arg base_link_tf)" pkg="tf" type="static_transform_publisher" name=""
           args="0 0 0 0 0 0 1 map base_link 100"/>
+    <node if="$(arg camera_tf)" pkg="tf" type="static_transform_publisher" name=""
+          args="0.086 0 -0.046 0.5, 0.5, 0.5, 0.5 pitch camera 100"/>
 
 </launch>
