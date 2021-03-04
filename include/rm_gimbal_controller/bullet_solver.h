@@ -17,7 +17,8 @@
 #include <ros_utilities.h>
 
 struct Config {
-  double resistance_coff, g, delay, dt, timeout;
+  double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
+      resistance_coff_qd_30, g, delay, dt, timeout;
 };
 
 class BulletSolver {
@@ -26,10 +27,14 @@ class BulletSolver {
 
     map2gimbal_des_.header.frame_id = "map";
     map2gimbal_des_.child_frame_id = "gimbal_des";
-    controller_nh.param("publish_rate", publish_rate_, 50.0);
+    controller_nh.param("publish_rate_model", publish_rate_, 50.0);
 
     // init config
-    config_ = {.resistance_coff = getParam(controller_nh, "resistance_coff", 0.),
+    config_ = {.resistance_coff_qd_10 = getParam(controller_nh, "resistance_coff_qd_10", 0.),
+        .resistance_coff_qd_15 = getParam(controller_nh, "resistance_coff_qd_15", 0.),
+        .resistance_coff_qd_16 = getParam(controller_nh, "resistance_coff_qd_16", 0.),
+        .resistance_coff_qd_18 = getParam(controller_nh, "resistance_coff_qd_18", 0.),
+        .resistance_coff_qd_30 = getParam(controller_nh, "resistance_coff_qd_30", 0.),
         .g = getParam(controller_nh, "g", 0.),
         .delay = getParam(controller_nh, "delay", 0.),
         .dt = getParam(controller_nh, "dt", 0.),
@@ -51,7 +56,11 @@ class BulletSolver {
     ROS_INFO("[Gimbal] Dynamic params change");
     if (!dynamic_reconfig_initialized_) {
       Config init_config = *config_rt_buffer_.readFromNonRT(); // config init use yaml
-      config.resistance_coff = init_config.resistance_coff;
+      config.resistance_coff_qd_10 = init_config.resistance_coff_qd_10;
+      config.resistance_coff_qd_15 = init_config.resistance_coff_qd_15;
+      config.resistance_coff_qd_16 = init_config.resistance_coff_qd_16;
+      config.resistance_coff_qd_18 = init_config.resistance_coff_qd_18;
+      config.resistance_coff_qd_30 = init_config.resistance_coff_qd_30;
       config.g = init_config.g;
       config.delay = init_config.delay;
       config.dt = init_config.dt;
@@ -59,7 +68,11 @@ class BulletSolver {
       dynamic_reconfig_initialized_ = true;
     }
     Config config_non_rt{
-        .resistance_coff=config.resistance_coff,
+        .resistance_coff_qd_10=config.resistance_coff_qd_10,
+        .resistance_coff_qd_15=config.resistance_coff_qd_15,
+        .resistance_coff_qd_16=config.resistance_coff_qd_16,
+        .resistance_coff_qd_18=config.resistance_coff_qd_18,
+        .resistance_coff_qd_30=config.resistance_coff_qd_30,
         .g = config.g,
         .delay = config.delay,
         .dt=config.dt,
@@ -68,8 +81,11 @@ class BulletSolver {
     config_rt_buffer_.writeFromNonRT(config_non_rt);
   };
   virtual bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
-                     realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) = 0;
+                     double target_position_x, double target_position_y, double target_position_z,
+                     double target_speed_x, double target_speed_y, double target_speed_z,
+                     double bullet_speed) = 0;
   virtual void modelRviz(double x_offset, double y_offset, double z_offset) = 0;
+  void setResistanceCoefficient(double bullet_speed, Config config);
 
  protected:
   double bullet_speed_{};
@@ -81,40 +97,7 @@ class BulletSolver {
   bool dynamic_reconfig_initialized_ = false;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   Config config_{};
-};
-
-class Bullet2DSolver : public BulletSolver {
- public:
-  using BulletSolver::BulletSolver;
-  void setTarget(const DVec<double> &pos, const DVec<double> &vel) override {
-    target_x_ = pos[0] + vel[0] * config_.delay;
-    target_z_ = pos[1] + vel[1] * config_.delay;
-    target_dx_ = vel[0];
-    target_dz_ = vel[1];
-  };
-  bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
-             realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) override;
- protected:
-  virtual double computeError(double pitch) = 0;
-  double target_x_{}, target_z_{}, target_dx_{}, target_dz_{};
-  double fly_time_{};
-  double pitch_solved_;
-};
-
-class Iter2DSolver : public Bullet2DSolver {
- public:
-  using Bullet2DSolver::Bullet2DSolver;
-  using Bullet2DSolver::solve;
- private:
-  double computeError(double pitch) override;
-};
-
-class Approx2DSolver : public Bullet2DSolver {
- public:
-  using Bullet2DSolver::Bullet2DSolver;
-  using Bullet2DSolver::solve;
- private:
-  double computeError(double pitch) override;
+  double resistance_coff_{};
 };
 
 class Bullet3DSolver : public BulletSolver {
@@ -128,8 +111,11 @@ class Bullet3DSolver : public BulletSolver {
     target_dy_ = vel[1];
     target_dz_ = vel[2];
   };
-  bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
-             realtime_tools::RealtimeBuffer<rm_msgs::GimbalTrackCmd> cmd_track_rt_buffer) override;
+  bool solve(const DVec<double> &angle_init,
+             geometry_msgs::TransformStamped map2pitch,
+             double target_position_x, double target_position_y, double target_position_z,
+             double target_speed_x, double target_speed_y, double target_speed_z,
+             double bullet_speed) override;
   void modelRviz(double x_offset, double y_offset, double z_offset) override;
   geometry_msgs::TransformStamped getResult(const ros::Time &time);
   std::vector<Vec3<double>> getPointData3D();

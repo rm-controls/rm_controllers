@@ -29,10 +29,13 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
 
   map2gimbal_des_.header.frame_id = "map";
   map2gimbal_des_.child_frame_id = "gimbal_des";
+  map2gimbal_des_.transform.rotation.w = 1.;
+  controller_nh.param("publish_rate_error", publish_rate_, 100.0);
 
   cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
-  cmd_sub_track_ = root_nh.subscribe<rm_msgs::GimbalTrackCmd>
-      ("cmd_gimbal_track", 1, &GimbalStandardController::cmdTrackCB, this);
+  cmd_sub_track_ =
+      root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &GimbalStandardController::detectionCB, this);
+  error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
   bullet_solver_ = new Approx3DSolver(controller_nh);
   return true;
 }
@@ -40,16 +43,9 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
 void GimbalStandardController::update(const ros::Time &time, const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
 
-  if (!*cmd_msgs_type_rt_buffer_.readFromRT()) {
-    if (state_ != cmd_.mode) {
-      state_ = StandardState(cmd_.mode);
-      state_changed_ = true;
-    }
-  } else {
-    if (state_ != TRACK) {
-      state_ = TRACK;
-      state_changed_ = true;
-    }
+  if (state_ != cmd_.mode) {
+    state_ = StandardState(cmd_.mode);
+    state_changed_ = true;
   }
 
   if (state_ == PASSIVE)
@@ -90,23 +86,61 @@ void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &
 void GimbalStandardController::track(const ros::Time &time) {
   if (state_changed_) { //on enter
     state_changed_ = false;
+    error_yaw_ = 999;
+    error_pitch_ = 999;
     ROS_INFO("[Gimbal] Enter TRACK");
   }
-  geometry_msgs::TransformStamped map2pitch;
-  try {
-    map2pitch = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
+  for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
+    if (detection.id == cmd_.target_id) {
+      geometry_msgs::TransformStamped map2pitch, map2detection;
+      try {
+        map2pitch = robot_state_handle_.lookupTransform("map", "link_pitch", ros::Time(0));
+        geometry_msgs::TransformStamped camera2detection;
+        camera2detection.transform.translation.x = detection.pose.pose.position.x;
+        camera2detection.transform.translation.y = detection.pose.pose.position.y;
+        camera2detection.transform.translation.z = detection.pose.pose.position.z;
+        camera2detection.header.stamp = detection_rt_buffer_.readFromRT()->header.stamp;
+        camera2detection.header.frame_id = "camera";
+        camera2detection.child_frame_id = "detection" + std::to_string(detection.id);
+        robot_state_handle_.setTransform(camera2detection, "rm_gimbal_controller");
+        map2detection =
+            robot_state_handle_.lookupTransform("map", "detection" + std::to_string(detection.id), ros::Time(0));
+      }
+      catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+
+      if (bullet_solver_->solve(angle_init_, map2pitch,
+                                map2detection.transform.translation.x,
+                                map2detection.transform.translation.y,
+                                map2detection.transform.translation.z,
+                                0, 0, 0, cmd_.bullet_speed)) {
+        robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
+        if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
+          if (error_pub_->trylock()) {
+            error_pub_->msg_.error_pitch = error_pitch_;
+            error_pub_->msg_.error_yaw = error_yaw_;
+            error_pub_->unlockAndPublish();
+          }
+          last_publish_time_ = time;
+        }
+      } else {
+        double roll{}, pitch{}, yaw{};
+        quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
+        setDes(time, yaw, pitch);
+        if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
+          if (error_pub_->trylock()) {
+            error_pub_->msg_.error_pitch = 999;
+            error_pub_->msg_.error_yaw = 999;
+            error_pub_->unlockAndPublish();
+          }
+          last_publish_time_ = time;
+        }
+      }
+      return;
+    }
   }
-  catch (tf2::TransformException &ex) {
-    ROS_WARN("%s", ex.what());
-    return;
-  }
-  if (bullet_solver_->solve(angle_init_, map2pitch, cmd_track_rt_buffer_))
-    robot_state_handle_.setTransform(bullet_solver_->getResult(time), "rm_gimbal_controller");
-  else {
-    double roll{}, pitch{}, yaw{};
-    quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
-    setDes(time, yaw, pitch);
-  }
+  // Update des(tf_buffer only 1.0s)
+  map2gimbal_des_.header.stamp = time;
+  robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
 }
 
 void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
@@ -118,31 +152,30 @@ void GimbalStandardController::setDes(const ros::Time &time, double yaw, double 
 }
 
 void GimbalStandardController::moveJoint(const ros::Duration &period) {
-  geometry_msgs::TransformStamped pitch2des;
+  geometry_msgs::TransformStamped base2des;
   try {
-    pitch2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
+    base2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
     return;
   }
   double roll_des, pitch_des, yaw_des;  // desired position
-  quatToRPY(pitch2des.transform.rotation, roll_des, pitch_des, yaw_des);
-  double yaw_error = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
-  double pitch_error = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
-  pid_yaw_.computeCommand(yaw_error, period);
-  pid_pitch_.computeCommand(pitch_error, period);
+  quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
+  error_yaw_ = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
+  error_pitch_ = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
+  pid_yaw_.computeCommand(error_yaw_, period);
+  pid_pitch_.computeCommand(error_pitch_, period);
   joint_yaw_.setCommand(pid_yaw_.getCurrentCmd());
   joint_pitch_.setCommand(pid_pitch_.getCurrentCmd());
 }
 
 void GimbalStandardController::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
   cmd_rt_buffer_.writeFromNonRT(*msg);
-  cmd_msgs_type_rt_buffer_.writeFromNonRT(false);
 }
-void GimbalStandardController::cmdTrackCB(const rm_msgs::GimbalTrackCmdConstPtr &msg) {
-  cmd_track_rt_buffer_.writeFromNonRT(*msg);
-  cmd_msgs_type_rt_buffer_.writeFromNonRT(true);
+
+void GimbalStandardController::detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg) {
+  detection_rt_buffer_.writeFromNonRT(*msg);
 }
 
 } // namespace rm_gimbal_controllers
