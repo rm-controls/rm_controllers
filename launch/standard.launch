@@ -28,7 +28,10 @@
           controllers/joint_state_controller
   "/>
 
-  <node if="$(arg odom_tf)" pkg="tf" type="static_transform_publisher" name=""
+  <node if="$(arg enable_ekf)" pkg="robot_localization" type="ekf_localization_node" name="ekf_localization">
+    <rosparam command="load" file="$(find rm_chassis_controllers)/config/localization.yaml"/>
+  </node>
+  <node unless="$(arg enable_ekf)" pkg="tf" type="static_transform_publisher" name=""
         args="0 0 0 0 0 0 1 map odom 100"/>
 
 </launch>
