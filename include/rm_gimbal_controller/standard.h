@@ -62,7 +62,7 @@ class GimbalStandardController :
   double error_pitch_{};
   double publish_rate_{};
   ros::Time last_publish_time_;
-
+  ros::Time last_detection_time_;
 };
 }
 
