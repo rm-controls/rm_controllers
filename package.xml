@@ -28,6 +28,9 @@
   <depend>pluginlib</depend>
   <depend>realtime_tools</depend>
 
+  <exec_depend>imu_sensor_controller</exec_depend>
+  <exec_depend>robot_localization</exec_depend>
+
   <test_depend>rm_description</test_depend>
   <test_depend>rm_gazebo</test_depend>
 
