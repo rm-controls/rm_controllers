@@ -310,7 +310,7 @@ void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Dur
       odom_pub_->msg_.header.stamp = time;
       odom_pub_->msg_.twist.twist.linear.x = linear_vel.x;
       odom_pub_->msg_.twist.twist.linear.y = linear_vel.y;
-      odom_pub_->msg_.twist.twist.linear.z = linear_vel.z;
+      odom_pub_->msg_.twist.twist.angular.z = angular_vel.z;
       odom_pub_->unlockAndPublish();
     }
     if (enable_odom_tf_)
