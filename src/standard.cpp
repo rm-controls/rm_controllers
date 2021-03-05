@@ -1,6 +1,7 @@
 //
 // Created by flying on 2021/1/18.
 //
+#include "rm_chassis_controller/standard.h"
 
 #include <ros_utilities.h>
 #include <string>
@@ -12,8 +13,6 @@
 #include <tf2/convert.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-#include "rm_chassis_controller/standard.h"
-
 namespace rm_chassis_controllers {
 bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
                                      ros::NodeHandle &root_nh,
@@ -23,7 +22,8 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
   wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
 
-  publish_rate_ = getParam(controller_nh, "publish_rate_", 50);
+  publish_rate_ = getParam(controller_nh, "publish_rate_", 100);
+  enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue pose_cov_list;
@@ -81,11 +81,14 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
     return false;
 
   // init odom tf
-  odom2base_.header.frame_id = "odom";
-  odom2base_.child_frame_id = "base_link";
-  odom2base_.transform.rotation.w = 1;
-  tf_broadcaster_.init(root_nh);
-  tf_broadcaster_.sendTransform(odom2base_);
+  if (enable_odom_tf_) {
+    odom2base_.header.frame_id = "odom";
+    odom2base_.header.stamp = ros::Time::now();
+    odom2base_.child_frame_id = "base_link";
+    odom2base_.transform.rotation.w = 1;
+    tf_broadcaster_.init(root_nh);
+    tf_broadcaster_.sendTransform(odom2base_);
+  }
 
   cmd_chassis_sub_ =
       root_nh.subscribe<rm_msgs::ChassisCmd>("cmd_chassis", 1, &ChassisStandardController::cmdChassisCallback, this);
@@ -222,7 +225,7 @@ void ChassisStandardController::follow(const ros::Time &time, const ros::Duratio
   tfVelFromYawToBase(time);
   try {
     double roll{}, pitch{}, yaw{};
-    quatToRPY(robot_state_handle_.lookupTransform("base_link", "link_yaw", time).transform.rotation, roll, pitch, yaw);
+    quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", time).transform.rotation, roll, pitch, yaw);
     double follow_error = 0 - yaw;
     pid_follow_.computeCommand(follow_error, period);
     vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
@@ -242,7 +245,7 @@ void ChassisStandardController::twist(const ros::Time &time, const ros::Duration
   tfVelFromYawToBase(time);
   try {
     double roll{}, pitch{}, yaw{};
-    quatToRPY(robot_state_handle_.lookupTransform("base_link", "link_yaw", time).transform.rotation, roll, pitch, yaw);
+    quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", time).transform.rotation, roll, pitch, yaw);
     ros::Time now = ros::Time::now();
     double t = now.toSec();
     double follow_error = angles::shortest_angular_distance(yaw, 1 * sin(t) - yaw);
@@ -263,51 +266,56 @@ void ChassisStandardController::gyro(const ros::Time &time) {
 }
 
 void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Duration &period) {
-  geometry_msgs::Twist vel_base = iKine(); //on base_link frame
+  geometry_msgs::Twist vel_base = iKine(); // on base_link frame
+  bool need_publish =
+      publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time ? true : false;
   geometry_msgs::Vector3 linear_vel{}, angular_vel{};
   linear_vel.x = vel_base.linear.x;
   linear_vel.y = vel_base.linear.y;
   angular_vel.z = vel_base.angular.z;
-  try {
-    odom2base_ = robot_state_handle_.lookupTransform("odom", "base_link", ros::Time(0));
-    tf2::doTransform(linear_vel, linear_vel, odom2base_);
-    tf2::doTransform(angular_vel, angular_vel, odom2base_);
+  // If enable_odom_tf, the linear and angular vel should be translated to odom from base_link then add to old odom->base_link
+  // If not only publish the linear and angular vel under base_link
+  if (enable_odom_tf_) {
+    try {
+      odom2base_ = robot_state_handle_.lookupTransform("odom", "base_link", ros::Time(0));
+      tf2::doTransform(linear_vel, linear_vel, odom2base_);
+      tf2::doTransform(angular_vel, angular_vel, odom2base_);
+    }
+    catch (tf2::TransformException &ex) {
+      ROS_WARN("%s", ex.what());
+      return;
+    }
+    odom2base_.header.stamp = time;
+    // integral vel to pos and angle
+    odom2base_.transform.translation.x += linear_vel.x * period.toSec();
+    odom2base_.transform.translation.y += linear_vel.y * period.toSec();
+    odom2base_.transform.translation.z += linear_vel.z * period.toSec();
+    double length =
+        std::sqrt(std::pow(angular_vel.x, 2) + std::pow(angular_vel.y, 2) + std::pow(angular_vel.z, 2));
+    if (length > 0.001) { // avoid nan quat
+      tf2::Quaternion odom2base_quat, trans_quat;
+      tf2::fromMsg(odom2base_.transform.rotation, odom2base_quat);
+      trans_quat.setRotation(tf2::Vector3(angular_vel.x / length,
+                                          angular_vel.y / length,
+                                          angular_vel.z / length), length * period.toSec());
+      odom2base_quat = trans_quat * odom2base_quat;
+      odom2base_quat.normalize();
+      odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
+    }
   }
-  catch (tf2::TransformException &ex) {
-    ROS_WARN("%s", ex.what());
-    return;
-  }
-  odom2base_.header.stamp = time;
-  // integral vel to pos and angle
-  odom2base_.transform.translation.x += linear_vel.x * period.toSec();
-  odom2base_.transform.translation.y += linear_vel.y * period.toSec();
-  odom2base_.transform.translation.z += linear_vel.z * period.toSec();
-  double length =
-      std::sqrt(std::pow(angular_vel.x, 2) + std::pow(angular_vel.y, 2) + std::pow(angular_vel.z, 2));
-  if (length > 0.001) { // avoid nan quat
-    tf2::Quaternion odom2base_quat, trans_quat;
-    tf2::fromMsg(odom2base_.transform.rotation, odom2base_quat);
-    trans_quat.setRotation(tf2::Vector3(angular_vel.x / length,
-                                        angular_vel.y / length,
-                                        angular_vel.z / length), length * period.toSec());
-    odom2base_quat = trans_quat * odom2base_quat;
-    odom2base_quat.normalize();
-    odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
-  }
-
-  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
+  if (need_publish) {
     last_publish_time_ = time;
-    tf_broadcaster_.sendTransform(odom2base_);
     // publish odom message
     if (odom_pub_->trylock()) {
       odom_pub_->msg_.header.stamp = time;
-      odom_pub_->msg_.pose.pose.position.x = odom2base_.transform.translation.x;
-      odom_pub_->msg_.pose.pose.position.y = odom2base_.transform.translation.y;
-      odom_pub_->msg_.pose.pose.position.z = odom2base_.transform.translation.z;
-      odom_pub_->msg_.pose.pose.orientation = odom2base_.transform.rotation;
+      odom_pub_->msg_.twist.twist.linear.x = linear_vel.x;
+      odom_pub_->msg_.twist.twist.linear.y = linear_vel.y;
+      odom_pub_->msg_.twist.twist.linear.z = linear_vel.z;
       odom_pub_->unlockAndPublish();
     }
-  } else
+    if (enable_odom_tf_)
+      tf_broadcaster_.sendTransform(odom2base_);
+  } else if (enable_odom_tf_)
     robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 }
 
@@ -323,7 +331,7 @@ void ChassisStandardController::tfVelFromYawToBase(const ros::Time &time) {
   try {
     tf2::doTransform(
         vel_cmd_, vel_tfed_,
-        robot_state_handle_.lookupTransform("base_link", "link_yaw", ros::Time(0)));
+        robot_state_handle_.lookupTransform("base_link", "yaw", ros::Time(0)));
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }

@@ -14,6 +14,7 @@
 #include <rm_msgs/ChassisCmd.h>
 #include <filters.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
 
 namespace rm_chassis_controllers {
@@ -59,6 +60,7 @@ class ChassisStandardController : public controller_interface::MultiInterfaceCon
 
   RampFilter<double> *ramp_x{}, *ramp_y{}, *ramp_w{};
 
+  bool enable_odom_tf_{};
   bool state_changed_{};
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_chassis_sub_;
