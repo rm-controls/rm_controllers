@@ -21,8 +21,8 @@ controllers:
     pid_lb: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
     pid_follow: { p: 0, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
     pid_twist: { p: 0, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true }
-    pose_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
-    twist_covariance_diagonal: [0.001, 0.001, 1000000.0, 1000000.0, 1000000.0, 1.0]
+    pose_covariance_diagonal: [0.0001, 0.0001, 0.0001, 0.0001, 0.0001, 0.0001]
+    twist_covariance_diagonal: [0.001, 0.001, 0.001, 0.001, 0.001, 0.001]
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 100
