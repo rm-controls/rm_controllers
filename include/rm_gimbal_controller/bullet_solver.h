@@ -24,9 +24,6 @@ struct Config {
 class BulletSolver {
  public:
   explicit BulletSolver(ros::NodeHandle &controller_nh) {
-
-    map2gimbal_des_.header.frame_id = "map";
-    map2gimbal_des_.child_frame_id = "gimbal_des";
     controller_nh.param("publish_rate_model", publish_rate_, 50.0);
 
     // init config
@@ -80,7 +77,7 @@ class BulletSolver {
     };
     config_rt_buffer_.writeFromNonRT(config_non_rt);
   };
-  virtual bool solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
+  virtual bool solve(const DVec<double> &angle_init,
                      double target_position_x, double target_position_y, double target_position_z,
                      double target_speed_x, double target_speed_y, double target_speed_z,
                      double bullet_speed) = 0;
@@ -91,13 +88,13 @@ class BulletSolver {
   double bullet_speed_{};
   ros::Publisher path_pub_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
-  geometry_msgs::TransformStamped map2gimbal_des_;
   double publish_rate_{};
   ros::Time last_publish_time_;
   bool dynamic_reconfig_initialized_ = false;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   Config config_{};
   double resistance_coff_{};
+  Vec2<double> angle_result_{};
 };
 
 class Bullet3DSolver : public BulletSolver {
@@ -112,12 +109,11 @@ class Bullet3DSolver : public BulletSolver {
     target_dz_ = vel[2];
   };
   bool solve(const DVec<double> &angle_init,
-             geometry_msgs::TransformStamped map2pitch,
              double target_position_x, double target_position_y, double target_position_z,
              double target_speed_x, double target_speed_y, double target_speed_z,
              double bullet_speed) override;
   void modelRviz(double x_offset, double y_offset, double z_offset) override;
-  geometry_msgs::TransformStamped getResult(const ros::Time &time);
+  Vec2<double> getResult(const ros::Time &time, geometry_msgs::TransformStamped map2pitch);
   std::vector<Vec3<double>> getPointData3D();
  protected:
   virtual double computeError(double yaw, double pitch, double *error_polar) = 0;
@@ -128,9 +124,6 @@ class Bullet3DSolver : public BulletSolver {
   Vec3<double> pos_{};
   Vec3<double> vel_{};
   std::vector<Vec3<double>> model_data_;
-  double map2pitch_offset_x_{};
-  double map2pitch_offset_y_{};
-  double map2pitch_offset_z_{};
 };
 
 class Iter3DSolver : public Bullet3DSolver {

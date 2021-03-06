@@ -22,16 +22,14 @@ void BulletSolver::setResistanceCoefficient(double bullet_speed, Config config) 
 }
 
 ///////////////////////////Bullet3DSolver/////////////////////////////
-bool Bullet3DSolver::solve(const DVec<double> &angle_init, geometry_msgs::TransformStamped map2pitch,
+bool Bullet3DSolver::solve(const DVec<double> &angle_init,
                            double target_position_x, double target_position_y, double target_position_z,
                            double target_speed_x, double target_speed_y, double target_speed_z, double bullet_speed) {
   config_ = *config_rt_buffer_.readFromRT();
-  map2pitch_offset_x_ = map2pitch.transform.translation.x;
-  map2pitch_offset_y_ = map2pitch.transform.translation.y;
-  map2pitch_offset_z_ = map2pitch.transform.translation.z;
-  pos_[0] = target_position_x - map2pitch_offset_x_;
-  pos_[1] = target_position_y - map2pitch_offset_y_;
-  pos_[2] = target_position_z - map2pitch_offset_z_;
+  setResistanceCoefficient(bullet_speed, config_);
+  pos_[0] = target_position_x;
+  pos_[1] = target_position_y;
+  pos_[2] = target_position_z;
   vel_[0] = target_speed_x;
   vel_[1] = target_speed_y;
   vel_[2] = target_speed_z;
@@ -64,14 +62,17 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init, geometry_msgs::Transf
 
   int count = 0;
   double error = 999999;
-  while (error >= 0.0001) {
+  while (error >= 0.001) {
     error = computeError(yaw_solved_, pitch_solved_, error_theta_z);
     yaw_solved_ = yaw_solved_ + error_theta_z[0];
     temp_z = temp_z + error_theta_z[1];
     pitch_solved_ = std::atan2(temp_z, std::sqrt(std::pow(target_x_, 2)
                                                      + std::pow(target_y_, 2)));
-    if (count >= 20 || std::isnan(error))
+    if (count >= 20 || std::isnan(error)) {
+      yaw_solved_ = angle_init[0];
+      pitch_solved_ = angle_init[1];
       return false;
+    }
     count++;
   }
 
@@ -131,18 +132,15 @@ void Bullet3DSolver::modelRviz(double x_offset, double y_offset, double z_offset
   this->path_pub_.publish(marker);
 }
 
-geometry_msgs::TransformStamped Bullet3DSolver::getResult(const ros::Time &time) {
+Vec2<double> Bullet3DSolver::getResult(const ros::Time &time, geometry_msgs::TransformStamped map2pitch) {
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
     model_data_ = getPointData3D();
-    modelRviz(map2pitch_offset_x_,
-              map2pitch_offset_y_,
-              map2pitch_offset_z_);
+    modelRviz(map2pitch.transform.translation.x, map2pitch.transform.translation.y, map2pitch.transform.translation.z);
     last_publish_time_ = time;
   }
-  map2gimbal_des_.transform.rotation =
-      tf::createQuaternionMsgFromRollPitchYaw(0, -pitch_solved_, yaw_solved_);
-  map2gimbal_des_.header.stamp = time;
-  return map2gimbal_des_;
+  angle_result_[0] = yaw_solved_;
+  angle_result_[1] = -pitch_solved_;
+  return angle_result_;
 }
 
 ///////////////////////////Iter3DSolver/////////////////////////////
