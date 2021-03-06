@@ -128,7 +128,7 @@ void ShooterStandardController::push(const ros::Time &time,
     ROS_DEBUG("[Shooter] wait for friction wheel");
 
   bool is_block_now =
-      joint_trigger_.getEffort() > config_.block_effort && joint_trigger_.getVelocity() < config_.block_speed;
+      fabs(joint_trigger_.getEffort()) > config_.block_effort && joint_trigger_.getVelocity() > (-config_.block_speed);
   if (is_block_now) {
     if (!is_start_block_time_) {
       block_time_ = time;
@@ -151,7 +151,7 @@ void ShooterStandardController::block(const ros::Time &time, const ros::Duration
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter BLOCK");
 
-    trigger_q_des_ = joint_trigger_.getPosition() - config_.anti_block_angle;
+    trigger_q_des_ = joint_trigger_.getPosition() + config_.anti_block_angle;
   }
   if (fabs(trigger_q_des_ - joint_trigger_.getPosition()) < config_.anti_block_error) {
     state_ = PUSH;

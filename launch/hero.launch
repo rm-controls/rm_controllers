@@ -1,5 +1,5 @@
 <launch>
-    <arg name="use_simulation" default="true"/>
+    <arg name="use_simulation" default="false"/>
     <arg name="load_description" default="true"/>
     <arg name="load_controller" default="true"/>
 

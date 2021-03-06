@@ -4,6 +4,8 @@
     <arg name="load_controller" default="true"/>
 
     <rosparam file="$(find rm_shooter_controllers)/config/standard.yaml" command="load"/>
+    <rosparam file="$(find rm_gimbal_controllers)/config/standard.yaml" command="load"/>
+
     <rosparam unless="$(arg use_simulation)" file="$(find rm_base)/config/standard.yaml" command="load"/>
 
     <include if="$(arg load_description)" file="$(find rm_description)/launch/standard.launch">
@@ -25,6 +27,10 @@
           controllers/robot_state_controller
           controllers/joint_state_controller
           controllers/shooter_standard_controller
+          controllers/gimbal_standard_controller
     "/>
+
+    <node pkg="tf" type="static_transform_publisher" name=""
+          args="0 0 0 0 0 0 1 map base_link 100"/>
 
 </launch>
