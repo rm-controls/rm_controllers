@@ -77,7 +77,9 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
   if (!pid_rf_.init(ros::NodeHandle(controller_nh, "pid_rf")) ||
       !pid_rb_.init(ros::NodeHandle(controller_nh, "pid_rb")) ||
       !pid_lf_.init(ros::NodeHandle(controller_nh, "pid_lf")) ||
-      !pid_lb_.init(ros::NodeHandle(controller_nh, "pid_lb")))
+      !pid_lb_.init(ros::NodeHandle(controller_nh, "pid_lb")) ||
+      !pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow")) ||
+      !pid_twist_.init(ros::NodeHandle(controller_nh, "pid_twist")))
     return false;
 
   // init odom tf
@@ -224,9 +226,9 @@ void ChassisStandardController::follow(const ros::Time &time, const ros::Duratio
 
   tfVelFromYawToBase(time);
   try {
-    double roll{}, pitch{}, yaw{};
-    quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", time).transform.rotation, roll, pitch, yaw);
-    double follow_error = 0 - yaw;
+    double roll{}, pitch{}, follow_error{};
+    quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", ros::Time(0)).transform.rotation,
+              roll, pitch, follow_error);
     pid_follow_.computeCommand(follow_error, period);
     vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
   }
@@ -245,7 +247,8 @@ void ChassisStandardController::twist(const ros::Time &time, const ros::Duration
   tfVelFromYawToBase(time);
   try {
     double roll{}, pitch{}, yaw{};
-    quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", time).transform.rotation, roll, pitch, yaw);
+    quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", ros::Time(0)).transform.rotation,
+              roll, pitch, yaw);
     ros::Time now = ros::Time::now();
     double t = now.toSec();
     double follow_error = angles::shortest_angular_distance(yaw, 1 * sin(t) - yaw);

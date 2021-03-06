@@ -45,7 +45,7 @@
         clear_params="true">
     <rosparam command="load" file="$(find rm_chassis_controllers)/config/localization.yaml"/>
   </node>
-  <node unless="$(arg odom_tf)" pkg="tf" type="static_transform_publisher" name=""
+  <node if="$(arg odom_tf)" pkg="tf" type="static_transform_publisher" name=""
         args="0 0 0 0 0 0 1 map odom 100"/>
 
 </launch>
