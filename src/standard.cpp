@@ -78,8 +78,7 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
       !pid_rb_.init(ros::NodeHandle(controller_nh, "pid_rb")) ||
       !pid_lf_.init(ros::NodeHandle(controller_nh, "pid_lf")) ||
       !pid_lb_.init(ros::NodeHandle(controller_nh, "pid_lb")) ||
-      !pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow")) ||
-      !pid_twist_.init(ros::NodeHandle(controller_nh, "pid_twist")))
+      !pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow")))
     return false;
 
   // init odom tf
