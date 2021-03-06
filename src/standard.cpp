@@ -120,7 +120,7 @@ void ShooterStandardController::push(const ros::Time &time,
   }
 
   if (joint_fiction_l_.getVelocity() >= 0.95 * friction_qd_des_ && joint_fiction_l_.getVelocity() > 8.0 &&
-      joint_fiction_r_.getVelocity() <= 0.95 * friction_qd_des_ && joint_fiction_r_.getVelocity() < -8.0 &&
+      joint_fiction_r_.getVelocity() <= 0.95 * (-friction_qd_des_) && joint_fiction_r_.getVelocity() < -8.0 &&
       (ros::Time::now() - last_shoot_time_).toSec() >= 1. / cmd_.hz) { // Time to shoot!!!
     trigger_q_des_ = joint_trigger_.getPosition() - config_.push_angle;
     last_shoot_time_ = time;
