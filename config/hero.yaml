@@ -11,7 +11,7 @@ controllers:
     joint_fiction_right_name: "right_friction_wheel_joint"
     joint_trigger_name: "trigger_joint"
     push_angle: 1.4
-    block_effort: 5.8
+    block_effort: 2.9
     block_duration: 0.5
     block_speed: 0.9
     anti_block_angle: 0.5

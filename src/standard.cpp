@@ -116,6 +116,7 @@ void ShooterStandardController::push(const ros::Time &time,
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PUSH");
 
+    trigger_q_des_ = joint_trigger_.getPosition();
     pid_trigger_.reset();
   }
 
