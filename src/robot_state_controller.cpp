@@ -18,7 +18,7 @@ bool RobotStateController::init(hardware_interface::RobotHW *robot_hw,
   // ignore_timestamp_ == true, joins_states messages are accepted, no matter their timestamp
   controller_nh.param("ignore_timestamp", ignore_timestamp_, false);
   double duration;
-  controller_nh.param("buffer_duration", duration, 1.);
+  controller_nh.param("buffer_duration", duration, 10.);
 
   if (!model_.initParam("robot_description")) {
     ROS_ERROR("Failed to init URDF from robot description");
