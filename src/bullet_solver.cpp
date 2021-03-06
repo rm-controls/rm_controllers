@@ -69,12 +69,18 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init,
     pitch_solved_ = std::atan2(temp_z, std::sqrt(std::pow(target_x_, 2)
                                                      + std::pow(target_y_, 2)));
     if (count >= 20 || std::isnan(error)) {
-      yaw_solved_ = angle_init[0];
-      pitch_solved_ = angle_init[1];
+      if (solve_success_) {
+        angle_result_[0] = angle_init[0];
+        angle_result_[1] = -angle_init[1];
+        solve_success_ = false;
+      }
       return false;
     }
     count++;
   }
+  solve_success_ = true;
+  angle_result_[0] = yaw_solved_;
+  angle_result_[1] = -pitch_solved_;
 
   return true;
 }
@@ -138,8 +144,7 @@ Vec2<double> Bullet3DSolver::getResult(const ros::Time &time, geometry_msgs::Tra
     modelRviz(map2pitch.transform.translation.x, map2pitch.transform.translation.y, map2pitch.transform.translation.z);
     last_publish_time_ = time;
   }
-  angle_result_[0] = yaw_solved_;
-  angle_result_[1] = -pitch_solved_;
+
   return angle_result_;
 }
 
