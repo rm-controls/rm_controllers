@@ -121,7 +121,7 @@ class Bullet3DSolver : public BulletSolver {
       target_dx_{}, target_dy_{}, target_dz_{};
   double fly_time_{};
   double pitch_solved_, yaw_solved_;
-  bool solve_success_{};
+  bool solve_success_ = true;
   Vec3<double> pos_{};
   Vec3<double> vel_{};
   std::vector<Vec3<double>> model_data_;

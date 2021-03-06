@@ -141,11 +141,15 @@ void GimbalStandardController::track(const ros::Time &time) {
         }
       }
       setDes(time, bullet_solver_->getResult(time, map2pitch)[0], bullet_solver_->getResult(time, map2pitch)[1]);
+      identification_success_ = true;
       return;
     }
   }
   // Update des(tf_buffer only 1.0s)
-  setDes(time, yaw, pitch);
+  if (identification_success_) {
+    setDes(time, yaw, pitch);
+    identification_success_ = false;
+  }
 }
 
 void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
