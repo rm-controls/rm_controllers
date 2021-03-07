@@ -63,11 +63,11 @@ void GimbalStandardController::passive() {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter PASSIVE");
-
-    joint_yaw_.setCommand(0);
-    joint_pitch_.setCommand(0);
-    pid_yaw_.reset();
   }
+
+  joint_yaw_.setCommand(0);
+  joint_pitch_.setCommand(0);
+  pid_yaw_.reset();
 }
 
 void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &period) {
