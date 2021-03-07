@@ -29,9 +29,9 @@
           controllers/gimbal_standard_controller
     "/>
 
-    <node if="$(arg base_link_tf)" pkg="tf" type="static_transform_publisher" name=""
+    <node if="$(arg base_link_tf)" pkg="tf" type="static_transform_publisher" name="odom_tf_bro"
           args="0 0 0 0 0 0 1 map base_link 100"/>
-    <node if="$(arg camera_tf)" pkg="tf" type="static_transform_publisher" name=""
+    <node if="$(arg camera_tf)" pkg="tf" type="static_transform_publisher" name="camera_tf_bro"
           args="0.086 0 -0.046 0.5, 0.5, 0.5, 0.5 pitch camera 100"/>
 
 </launch>
