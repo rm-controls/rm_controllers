@@ -4,7 +4,7 @@
     <arg name="load_controller" default="true"/>
     <arg name="ekf" default="true"/>
     <arg name="odom_tf" default="true"/>
-    <arg name="yaw_tf" default="true"/>
+    <arg name="yaw_tf" default="false"/>
 
     <rosparam unless="$(arg use_simulation)" file="$(find rm_base)/config/standard.yaml" command="load"/>
 
