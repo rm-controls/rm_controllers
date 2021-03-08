@@ -21,6 +21,8 @@ find_package(catkin REQUIRED
 
         control_toolbox
         angles
+        tf2
+        tf2_geometry_msgs
         controller_interface
         forward_command_controller
         hardware_interface
@@ -43,25 +45,26 @@ generate_dynamic_reconfigure_options(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    INCLUDE_DIRS
-    include
-    LIBRARIES
-    CATKIN_DEPENDS
-    roscpp
-    roslint
+        INCLUDE_DIRS
+        include
+        LIBRARIES
+        CATKIN_DEPENDS
+        roscpp
+        roslint
 
-    rm_msgs
-    rm_common
-    rm_base
+        rm_msgs
+        rm_common
+        rm_base
 
-    control_toolbox
-    angles
-    controller_interface
-    forward_command_controller
-    hardware_interface
-    pluginlib
-    realtime_tools
-    DEPENDS
+        control_toolbox
+        angles
+        tf2
+        controller_interface
+        forward_command_controller
+        hardware_interface
+        pluginlib
+        realtime_tools
+        DEPENDS
 )
 
 ###########
