@@ -1,56 +1,29 @@
 <launch>
-    <arg name="use_simulation" default="true"/>
-    <arg name="load_description" default="true"/>
-    <arg name="load_controller" default="true"/>
     <arg name="ekf" default="true"/>
     <arg name="odom_tf" default="true"/>
-    <arg name="yaw_tf" default="true"/>
+    <arg name="yaw_tf" default="false"/>
 
-    <rosparam unless="$(arg use_simulation)" file="$(find rm_base)/config/hero.yaml" command="load"/>
-
-    <include if="$(arg load_description)" file="$(find rm_description)/launch/hero.launch">
-        <arg name="load_chassis" value="true"/>
-        <arg name="load_gimbal" value="false"/>
-        <arg name="load_shooter" value="false"/>
-        <arg name="use_simulation" value="$(arg use_simulation)"/>
-        <arg name="use_rm_gazebo" value="true"/>
-        <arg if="$(arg use_simulation)" name="roller_type" value="simple"/>
-        <arg unless="$(arg use_simulation)" name="roller_type" value="none"/>
-        <arg name="paused" value="false"/>
-    </include>
-    <include unless="$(arg use_simulation)" file="$(find rm_base)/launch/rm_base.launch"/>
-
-    <!-- load the controllers -->
     <rosparam file="$(find rm_chassis_controllers)/config/hero.yaml" command="load"/>
     <rosparam if="$(arg ekf)" param="controllers/chassis_standard_controller/enable_odom_tf">false</rosparam>
 
-    <group if="$(arg load_controller)">
-        <node unless="$(arg use_simulation)" name="controller_spawner" pkg="controller_manager" type="spawner"
-              respawn="false" output="screen"
-              args="
+    <!-- load the controllers -->
+    <node name="controller_spawner" pkg="controller_manager" type="spawner"
+          respawn="false" output="screen"
+          args="
           controllers/robot_state_controller
           controllers/imu_sensor_controller
           controllers/chassis_standard_controller
           controllers/joint_state_controller
   "/>
-        <node if="$(arg use_simulation)" name="controller_spawner" pkg="controller_manager" type="spawner"
-              respawn="false" output="screen"
-              args="
-          controllers/robot_state_controller
-          controllers/chassis_standard_controller
-          controllers/joint_state_controller
-  "/>
-    </group>
 
     <node if="$(arg ekf)" pkg="robot_localization" type="ekf_localization_node" name="ekf_localization"
           clear_params="true">
         <rosparam command="load" file="$(find rm_chassis_controllers)/config/localization.yaml"/>
     </node>
-    <node if="$(arg odom_tf)" pkg="tf" type="static_transform_publisher" name=""
+    <node if="$(arg odom_tf)" pkg="tf" type="static_transform_publisher" name="odom_tf_publisher"
           args="0 0 0 0 0 0 1 map odom 100"/>
 
     <!--  for test !!! -->
     <node if="$(arg yaw_tf)" pkg="tf" type="static_transform_publisher" name="yaw_tf_publisher"
           args="0 0 0 0 0 0 1 map yaw 100"/>
-
 </launch>
