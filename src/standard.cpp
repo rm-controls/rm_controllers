@@ -110,11 +110,10 @@ void GimbalStandardController::track(const ros::Time &time) {
         map2pitch = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
         double roll, pitch, yaw;
         quatToRPY(map2pitch.transform.rotation, roll, pitch, yaw);
-        setDes(time, yaw, pitch);
         angle_init_[0] = yaw;
         angle_init_[1] = -pitch;
         map2detection =
-            robot_state_handle_.lookupTransform("pitch", "detection" + std::to_string(detection.id), ros::Time(0));
+            robot_state_handle_.lookupTransform("map", "detection" + std::to_string(detection.id), ros::Time(0));
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
       bool solve_success = bullet_solver_->solve(
