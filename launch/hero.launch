@@ -1,22 +1,8 @@
 <launch>
-    <arg name="use_simulation" default="false"/>
-    <arg name="load_description" default="true"/>
     <arg name="load_controller" default="true"/>
 
     <rosparam file="$(find rm_shooter_controllers)/config/hero.yaml" command="load"/>
-    <rosparam unless="$(arg use_simulation)" file="$(find rm_base)/config/hero.yaml" command="load"/>
-
-    <include if="$(arg load_description)" file="$(find rm_description)/launch/hero.launch">
-        <arg name="load_chassis" value="true"/>
-        <arg name="load_gimbal" value="true"/>
-        <arg name="load_shooter" value="true"/>
-        <arg name="use_simulation" value="$(arg use_simulation)"/>
-        <arg name="use_rm_gazebo" value="true"/>
-        <arg if="$(arg use_simulation)" name="roller_type" value="simple"/>
-        <arg unless="$(arg use_simulation)" name="roller_type" value="none"/>
-        <arg name="paused" value="false"/>
-    </include>
-    <include unless="$(arg use_simulation)" file="$(find rm_base)/launch/rm_base.launch"/>
+    <rosparam file="$(find rm_gimbal_controllers)/config/hero.yaml" command="load"/>
 
     <!-- load the controllers -->
     <node if="$(arg load_controller)" name="controller_spawner" pkg="controller_manager" type="spawner"
@@ -25,6 +11,10 @@
           controllers/robot_state_controller
           controllers/joint_state_controller
           controllers/shooter_standard_controller
+          controllers/gimbal_standard_controller
     "/>
+
+    <node pkg="tf" type="static_transform_publisher" name=""
+          args="0 0 0 0 0 0 1 map base_link 100"/>
 
 </launch>
