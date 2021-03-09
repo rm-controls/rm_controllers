@@ -47,6 +47,6 @@ class RobotStateHandle {
 
 };
 
-class RobotStateInterface : public HardwareResourceManager<RobotStateHandle, ClaimResources> {};
+class RobotStateInterface : public HardwareResourceManager<RobotStateHandle, DontClaimResources> {};
 }
 #endif //ROBOT_STATE_CONTROLLER_ROBOT_STATE_INTERFACE_H
