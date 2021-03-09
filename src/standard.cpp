@@ -93,7 +93,7 @@ void GimbalStandardController::track(const ros::Time &time) {
     error_pitch_ = 999;
     ROS_INFO("[Gimbal] Enter TRACK");
   }
-  bool solve_success;
+  bool solve_success{}, identification_success{};
   double roll, pitch, yaw;
   geometry_msgs::TransformStamped map2pitch;
   try {
@@ -111,6 +111,7 @@ void GimbalStandardController::track(const ros::Time &time) {
         map2detection.transform.translation.y - map2pitch.transform.translation.y,
         map2detection.transform.translation.z - map2pitch.transform.translation.z,
         0, 0, 0, cmd_.bullet_speed);
+    identification_success = true;
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
@@ -122,8 +123,10 @@ void GimbalStandardController::track(const ros::Time &time) {
     }
     last_publish_time_ = time;
   }
-  setDes(time, bullet_solver_->getResult(time, map2pitch)[0], bullet_solver_->getResult(time, map2pitch)[1]);
-
+  if (identification_success)
+    setDes(time, bullet_solver_->getResult(time, map2pitch)[0], bullet_solver_->getResult(time, map2pitch)[1]);
+  else
+    setDes(time, yaw, pitch);
 }
 
 void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
