@@ -46,12 +46,9 @@ class GimbalStandardController :
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
   hardware_interface::RobotStateHandle robot_state_handle_;
   geometry_msgs::TransformStamped map2gimbal_des_;
-
   Bullet3DSolver *bullet_solver_{};
 
-  double *chassis_angular_z_{};
   bool state_changed_{};
-  bool identification_success_ = true;
   Vec2<double> angle_init_{};
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_subscriber_;
