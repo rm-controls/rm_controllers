@@ -164,7 +164,7 @@ void GimbalStandardController::updateDetection() {
       last_detection_time_ = detection_time;
       try {
         tf2::fromMsg(detection.pose, camera2detection_tf);
-        map2camera = robot_state_handle_.lookupTransform("map", "camera", ros::Time(0));
+        map2camera = robot_state_handle_.lookupTransform("map", "camera", detection_time);
         tf2::fromMsg(map2camera.transform, map2camera_tf);
         map2detection_tf = map2camera_tf * camera2detection_tf;
         map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
