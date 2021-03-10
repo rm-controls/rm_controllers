@@ -1,6 +1,6 @@
 <launch>
   <!-- Load common test stuff -->
-  <include file="$(find rm_chassis_controllers)/launch/standard.launch">
+  <include file="$(find rm_chassis_controllers)/launch/load_controllers.launch">
     <arg name="use_simulation" value="true"/>
     <arg name="load_description" value="true"/>
     <arg name="load_controller" value="true"/>

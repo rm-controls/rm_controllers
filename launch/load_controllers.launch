@@ -1,9 +1,10 @@
 <launch>
+    <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, hero, engineer]"/>
     <arg name="ekf" default="true"/>
     <arg name="odom_tf" default="true"/>
     <arg name="yaw_tf" default="false"/>
 
-    <rosparam file="$(find rm_chassis_controllers)/config/hero.yaml" command="load"/>
+    <rosparam file="$(find rm_chassis_controllers)/config/$(arg robot_type).yaml" command="load"/>
     <rosparam if="$(arg ekf)" param="controllers/chassis_standard_controller/enable_odom_tf">false</rosparam>
 
     <!-- load the controllers -->
@@ -26,4 +27,5 @@
     <!--  for test !!! -->
     <node if="$(arg yaw_tf)" pkg="tf" type="static_transform_publisher" name="yaw_tf_publisher"
           args="0 0 0 0 0 0 1 map yaw 100"/>
+
 </launch>
