@@ -1,9 +1,10 @@
 <launch>
+    <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, hero, engineer]"/>
     <arg name="load_controller" default="true"/>
     <arg name="base_link_tf" default="true"/>
     <arg name="camera_tf" default="true"/>
 
-    <rosparam file="$(find rm_gimbal_controllers)/config/hero.yaml" command="load"/>
+    <rosparam file="$(find rm_gimbal_controllers)/config/$(arg robot_type).yaml" command="load"/>
 
     <!-- load the controllers -->
     <node if="$(arg load_controller)" name="controller_spawner" pkg="controller_manager" type="spawner"
