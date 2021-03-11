@@ -139,6 +139,11 @@ if (${CATKIN_ENABLE_TESTING})
           test/test_wrong_joint_name.test
           test/test_wrong_joint_name.cpp)
   target_link_libraries(wrong_joint_name_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(nan_cmd_vel_test
+          test/test_NAN_cmd.test
+          test/test_NAN_cmd.cpp)
+  target_link_libraries(nan_cmd_vel_test ${catkin_LIBRARIES})
 endif ()
 
 ##########################

@@ -65,6 +65,8 @@ class StandardChassisTest : public ::testing::Test {
 
   bool isControllerAlive() const { return (odom_sub_.getNumPublishers() > 0); }
 
+  nav_msgs::Odometry getLastOdom() { return last_odom_; }
+
  private:
   ros::NodeHandle nh_;
   ros::Publisher cmd_chassis_pub_;
