@@ -121,9 +121,24 @@ target_link_libraries(${PROJECT_NAME}
 if (${CATKIN_ENABLE_TESTING})
   ## Add gtest based cpp test target and link libraries
   add_rostest_gtest(standard_chassis_test
-      test/test_standard_chassis.test
-      test/test_standard_chassis.cpp)
+          test/test_standard_chassis.test
+          test/test_standard_chassis.cpp)
   target_link_libraries(standard_chassis_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(scopperil_test
+          test/test_scopperil.test
+          test/test_scopperil.cpp)
+  target_link_libraries(scopperil_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(default_cmd_publisher_test
+          test/test_default_cmd_publisher.test
+          test/test_default_cmd_publisher.cpp)
+  target_link_libraries(default_cmd_publisher_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(wrong_joint_name_test
+          test/test_wrong_joint_name.test
+          test/test_wrong_joint_name.cpp)
+  target_link_libraries(wrong_joint_name_test ${catkin_LIBRARIES})
 endif ()
 
 ##########################
