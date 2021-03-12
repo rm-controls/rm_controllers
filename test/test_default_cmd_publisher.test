@@ -1,0 +1,16 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find rm_chassis_controllers)/launch/standard.launch">
+    <arg name="use_simulation" value="true"/>
+    <arg name="load_description" value="true"/>
+    <arg name="load_controller" value="true"/>
+    <arg name="odom_tf" value="true"/>
+  </include>
+
+  <!-- Controller test -->
+  <test test-name="default_cmd_publisher_test"
+        pkg="rm_chassis_controllers"
+        type="default_cmd_publisher_test"
+        time-limit="40.0">
+  </test>
+</launch>
