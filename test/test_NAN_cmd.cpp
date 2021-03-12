@@ -91,6 +91,7 @@ TEST_F(StandardChassisTest, testCmdChassisNaNEffortLimit) {
 }
 
 //Test case3
+//this case can't pass now
 TEST_F(StandardChassisTest, testCmdChassisNaNAccel) {
   // wait for ROS
   while (!isControllerAlive()) {
@@ -125,7 +126,7 @@ TEST_F(StandardChassisTest, testCmdChassisNaNAccel) {
   geometry_msgs::Twist odom_msg = getTwist();
   EXPECT_NEAR(odom_msg.linear.x, 0.0, VELOCITY_TOLERANCE);
 
-  ROS_INFO("Test send NAN effort limit success!");
+  ROS_INFO("Test send NAN accel linear x success!");
 }
 
 int main(int argc, char **argv) {
