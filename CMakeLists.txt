@@ -140,6 +140,11 @@ if (${CATKIN_ENABLE_TESTING})
           test/test_wrong_joint_name.cpp)
   target_link_libraries(wrong_joint_name_test ${catkin_LIBRARIES})
 
+  add_rostest_gtest(default_odom_frame_test
+          test/test_default_odom_frame.test
+          test/test_default_odom_frame.cpp)
+  target_link_libraries(default_odom_frame_test ${catkin_LIBRARIES})
+
   add_rostest_gtest(nan_cmd_vel_test
           test/test_NAN_cmd.test
           test/test_NAN_cmd.cpp)
