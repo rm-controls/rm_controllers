@@ -1,6 +1,7 @@
 #include "test_common.h"
 
 // TEST CASES
+//This send a x direction vel and accel,then stop quickly,after that,see whether the controller can stop in time.
 TEST_F(StandardChassisTest, testTimeout) {
   // wait for ROS
   waitForController();
