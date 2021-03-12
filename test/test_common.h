@@ -15,6 +15,8 @@
 
 const double POSITION_TOLERANCE = 0.005; // 1 mm-s precision
 const double VELOCITY_TOLERANCE = 0.005; // 1 mm-s-1 precision
+const double JERK_LINEAR_VELOCITY_TOLERANCE = 0.10;
+const double EPS = 0.01;
 
 class StandardChassisTest : public ::testing::Test {
  public:

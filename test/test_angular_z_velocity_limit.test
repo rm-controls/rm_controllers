@@ -1,0 +1,20 @@
+<launch>
+  <arg name="yaw_tf" default="true"/>
+  <!-- Load common test stuff -->
+  <include file="$(find rm_chassis_controllers)/launch/standard.launch">
+    <arg name="use_simulation" value="true"/>
+    <arg name="load_description" value="true"/>
+    <arg name="load_controller" value="true"/>
+    <arg name="odom_tf" value="true"/>
+  </include>
+
+  <!-- Controller test -->
+  <test test-name="angular_z_velocity_limit_test"
+        pkg="rm_chassis_controllers"
+        type="angular_z_velocity_limit_test"
+        time-limit="40.0">
+  </test>
+
+      <node if="$(arg yaw_tf)" pkg="tf" type="static_transform_publisher" name="yaw_tf_publisher"
+            args="0 0 0 0 0 0 1 map yaw 100"/>
+</launch>
