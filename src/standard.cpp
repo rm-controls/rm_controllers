@@ -98,9 +98,9 @@ void GimbalStandardController::track(const ros::Time &time) {
         if (last_detection_time_ != detection_time) {
           last_detection_time_ = detection_time;
           geometry_msgs::TransformStamped camera2detection;
-          camera2detection.transform.translation.x = detection.pose.pose.position.x;
-          camera2detection.transform.translation.y = detection.pose.pose.position.y;
-          camera2detection.transform.translation.z = detection.pose.pose.position.z;
+          camera2detection.transform.translation.x = detection.pose.position.x;
+          camera2detection.transform.translation.y = detection.pose.position.y;
+          camera2detection.transform.translation.z = detection.pose.position.z;
           camera2detection.transform.rotation.w = 1;
           camera2detection.header.stamp = detection_time;
           camera2detection.header.frame_id = "camera";
