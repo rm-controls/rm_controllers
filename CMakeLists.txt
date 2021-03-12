@@ -170,6 +170,21 @@ if (${CATKIN_ENABLE_TESTING})
           test/test_angular_z_velocity_limit.cpp)
   target_link_libraries(angular_z_velocity_limit_test ${catkin_LIBRARIES})
 
+  add_rostest_gtest(linear_x_accel_limit_test
+          test/test_linear_x_accel_limit.test
+          test/test_linear_x_accel_limit.cpp)
+  target_link_libraries(linear_x_accel_limit_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(linear_y_accel_limit_test
+          test/test_linear_y_accel_limit.test
+          test/test_linear_y_accel_limit.cpp)
+  target_link_libraries(linear_y_accel_limit_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(angular_z_accel_limit_test
+          test/test_angular_z_accel_limit.test
+          test/test_angular_z_accel_limit.cpp)
+  target_link_libraries(angular_z_accel_limit_test ${catkin_LIBRARIES})
+
 endif ()
 
 ##########################
