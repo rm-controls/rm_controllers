@@ -146,13 +146,13 @@ if (${CATKIN_ENABLE_TESTING})
   target_link_libraries(nan_cmd_vel_test ${catkin_LIBRARIES})
 
   add_rostest_gtest(linear_x_direction_jerk_limit_test
-          test/test_linear_x_direction_jerk_limit.test
-          test/test_linear_x_direction_jerk_limit.cpp)
+          test/test_linear_x_jerk_limit.test
+          test/test_linear_x_jerk_limit.cpp)
   target_link_libraries(linear_x_direction_jerk_limit_test ${catkin_LIBRARIES})
 
   add_rostest_gtest(linear_y_direction_jerk_limit_test
-          test/test_linear_y_direction_jerk_limit.test
-          test/test_linear_y_direction_jerk_limit.cpp)
+          test/test_linear_y_jerk_limit.test
+          test/test_linear_y_jerk_limit.cpp)
   target_link_libraries(linear_y_direction_jerk_limit_test ${catkin_LIBRARIES})
 
   add_rostest_gtest(linear_x_velocity_limit_test
