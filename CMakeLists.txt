@@ -145,6 +145,11 @@ if (${CATKIN_ENABLE_TESTING})
           test/test_default_odom_frame.cpp)
   target_link_libraries(default_odom_frame_test ${catkin_LIBRARIES})
 
+  add_rostest_gtest(timeout_test
+          test/test_timeout.test
+          test/test_timeout.cpp)
+  target_link_libraries(timeout_test ${catkin_LIBRARIES})
+
   add_rostest_gtest(nan_cmd_vel_test
           test/test_NAN_cmd.test
           test/test_NAN_cmd.cpp)
