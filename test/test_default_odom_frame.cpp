@@ -5,7 +5,7 @@
 
 
 // TEST CASES
-TEST_F(StandardChassisTest, testOdomFrame) {
+TEST_F(StandardChassisTest, testDefaultOdomFrame) {
   // wait for ROS
   waitForController();
 
