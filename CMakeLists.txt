@@ -145,6 +145,11 @@ if (${CATKIN_ENABLE_TESTING})
           test/test_default_odom_frame.cpp)
   target_link_libraries(default_odom_frame_test ${catkin_LIBRARIES})
 
+  add_rostest_gtest(odom_tf_test
+          test/test_odom_tf.test
+          test/test_odom_tf.cpp)
+  target_link_libraries(odom_tf_test ${catkin_LIBRARIES})
+
   add_rostest_gtest(timeout_test
           test/test_timeout.test
           test/test_timeout.cpp)
@@ -194,6 +199,11 @@ if (${CATKIN_ENABLE_TESTING})
           test/test_angular_z_accel_limit.test
           test/test_angular_z_accel_limit.cpp)
   target_link_libraries(angular_z_accel_limit_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(multiple_cmd_vel_publisher_test
+          test/test_multiple_cmd_vel_publisher.test
+          test/test_multiple_cmd_vel_publisher.cpp)
+  target_link_libraries(multiple_cmd_vel_publisher_test ${catkin_LIBRARIES})
 
 endif ()
 

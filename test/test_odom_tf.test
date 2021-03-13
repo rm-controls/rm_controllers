@@ -1,0 +1,24 @@
+<launch>
+  <!-- Load common test stuff -->
+  <include file="$(find rm_chassis_controllers)/launch/standard.launch">
+    <arg name="use_simulation" value="true"/>
+    <arg name="load_description" value="true"/>
+    <arg name="load_controller" value="true"/>
+    <arg name="odom_tf" value="false"/>
+  </include>
+
+    <!-- Make sure to disable odom tf -->
+    <rosparam>
+      controllers:
+        chassis_standard_controller:
+          enable_odom_tf: False
+    </rosparam>
+
+
+  <!-- Controller test -->
+  <test test-name="odom_tf_test"
+        pkg="rm_chassis_controllers"
+        type="odom_tf_test"
+        time-limit="40.0">
+  </test>
+</launch>
