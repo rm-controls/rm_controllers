@@ -200,10 +200,15 @@ if (${CATKIN_ENABLE_TESTING})
           test/test_angular_z_accel_limit.cpp)
   target_link_libraries(angular_z_accel_limit_test ${catkin_LIBRARIES})
 
-  add_rostest_gtest(multiple_cmd_vel_publisher_test
-          test/test_multiple_cmd_vel_publisher.test
-          test/test_multiple_cmd_vel_publisher.cpp)
-  target_link_libraries(multiple_cmd_vel_publisher_test ${catkin_LIBRARIES})
+  add_rostest_gtest(forward_test
+          test/test_forward.test
+          test/test_forward.cpp)
+  target_link_libraries(forward_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(turn_test
+          test/test_turn.test
+          test/test_turn.cpp)
+  target_link_libraries(turn_test ${catkin_LIBRARIES})
 
 endif ()
 
