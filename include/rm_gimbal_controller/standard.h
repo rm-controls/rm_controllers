@@ -40,17 +40,15 @@ class GimbalStandardController :
   void moveJoint(const ros::Duration &period);
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
+  void updateDetection();
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
   hardware_interface::RobotStateHandle robot_state_handle_;
   geometry_msgs::TransformStamped map2gimbal_des_;
-
   Bullet3DSolver *bullet_solver_{};
 
-  double *chassis_angular_z_{};
   bool state_changed_{};
-  bool identification_success_ = true;
   Vec2<double> angle_init_{};
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_subscriber_;
@@ -58,6 +56,8 @@ class GimbalStandardController :
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError> > error_pub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> detection_rt_buffer_;
+  robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
+
   rm_msgs::GimbalCmd cmd_;
   double error_yaw_{};
   double error_pitch_{};
