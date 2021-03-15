@@ -13,8 +13,8 @@
 #include <nav_msgs/Odometry.h>
 #include <gazebo_msgs/LinkStates.h>
 
-const double POSITION_TOLERANCE = 0.005; // 1 mm-s precision
-const double VELOCITY_TOLERANCE = 0.005; // 1 mm-s-1 precision
+const double POSITION_TOLERANCE = 0.05; // 1 mm-s precision
+const double VELOCITY_TOLERANCE = 0.05; // 1 mm-s-1 precision
 
 class StandardChassisTest : public ::testing::Test {
  public:
