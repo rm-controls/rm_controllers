@@ -14,7 +14,7 @@ TEST_F(StandardChassisTest, testLinearYDirectionVelocityLimits) {
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
 
-  cmd_chassis.mode = cmd_chassis.GYRO;
+  cmd_chassis.mode = cmd_chassis.RAW;
   cmd_chassis.effort_limit = 99;
   cmd_chassis.accel.linear.x = 0.0;
   cmd_chassis.accel.linear.y = 0.0;
