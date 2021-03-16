@@ -13,7 +13,7 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
 
-  cmd_chassis.mode = cmd_chassis.GYRO;
+  cmd_chassis.mode = cmd_chassis.RAW;
   cmd_chassis.effort_limit = 99;
   cmd_chassis.accel.linear.x = 0;
   cmd_chassis.accel.linear.y = 0;
@@ -43,8 +43,8 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), POSITION_TOLERANCE);
 
   EXPECT_LT(fabs(new_base_link_twist_.linear.y - old_base_link_twist_.linear.y), 1.0 + VELOCITY_TOLERANCE);
-  EXPECT_LT(fabs(new_base_link_twist_.angular.z - old_base_link_twist_.angular.z), 0.03);
-  EXPECT_LT(fabs(new_base_link_pose_.position.x - old_base_link_pose_.position.x), 0.04);
+  EXPECT_LT(fabs(new_base_link_twist_.angular.z - old_base_link_twist_.angular.z), VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_base_link_pose_.position.x - old_base_link_pose_.position.x), POSITION_TOLERANCE);
 
   cmd_vel.angular.z = 0.0;
   cmd_chassis.accel.angular.z = 0.0;
