@@ -25,12 +25,14 @@ TEST_F(StandardChassisTest, testForward) {
   publish(chassis_cmd, cmd_vel);
   ros::Duration(2).sleep();
   EXPECT_NEAR(cmd_vel.linear.x, getTwist().linear.x, VELOCITY_TOLERANCE);
+  EXPECT_NEAR(cmd_vel.linear.x, getLastOdom().twist.twist.linear.x, VELOCITY_TOLERANCE);
 
   cmd_vel.linear.x = 0.;
   cmd_vel.linear.y = 0.5;
   publish(chassis_cmd, cmd_vel);
   ros::Duration(2).sleep();
   EXPECT_NEAR(cmd_vel.linear.y, getTwist().linear.y, VELOCITY_TOLERANCE);
+  EXPECT_NEAR(cmd_vel.linear.y, getLastOdom().twist.twist.linear.y, VELOCITY_TOLERANCE);
 
 }
 
