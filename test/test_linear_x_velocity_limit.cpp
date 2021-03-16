@@ -14,7 +14,7 @@ TEST_F(StandardChassisTest, testLinearXDirectionVelocityLimits) {
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
 
-  cmd_chassis.mode = cmd_chassis.GYRO;
+  cmd_chassis.mode = cmd_chassis.RAW;
   cmd_chassis.effort_limit = 99;
   cmd_chassis.accel.linear.x = 10;
   cmd_chassis.accel.linear.y = 10;
@@ -36,9 +36,8 @@ TEST_F(StandardChassisTest, testLinearXDirectionVelocityLimits) {
 
 // check if the robot speed is now 1.0 m.s-1, the limit
   EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 3.8 + VELOCITY_TOLERANCE);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), 0.03);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), VELOCITY_TOLERANCE);
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), POSITION_TOLERANCE);
-
 
   cmd_vel.linear.x = 0.0;
   cmd_chassis.accel.linear.x = 0.0;
