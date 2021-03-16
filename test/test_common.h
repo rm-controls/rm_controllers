@@ -15,6 +15,7 @@
 
 const double POSITION_TOLERANCE = 0.05; // 1 mm-s precision
 const double VELOCITY_TOLERANCE = 0.05; // 1 mm-s-1 precision
+const double EPS = 0.01;
 
 class StandardChassisTest : public ::testing::Test {
  public:
@@ -57,6 +58,8 @@ class StandardChassisTest : public ::testing::Test {
   const geometry_msgs::Twist &getTwist() { return base_link_twist_; }
   const nav_msgs::Odometry getLastOdom() { return last_odom_; }
 
+  bool isControllerAlive() const { return (odom_sub_.getNumPublishers() > 0); }
+
  private:
   ros::NodeHandle nh_;
   ros::Publisher cmd_chassis_pub_;
@@ -67,8 +70,6 @@ class StandardChassisTest : public ::testing::Test {
   geometry_msgs::Pose base_link_pose_;  //  from Gazebo
   geometry_msgs::Twist base_link_twist_; //  from Gazebo
   bool received_first_odom_;
-
-  bool isControllerAlive() const { return (odom_sub_.getNumPublishers() > 0); }
 
   void odomCallback(const nav_msgs::Odometry &odom) {
     last_odom_ = odom;
