@@ -13,7 +13,7 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
 
-  cmd_chassis.mode = cmd_chassis.GYRO;
+  cmd_chassis.mode = cmd_chassis.RAW;
   cmd_chassis.effort_limit = 99;
   cmd_chassis.accel.linear.x = 0;
   cmd_chassis.accel.linear.y = 0;
@@ -24,8 +24,8 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
 // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
 // send a big command
-  cmd_vel.linear.x = 1.0;
-  cmd_chassis.accel.linear.x = 10.0;
+  cmd_vel.angular.z = 1.0;
+  cmd_chassis.accel.angular.z = 10.0;
   publish(cmd_chassis, cmd_vel);
 // wait for a while
   ros::Duration(10.0).sleep();
@@ -45,7 +45,7 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "angular_z_direction_accel_limit_test");
+  ros::init(argc, argv, "angular_z_angular_accel_limit_test");
 
   ros::AsyncSpinner spinner(1);
   spinner.start();
