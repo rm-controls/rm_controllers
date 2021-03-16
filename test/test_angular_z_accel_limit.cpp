@@ -21,8 +21,10 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
 
   publish(cmd_chassis, cmd_vel);
   ros::Duration(2.0).sleep();
-// get initial odom
+// get initial odom and base_link
   nav_msgs::Odometry old_odom = getLastOdom();
+  geometry_msgs::Pose old_base_link_pose = getPose();    //  from Gazebo
+  geometry_msgs::Twist old_base_link_twist = getTwist(); //  from Gazebo
 // send a big command
   cmd_vel.angular.z = 1.0;
   cmd_chassis.accel.angular.z = 10.0;
@@ -31,12 +33,17 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   ros::Duration(10.0).sleep();
 
   nav_msgs::Odometry new_odom = getLastOdom();
+  geometry_msgs::Pose new_base_link_pose = getPose();    //  from Gazebo
+  geometry_msgs::Twist new_base_link_twist = getTwist(); //  from Gazebo
 
 // check if the robot speed is now 1.0rad.s-1, which is 2.0rad.s-2 * 0.5s
   EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), 2.0 + VELOCITY_TOLERANCE);
-
   EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), POSITION_TOLERANCE);
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), POSITION_TOLERANCE);
+
+  EXPECT_LT(fabs(new_base_link_twist.angular.z - old_base_link_twist.angular.z), 2.0 + VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_base_link_pose.position.x - old_base_link_pose.position.x), POSITION_TOLERANCE);
+  EXPECT_LT(fabs(new_base_link_pose.position.y - old_base_link_pose.position.y), POSITION_TOLERANCE);
 
   cmd_vel.angular.z = 0.0;
   cmd_chassis.accel.angular.z = 0.0;
