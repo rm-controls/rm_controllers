@@ -49,8 +49,8 @@ TEST_F(StandardChassisTest, testForward) {
   EXPECT_NEAR(sqrt(dx * dx + dy * dy), expected_distance, 0.3);
 
   EXPECT_NEAR(fabs(new_base_link_twist_.linear.x), cmd_vel.linear.x, 0.08);
-  EXPECT_LT(fabs(new_base_link_twist_.linear.y), EPS);
-  EXPECT_LT(fabs(new_base_link_twist_.angular.z), EPS);
+  EXPECT_LT(fabs(new_base_link_twist_.linear.y), VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_base_link_twist_.angular.z), VELOCITY_TOLERANCE);
 }
 
 int main(int argc, char **argv) {
