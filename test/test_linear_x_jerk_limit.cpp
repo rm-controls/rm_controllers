@@ -2,7 +2,7 @@
 #include "test_common.h"
 
 // TEST CASES
-TEST_F(StandardChassisTest, testLinearYDirectionJerkLimits) {
+TEST_F(StandardChassisTest, testLinearXDirectionJerkLimits) {
 // wait for ROS
   waitForController();
 
@@ -45,8 +45,8 @@ TEST_F(StandardChassisTest, testLinearYDirectionJerkLimits) {
   EXPECT_LT(fabs(new_base_link_pose_.position.y - old_base_link_pose_.position.y), POSITION_TOLERANCE);
   EXPECT_LT(fabs(new_base_link_twist_.angular.z - old_base_link_twist_.angular.z), 0.1);
 
-  cmd_vel.linear.y = 0.0;
-  cmd_chassis.accel.linear.y = 0.0;
+  cmd_vel.linear.x = 0.0;
+  cmd_chassis.accel.linear.x = 0.0;
   publish(cmd_chassis, cmd_vel);
 }
 

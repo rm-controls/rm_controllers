@@ -20,22 +20,30 @@ TEST_F(StandardChassisTest, testLinearYDirectionJerkLimits) {
   cmd_chassis.accel.linear.y = 0;
 
   publish(cmd_chassis, cmd_vel);
-  ros::Duration(2.0).sleep();
+  ros::Duration(5.0).sleep();
 // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
+  geometry_msgs::Pose old_base_link_pose_ = getPose();  //  from Gazebo
+  geometry_msgs::Twist old_base_link_twist_ = getTwist();//  from Gazebo
 // send a big command
   cmd_vel.linear.y = 10.0;
   cmd_chassis.accel.linear.y = 10.0;
   publish(cmd_chassis, cmd_vel);
 // wait for a while
-  ros::Duration(0.5).sleep();
+  ros::Duration(1.0).sleep();
 
+  geometry_msgs::Pose new_base_link_pose_ = getPose();  //  from Gazebo
+  geometry_msgs::Twist new_base_link_twist_ = getTwist();//  from Gazebo
   nav_msgs::Odometry new_odom = getLastOdom();
 
-// check if the robot speed is now 3.7m.s-1
-  EXPECT_NEAR(new_odom.twist.twist.linear.y, 3.7, 0.10);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 0.1);
-  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), 0.1);
+// check if the robot speed is now 4.0m.s-1
+  EXPECT_NEAR(new_odom.twist.twist.linear.y, 3.8, 0.20);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), POSITION_TOLERANCE);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), 0.2);
+
+  EXPECT_NEAR(new_base_link_twist_.linear.y, 3.8, 0.50);
+  EXPECT_LT(fabs(new_base_link_pose_.position.x - old_base_link_pose_.position.x), 0.2);
+  EXPECT_LT(fabs(new_base_link_twist_.angular.z - old_base_link_twist_.angular.z), 0.2);
 
   cmd_vel.linear.y = 0.0;
   cmd_chassis.accel.linear.y = 0.0;
