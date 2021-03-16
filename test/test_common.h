@@ -55,6 +55,7 @@ class StandardChassisTest : public ::testing::Test {
 
   const geometry_msgs::Pose &getPose() { return base_link_pose_; }
   const geometry_msgs::Twist &getTwist() { return base_link_twist_; }
+  const nav_msgs::Odometry getLastOdom() { return last_odom_; }
 
  private:
   ros::NodeHandle nh_;
