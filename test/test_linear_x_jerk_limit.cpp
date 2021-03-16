@@ -14,7 +14,7 @@ TEST_F(StandardChassisTest, testLinearYDirectionJerkLimits) {
   cmd_vel.linear.y = 0.0;
   cmd_vel.angular.z = 0.0;
 
-  cmd_chassis.mode = cmd_chassis.GYRO;
+  cmd_chassis.mode = cmd_chassis.RAW;
   cmd_chassis.effort_limit = 99;
   cmd_chassis.accel.linear.x = 0;
   cmd_chassis.accel.linear.y = 0;
@@ -41,7 +41,8 @@ TEST_F(StandardChassisTest, testLinearYDirectionJerkLimits) {
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), POSITION_TOLERANCE);
   EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), 0.1);
 
-  EXPECT_LT(fabs(new_base_link_pose_.position.y - old_base_link_pose_.position.y), 0.06);
+  EXPECT_NEAR(new_base_link_twist_.linear.x, 3.8, 0.10);
+  EXPECT_LT(fabs(new_base_link_pose_.position.y - old_base_link_pose_.position.y), POSITION_TOLERANCE);
   EXPECT_LT(fabs(new_base_link_twist_.angular.z - old_base_link_twist_.angular.z), 0.1);
 
   cmd_vel.linear.y = 0.0;
