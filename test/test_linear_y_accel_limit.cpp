@@ -20,7 +20,7 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   cmd_chassis.accel.angular.z = 0;
 
   publish(cmd_chassis, cmd_vel);
-  ros::Duration(8.0).sleep();
+  ros::Duration(2.5).sleep();
 // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
   geometry_msgs::Pose old_base_link_pose_ = getPose();  //  from Gazebo
@@ -30,7 +30,7 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   cmd_chassis.accel.linear.y = 10.0;
   publish(cmd_chassis, cmd_vel);
 // wait for a while
-  ros::Duration(3.0).sleep();
+  ros::Duration(1.0).sleep();
 
   geometry_msgs::Pose new_base_link_pose_ = getPose();  //  from Gazebo
   geometry_msgs::Twist new_base_link_twist_ = getTwist(); //  from Gazebo
@@ -46,8 +46,33 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   EXPECT_LT(fabs(new_base_link_twist_.angular.z - old_base_link_twist_.angular.z), VELOCITY_TOLERANCE);
   EXPECT_LT(fabs(new_base_link_pose_.position.x - old_base_link_pose_.position.x), POSITION_TOLERANCE);
 
-  cmd_vel.angular.z = 0.0;
-  cmd_chassis.accel.angular.z = 0.0;
+  cmd_vel.linear.y = 0.0;
+  cmd_chassis.accel.linear.y = 10.0;
+  publish(cmd_chassis, cmd_vel);
+  ros::Duration(3.0).sleep();
+
+  old_odom = getLastOdom();
+  old_base_link_pose_ = getPose();  //  from Gazebo
+  old_base_link_twist_ = getTwist(); //  from Gazebo
+
+  cmd_vel.linear.y = 1.0;
+  cmd_chassis.accel.linear.y = 0.5;
+  publish(cmd_chassis, cmd_vel);
+  ros::Duration(1.0).sleep();
+
+  new_odom = getLastOdom();
+  new_base_link_pose_ = getPose();  //  from Gazebo
+  new_base_link_twist_ = getTwist(); //  from Gazebo
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.y - old_odom.twist.twist.linear.y), 1.0);
+  EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), POSITION_TOLERANCE);
+
+  EXPECT_LT(fabs(new_base_link_twist_.linear.y - old_base_link_twist_.linear.y), 1.0);
+  EXPECT_LT(fabs(new_base_link_twist_.angular.z - old_base_link_twist_.angular.z), VELOCITY_TOLERANCE);
+  EXPECT_LT(fabs(new_base_link_pose_.position.x - old_base_link_pose_.position.x), POSITION_TOLERANCE);
+
+  cmd_vel.linear.y = 0.0;
+  cmd_chassis.accel.linear.y = 0.0;
   publish(cmd_chassis, cmd_vel);
 }
 
