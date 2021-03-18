@@ -8,7 +8,7 @@
 #include <control_toolbox/pid.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <robot_state_controller/robot_state_interface.h>
+#include <rm_common/hardware_interface/robot_state_interface.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_shooter_controllers/ShooterStandardConfig.h>

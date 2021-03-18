@@ -1,35 +1,31 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>rm_shooter_controllers</name>
-  <version>0.1.0</version>
-  <description>RoboMaster standard robot Shooter controller</description>
-  <maintainer email="pfankhauser@anybotics.com">Peter Fankhauser</maintainer>
-  <license>BSD</license>
-  <!--  <url type="website">https://github.com/ethz-asl/ros_best_practices</url>-->
-  <!--  <url type="bugtracker">https://github.com/ethz-asl/ros_best_practices/issues</url>-->
-  <author email="pfankhauser@anybotics.com">Peter Fankhauser</author>
+    <name>rm_shooter_controllers</name>
+    <version>0.1.0</version>
+    <description>RoboMaster standard robot Shooter controller</description>
+    <maintainer email="liaoqiayuan@gmail.com">Qiayuan Liao</maintainer>
+    <license>BSD</license>
+    <author email="liaoqiayuan@gmail.com">Qiayuan Liao</author>
 
-  <!-- buildtool_depend: dependencies of the build process -->
-  <buildtool_depend>catkin</buildtool_depend>
-  <!-- depend: build, export, and execution dependency -->
-  <depend>roscpp</depend>
-  <depend>roslint</depend>
+    <!-- buildtool_depend: dependencies of the build process -->
+    <buildtool_depend>catkin</buildtool_depend>
+    <!-- depend: build, export, and execution dependency -->
+    <depend>roscpp</depend>
+    <depend>roslint</depend>
 
-  <depend>rm_msgs</depend>
-  <depend>rm_common</depend>
-  <depend>rm_base</depend>
-  <depend>robot_state_controller</depend>
-  <depend>control_toolbox</depend>
-  <depend>angles</depend>
-  <depend>controller_interface</depend>
-  <depend>forward_command_controller</depend>
-  <depend>hardware_interface</depend>
-  <depend>pluginlib</depend>
-  <depend>realtime_tools</depend>
-  <depend>dynamic_reconfigure</depend>
+    <depend>rm_msgs</depend>
+    <depend>rm_common</depend>
 
-  <export>
-    <controller_interface
-            plugin="${prefix}/rm_shooter_controllers_plugins.xml"/>
-  </export>
+    <depend>pluginlib</depend>
+    <depend>hardware_interface</depend>
+    <depend>controller_interface</depend>
+    <depend>forward_command_controller</depend>
+    <depend>realtime_tools</depend>
+    <depend>control_toolbox</depend>
+    <depend>dynamic_reconfigure</depend>
+
+    <export>
+        <controller_interface
+                plugin="${prefix}/rm_shooter_controllers_plugins.xml"/>
+    </export>
 </package>
