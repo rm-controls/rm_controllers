@@ -17,17 +17,16 @@ find_package(catkin REQUIRED
 
         rm_msgs
         rm_common
-        rm_base
 
-        control_toolbox
-        angles
-        tf2
-        tf2_geometry_msgs
+        pluginlib
+        hardware_interface
         controller_interface
         forward_command_controller
-        hardware_interface
-        pluginlib
         realtime_tools
+        control_toolbox
+        tf2
+        tf2_geometry_msgs
+        visualization_msgs
         dynamic_reconfigure
         )
 
@@ -54,16 +53,17 @@ catkin_package(
 
         rm_msgs
         rm_common
-        rm_base
 
-        control_toolbox
-        angles
-        tf2
+        pluginlib
+        hardware_interface
         controller_interface
         forward_command_controller
-        hardware_interface
-        pluginlib
         realtime_tools
+        control_toolbox
+        tf2
+        tf2_geometry_msgs
+        visualization_msgs
+        dynamic_reconfigure
         DEPENDS
 )
 
@@ -82,12 +82,10 @@ add_library(bullet_solver src/bullet_solver.cpp)
 add_library(${PROJECT_NAME} src/standard.cpp)
 
 ## Declare cpp executables
-add_executable(test_bullet_solver test/test_bullet_solver.cpp)
 
 ## Specify libraries to link executable targets against
 target_link_libraries(bullet_solver ${catkin_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} bullet_solver ${catkin_LIBRARIES})
-target_link_libraries(test_bullet_solver bullet_solver ${catkin_LIBRARIES})
 
 #############
 ## Install ##

@@ -12,8 +12,8 @@
 #include <visualization_msgs/Marker.h>
 #include <rm_gimbal_controllers/GimbalConfig.h>
 #include <dynamic_reconfigure/server.h>
-#include <robot_state_controller/robot_state_interface.h>
-#include "rm_common/cpp_types.h"
+#include <rm_common/hardware_interface/robot_state_interface.h>
+#include <rm_common/cpp_types.h>
 #include <rm_common/ros_utilities.h>
 
 struct Config {
