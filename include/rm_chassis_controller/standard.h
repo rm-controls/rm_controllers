@@ -8,8 +8,8 @@
 #include <control_toolbox/pid.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <robot_state_controller/robot_state_interface.h>
-#include <robot_state_controller/tf_rt_broadcaster.h>
+#include <rm_common/hardware_interface/robot_state_interface.h>
+#include <rm_common/tf_rt_broadcaster.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_msgs/ChassisCmd.h>
 #include <rm_common/filters/filters.h>

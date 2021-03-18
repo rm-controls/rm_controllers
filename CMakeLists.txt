@@ -11,26 +11,24 @@ add_definitions(-Wall -Werror)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED
-    COMPONENTS
-    roscpp
-    roslint
-    rostest
+        COMPONENTS
+        roscpp
+        roslint
+        rostest
 
-    rm_msgs
-    rm_common
-    rm_base
+        rm_msgs
+        rm_common
 
-    tf2
-    tf2_geometry_msgs
-
-    control_toolbox
-    angles
-    controller_interface
-    forward_command_controller
-    hardware_interface
-    pluginlib
-    realtime_tools
-    )
+        pluginlib
+        hardware_interface
+        controller_interface
+        forward_command_controller
+        realtime_tools
+        control_toolbox
+        tf2
+        tf2_geometry_msgs
+        angles
+        )
 
 ###################################
 ## catkin specific configuration ##
@@ -42,30 +40,27 @@ find_package(catkin REQUIRED
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    INCLUDE_DIRS
-    include
-    LIBRARIES
-    CATKIN_DEPENDS
-    roscpp
-    roslint
-    rostest
+        INCLUDE_DIRS
+        include
+        LIBRARIES
+        CATKIN_DEPENDS
+        roscpp
+        roslint
+        rostest
 
-    rm_msgs
-    rm_common
-    rm_base
+        rm_msgs
+        rm_common
 
-    tf2
-    tf2_geometry_msgs
-
-    control_toolbox
-    angles
-    controller_interface
-    forward_command_controller
-    hardware_interface
-    pluginlib
-    realtime_tools
-
-    DEPENDS
+        pluginlib
+        hardware_interface
+        controller_interface
+        forward_command_controller
+        realtime_tools
+        control_toolbox
+        tf2
+        tf2_geometry_msgs
+        angles
+        DEPENDS
 )
 
 ###########
@@ -74,20 +69,20 @@ catkin_package(
 
 ## Specify additional locations of header files
 include_directories(
-    include
-    ${catkin_INCLUDE_DIRS}
+        include
+        ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
-    src/standard.cpp
-    src/sentry.cpp
-    )
+        src/standard.cpp
+        src/sentry.cpp
+        )
 
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME}
-    ${catkin_LIBRARIES}
-    )
+        ${catkin_LIBRARIES}
+        )
 
 #############
 ## Install ##
@@ -119,11 +114,11 @@ target_link_libraries(${PROJECT_NAME}
 #############
 
 if (${CATKIN_ENABLE_TESTING})
-  ## Add gtest based cpp test target and link libraries
-  add_rostest_gtest(standard_chassis_test
-      test/test_standard_chassis.test
-      test/test_standard_chassis.cpp)
-  target_link_libraries(standard_chassis_test ${catkin_LIBRARIES})
+    ## Add gtest based cpp test target and link libraries
+    add_rostest_gtest(standard_chassis_test
+            test/test_standard_chassis.test
+            test/test_standard_chassis.cpp)
+    target_link_libraries(standard_chassis_test ${catkin_LIBRARIES})
 endif ()
 
 ##########################
