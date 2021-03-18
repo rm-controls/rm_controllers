@@ -13,8 +13,8 @@
 #include <rm_gimbal_controllers/GimbalConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <robot_state_controller/robot_state_interface.h>
-#include "cpp_types.h"
-#include <ros_utilities.h>
+#include "rm_common/cpp_types.h"
+#include <rm_common/ros_utilities.h>
 
 struct Config {
   double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
