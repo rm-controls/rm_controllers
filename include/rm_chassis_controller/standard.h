@@ -12,7 +12,7 @@
 #include <robot_state_controller/tf_rt_broadcaster.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_msgs/ChassisCmd.h>
-#include <filters.h>
+#include <rm_common/filters/filters.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
