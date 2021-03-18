@@ -25,6 +25,8 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
   publish_rate_ = getParam(controller_nh, "publish_rate_", 100);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
 
+  timeout_ = getParam(controller_nh, "timeout_", 1.0);
+
   // Get and check params for covariances
   XmlRpc::XmlRpcValue pose_cov_list;
   controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
@@ -100,6 +102,7 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
 }
 
 void ChassisStandardController::update(const ros::Time &time, const ros::Duration &period) {
+  fsmTimeOut(time);
   cmd_chassis_ = *chassis_rt_buffer_.readFromRT();
   ramp_x->setAcc(cmd_chassis_.accel.linear.x);
   ramp_y->setAcc(cmd_chassis_.accel.linear.y);
@@ -323,10 +326,21 @@ void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Dur
 
 void ChassisStandardController::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg) {
   chassis_rt_buffer_.writeFromNonRT(*msg);
+  cmd_chassis_callback_time_ = ros::Time::now();
 }
 
 void ChassisStandardController::cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd) {
   vel_rt_buffer_.writeFromNonRT(*cmd);
+  cmd_vel_callback_time_ = ros::Time::now();
+}
+
+void ChassisStandardController::fsmTimeOut(const ros::Time &time) {
+  if ((time - cmd_chassis_callback_time_).toSec() > timeout_ || (time - cmd_vel_callback_time_).toSec() > timeout_) {
+    cmd_chassis_.effort_limit = 0;
+    chassis_rt_buffer_.writeFromNonRT(cmd_chassis_);
+    ROS_INFO_THROTTLE(2.0, "Message cmd_vel and cmd_chassis timeout!");
+  } else
+    ROS_INFO_THROTTLE(2.0, "Message cmd_vel and cmd_chassis come in time!");
 }
 
 void ChassisStandardController::tfVelFromYawToBase(const ros::Time &time) {

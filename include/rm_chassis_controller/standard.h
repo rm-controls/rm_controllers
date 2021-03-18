@@ -45,6 +45,7 @@ class ChassisStandardController : public controller_interface::MultiInterfaceCon
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd);
   void updateOdom(const ros::Time &time, const ros::Duration &period);
+  void fsmTimeOut(const ros::Time &time);
   geometry_msgs::Twist iKine();
 
   control_toolbox::Pid pid_rf_, pid_lf_, pid_rb_, pid_lb_;
@@ -54,6 +55,8 @@ class ChassisStandardController : public controller_interface::MultiInterfaceCon
 
   double publish_rate_{}, wheel_base_{}, wheel_track_{}, wheel_radius_{};
   ros::Time last_publish_time_;
+  ros::Time cmd_vel_callback_time_;
+  ros::Time cmd_chassis_callback_time_;
   geometry_msgs::TransformStamped odom2base_{};
   geometry_msgs::Vector3Stamped vel_cmd_{};
   geometry_msgs::Vector3Stamped vel_tfed_{};
@@ -62,6 +65,7 @@ class ChassisStandardController : public controller_interface::MultiInterfaceCon
 
   bool enable_odom_tf_{};
   bool state_changed_{};
+  double timeout_;
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_chassis_sub_;
   ros::Subscriber cmd_vel_sub_;
