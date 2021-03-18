@@ -11,18 +11,19 @@ add_definitions(-Wall -Werror)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED
-    COMPONENTS
-    roscpp
-    roslint
+        COMPONENTS
+        roscpp
+        roslint
 
-    hardware_interface
-    controller_interface
-    urdf
-    tf2_ros
-    tf2_kdl
-    kdl_parser
-    realtime_tools
-    )
+        rm_common
+        hardware_interface
+        controller_interface
+        urdf
+        tf2_ros
+        tf2_kdl
+        kdl_parser
+        realtime_tools
+        )
 
 ###################################
 ## catkin specific configuration ##
@@ -34,21 +35,21 @@ find_package(catkin REQUIRED
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-    INCLUDE_DIRS
-    include
-    LIBRARIES
-    ${PROJECT_NAME}
-    CATKIN_DEPENDS
-    roscpp
-    roslint
+        INCLUDE_DIRS
+        include
+        LIBRARIES
+        ${PROJECT_NAME}
+        CATKIN_DEPENDS
+        roscpp
+        roslint
 
-    hardware_interface
-    controller_interface
-    urdf
-    tf2_ros
-    kdl_parser
-    realtime_tools
-    DEPENDS
+        hardware_interface
+        controller_interface
+        urdf
+        tf2_ros
+        kdl_parser
+        realtime_tools
+        DEPENDS
 )
 
 ###########
@@ -58,19 +59,18 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-    include
-    ${catkin_INCLUDE_DIRS}
+        include
+        ${catkin_INCLUDE_DIRS}
 )
 
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
-    src/${PROJECT_NAME}.cpp
-    src/tf_rt_broadcaster.cpp
-    )
+        src/${PROJECT_NAME}.cpp
+        )
 
 target_link_libraries(${PROJECT_NAME}
-    ${catkin_LIBRARIES}
-    )
+        ${catkin_LIBRARIES}
+        )
 
 #############
 ## Install ##

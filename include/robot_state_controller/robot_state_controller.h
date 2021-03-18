@@ -5,8 +5,8 @@
 #ifndef ROBOT_STATE_CONTROLLER_ROBOT_STATE_CONTROLLER_H
 #define ROBOT_STATE_CONTROLLER_ROBOT_STATE_CONTROLLER_H
 
-#include "robot_state_controller/tf_rt_broadcaster.h"
-#include "robot_state_controller/robot_state_interface.h"
+#include <rm_common/hardware_interface/robot_state_interface.h>
+#include <rm_common/tf_rt_broadcaster.h>
 
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_state_interface.h>
@@ -15,6 +15,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/buffer.h>
 #include <urdf/model.h>
+#include <kdl/tree.hpp>
 
 namespace robot_state_controller {
 class SegmentPair {
