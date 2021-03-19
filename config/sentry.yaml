@@ -1,0 +1,27 @@
+controllers:
+  robot_state_controller:
+    type: robot_state_controller/RobotStateController
+    publish_rate: 50
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50
+  shooter_standard_controller:
+    type: rm_shooter_controllers/ShooterStandardController
+    joint_fiction_left_name: "left_friction_wheel_joint"
+    joint_fiction_right_name: "right_friction_wheel_joint"
+    joint_trigger_name: "trigger_joint"
+    push_angle: 0.8
+    block_effort: 0.9
+    block_duration: 0.05
+    block_speed: 0.5
+    anti_block_angle: 0.15
+    anti_block_error: 0.1
+    qd_10: 372.0
+    qd_15: 496.0
+    qd_16: 498.0
+    qd_18: 540.0
+    qd_30: 772.0
+    pid_fiction_l: { p: 0.001, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    pid_fiction_r: { p: 0.001, i: 0.0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    pid_trigger: { p: 7.4, i: 0.0, d: 0.22, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    publish_rate: 50
