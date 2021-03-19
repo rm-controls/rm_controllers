@@ -13,7 +13,7 @@
 #include <rm_gimbal_controllers/GimbalConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
-#include <rm_common/cpp_types.h>
+#include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
 
 struct Config {
