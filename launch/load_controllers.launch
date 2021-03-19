@@ -3,7 +3,7 @@
     <arg name="load_controller" default="true"/>
 
     <rosparam file="$(find rm_shooter_controllers)/config/$(arg robot_type).yaml" command="load"/>
-    <rosparam file="$(find rm_gimbal_controllers)/config/$(arg robot_type).yaml" command="load"/>
+<!--    <rosparam file="$(find rm_gimbal_controllers)/config/$(arg robot_type).yaml" command="load"/>-->
 
     <!-- load the controllers -->
     <node if="$(arg load_controller)" name="controller_spawner" pkg="controller_manager" type="spawner"
@@ -12,7 +12,6 @@
           controllers/robot_state_controller
           controllers/joint_state_controller
           controllers/shooter_standard_controller
-          controllers/gimbal_standard_controller
     "/>
 
     <node pkg="tf" type="static_transform_publisher" name=""
