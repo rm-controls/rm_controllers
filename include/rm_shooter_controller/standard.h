@@ -20,7 +20,8 @@ enum State {
   PASSIVE = 0,
   READY = 1,
   PUSH = 2,
-  BLOCK = 3
+  STOP = 3,
+  BLOCK = 4
 };
 
 struct Config {
@@ -42,12 +43,13 @@ class ShooterStandardController
   void ready(const ros::Duration &period);
   void push(const ros::Time &time, const ros::Duration &period);
   void block(const ros::Time &time, const ros::Duration &period);
+  void stop(const ros::Time &time, const ros::Duration &period);
   void moveJoint(const ros::Duration &period);
   void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
   void reconfigCB(rm_shooter_controllers::ShooterStandardConfig &config, uint32_t /*level*/);
 
-  hardware_interface::JointHandle joint_fiction_l_, joint_fiction_r_, joint_trigger_;
-  control_toolbox::Pid pid_fiction_l_, pid_fiction_r_, pid_trigger_;
+  hardware_interface::JointHandle joint_friction_l_, joint_friction_r_, joint_trigger_;
+  control_toolbox::Pid pid_friction_l_, pid_friction_r_, pid_trigger_;
 
   double friction_qd_des_{};
   double trigger_q_des_{};

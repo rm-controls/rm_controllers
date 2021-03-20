@@ -14,10 +14,10 @@ bool ShooterStandardController::init(hardware_interface::RobotHW *robot_hw,
                                      ros::NodeHandle &controller_nh) {
   // init joint
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
-  joint_fiction_l_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_fiction_left_name", std::string("joint_fiction_left")));
-  joint_fiction_r_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_fiction_right_name", std::string("joint_fiction_right")));
+  joint_friction_l_ = effort_jnt_interface->getHandle(
+      getParam(controller_nh, "joint_friction_left_name", std::string("joint_friction_left")));
+  joint_friction_r_ = effort_jnt_interface->getHandle(
+      getParam(controller_nh, "joint_friction_right_name", std::string("joint_friction_right")));
   joint_trigger_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_trigger_name", std::string("joint_trigger")));
 
@@ -43,8 +43,8 @@ bool ShooterStandardController::init(hardware_interface::RobotHW *robot_hw,
       };
   d_srv_->setCallback(cb);
 
-  if (!pid_fiction_l_.init(ros::NodeHandle(controller_nh, "pid_fiction_l"))
-      || !pid_fiction_r_.init(ros::NodeHandle(controller_nh, "pid_fiction_r"))
+  if (!pid_friction_l_.init(ros::NodeHandle(controller_nh, "pid_friction_l"))
+      || !pid_friction_r_.init(ros::NodeHandle(controller_nh, "pid_friction_r"))
       || !pid_trigger_.init(ros::NodeHandle(controller_nh, "pid_trigger")))
     return false;
 
@@ -85,6 +85,8 @@ void ShooterStandardController::update(const ros::Time &time,
       push(time, period);
     else if (state_ == BLOCK)
       block(time, period);
+    else if (state_ == STOP)
+      stop(time, period);
     moveJoint(period);
   }
 }
@@ -94,8 +96,8 @@ void ShooterStandardController::passive() {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PASSIVE");
 
-    joint_fiction_l_.setCommand(0);
-    joint_fiction_r_.setCommand(0);
+    joint_friction_l_.setCommand(0);
+    joint_friction_r_.setCommand(0);
     joint_trigger_.setCommand(0);
   }
 }
@@ -105,8 +107,8 @@ void ShooterStandardController::ready(const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter READY");
     trigger_q_des_ = joint_trigger_.getPosition();
-    pid_fiction_l_.reset();
-    pid_fiction_r_.reset();
+    pid_friction_l_.reset();
+    pid_friction_r_.reset();
   }
 }
 
@@ -120,8 +122,8 @@ void ShooterStandardController::push(const ros::Time &time,
     pid_trigger_.reset();
   }
 
-  if (joint_fiction_l_.getVelocity() >= 0.95 * friction_qd_des_ && joint_fiction_l_.getVelocity() > 8.0 &&
-      joint_fiction_r_.getVelocity() <= 0.95 * (-friction_qd_des_) && joint_fiction_r_.getVelocity() < -8.0 &&
+  if (joint_friction_l_.getVelocity() >= 0.95 * friction_qd_des_ && joint_friction_l_.getVelocity() > 8.0 &&
+      joint_friction_r_.getVelocity() <= 0.95 * (-friction_qd_des_) && joint_friction_r_.getVelocity() < -8.0 &&
       (ros::Time::now() - last_shoot_time_).toSec() >= 1. / cmd_.hz) { // Time to shoot!!!
     trigger_q_des_ = joint_trigger_.getPosition() - config_.push_angle;
     last_shoot_time_ = time;
@@ -159,6 +161,19 @@ void ShooterStandardController::block(const ros::Time &time, const ros::Duration
     state_changed_ = true;
     ROS_INFO("[Shooter] Exit BLOCK");
   }
+}
+
+void ShooterStandardController::stop(const ros::Time &time, const ros::Duration &period) {
+  if (state_changed_) { //on enter
+    state_changed_ = false;
+    ROS_INFO("[Shooter] Enter STOP");
+
+    pid_friction_l_.reset();
+    pid_friction_r_.reset();
+    pid_trigger_.reset();
+  }
+  friction_qd_des_ = 0;
+  trigger_q_des_ = joint_trigger_.getPosition();
 }
 
 void ShooterStandardController::commandCB(const rm_msgs::ShootCmdConstPtr &msg) {
@@ -201,15 +216,15 @@ void ShooterStandardController::reconfigCB(rm_shooter_controllers::ShooterStanda
 }
 
 void ShooterStandardController::moveJoint(const ros::Duration &period) {
-  double friction_l_error = friction_qd_des_ - joint_fiction_l_.getVelocity();
-  double friction_r_error = -friction_qd_des_ - joint_fiction_r_.getVelocity();
+  double friction_l_error = friction_qd_des_ - joint_friction_l_.getVelocity();
+  double friction_r_error = -friction_qd_des_ - joint_friction_r_.getVelocity();
   double trigger_error = trigger_q_des_ - joint_trigger_.getPosition();
 
-  pid_fiction_l_.computeCommand(friction_l_error, period);
-  pid_fiction_r_.computeCommand(friction_r_error, period);
+  pid_friction_l_.computeCommand(friction_l_error, period);
+  pid_friction_r_.computeCommand(friction_r_error, period);
   pid_trigger_.computeCommand(trigger_error, period);
-  joint_fiction_l_.setCommand(pid_fiction_l_.getCurrentCmd());
-  joint_fiction_r_.setCommand(pid_fiction_r_.getCurrentCmd());
+  joint_friction_l_.setCommand(pid_friction_l_.getCurrentCmd());
+  joint_friction_r_.setCommand(pid_friction_r_.getCurrentCmd());
   joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
 }
 
