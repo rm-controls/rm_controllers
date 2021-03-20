@@ -11,6 +11,7 @@ controllers:
     joint_rf_name: "front_right_wheel_joint"
     joint_lb_name: "back_left_wheel_joint"
     joint_rb_name: "back_right_wheel_joint"
+    enable_odom_tf: false
     publish_rate_: 100
     wheel_base: 0.395
     wheel_track: 0.380
