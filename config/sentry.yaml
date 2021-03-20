@@ -5,7 +5,7 @@ controllers:
   imu_sensor_controller:
     type: imu_sensor_controller/ImuSensorController
     publish_rate: 100
-  chassis_standard_controller:
+  chassis_controller:
     type: rm_chassis_controllers/ChassisSentryController
     joint_name: "drive_joint"
 
