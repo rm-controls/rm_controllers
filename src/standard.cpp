@@ -37,8 +37,20 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   cmd_sub_track_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &GimbalStandardController::detectionCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
-  bullet_solver_ = new Approx3DSolver(controller_nh);
+  ros::NodeHandle nh = ros::NodeHandle(controller_nh, "bullet_solver");
+  bullet_solver_ = new Approx3DSolver(nh);
   tf_broadcaster_.init(root_nh);
+
+  config_ = {
+      .detection_period = getParam(controller_nh, "detection_period", 0.)};
+  config_rt_gimbal_buffer_.initRT(config_);
+
+  d_srv_ =
+      new dynamic_reconfigure::Server<rm_gimbal_controllers::Gimbal_detectionConfig>(controller_nh);
+  dynamic_reconfigure::Server<rm_gimbal_controllers::Gimbal_detectionConfig>::CallbackType
+      cb = boost::bind(&GimbalStandardController::reconfigCB, this, _1, _2);
+  d_srv_->setCallback(cb);
+
   return true;
 }
 
@@ -160,11 +172,14 @@ void GimbalStandardController::updateDetection() {
     geometry_msgs::TransformStamped map2camera, map2detection;
     tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
     ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
+    config_ = *config_rt_gimbal_buffer_.readFromRT();
     if (last_detection_time_ != detection_time) {
       last_detection_time_ = detection_time;
       try {
         tf2::fromMsg(detection.pose, camera2detection_tf);
-        map2camera = robot_state_handle_.lookupTransform("map", "camera", detection_time);
+        map2camera = robot_state_handle_.lookupTransform("map",
+                                                         "camera",
+                                                         detection_time - ros::Duration(config_.detection_period));
         tf2::fromMsg(map2camera.transform, map2camera_tf);
         map2detection_tf = map2camera_tf * camera2detection_tf;
         map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
@@ -187,6 +202,19 @@ void GimbalStandardController::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) 
 
 void GimbalStandardController::detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg) {
   detection_rt_buffer_.writeFromNonRT(*msg);
+}
+
+void GimbalStandardController::reconfigCB(rm_gimbal_controllers::Gimbal_detectionConfig &config, uint32_t) {
+  ROS_INFO("[Gimbal] Dynamic params change");
+  if (!dynamic_reconfig_initialized_) {
+    Config init_config = *config_rt_gimbal_buffer_.readFromNonRT(); // config init use yaml
+    config.detection_period = init_config.detection_period;
+    dynamic_reconfig_initialized_ = true;
+  }
+  Config config_non_rt{
+      .detection_period=config.detection_period
+  };
+  config_rt_gimbal_buffer_.writeFromNonRT(config_non_rt);
 }
 
 } // namespace rm_gimbal_controllers

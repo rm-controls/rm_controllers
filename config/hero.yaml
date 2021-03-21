@@ -21,3 +21,4 @@ controllers:
     dt: 0.001
     timeout: 0.001
     publish_rate: 50
+    detection_period: 2.0
