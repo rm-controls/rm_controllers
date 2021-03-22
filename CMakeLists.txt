@@ -32,6 +32,7 @@ find_package(catkin REQUIRED
 
 generate_dynamic_reconfigure_options(
         cfg/Gimbal.cfg
+        cfg/Gimbal_detection.cfg
 )
 
 ###################################
