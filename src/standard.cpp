@@ -2,27 +2,19 @@
 // Created by flying on 2021/1/18.
 //
 #include "rm_chassis_controller/standard.h"
-
 #include <rm_common/ros_utilities.h>
 #include <string>
-#include <tf/transform_datatypes.h>
 #include <angles/angles.h>
 #include <rm_common/ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
-#include <rm_msgs/ChassisCmd.h>
 #include <tf2/convert.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace rm_chassis_controllers {
-bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
-                                     ros::NodeHandle &root_nh,
-                                     ros::NodeHandle &controller_nh) {
-
-  wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
+bool StandardController::init(hardware_interface::RobotHW *robot_hw,
+                              ros::NodeHandle &root_nh,
+                              ros::NodeHandle &controller_nh) {
   wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
-  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
-
-  publish_rate_ = getParam(controller_nh, "publish_rate_", 100);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
 
   // Get and check params for covariances
@@ -32,13 +24,6 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
   ROS_ASSERT(pose_cov_list.size() == 6);
   for (int i = 0; i < pose_cov_list.size(); ++i)
     ROS_ASSERT(pose_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-
-  XmlRpc::XmlRpcValue twist_cov_list;
-  controller_nh.getParam("twist_covariance_diagonal", twist_cov_list);
-  ROS_ASSERT(twist_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  ROS_ASSERT(twist_cov_list.size() == 6);
-  for (int i = 0; i < twist_cov_list.size(); ++i)
-    ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
   // Setup odometry realtime publisher + odom message constant fields
   odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "odom", 100));
@@ -51,27 +36,24 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
       0., 0., 0., static_cast<double>(pose_cov_list[3]), 0., 0.,
       0., 0., 0., 0., static_cast<double>(pose_cov_list[4]), 0.,
       0., 0., 0., 0., 0., static_cast<double>(pose_cov_list[5])};
-  odom_pub_->msg_.twist.covariance = {
-      static_cast<double>(twist_cov_list[0]), 0., 0., 0., 0., 0.,
-      0., static_cast<double>(twist_cov_list[1]), 0., 0., 0., 0.,
-      0., 0., static_cast<double>(twist_cov_list[2]), 0., 0., 0.,
-      0., 0., 0., static_cast<double>(twist_cov_list[3]), 0., 0.,
-      0., 0., 0., 0., static_cast<double>(twist_cov_list[4]), 0.,
-      0., 0., 0., 0., 0., static_cast<double>(twist_cov_list[5])};
 
-  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
-  joint_rf_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_rf_name", std::string("joint_rf")));
-  joint_rb_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_rb_name", std::string("joint_rb")));
-  joint_lb_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_lb_name", std::string("joint_lb")));
-  joint_lf_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_lf_name", std::string("joint_lf")));
-
-  ramp_x = new RampFilter<double>(0, 0.001);
+  bool chassis_base_init = ChassisBase::init(robot_hw, root_nh, controller_nh);
+  if (chassis_base_init) {
+    auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
+    joint_rf_ = effort_jnt_interface->getHandle(
+        getParam(controller_nh, "joint_rf_name", std::string("joint_rf")));
+    joint_rb_ = effort_jnt_interface->getHandle(
+        getParam(controller_nh, "joint_rb_name", std::string("joint_rb")));
+    joint_lb_ = effort_jnt_interface->getHandle(
+        getParam(controller_nh, "joint_lb_name", std::string("joint_lb")));
+    joint_lf_ = effort_jnt_interface->getHandle(
+        getParam(controller_nh, "joint_lf_name", std::string("joint_lf")));
+    joint_vector_.push_back(joint_rf_);
+    joint_vector_.push_back(joint_rb_);
+    joint_vector_.push_back(joint_lb_);
+    joint_vector_.push_back(joint_lf_);
+  }
   ramp_y = new RampFilter<double>(0, 0.001);
-  ramp_w = new RampFilter<double>(0, 0.001);
 
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
   if (!pid_rf_.init(ros::NodeHandle(controller_nh, "pid_rf")) ||
@@ -91,49 +73,29 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
     tf_broadcaster_.sendTransform(odom2base_);
   }
 
-  cmd_chassis_sub_ =
-      root_nh.subscribe<rm_msgs::ChassisCmd>("cmd_chassis", 1, &ChassisStandardController::cmdChassisCallback, this);
-  cmd_vel_sub_ =
-      root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisStandardController::cmdVelCallback, this);
-
   return true;
 }
 
-void ChassisStandardController::update(const ros::Time &time, const ros::Duration &period) {
-  cmd_chassis_ = *chassis_rt_buffer_.readFromRT();
-  ramp_x->setAcc(cmd_chassis_.accel.linear.x);
-  ramp_y->setAcc(cmd_chassis_.accel.linear.y);
-  ramp_w->setAcc(cmd_chassis_.accel.angular.z);
-
-  geometry_msgs::Twist vel_cmd;
-  vel_cmd = *vel_rt_buffer_.readFromRT();
-  vel_cmd_.vector.x = vel_cmd.linear.x;
-  vel_cmd_.vector.y = vel_cmd.linear.y;
-  vel_cmd_.vector.z = vel_cmd.angular.z;
-
+void StandardController::update(const ros::Time &time, const ros::Duration &period) {
+  ChassisBase::update(time, period);
   updateOdom(time, period);
 
-  if (state_ != cmd_chassis_.mode) {
-    state_ = StandardState(cmd_chassis_.mode);
-    state_changed_ = true;
-  }
-
-  if (state_ == PASSIVE)
+  if (state_ == rm_chassis_base::PASSIVE)
     passive();
   else {
-    if (state_ == RAW)
+    if (state_ == rm_chassis_base::RAW)
       raw();
-    else if (state_ == GYRO)
+    else if (state_ == rm_chassis_base::GYRO)
       gyro(time);
-    else if (state_ == FOLLOW)
+    else if (state_ == rm_chassis_base::FOLLOW)
       follow(time, period);
-    else if (state_ == TWIST)
+    else if (state_ == rm_chassis_base::TWIST)
       twist(time, period);
     moveJoint(period);
   }
 }
 
-void ChassisStandardController::moveJoint(const ros::Duration &period) {
+void StandardController::moveJoint(const ros::Duration &period) {
   ramp_x->input(vel_tfed_.vector.x);
   ramp_y->input(vel_tfed_.vector.y);
   ramp_w->input(vel_tfed_.vector.z);
@@ -166,7 +128,7 @@ void ChassisStandardController::moveJoint(const ros::Duration &period) {
   joint_lb_.setCommand(prop * pid_lb_.getCurrentCmd());
 }
 
-geometry_msgs::Twist ChassisStandardController::iKine() {
+geometry_msgs::Twist StandardController::iKine() {
   geometry_msgs::Twist vel_data;
   double k = wheel_radius_ / 4.0;
   double joint_rf_velocity = joint_rf_.getVelocity();
@@ -183,38 +145,7 @@ geometry_msgs::Twist ChassisStandardController::iKine() {
   return vel_data;
 }
 
-void ChassisStandardController::recovery() {
-  geometry_msgs::Twist vel = iKine();
-
-  ramp_x->clear(vel.linear.x);
-  ramp_y->clear(vel.linear.y);
-  ramp_w->clear(vel.angular.z);
-}
-
-void ChassisStandardController::passive() {
-  if (state_changed_) {
-    state_changed_ = false;
-    ROS_INFO("[Chassis] Enter PASSIVE");
-
-    joint_rf_.setCommand(0);
-    joint_rb_.setCommand(0);
-    joint_lf_.setCommand(0);
-    joint_lb_.setCommand(0);
-  }
-}
-
-void ChassisStandardController::raw() {
-  if (state_changed_) {
-    state_changed_ = false;
-    ROS_INFO("[Chassis] Enter RAW");
-
-    recovery();
-  }
-
-  vel_tfed_ = vel_cmd_;
-}
-
-void ChassisStandardController::follow(const ros::Time &time, const ros::Duration &period) {
+void StandardController::follow(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enter FOLLOW");
@@ -234,7 +165,7 @@ void ChassisStandardController::follow(const ros::Time &time, const ros::Duratio
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }
 
-void ChassisStandardController::twist(const ros::Time &time, const ros::Duration &period) {
+void StandardController::twist(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enter TWIST");
@@ -257,7 +188,7 @@ void ChassisStandardController::twist(const ros::Time &time, const ros::Duration
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }
 
-void ChassisStandardController::gyro(const ros::Time &time) {
+void StandardController::gyro(const ros::Time &time) {
   if (state_changed_) {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enter GYRO");
@@ -267,21 +198,21 @@ void ChassisStandardController::gyro(const ros::Time &time) {
   tfVelFromYawToBase(time);
 }
 
-void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Duration &period) {
-  geometry_msgs::Twist vel_base = iKine(); // on base_link frame
+void StandardController::updateOdom(const ros::Time &time, const ros::Duration &period) {
+  vel_base_ = iKine(); // on base_link frame
   bool need_publish =
       publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time ? true : false;
-  geometry_msgs::Vector3 linear_vel{}, angular_vel{};
-  linear_vel.x = vel_base.linear.x;
-  linear_vel.y = vel_base.linear.y;
-  angular_vel.z = vel_base.angular.z;
+
+  linear_vel_.x = vel_base_.linear.x;
+  linear_vel_.y = vel_base_.linear.y;
+  angular_vel_.z = vel_base_.angular.z;
   // If enable_odom_tf, the linear and angular vel should be translated to odom from base_link then add to old odom->base_link
   // If not only publish the linear and angular vel under base_link
   if (enable_odom_tf_) {
     try {
       odom2base_ = robot_state_handle_.lookupTransform("odom", "base_link", ros::Time(0));
-      tf2::doTransform(linear_vel, linear_vel, odom2base_);
-      tf2::doTransform(angular_vel, angular_vel, odom2base_);
+      tf2::doTransform(linear_vel_, linear_vel_, odom2base_);
+      tf2::doTransform(angular_vel_, angular_vel_, odom2base_);
     }
     catch (tf2::TransformException &ex) {
       ROS_WARN("%s", ex.what());
@@ -289,55 +220,30 @@ void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Dur
     }
     odom2base_.header.stamp = time;
     // integral vel to pos and angle
-    odom2base_.transform.translation.x += linear_vel.x * period.toSec();
-    odom2base_.transform.translation.y += linear_vel.y * period.toSec();
-    odom2base_.transform.translation.z += linear_vel.z * period.toSec();
+    odom2base_.transform.translation.x += linear_vel_.x * period.toSec();
+    odom2base_.transform.translation.y += linear_vel_.y * period.toSec();
+    odom2base_.transform.translation.z += linear_vel_.z * period.toSec();
     double length =
-        std::sqrt(std::pow(angular_vel.x, 2) + std::pow(angular_vel.y, 2) + std::pow(angular_vel.z, 2));
+        std::sqrt(std::pow(angular_vel_.x, 2) + std::pow(angular_vel_.y, 2) + std::pow(angular_vel_.z, 2));
     if (length > 0.001) { // avoid nan quat
       tf2::Quaternion odom2base_quat, trans_quat;
       tf2::fromMsg(odom2base_.transform.rotation, odom2base_quat);
-      trans_quat.setRotation(tf2::Vector3(angular_vel.x / length,
-                                          angular_vel.y / length,
-                                          angular_vel.z / length), length * period.toSec());
+      trans_quat.setRotation(tf2::Vector3(angular_vel_.x / length,
+                                          angular_vel_.y / length,
+                                          angular_vel_.z / length), length * period.toSec());
       odom2base_quat = trans_quat * odom2base_quat;
       odom2base_quat.normalize();
       odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
     }
   }
   if (need_publish) {
-    last_publish_time_ = time;
-    // publish odom message
-    if (odom_pub_->trylock()) {
-      odom_pub_->msg_.header.stamp = time;
-      odom_pub_->msg_.twist.twist.linear.x = linear_vel.x;
-      odom_pub_->msg_.twist.twist.linear.y = linear_vel.y;
-      odom_pub_->msg_.twist.twist.angular.z = angular_vel.z;
-      odom_pub_->unlockAndPublish();
-    }
+    ChassisBase::updateOdom(time, period);
     if (enable_odom_tf_)
       tf_broadcaster_.sendTransform(odom2base_);
   } else if (enable_odom_tf_)
     robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 }
 
-void ChassisStandardController::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg) {
-  chassis_rt_buffer_.writeFromNonRT(*msg);
-}
-
-void ChassisStandardController::cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd) {
-  vel_rt_buffer_.writeFromNonRT(*cmd);
-}
-
-void ChassisStandardController::tfVelFromYawToBase(const ros::Time &time) {
-  try {
-    tf2::doTransform(
-        vel_cmd_, vel_tfed_,
-        robot_state_handle_.lookupTransform("base_link", "yaw", ros::Time(0)));
-  }
-  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
-}
-
 } // namespace rm_chassis_controller
 
-PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::ChassisStandardController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::StandardController, controller_interface::ControllerBase)
