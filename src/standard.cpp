@@ -14,6 +14,7 @@ namespace rm_chassis_controllers {
 bool StandardController::init(hardware_interface::RobotHW *robot_hw,
                               ros::NodeHandle &root_nh,
                               ros::NodeHandle &controller_nh) {
+  ChassisBase::init(robot_hw, root_nh, controller_nh);
   wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
 
@@ -25,10 +26,6 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   for (int i = 0; i < pose_cov_list.size(); ++i)
     ROS_ASSERT(pose_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
-  // Setup odometry realtime publisher + odom message constant fields
-  odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "odom", 100));
-  odom_pub_->msg_.header.frame_id = "odom";
-  odom_pub_->msg_.child_frame_id = "base_link";
   odom_pub_->msg_.pose.covariance = {
       static_cast<double>(pose_cov_list[0]), 0., 0., 0., 0., 0.,
       0., static_cast<double>(pose_cov_list[1]), 0., 0., 0., 0.,
@@ -37,22 +34,20 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
       0., 0., 0., 0., static_cast<double>(pose_cov_list[4]), 0.,
       0., 0., 0., 0., 0., static_cast<double>(pose_cov_list[5])};
 
-  bool chassis_base_init = ChassisBase::init(robot_hw, root_nh, controller_nh);
-  if (chassis_base_init) {
-    auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
-    joint_rf_ = effort_jnt_interface->getHandle(
-        getParam(controller_nh, "joint_rf_name", std::string("joint_rf")));
-    joint_rb_ = effort_jnt_interface->getHandle(
-        getParam(controller_nh, "joint_rb_name", std::string("joint_rb")));
-    joint_lb_ = effort_jnt_interface->getHandle(
-        getParam(controller_nh, "joint_lb_name", std::string("joint_lb")));
-    joint_lf_ = effort_jnt_interface->getHandle(
-        getParam(controller_nh, "joint_lf_name", std::string("joint_lf")));
-    joint_vector_.push_back(joint_rf_);
-    joint_vector_.push_back(joint_rb_);
-    joint_vector_.push_back(joint_lb_);
-    joint_vector_.push_back(joint_lf_);
-  }
+  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
+  joint_rf_ = effort_jnt_interface->getHandle(
+      getParam(controller_nh, "joint_rf_name", std::string("joint_rf")));
+  joint_rb_ = effort_jnt_interface->getHandle(
+      getParam(controller_nh, "joint_rb_name", std::string("joint_rb")));
+  joint_lb_ = effort_jnt_interface->getHandle(
+      getParam(controller_nh, "joint_lb_name", std::string("joint_lb")));
+  joint_lf_ = effort_jnt_interface->getHandle(
+      getParam(controller_nh, "joint_lf_name", std::string("joint_lf")));
+  joint_vector_.push_back(joint_rf_);
+  joint_vector_.push_back(joint_rb_);
+  joint_vector_.push_back(joint_lb_);
+  joint_vector_.push_back(joint_lf_);
+
   ramp_y = new RampFilter<double>(0, 0.001);
 
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
@@ -84,9 +79,9 @@ void StandardController::update(const ros::Time &time, const ros::Duration &peri
     passive();
   else {
     if (state_ == rm_chassis_base::RAW)
-      raw();
+      raw(period);
     else if (state_ == rm_chassis_base::GYRO)
-      gyro(time);
+      gyro(time, period);
     else if (state_ == rm_chassis_base::FOLLOW)
       follow(time, period);
     else if (state_ == rm_chassis_base::TWIST)
@@ -128,7 +123,7 @@ void StandardController::moveJoint(const ros::Duration &period) {
   joint_lb_.setCommand(prop * pid_lb_.getCurrentCmd());
 }
 
-geometry_msgs::Twist StandardController::iKine() {
+geometry_msgs::Twist StandardController::iKine(const ros::Duration &period) {
   geometry_msgs::Twist vel_data;
   double k = wheel_radius_ / 4.0;
   double joint_rf_velocity = joint_rf_.getVelocity();
@@ -150,7 +145,7 @@ void StandardController::follow(const ros::Time &time, const ros::Duration &peri
     state_changed_ = false;
     ROS_INFO("[Chassis] Enter FOLLOW");
 
-    recovery();
+    recovery(period);
     pid_follow_.reset();
   }
 
@@ -170,7 +165,7 @@ void StandardController::twist(const ros::Time &time, const ros::Duration &perio
     state_changed_ = false;
     ROS_INFO("[Chassis] Enter TWIST");
 
-    recovery();
+    recovery(period);
     pid_twist_.reset();
   }
 
@@ -188,18 +183,18 @@ void StandardController::twist(const ros::Time &time, const ros::Duration &perio
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }
 
-void StandardController::gyro(const ros::Time &time) {
+void StandardController::gyro(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enter GYRO");
 
-    recovery();
+    recovery(period);
   }
   tfVelFromYawToBase(time);
 }
 
 void StandardController::updateOdom(const ros::Time &time, const ros::Duration &period) {
-  vel_base_ = iKine(); // on base_link frame
+  vel_base_ = iKine(period); // on base_link frame
   bool need_publish =
       publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time ? true : false;
 
