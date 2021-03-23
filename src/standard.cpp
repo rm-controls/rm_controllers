@@ -4,6 +4,7 @@
 #include "rm_chassis_controller/standard.h"
 #include <rm_common/ros_utilities.h>
 #include <string>
+#include <tf/transform_datatypes.h>
 #include <angles/angles.h>
 #include <rm_common/ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
@@ -47,8 +48,6 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   joint_vector_.push_back(joint_rb_);
   joint_vector_.push_back(joint_lb_);
   joint_vector_.push_back(joint_lf_);
-
-  ramp_y = new RampFilter<double>(0, 0.001);
 
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
   if (!pid_rf_.init(ros::NodeHandle(controller_nh, "pid_rf")) ||
