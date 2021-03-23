@@ -9,6 +9,8 @@ controllers:
     type: rm_gimbal_controllers/GimbalStandardController
     joint_yaw_name: "yaw_joint"
     joint_pitch_name: "pitch_joint"
+    pitch_upper: 0.487
+    pitch_lower: -0.716
     pid_yaw: { p: 6, i: 0.08, d: 0.01, i_clamp_max: 0.2, i_clamp_min: -0.2, antiwindup: true, publish_state: true }
     pid_pitch: { p: 10, i: 7.0, d: 0.08, i_clamp_max: 0.8, i_clamp_min: -0.8, antiwindup: false, publish_state: true }
     detection_period: 0.004
