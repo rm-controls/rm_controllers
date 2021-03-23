@@ -12,7 +12,7 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_msgs/GimbalCmd.h>
 #include <rm_msgs/GimbalDesError.h>
-#include <rm_gimbal_controllers/Gimbal_detectionConfig.h>
+#include <rm_gimbal_controllers/GimbalTimeCompensationConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_msgs/TargetDetectionArray.h>
 #include <rm_gimbal_controllers/GimbalConfig.h>
@@ -27,7 +27,7 @@ enum StandardState {
 };
 
 struct Config {
-  double detection_period;
+  double time_compensation;
 };
 
 class GimbalStandardController :
@@ -47,7 +47,7 @@ class GimbalStandardController :
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
   void updateDetection();
-  void reconfigCB(rm_gimbal_controllers::Gimbal_detectionConfig &config, uint32_t);
+  void reconfigCB(rm_gimbal_controllers::GimbalTimeCompensationConfig &config, uint32_t);
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
@@ -62,7 +62,7 @@ class GimbalStandardController :
   ros::Subscriber cmd_sub_track_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError> > error_pub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
-  dynamic_reconfigure::Server<rm_gimbal_controllers::Gimbal_detectionConfig> *d_srv_{};
+  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig> *d_srv_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_gimbal_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> detection_rt_buffer_;
   robot_state_controller::TfRtBroadcaster tf_broadcaster_{};

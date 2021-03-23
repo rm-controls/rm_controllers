@@ -42,12 +42,12 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   tf_broadcaster_.init(root_nh);
 
   config_ = {
-      .detection_period = getParam(controller_nh, "detection_period", 0.)};
+      .time_compensation = getParam(controller_nh, "time_compensation", 0.)};
   config_rt_gimbal_buffer_.initRT(config_);
 
   d_srv_ =
-      new dynamic_reconfigure::Server<rm_gimbal_controllers::Gimbal_detectionConfig>(controller_nh);
-  dynamic_reconfigure::Server<rm_gimbal_controllers::Gimbal_detectionConfig>::CallbackType
+      new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig>(controller_nh);
+  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig>::CallbackType
       cb = boost::bind(&GimbalStandardController::reconfigCB, this, _1, _2);
   d_srv_->setCallback(cb);
 
@@ -179,7 +179,7 @@ void GimbalStandardController::updateDetection() {
         tf2::fromMsg(detection.pose, camera2detection_tf);
         map2camera = robot_state_handle_.lookupTransform("map",
                                                          "camera",
-                                                         detection_time - ros::Duration(config_.detection_period));
+                                                         detection_time - ros::Duration(config_.time_compensation));
         tf2::fromMsg(map2camera.transform, map2camera_tf);
         map2detection_tf = map2camera_tf * camera2detection_tf;
         map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
@@ -204,15 +204,15 @@ void GimbalStandardController::detectionCB(const rm_msgs::TargetDetectionArrayCo
   detection_rt_buffer_.writeFromNonRT(*msg);
 }
 
-void GimbalStandardController::reconfigCB(rm_gimbal_controllers::Gimbal_detectionConfig &config, uint32_t) {
+void GimbalStandardController::reconfigCB(rm_gimbal_controllers::GimbalTimeCompensationConfig &config, uint32_t) {
   ROS_INFO("[Gimbal] Dynamic params change");
   if (!dynamic_reconfig_initialized_) {
     Config init_config = *config_rt_gimbal_buffer_.readFromNonRT(); // config init use yaml
-    config.detection_period = init_config.detection_period;
+    config.time_compensation= init_config.time_compensation;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{
-      .detection_period=config.detection_period
+      .time_compensation=config.time_compensation
   };
   config_rt_gimbal_buffer_.writeFromNonRT(config_non_rt);
 }
