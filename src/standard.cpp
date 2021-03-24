@@ -26,6 +26,7 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
 
   timeout_ = getParam(controller_nh, "timeout_", 1.0);
+  enable_timeout_ = getParam(controller_nh, "enable_timeout_", true);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue pose_cov_list;
@@ -102,7 +103,10 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
 }
 
 void ChassisStandardController::update(const ros::Time &time, const ros::Duration &period) {
-  fsmTimeOut(time);
+  if (enable_timeout_) {
+    fsmTimeOut(time);
+  }
+
   cmd_chassis_ = *chassis_rt_buffer_.readFromRT();
   ramp_x->setAcc(cmd_chassis_.accel.linear.x);
   ramp_y->setAcc(cmd_chassis_.accel.linear.y);

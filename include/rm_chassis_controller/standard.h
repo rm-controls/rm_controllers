@@ -65,6 +65,7 @@ class ChassisStandardController : public controller_interface::MultiInterfaceCon
 
   bool enable_odom_tf_{};
   bool state_changed_{};
+  bool enable_timeout_{};
   double timeout_;
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_chassis_sub_;
