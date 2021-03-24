@@ -77,6 +77,7 @@ include_directories(
 add_library(${PROJECT_NAME}
         src/standard.cpp
         src/sentry.cpp
+        src/chassis_base.cpp
         )
 
 ## Specify libraries to link executable targets against

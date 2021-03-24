@@ -5,7 +5,7 @@
 #ifndef RM_CHASSIS_CONTROLLER_SENTRY_H
 #define RM_CHASSIS_CONTROLLER_SENTRY_H
 
-#include <rm_common/chassis_base.h>
+#include <rm_chassis_controller/chassis_base.h>
 #include <rm_common/tf_rt_broadcaster.h>
 
 namespace rm_chassis_controllers {
