@@ -19,7 +19,6 @@ TEST_F(StandardChassisTest, testDefaultVelAndChassisCmd) {
   cmd_chassis.accel.linear.x = 0;
   cmd_chassis.accel.linear.y = 0;
 
-  publishFromWrongTopic(cmd_chassis, cmd_vel);
   publish(cmd_chassis, cmd_vel);
   ros::Duration(2.0).sleep();
 

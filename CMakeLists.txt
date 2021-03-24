@@ -175,6 +175,11 @@ if (${CATKIN_ENABLE_TESTING})
           test/test_angular_z_accel_limit.cpp)
   target_link_libraries(angular_z_accel_limit_test ${catkin_LIBRARIES})
 
+  add_rostest_gtest(iKine_test
+          test/test_iKine.test
+          test/test_iKine.cpp)
+  target_link_libraries(iKine_test ${catkin_LIBRARIES})
+
 endif ()
 
 ##########################
