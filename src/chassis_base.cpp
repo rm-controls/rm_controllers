@@ -1,7 +1,7 @@
 //
 // Created by huakang on 2021/3/21.
 //
-#include "rm_chassis_controller/chassis_base.h"
+#include "rm_chassis_controllers/chassis_base.h"
 #include <rm_common/ros_utilities.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 

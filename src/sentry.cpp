@@ -1,7 +1,7 @@
 //
 // Created by flying on 2021/1/18.
 //
-#include "rm_chassis_controller/sentry.h"
+#include "rm_chassis_controllers/sentry.h"
 #include <rm_common/ros_utilities.h>
 #include <string>
 #include <tf/transform_datatypes.h>
@@ -89,6 +89,6 @@ void SentryController::updateOdom(const ros::Time &time, const ros::Duration &pe
     robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 }
 
-}// namespace rm_chassis_controller
+}// namespace rm_chassis_controllers
 
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::SentryController, controller_interface::ControllerBase)
