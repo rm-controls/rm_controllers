@@ -8,7 +8,7 @@ controllers:
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
-  chassis_balance_controller:
+  chassis_controller:
     type: rm_chassis_controllers/BalanceController
     joint_left_name: "left_wheel_joint"
     joint_right_name: "right_wheel_joint"
