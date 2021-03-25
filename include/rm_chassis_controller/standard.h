@@ -45,7 +45,7 @@ class ChassisStandardController : public controller_interface::MultiInterfaceCon
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd);
   void updateOdom(const ros::Time &time, const ros::Duration &period);
-  void fsmTimeOut(const ros::Time &time);
+  void timeOut(const ros::Time &time);
   geometry_msgs::Twist iKine();
 
   control_toolbox::Pid pid_rf_, pid_lf_, pid_rb_, pid_lb_;

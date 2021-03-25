@@ -104,7 +104,7 @@ bool ChassisStandardController::init(hardware_interface::RobotHW *robot_hw,
 
 void ChassisStandardController::update(const ros::Time &time, const ros::Duration &period) {
   if (enable_timeout_) {
-    fsmTimeOut(time);
+    timeOut(time);
   }
 
   cmd_chassis_ = *chassis_rt_buffer_.readFromRT();
@@ -338,7 +338,7 @@ void ChassisStandardController::cmdVelCallback(const geometry_msgs::Twist::Const
   cmd_vel_callback_time_ = ros::Time::now();
 }
 
-void ChassisStandardController::fsmTimeOut(const ros::Time &time) {
+void ChassisStandardController::timeOut(const ros::Time &time) {
   if ((time - cmd_chassis_callback_time_).toSec() > timeout_ || (time - cmd_vel_callback_time_).toSec() > timeout_) {
     cmd_chassis_.effort_limit = 0;
     chassis_rt_buffer_.writeFromNonRT(cmd_chassis_);
