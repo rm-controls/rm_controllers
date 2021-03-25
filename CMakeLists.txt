@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ## By adding -Wall and -Werror, the compiler does not ignore warnings anymore,
 ## enforcing cleaner code.
-add_definitions(-Wall -Werror)
+add_definitions(-Wall -Werror -Wno-enum-compare)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED
@@ -30,6 +30,8 @@ find_package(catkin REQUIRED
         angles
         )
 
+find_package(Eigen3 REQUIRED)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -42,6 +44,7 @@ find_package(catkin REQUIRED
 catkin_package(
         INCLUDE_DIRS
         include
+        ${EIGEN3_INCLUDE_DIR}
         LIBRARIES
         CATKIN_DEPENDS
         roscpp
@@ -71,12 +74,14 @@ catkin_package(
 include_directories(
         include
         ${catkin_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIR}
 )
 
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
         src/standard.cpp
         src/sentry.cpp
+        src/balance.cpp
         src/chassis_base.cpp
         )
 

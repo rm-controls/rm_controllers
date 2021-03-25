@@ -5,14 +5,14 @@
     <arg name="yaw_tf" default="false"/>
 
     <rosparam file="$(find rm_chassis_controllers)/config/$(arg robot_type).yaml" command="load"/>
-    <rosparam if="$(arg ekf)" param="controllers/chassis_standard_controller/enable_odom_tf">false</rosparam>
+    <rosparam if="$(arg ekf)" param="controllers/chassis_controller/enable_odom_tf">false</rosparam>
 
     <!-- load the controllers -->
     <node name="controller_spawner" pkg="controller_manager" type="spawner"
           respawn="false" output="screen"
           args="
           controllers/robot_state_controller
-          controllers/chassis_standard_controller
+          controllers/chassis_controller
           controllers/joint_state_controller
   "/>
 
