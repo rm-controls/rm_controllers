@@ -12,7 +12,7 @@
           respawn="false" output="screen"
           args="
           controllers/robot_state_controller
-          controllers/chassis_standard_controller
+          controllers/chassis_controller
           controllers/joint_state_controller
   "/>
 

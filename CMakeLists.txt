@@ -15,6 +15,7 @@ find_package(catkin REQUIRED
         roscpp
         roslint
         rostest
+        message_generation
 
         rm_msgs
         rm_common
@@ -30,6 +31,11 @@ find_package(catkin REQUIRED
         angles
         )
 
+find_package(Eigen3 REQUIRED)
+
+add_message_files(FILES Data.msg)
+generate_messages(DEPENDENCIES std_msgs)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -42,11 +48,13 @@ find_package(catkin REQUIRED
 catkin_package(
         INCLUDE_DIRS
         include
+        ${EIGEN3_INCLUDE_DIR}
         LIBRARIES
         CATKIN_DEPENDS
         roscpp
         roslint
         rostest
+        message_generation
 
         rm_msgs
         rm_common
@@ -71,6 +79,7 @@ catkin_package(
 include_directories(
         include
         ${catkin_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIR}
 )
 
 ## Declare cpp executables
