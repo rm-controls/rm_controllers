@@ -7,7 +7,7 @@
 #include <angles/angles.h>
 #include <rm_common/ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
-#include "rm_chassis_controller/balance.h"
+#include "rm_chassis_controllers/balance.h"
 #include <rm_msgs/BalanceState.h>
 
 namespace rm_chassis_controllers {
