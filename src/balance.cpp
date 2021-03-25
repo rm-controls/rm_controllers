@@ -128,12 +128,10 @@ void BalanceController::dataImuCallback(const sensor_msgs::ImuConstPtr &data) {
 
 void BalanceController::updateOdom(const ros::Time &time, const ros::Duration &period) {
   vel_base_ = iKine(period); // on base_link frame
-  bool need_publish =
-      publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time ? true : false;
 
   linear_vel_.x = vel_base_.linear.x;
   angular_vel_.z = vel_base_.angular.z;
-  if (need_publish)
+  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
     ChassisBase::updateOdom(time, period);
 }
 
