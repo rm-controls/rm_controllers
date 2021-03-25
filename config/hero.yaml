@@ -5,7 +5,7 @@ controllers:
   imu_sensor_controller:
     type: imu_sensor_controller/ImuSensorController
     publish_rate: 100
-  chassis_standard_controller:
+  chassis_controller:
     type: rm_chassis_controllers/ChassisStandardController
     joint_lf_name: "front_left_wheel_joint"
     joint_rf_name: "front_right_wheel_joint"

@@ -2,8 +2,11 @@ controllers:
   robot_state_controller:
     type: robot_state_controller/RobotStateController
     publish_rate: 100
-  chassis_standard_controller:
-    type: rm_chassis_controllers/SentryController
+  imu_sensor_controller:
+    type: imu_sensor_controller/ImuSensorController
+    publish_rate: 100
+  chassis_controller:
+    type: rm_chassis_controllers/ChassisSentryController
     joint_name: "drive_joint"
     publish_rate_: 100
     wheel_radius: 0.0250
