@@ -19,8 +19,12 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   joint_yaw_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_yaw_name", std::string("joint_yaw")));
   joint_pitch_ =
-      effort_jnt_interface->getHandle(
-          getParam(controller_nh, "joint_pitch_name", std::string("joint_pitch")));
+      effort_jnt_interface->getHandle(getParam(controller_nh, "joint_pitch_name", std::string("joint_pitch")));
+
+  upper_yaw_ = getParam(controller_nh, "yaw_upper", 1e9);
+  lower_yaw_ = getParam(controller_nh, "yaw_lower", -1e9);
+  upper_pitch_ = getParam(controller_nh, "pitch_upper", 1e9);
+  lower_pitch_ = getParam(controller_nh, "pitch_lower", -1e9);
 
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
@@ -42,12 +46,12 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   tf_broadcaster_.init(root_nh);
 
   config_ = {
-      .detection_period = getParam(controller_nh, "detection_period", 0.)};
+      .time_compensation = getParam(controller_nh, "time_compensation", 0.)};
   config_rt_gimbal_buffer_.initRT(config_);
 
   d_srv_ =
-      new dynamic_reconfigure::Server<rm_gimbal_controllers::Gimbal_detectionConfig>(controller_nh);
-  dynamic_reconfigure::Server<rm_gimbal_controllers::Gimbal_detectionConfig>::CallbackType
+      new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig>(controller_nh);
+  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig>::CallbackType
       cb = boost::bind(&GimbalStandardController::reconfigCB, this, _1, _2);
   d_srv_->setCallback(cb);
 
@@ -56,7 +60,7 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
 
 void GimbalStandardController::update(const ros::Time &time, const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
-  updateDetection();
+  updateTf();
 
   if (state_ != cmd_.mode) {
     state_ = StandardState(cmd_.mode);
@@ -109,7 +113,6 @@ void GimbalStandardController::track(const ros::Time &time) {
   double roll, pitch, yaw;
   geometry_msgs::TransformStamped map2pitch;
   try {
-    map2pitch = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
     quatToRPY(map2pitch.transform.rotation, roll, pitch, yaw);
     angle_init_[0] = yaw;
     angle_init_[1] = -pitch;
@@ -135,15 +138,14 @@ void GimbalStandardController::track(const ros::Time &time) {
     last_publish_time_ = time;
   }
   if (solve_success)
-    setDes(time, bullet_solver_->getResult(time, map2pitch)[0], bullet_solver_->getResult(time, map2pitch)[1]);
+    setDes(time, bullet_solver_->getResult(time, map2pitch_)[0], bullet_solver_->getResult(time, map2pitch_)[1]);
   else
     setDes(time, yaw, pitch);
 }
 
 void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
-  //pitch = minAbs(pitch, M_PI_2 - 0.1); //avoid gimbal lock
-  map2gimbal_des_.transform.rotation =
-      tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
+  if (pitch <= upper_pitch_ && pitch >= lower_pitch_ && yaw <= upper_yaw_ && pitch >= lower_yaw_)
+    map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
   map2gimbal_des_.header.stamp = time;
   robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
 }
@@ -167,7 +169,13 @@ void GimbalStandardController::moveJoint(const ros::Duration &period) {
   joint_pitch_.setCommand(pid_pitch_.getCurrentCmd());
 }
 
-void GimbalStandardController::updateDetection() {
+void GimbalStandardController::updateTf() {
+  try {
+    map2pitch_ = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
+
+  }
+  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+
   for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
     geometry_msgs::TransformStamped map2camera, map2detection;
     tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
@@ -179,7 +187,7 @@ void GimbalStandardController::updateDetection() {
         tf2::fromMsg(detection.pose, camera2detection_tf);
         map2camera = robot_state_handle_.lookupTransform("map",
                                                          "camera",
-                                                         detection_time - ros::Duration(config_.detection_period));
+                                                         detection_time - ros::Duration(config_.time_compensation));
         tf2::fromMsg(map2camera.transform, map2camera_tf);
         map2detection_tf = map2camera_tf * camera2detection_tf;
         map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
@@ -204,15 +212,15 @@ void GimbalStandardController::detectionCB(const rm_msgs::TargetDetectionArrayCo
   detection_rt_buffer_.writeFromNonRT(*msg);
 }
 
-void GimbalStandardController::reconfigCB(rm_gimbal_controllers::Gimbal_detectionConfig &config, uint32_t) {
+void GimbalStandardController::reconfigCB(rm_gimbal_controllers::GimbalTimeCompensationConfig &config, uint32_t) {
   ROS_INFO("[Gimbal] Dynamic params change");
   if (!dynamic_reconfig_initialized_) {
     Config init_config = *config_rt_gimbal_buffer_.readFromNonRT(); // config init use yaml
-    config.detection_period = init_config.detection_period;
+    config.time_compensation = init_config.time_compensation;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{
-      .detection_period=config.detection_period
+      .time_compensation=config.time_compensation
   };
   config_rt_gimbal_buffer_.writeFromNonRT(config_non_rt);
 }
