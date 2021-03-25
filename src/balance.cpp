@@ -8,7 +8,7 @@
 #include <rm_common/ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
 #include "rm_chassis_controller/balance.h"
-#include "rm_balance/Data.h"
+#include <rm_msgs/BalanceState.h>
 
 namespace rm_chassis_controllers {
 bool BalanceController::init(hardware_interface::RobotHW *robot_hw,
@@ -34,7 +34,7 @@ bool BalanceController::init(hardware_interface::RobotHW *robot_hw,
   controller_nh.getParam("r", r);
   getK(a, b, q, r);
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
-  state_real_pub_ = root_nh.advertise<rm_balance::Data>("state_real", 100);
+  state_real_pub_ = root_nh.advertise<rm_msgs::BalanceState>("state_real", 100);
   data_imu_sub_ =
       root_nh.subscribe<sensor_msgs::Imu>("base_imu", 1, &BalanceController::dataImuCallback, this);
 
@@ -55,7 +55,7 @@ void BalanceController::update(const ros::Time &time, const ros::Duration &perio
     moveJoint(period);
   }
 
-  rm_balance::Data state_real_msg;
+  rm_msgs::BalanceState state_real_msg;
   state_real_msg.header.stamp = time;
   state_real_msg.alpha = x_(0);
   state_real_msg.alpha_dot = x_(1);

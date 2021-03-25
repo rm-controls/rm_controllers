@@ -15,7 +15,6 @@ find_package(catkin REQUIRED
         roscpp
         roslint
         rostest
-        message_generation
 
         rm_msgs
         rm_common
@@ -32,9 +31,6 @@ find_package(catkin REQUIRED
         )
 
 find_package(Eigen3 REQUIRED)
-
-add_message_files(FILES Data.msg)
-generate_messages(DEPENDENCIES std_msgs)
 
 ###################################
 ## catkin specific configuration ##
@@ -54,7 +50,6 @@ catkin_package(
         roscpp
         roslint
         rostest
-        message_generation
 
         rm_msgs
         rm_common
