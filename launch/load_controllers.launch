@@ -12,6 +12,7 @@
           controllers/robot_state_controller
           controllers/joint_state_controller
           controllers/shooter_standard_controller
+          controllers/gimbal_standard_controller
     "/>
 
     <node pkg="tf" type="static_transform_publisher" name=""
