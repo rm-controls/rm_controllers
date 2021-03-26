@@ -46,6 +46,7 @@ class ChassisStandardController : public controller_interface::MultiInterfaceCon
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd);
   void updateOdom(const ros::Time &time, const ros::Duration &period);
   void timeOut(const ros::Time &time);
+  void processNaN();
   geometry_msgs::Twist iKine();
 
   control_toolbox::Pid pid_rf_, pid_lf_, pid_rb_, pid_lb_;
@@ -67,6 +68,8 @@ class ChassisStandardController : public controller_interface::MultiInterfaceCon
   bool state_changed_{};
   bool enable_timeout_{};
   double timeout_;
+  double cmd_chassis_isNaN;
+  double cmd_vel_isNaN;
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_chassis_sub_;
   ros::Subscriber cmd_vel_sub_;

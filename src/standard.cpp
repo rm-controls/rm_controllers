@@ -106,6 +106,7 @@ void ChassisStandardController::update(const ros::Time &time, const ros::Duratio
   if (enable_timeout_) {
     timeOut(time);
   }
+  processNaN();
 
   cmd_chassis_ = *chassis_rt_buffer_.readFromRT();
   ramp_x->setAcc(cmd_chassis_.accel.linear.x);
@@ -331,11 +332,13 @@ void ChassisStandardController::updateOdom(const ros::Time &time, const ros::Dur
 void ChassisStandardController::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg) {
   chassis_rt_buffer_.writeFromNonRT(*msg);
   cmd_chassis_callback_time_ = ros::Time::now();
+  cmd_chassis_isNaN = (msg->accel.linear.x) + (msg->accel.linear.y) + (msg->accel.angular.z) + (msg->effort_limit);
 }
 
 void ChassisStandardController::cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd) {
   vel_rt_buffer_.writeFromNonRT(*cmd);
   cmd_vel_callback_time_ = ros::Time::now();
+  cmd_vel_isNaN = (cmd->linear.x) + (cmd->linear.y) + (cmd->angular.z);
 }
 
 void ChassisStandardController::timeOut(const ros::Time &time) {
@@ -345,6 +348,15 @@ void ChassisStandardController::timeOut(const ros::Time &time) {
     ROS_INFO_THROTTLE(2.0, "Message cmd_vel and cmd_chassis timeout!");
   } else
     ROS_INFO_THROTTLE(2.0, "Message cmd_vel and cmd_chassis come in time!");
+}
+
+void ChassisStandardController::processNaN(){
+  if(isnan(cmd_vel_isNaN) || isnan(cmd_chassis_isNaN)){
+    cmd_chassis_.effort_limit = 0;
+    cmd_chassis_.mode = cmd_chassis_.GYRO;
+    chassis_rt_buffer_.writeFromNonRT(cmd_chassis_);
+    ROS_INFO("cmd_vel or cmd_chassis have NaN data,Robot stop now");
+  }
 }
 
 void ChassisStandardController::tfVelFromYawToBase(const ros::Time &time) {
