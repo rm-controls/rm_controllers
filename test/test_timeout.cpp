@@ -20,23 +20,21 @@ TEST_F(StandardChassisTest, testTimeout) {
 
   publish(cmd_chassis, cmd_vel);
   // give some time to the controller to react to the command
-  ros::Duration(5.0).sleep();
+  ros::Duration(1.0).sleep();
   // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
 
   // send a velocity command of 1 m/s
   cmd_vel.linear.x = 1.0;
-  cmd_chassis.accel.linear.x = 1.0;
+  cmd_chassis.accel.linear.x = 8.0;
   publish(cmd_chassis, cmd_vel);
   // wait a bit
-  ros::Duration(0.5).sleep();
+  ros::Duration(5).sleep();
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
-
-  // check if the robot has stopped after 0.5s, thus covering less than 0.5s*1.0m.s-1 + some (big) tolerance
-  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), 0.8);
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 0.8);
+  EXPECT_LT(fabs(new_odom.pose.pose.position.x - old_odom.pose.pose.position.x), POSITION_TOLERANCE);
+  EXPECT_LT(new_odom.twist.twist.linear.x, VELOCITY_TOLERANCE);
 
 }
 
