@@ -1,4 +1,11 @@
 <launch>
+   <!-- Make sure to disable timeout -->
+    <rosparam>
+      controllers:
+        chassis_standard_controller:
+          enable_timeout_: false
+    </rosparam>
+
   <!-- Load common test stuff -->
   <include file="$(find rm_chassis_controllers)/launch/load_controllers.launch">
     <arg name="odom_tf" value="true"/>

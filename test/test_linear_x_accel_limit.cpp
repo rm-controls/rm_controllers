@@ -39,11 +39,13 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
 // check if the robot speed is now 1.0 m.s-1, the limit
   EXPECT_NEAR(cmd_vel.linear.x,
               fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x),
-              VELOCITY_TOLERANCE);
+              VELOCITY_TOLERANCE + 0.03);
   EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), VELOCITY_TOLERANCE);
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), POSITION_TOLERANCE);
 
-  EXPECT_NEAR(cmd_vel.linear.x, fabs(new_base_link_twist.linear.x - old_base_link_twist.linear.x), 0.07);
+  EXPECT_NEAR(cmd_vel.linear.x,
+              fabs(new_base_link_twist.linear.x - old_base_link_twist.linear.x),
+              VELOCITY_TOLERANCE + 0.03);
   EXPECT_LT(fabs(new_base_link_twist.angular.z - old_base_link_twist.angular.z), VELOCITY_TOLERANCE);
   EXPECT_LT(fabs(new_base_link_pose.position.y - old_base_link_pose.position.y), POSITION_TOLERANCE);
 

@@ -5,6 +5,7 @@
       controllers:
         chassis_standard_controller:
           enable_odom_tf: false
+          enable_timeout_: false
     </rosparam>
 
   <!-- Load common test stuff -->
