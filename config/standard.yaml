@@ -8,6 +8,7 @@ controllers:
   gimbal_standard_controller:
     type: rm_gimbal_controllers/GimbalStandardController
     time_compensation: 0.004
+    publish_rate_error: 100
     yaw:
       joint_name: "yaw_joint"
       lp_cutoff: 100
@@ -30,4 +31,4 @@ controllers:
       delay: 0.2
       dt: 0.001
       timeout: 0.001
-      publish_rate: 50
+      publish_rate_model: 50

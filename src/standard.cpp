@@ -15,21 +15,25 @@ namespace rm_gimbal_controllers {
 bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
                                     ros::NodeHandle &root_nh,
                                     ros::NodeHandle &controller_nh) {
-  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
-  joint_yaw_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_yaw_name", std::string("joint_yaw")));
-  joint_pitch_ =
-      effort_jnt_interface->getHandle(getParam(controller_nh, "joint_pitch_name", std::string("joint_pitch")));
+  ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
+  ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
+  ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
 
-  upper_yaw_ = getParam(controller_nh, "yaw_upper", 1e9);
-  lower_yaw_ = getParam(controller_nh, "yaw_lower", -1e9);
-  upper_pitch_ = getParam(controller_nh, "pitch_upper", 1e9);
-  lower_pitch_ = getParam(controller_nh, "pitch_lower", -1e9);
+  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
+  joint_yaw_ =
+      effort_jnt_interface->getHandle(getParam(nh_yaw, "joint_name", std::string("joint_yaw")));
+  joint_pitch_ =
+      effort_jnt_interface->getHandle(getParam(nh_pitch, "joint_name", std::string("joint_pitch")));
+
+  upper_yaw_ = getParam(nh_yaw, "upper", 1e9);
+  lower_yaw_ = getParam(nh_yaw, "lower", -1e9);
+  upper_pitch_ = getParam(nh_pitch, "upper", 1e9);
+  lower_pitch_ = getParam(nh_pitch, "lower", -1e9);
 
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
-  if (!pid_yaw_.init(ros::NodeHandle(controller_nh, "pid_yaw")) ||
-      !pid_pitch_.init(ros::NodeHandle(controller_nh, "pid_pitch")))
+  if (!pid_yaw_.init(ros::NodeHandle(nh_yaw, "pid")) ||
+      !pid_pitch_.init(ros::NodeHandle(nh_pitch, "pid")))
     return false;
 
   map2gimbal_des_.header.frame_id = "map";
@@ -41,8 +45,8 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   cmd_sub_track_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &GimbalStandardController::detectionCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
-  ros::NodeHandle nh = ros::NodeHandle(controller_nh, "bullet_solver");
-  bullet_solver_ = new Approx3DSolver(nh);
+
+  bullet_solver_ = new Approx3DSolver(nh_bullet_solver);
   tf_broadcaster_.init(root_nh);
 
   config_ = {
