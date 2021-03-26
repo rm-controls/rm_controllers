@@ -68,7 +68,7 @@ class GimbalStandardController :
   robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
 
   rm_msgs::GimbalCmd cmd_;
-  double error_yaw_{}, error_pitch_{};
+  double error_yaw_{}, error_pitch_{}, error_yaw_last_, error_pitch_last_;
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
   double publish_rate_{};
   ros::Time last_publish_time_;
