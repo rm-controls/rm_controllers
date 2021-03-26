@@ -12,9 +12,9 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace rm_gimbal_controllers {
-bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
-                                    ros::NodeHandle &root_nh,
-                                    ros::NodeHandle &controller_nh) {
+bool Controller::init(hardware_interface::RobotHW *robot_hw,
+                      ros::NodeHandle &root_nh,
+                      ros::NodeHandle &controller_nh) {
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
@@ -41,9 +41,9 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   map2gimbal_des_.transform.rotation.w = 1.;
   controller_nh.param("publish_rate_error", publish_rate_, 100.0);
 
-  cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
+  cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &Controller::commandCB, this);
   cmd_sub_track_ =
-      root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &GimbalStandardController::detectionCB, this);
+      root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
 
   bullet_solver_ = new Approx3DSolver(nh_bullet_solver);
@@ -56,13 +56,13 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   d_srv_ =
       new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig>::CallbackType
-      cb = boost::bind(&GimbalStandardController::reconfigCB, this, _1, _2);
+      cb = boost::bind(&Controller::reconfigCB, this, _1, _2);
   d_srv_->setCallback(cb);
 
   return true;
 }
 
-void GimbalStandardController::update(const ros::Time &time, const ros::Duration &period) {
+void Controller::update(const ros::Time &time, const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
   updateTf();
 
@@ -82,7 +82,7 @@ void GimbalStandardController::update(const ros::Time &time, const ros::Duration
   }
 }
 
-void GimbalStandardController::passive() {
+void Controller::passive() {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter PASSIVE");
@@ -93,7 +93,7 @@ void GimbalStandardController::passive() {
   pid_yaw_.reset();
 }
 
-void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &period) {
+void Controller::rate(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
@@ -106,7 +106,7 @@ void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &
          pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
 }
 
-void GimbalStandardController::track(const ros::Time &time) {
+void Controller::track(const ros::Time &time) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     error_yaw_ = 999;
@@ -146,14 +146,14 @@ void GimbalStandardController::track(const ros::Time &time) {
     setDes(time, yaw, pitch);
 }
 
-void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
+void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
   if (pitch <= upper_pitch_ && pitch >= lower_pitch_ && yaw <= upper_yaw_ && pitch >= lower_yaw_)
     map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
   map2gimbal_des_.header.stamp = time;
   robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
 }
 
-void GimbalStandardController::moveJoint(const ros::Duration &period) {
+void Controller::moveJoint(const ros::Duration &period) {
   geometry_msgs::TransformStamped base2des;
   try {
     base2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
@@ -172,7 +172,7 @@ void GimbalStandardController::moveJoint(const ros::Duration &period) {
   joint_pitch_.setCommand(pid_pitch_.getCurrentCmd());
 }
 
-void GimbalStandardController::updateTf() {
+void Controller::updateTf() {
   try {
     map2pitch_ = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
 
@@ -207,15 +207,15 @@ void GimbalStandardController::updateTf() {
   }
 }
 
-void GimbalStandardController::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
+void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
   cmd_rt_buffer_.writeFromNonRT(*msg);
 }
 
-void GimbalStandardController::detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg) {
+void Controller::detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg) {
   detection_rt_buffer_.writeFromNonRT(*msg);
 }
 
-void GimbalStandardController::reconfigCB(rm_gimbal_controllers::GimbalTimeCompensationConfig &config, uint32_t) {
+void Controller::reconfigCB(rm_gimbal_controllers::GimbalTimeCompensationConfig &config, uint32_t) {
   ROS_INFO("[Gimbal] Dynamic params change");
   if (!dynamic_reconfig_initialized_) {
     Config init_config = *config_rt_gimbal_buffer_.readFromNonRT(); // config init use yaml
@@ -230,4 +230,4 @@ void GimbalStandardController::reconfigCB(rm_gimbal_controllers::GimbalTimeCompe
 
 } // namespace rm_gimbal_controllers
 
-PLUGINLIB_EXPORT_CLASS(rm_gimbal_controllers::GimbalStandardController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(rm_gimbal_controllers::Controller, controller_interface::ControllerBase)

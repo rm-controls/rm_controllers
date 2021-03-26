@@ -30,11 +30,11 @@ struct Config {
   double time_compensation;
 };
 
-class GimbalStandardController :
+class Controller :
     public controller_interface::MultiInterfaceController<
         hardware_interface::EffortJointInterface, hardware_interface::RobotStateInterface> {
  public:
-  GimbalStandardController() = default;
+  Controller() = default;
   bool init(hardware_interface::RobotHW *robot_hw,
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
   void update(const ros::Time &time, const ros::Duration &period) override;

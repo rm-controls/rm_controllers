@@ -5,8 +5,8 @@ controllers:
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
-  gimbal_standard_controller:
-    type: rm_gimbal_controllers/GimbalStandardController
+  gimbal_controller:
+    type: rm_gimbal_controllers/Controller
     time_compensation: 0.004
     publish_rate_error: 100
     yaw:
