@@ -111,9 +111,8 @@ void GimbalStandardController::track(const ros::Time &time) {
   }
   bool solve_success = false;
   double roll, pitch, yaw;
-  geometry_msgs::TransformStamped map2pitch;
   try {
-    quatToRPY(map2pitch.transform.rotation, roll, pitch, yaw);
+    quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
     angle_init_[0] = yaw;
     angle_init_[1] = -pitch;
     geometry_msgs::TransformStamped map2detection =
@@ -122,9 +121,9 @@ void GimbalStandardController::track(const ros::Time &time) {
                                             ros::Time(0));
     solve_success = bullet_solver_->solve(
         angle_init_,
-        map2detection.transform.translation.x - map2pitch.transform.translation.x,
-        map2detection.transform.translation.y - map2pitch.transform.translation.y,
-        map2detection.transform.translation.z - map2pitch.transform.translation.z,
+        map2detection.transform.translation.x - map2pitch_.transform.translation.x,
+        map2detection.transform.translation.y - map2pitch_.transform.translation.y,
+        map2detection.transform.translation.z - map2pitch_.transform.translation.z,
         0, 0, 0, cmd_.bullet_speed);
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
