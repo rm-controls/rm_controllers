@@ -12,24 +12,28 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace rm_gimbal_controllers {
-bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
-                                    ros::NodeHandle &root_nh,
-                                    ros::NodeHandle &controller_nh) {
-  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
-  joint_yaw_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_yaw_name", std::string("joint_yaw")));
-  joint_pitch_ =
-      effort_jnt_interface->getHandle(getParam(controller_nh, "joint_pitch_name", std::string("joint_pitch")));
+bool Controller::init(hardware_interface::RobotHW *robot_hw,
+                      ros::NodeHandle &root_nh,
+                      ros::NodeHandle &controller_nh) {
+  ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
+  ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
+  ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
 
-  upper_yaw_ = getParam(controller_nh, "yaw_upper", 1e9);
-  lower_yaw_ = getParam(controller_nh, "yaw_lower", -1e9);
-  upper_pitch_ = getParam(controller_nh, "pitch_upper", 1e9);
-  lower_pitch_ = getParam(controller_nh, "pitch_lower", -1e9);
+  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
+  joint_yaw_ =
+      effort_jnt_interface->getHandle(getParam(nh_yaw, "joint_name", std::string("joint_yaw")));
+  joint_pitch_ =
+      effort_jnt_interface->getHandle(getParam(nh_pitch, "joint_name", std::string("joint_pitch")));
+
+  upper_yaw_ = getParam(nh_yaw, "upper", 1e9);
+  lower_yaw_ = getParam(nh_yaw, "lower", -1e9);
+  upper_pitch_ = getParam(nh_pitch, "upper", 1e9);
+  lower_pitch_ = getParam(nh_pitch, "lower", -1e9);
 
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
-  if (!pid_yaw_.init(ros::NodeHandle(controller_nh, "pid_yaw")) ||
-      !pid_pitch_.init(ros::NodeHandle(controller_nh, "pid_pitch")))
+  if (!pid_yaw_.init(ros::NodeHandle(nh_yaw, "pid")) ||
+      !pid_pitch_.init(ros::NodeHandle(nh_pitch, "pid")))
     return false;
 
   map2gimbal_des_.header.frame_id = "map";
@@ -37,12 +41,14 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   map2gimbal_des_.transform.rotation.w = 1.;
   controller_nh.param("publish_rate_error", publish_rate_, 100.0);
 
-  cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &GimbalStandardController::commandCB, this);
+  cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &Controller::commandCB, this);
   cmd_sub_track_ =
-      root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &GimbalStandardController::detectionCB, this);
+      root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
-  ros::NodeHandle nh = ros::NodeHandle(controller_nh, "bullet_solver");
-  bullet_solver_ = new Approx3DSolver(nh);
+
+  bullet_solver_ = new Approx3DSolver(nh_bullet_solver);
+  lp_filter_yaw_ = new LowPassFilter(nh_yaw);
+  lp_filter_pitch_ = new LowPassFilter(nh_pitch);
   tf_broadcaster_.init(root_nh);
 
   config_ = {
@@ -52,13 +58,13 @@ bool GimbalStandardController::init(hardware_interface::RobotHW *robot_hw,
   d_srv_ =
       new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig>::CallbackType
-      cb = boost::bind(&GimbalStandardController::reconfigCB, this, _1, _2);
+      cb = boost::bind(&Controller::reconfigCB, this, _1, _2);
   d_srv_->setCallback(cb);
 
   return true;
 }
 
-void GimbalStandardController::update(const ros::Time &time, const ros::Duration &period) {
+void Controller::update(const ros::Time &time, const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
   updateTf();
 
@@ -74,11 +80,11 @@ void GimbalStandardController::update(const ros::Time &time, const ros::Duration
       rate(time, period);
     else if (state_ == TRACK)
       track(time);
-    moveJoint(period);
+    moveJoint(time, period);
   }
 }
 
-void GimbalStandardController::passive() {
+void Controller::passive() {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter PASSIVE");
@@ -89,7 +95,7 @@ void GimbalStandardController::passive() {
   pid_yaw_.reset();
 }
 
-void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &period) {
+void Controller::rate(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
@@ -102,7 +108,7 @@ void GimbalStandardController::rate(const ros::Time &time, const ros::Duration &
          pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
 }
 
-void GimbalStandardController::track(const ros::Time &time) {
+void Controller::track(const ros::Time &time) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     error_yaw_ = 999;
@@ -142,14 +148,14 @@ void GimbalStandardController::track(const ros::Time &time) {
     setDes(time, yaw, pitch);
 }
 
-void GimbalStandardController::setDes(const ros::Time &time, double yaw, double pitch) {
+void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
   if (pitch <= upper_pitch_ && pitch >= lower_pitch_ && yaw <= upper_yaw_ && pitch >= lower_yaw_)
     map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
   map2gimbal_des_.header.stamp = time;
   robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
 }
 
-void GimbalStandardController::moveJoint(const ros::Duration &period) {
+void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
   geometry_msgs::TransformStamped base2des;
   try {
     base2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
@@ -162,13 +168,15 @@ void GimbalStandardController::moveJoint(const ros::Duration &period) {
   quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
   error_yaw_ = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
   error_pitch_ = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
-  pid_yaw_.computeCommand(error_yaw_, period);
-  pid_pitch_.computeCommand(error_pitch_, period);
+  lp_filter_yaw_->input(error_yaw_, time);
+  lp_filter_pitch_->input(error_pitch_, time);
+  pid_yaw_.computeCommand(lp_filter_yaw_->output(), period);
+  pid_pitch_.computeCommand(lp_filter_pitch_->output(), period);
   joint_yaw_.setCommand(pid_yaw_.getCurrentCmd());
   joint_pitch_.setCommand(pid_pitch_.getCurrentCmd());
 }
 
-void GimbalStandardController::updateTf() {
+void Controller::updateTf() {
   try {
     map2pitch_ = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
 
@@ -203,15 +211,15 @@ void GimbalStandardController::updateTf() {
   }
 }
 
-void GimbalStandardController::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
+void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
   cmd_rt_buffer_.writeFromNonRT(*msg);
 }
 
-void GimbalStandardController::detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg) {
+void Controller::detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg) {
   detection_rt_buffer_.writeFromNonRT(*msg);
 }
 
-void GimbalStandardController::reconfigCB(rm_gimbal_controllers::GimbalTimeCompensationConfig &config, uint32_t) {
+void Controller::reconfigCB(rm_gimbal_controllers::GimbalTimeCompensationConfig &config, uint32_t) {
   ROS_INFO("[Gimbal] Dynamic params change");
   if (!dynamic_reconfig_initialized_) {
     Config init_config = *config_rt_gimbal_buffer_.readFromNonRT(); // config init use yaml
@@ -226,4 +234,4 @@ void GimbalStandardController::reconfigCB(rm_gimbal_controllers::GimbalTimeCompe
 
 } // namespace rm_gimbal_controllers
 
-PLUGINLIB_EXPORT_CLASS(rm_gimbal_controllers::GimbalStandardController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(rm_gimbal_controllers::Controller, controller_interface::ControllerBase)

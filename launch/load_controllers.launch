@@ -12,7 +12,7 @@
           args="
           controllers/robot_state_controller
           controllers/joint_state_controller
-          controllers/gimbal_standard_controller
+          controllers/gimbal_controller
     "/>
 
     <node if="$(arg base_link_tf)" pkg="tf" type="static_transform_publisher" name="odom_tf_bro"

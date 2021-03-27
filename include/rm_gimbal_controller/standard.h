@@ -18,6 +18,7 @@
 #include <rm_gimbal_controllers/GimbalConfig.h>
 #include <rm_gimbal_controller/bullet_solver.h>
 #include <visualization_msgs/Marker.h>
+#include <rm_common/filters/lp_filter.h>
 
 namespace rm_gimbal_controllers {
 enum StandardState {
@@ -30,11 +31,11 @@ struct Config {
   double time_compensation;
 };
 
-class GimbalStandardController :
+class Controller :
     public controller_interface::MultiInterfaceController<
         hardware_interface::EffortJointInterface, hardware_interface::RobotStateInterface> {
  public:
-  GimbalStandardController() = default;
+  Controller() = default;
   bool init(hardware_interface::RobotHW *robot_hw,
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
   void update(const ros::Time &time, const ros::Duration &period) override;
@@ -43,7 +44,7 @@ class GimbalStandardController :
   void passive();
   void rate(const ros::Time &time, const ros::Duration &period);
   void track(const ros::Time &time);
-  void moveJoint(const ros::Duration &period);
+  void moveJoint(const ros::Time &time, const ros::Duration &period);
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
   void updateTf();
@@ -54,6 +55,8 @@ class GimbalStandardController :
   hardware_interface::RobotStateHandle robot_state_handle_;
   geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
   Bullet3DSolver *bullet_solver_{};
+  LowPassFilter *lp_filter_yaw_{};
+  LowPassFilter *lp_filter_pitch_{};
 
   bool state_changed_{};
   Vec2<double> angle_init_{};
@@ -68,7 +71,7 @@ class GimbalStandardController :
   robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
 
   rm_msgs::GimbalCmd cmd_;
-  double error_yaw_{}, error_pitch_{};
+  double error_yaw_{}, error_pitch_{}, error_yaw_last_, error_pitch_last_;
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
   double publish_rate_{};
   ros::Time last_publish_time_;
