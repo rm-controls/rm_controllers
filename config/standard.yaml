@@ -11,13 +11,15 @@ controllers:
     publish_rate_error: 100
     yaw:
       joint_name: "yaw_joint"
-      lp_cutoff: 100
+      lp_cutoff_frequency: 50
+      lp_debug: true
       upper: 1e9
       lower: 1e-9
       pid: { p: 6, i: 0.08, d: 0.01, i_clamp_max: 0.2, i_clamp_min: -0.2, antiwindup: true, publish_state: true }
     pitch:
       joint_name: "pitch_joint"
-      lp_cutoff: 100
+      lp_cutoff_frequency: 100
+      lp_debug: true
       upper: 0.487
       lower: -0.716
       pid: { p: 6, i: 0.08, d: 0.01, i_clamp_max: 0.2, i_clamp_min: -0.2, antiwindup: true, publish_state: true }

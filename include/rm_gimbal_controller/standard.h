@@ -18,6 +18,7 @@
 #include <rm_gimbal_controllers/GimbalConfig.h>
 #include <rm_gimbal_controller/bullet_solver.h>
 #include <visualization_msgs/Marker.h>
+#include <rm_common/filters/lp_filter.h>
 
 namespace rm_gimbal_controllers {
 enum StandardState {
@@ -43,7 +44,7 @@ class Controller :
   void passive();
   void rate(const ros::Time &time, const ros::Duration &period);
   void track(const ros::Time &time);
-  void moveJoint(const ros::Duration &period);
+  void moveJoint(const ros::Time &time, const ros::Duration &period);
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
   void updateTf();
@@ -54,6 +55,8 @@ class Controller :
   hardware_interface::RobotStateHandle robot_state_handle_;
   geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
   Bullet3DSolver *bullet_solver_{};
+  LowPassFilter *lp_filter_yaw_{};
+  LowPassFilter *lp_filter_pitch_{};
 
   bool state_changed_{};
   Vec2<double> angle_init_{};

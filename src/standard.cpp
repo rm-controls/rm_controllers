@@ -47,6 +47,8 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
 
   bullet_solver_ = new Approx3DSolver(nh_bullet_solver);
+  lp_filter_yaw_ = new LowPassFilter(nh_yaw);
+  lp_filter_pitch_ = new LowPassFilter(nh_pitch);
   tf_broadcaster_.init(root_nh);
 
   config_ = {
@@ -78,7 +80,7 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
       rate(time, period);
     else if (state_ == TRACK)
       track(time);
-    moveJoint(period);
+    moveJoint(time, period);
   }
 }
 
@@ -153,7 +155,7 @@ void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
   robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
 }
 
-void Controller::moveJoint(const ros::Duration &period) {
+void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
   geometry_msgs::TransformStamped base2des;
   try {
     base2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
@@ -166,8 +168,10 @@ void Controller::moveJoint(const ros::Duration &period) {
   quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
   error_yaw_ = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
   error_pitch_ = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
-  pid_yaw_.computeCommand(error_yaw_, period);
-  pid_pitch_.computeCommand(error_pitch_, period);
+  lp_filter_yaw_->input(error_yaw_, time);
+  lp_filter_pitch_->input(error_pitch_, time);
+  pid_yaw_.computeCommand(lp_filter_yaw_->output(), period);
+  pid_pitch_.computeCommand(lp_filter_pitch_->output(), period);
   joint_yaw_.setCommand(pid_yaw_.getCurrentCmd());
   joint_pitch_.setCommand(pid_pitch_.getCurrentCmd());
 }
