@@ -28,7 +28,7 @@ find_package(catkin REQUIRED
         )
 
 generate_dynamic_reconfigure_options(
-        cfg/ShooterStandard.cfg
+        cfg/ShooterBase.cfg
 )
 
 ###################################
@@ -74,6 +74,7 @@ include_directories(
 
 ## Declare a cpp library
 add_library(${PROJECT_NAME}
+        src/shooter_base.cpp
         src/standard.cpp)
 
 ## Declare cpp executables
