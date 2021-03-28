@@ -45,6 +45,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   cmd_sub_track_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
+  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(controller_nh, "track", 100));
 
   bullet_solver_ = new Approx3DSolver(nh_bullet_solver);
   lp_filter_yaw_ = new LowPassFilter(nh_yaw);
@@ -67,6 +68,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
 void Controller::update(const ros::Time &time, const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
   updateTf();
+  updateTrack();
 
   if (state_ != cmd_.mode) {
     state_ = StandardState(cmd_.mode);
@@ -208,6 +210,20 @@ void Controller::updateTf() {
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     }
+  }
+}
+
+void Controller::updateTrack() {
+  rm_msgs::TrackData track_data;
+  track_pub_->msg_.tracks.clear();
+
+  if (track_pub_->trylock()) {
+    for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
+      track_data.id = detection.id;
+      track_data.pose = detection.pose;
+      track_pub_->msg_.tracks.emplace_back(track_data);
+    }
+    track_pub_->unlockAndPublish();
   }
 }
 
