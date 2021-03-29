@@ -31,7 +31,6 @@ struct Config {
 
 class ShooterBase : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
                                                                           hardware_interface::RobotStateInterface> {
-
  public:
   ShooterBase() = default;
   virtual bool init(hardware_interface::RobotHW *robot_hw,
@@ -67,5 +66,6 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   ros::Subscriber cmd_subscriber_;
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterBaseConfig> *d_srv_{};
 };
+
 } // namespace rm_shooter_base
 #endif //RM_SHOOTER_CONTROLLERS_INCLUDE_RM_SHOOTER_CONTROLLER_SHOOTER_BASE_H_

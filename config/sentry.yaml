@@ -5,8 +5,8 @@ controllers:
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
-  shooter_standard_controller:
-    type: rm_shooter_controllers/ShooterStandardController
+  shooter_controller:
+    type: rm_shooter_controllers/StandardController
     joint_friction_left_name: "left_friction_wheel_joint"
     joint_friction_right_name: "right_friction_wheel_joint"
     joint_trigger_name: "trigger_joint"
@@ -21,7 +21,7 @@ controllers:
     qd_16: 498.0
     qd_18: 540.0
     qd_30: 772.0
-    pid_friction_l: { p: 0.0055, i: 0.01, d: 0.0, i_clamp_max: 5.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
-    pid_friction_r: { p: 0.0055, i: 0.01, d: 0.0, i_clamp_max: 5.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+    pid_friction_l: { p: 0.001, i: 0.0001, d: 0.0, i_clamp_max: 1.0, i_clamp_min: -1.0, antiwindup: true, publish_state: true }
+    pid_friction_r: { p: 0.001, i: 0.0001, d: 0.0, i_clamp_max: 1.0, i_clamp_min: -1.0, antiwindup: true, publish_state: true }
     pid_trigger: { p: 7.4, i: 0.0, d: 0.22, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
     publish_rate: 50

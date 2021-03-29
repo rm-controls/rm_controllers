@@ -11,7 +11,7 @@
           args="
           controllers/robot_state_controller
           controllers/joint_state_controller
-          controllers/shooter_standard_controller
+          controllers/shooter_controller
           controllers/gimbal_controller
     "/>
 

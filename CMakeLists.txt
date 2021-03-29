@@ -75,7 +75,8 @@ include_directories(
 ## Declare a cpp library
 add_library(${PROJECT_NAME}
         src/shooter_base.cpp
-        src/standard.cpp)
+        src/standard.cpp
+        src/hero.cpp)
 
 ## Declare cpp executables
 #add_executable(${PROJECT_NAME}
