@@ -20,8 +20,8 @@ controllers:
       joint_name: "pitch_joint"
       lp_cutoff_frequency: 30
       lp_debug: true
-      upper: 0.487
-      lower: -0.716
+      upper: 0.443
+      lower: -0.537
       pid: { p: 5, i: 50, d: 0.2, i_clamp_max: 0.1, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
     bullet_solver:
       resistance_coff_qd_10: 0.45
