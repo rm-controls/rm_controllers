@@ -4,18 +4,12 @@
 
 #ifndef SRC_RM_COMMON_INCLUDE_KALMAN_FILTER_H
 #define SRC_RM_COMMON_INCLUDE_KALMAN_FILTER_H
-//change
-#include <rm_msgs/GimbalTrackCmd.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_buffer.h>
 #include <geometry_msgs/TransformStamped.h>
-#include <visualization_msgs/Marker.h>
-#include <rm_gimbal_controllers/GimbalConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
-#include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
-
 #include <rm_common/filters/kalman_filter.h>
 #include <rm_msgs/TargetDetectionArray.h>
 #include <rm_msgs/TrackData.h>
@@ -62,7 +56,7 @@ private:
 
   void reconfigCB(const KalmanConfig &config, uint32_t level);
 
-  bool inited_ = false, updated_ = false;
+  bool updated_ = false;
   double q_x_{}, q_dx_{}, r_x_{}, r_dx_{};
   double jump_thresh_{};
   std::map<int, TranTarget *> id2detection_;
