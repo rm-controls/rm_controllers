@@ -18,6 +18,7 @@
 #include <rm_msgs/TargetDetectionArray.h>
 #include <rm_gimbal_controllers/GimbalConfig.h>
 #include <rm_gimbal_controller/bullet_solver.h>
+#include <rm_gimbal_controller/kalman_filter.h>
 #include <visualization_msgs/Marker.h>
 #include <rm_common/filters/lp_filter.h>
 
@@ -49,6 +50,7 @@ class Controller :
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
   void updateTf();
+  void updateDetectionTf();
   void updateTrack();
   void reconfigCB(rm_gimbal_controllers::GimbalTimeCompensationConfig &config, uint32_t);
 
@@ -57,6 +59,8 @@ class Controller :
   hardware_interface::RobotStateHandle robot_state_handle_;
   geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
   Bullet3DSolver *bullet_solver_{};
+  KalmanFilterTrack *kalman_filter_track{};
+
   LowPassFilter *lp_filter_yaw_{};
   LowPassFilter *lp_filter_pitch_{};
 

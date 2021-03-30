@@ -48,6 +48,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(controller_nh, "track", 100));
 
   bullet_solver_ = new Approx3DSolver(nh_bullet_solver);
+  kalman_filter_track = new KalmanFilterTrack(robot_state_handle_, controller_nh);
   lp_filter_yaw_ = new LowPassFilter(nh_yaw);
   lp_filter_pitch_ = new LowPassFilter(nh_pitch);
   tf_broadcaster_.init(root_nh);
@@ -202,7 +203,7 @@ void Controller::updateTf() {
         map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
         map2detection.transform.translation.y = map2detection_tf.getOrigin().y();
         map2detection.transform.translation.z = map2detection_tf.getOrigin().z();
-        map2detection.transform.rotation.w = 1;
+        map2detection.transform.rotation.w = map2detection_tf.getRotation().z();
         map2detection.header.stamp = detection_time;
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.id);
@@ -211,6 +212,11 @@ void Controller::updateTf() {
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     }
   }
+}
+void Controller::updateDetectionTf(){
+  kalman_filter_track->update(detection_rt_buffer_);
+  kalman_filter_track->getState();
+
 }
 
 void Controller::updateTrack() {
