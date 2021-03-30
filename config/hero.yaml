@@ -5,10 +5,12 @@ controllers:
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
-  shooter_standard_controller:
-    type: rm_shooter_controllers/ShooterStandardController
-    joint_friction_left_name: "left_friction_wheel_joint"
-    joint_friction_right_name: "right_friction_wheel_joint"
+  shooter_controller:
+    type: rm_shooter_controllers/HeroController
+    joint_friction_lf_name: "left_follow_friction_wheel_joint"
+    joint_friction_rf_name: "right_follow_friction_wheel_joint"
+    joint_friction_lb_name: "left_back_friction_wheel_joint"
+    joint_friction_rb_name: "right_back_friction_wheel_joint"
     joint_trigger_name: "trigger_joint"
     push_angle: 1.4
     block_effort: 2.9
@@ -21,7 +23,9 @@ controllers:
     qd_16: 498.0
     qd_18: 540.0
     qd_30: 772.0
-    pid_friction_l: { p: 0.002, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
-    pid_friction_r: { p: 0.002, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+    pid_friction_lf: { p: 0.002, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+    pid_friction_rf: { p: 0.002, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+    pid_friction_lb: { p: 0.002, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+    pid_friction_rb: { p: 0.002, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
     pid_trigger: { p: 20, i: 0.0, d: 1.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
     publish_rate: 50
