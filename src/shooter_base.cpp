@@ -78,9 +78,9 @@ void ShooterBase::passive() {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PASSIVE");
 
-    for (unsigned int i = 0; i < joint_friction_vector_.size() - 1; ++i)
+    for (unsigned int i = 0; i < joint_friction_vector_.size(); ++i)
       joint_friction_vector_[i].setCommand(0);
-    for (unsigned int i = 0; i < joint_trigger_vector_.size() - 1; ++i)
+    for (unsigned int i = 0; i < joint_trigger_vector_.size(); ++i)
       joint_trigger_vector_[i].setCommand(0);
   }
 }
@@ -90,7 +90,7 @@ void ShooterBase::ready(const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter READY");
     trigger_q_des_ = joint_trigger_vector_[0].getPosition();
-    for (unsigned int i = 0; i < pid_friction_vector_.size() - 1; ++i)
+    for (unsigned int i = 0; i < pid_friction_vector_.size(); ++i)
       pid_friction_vector_[i].reset();
   }
 }
@@ -143,9 +143,9 @@ void ShooterBase::stop(const ros::Time &time, const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter STOP");
 
-    for (unsigned int i = 0; i < pid_friction_vector_.size() - 1; ++i)
+    for (unsigned int i = 0; i < pid_friction_vector_.size(); ++i)
       pid_friction_vector_[i].reset();
-    for (unsigned j = 0; j < pid_trigger_vector_.size() - 1; ++j)
+    for (unsigned j = 0; j < pid_trigger_vector_.size(); ++j)
       pid_trigger_vector_[j].reset();
   }
   friction_qd_des_ = 0;
