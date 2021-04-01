@@ -151,7 +151,7 @@ void Controller::track(const ros::Time &time) {
 }
 
 void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
-  if (pitch <= upper_pitch_ && pitch >= lower_pitch_ && yaw <= upper_yaw_ && pitch >= lower_yaw_)
+  if (pitch <= upper_pitch_ && pitch >= lower_pitch_ && yaw <= upper_yaw_ && yaw >= lower_yaw_)
     map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
   map2gimbal_des_.header.stamp = time;
   robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
