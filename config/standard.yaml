@@ -13,8 +13,8 @@ controllers:
       joint_name: "yaw_joint"
       lp_cutoff_frequency: 50
       lp_debug: true
-      upper: 1000000000
-      lower: -1000000000
+      upper: 1e9
+      lower: -1e9
       pid: { p: 5, i: 50, d: 0.3, i_clamp_max: 0.1, i_clamp_min: -0.1, antiwindup: true, publish_state: true }
     pitch:
       joint_name: "pitch_joint"
