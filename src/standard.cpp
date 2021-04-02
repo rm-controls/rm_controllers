@@ -214,24 +214,10 @@ void Controller::updateTf() {
     }
   }
 }
-void Controller::updateDetectionTf(){
-  kalman_filter_track->update(detection_rt_buffer_);
-  kalman_filter_track->getState();
 
-}
-
-void Controller::updateTrack() {
-  rm_msgs::TrackData track_data;
-  track_pub_->msg_.tracks.clear();
-
-  if (track_pub_->trylock()) {
-    for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
-      track_data.id = detection.id;
-      track_data.pose = detection.pose;
-      track_pub_->msg_.tracks.emplace_back(track_data);
-    }
-    track_pub_->unlockAndPublish();
-  }
+void Controller::updateDetectionTf() {
+  kalman_filter_track->update(detection_rt_buffer_, config_.time_compensation);
+  kalman_filter_track->getStateAndPub();
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {

@@ -19,7 +19,6 @@
 #include <rm_gimbal_controllers/KalmanConfig.h>
 
 namespace rm_gimbal_controllers {
-
 class TranTarget {
 public:
   void clear(const Vec6<double> &x) { kf_->clear(x); }
@@ -42,30 +41,35 @@ private:
 
 };
 
-class KalmanFilterTrack{
-public:
+class KalmanFilterTrack {
+ public:
   KalmanFilterTrack(hardware_interface::RobotStateHandle &robot_state_handle, ros::NodeHandle &controller_nh);
-  void getState();
-  ~KalmanFilterTrack(){
+
+  void getStateAndPub();
+
+  ~KalmanFilterTrack() {
     for (auto item:id2detection_)
       delete item.second;
   }
-  void update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray>&  detection_rt_buffer);
 
-private:
+  void
+  update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> &detection_rt_buffer, double time_compensation);
+
+ private:
 
   void reconfigCB(const KalmanConfig &config, uint32_t level);
 
   bool updated_ = false;
   double q_x_{}, q_dx_{}, r_x_{}, r_dx_{};
-  double jump_thresh_{};
+  double time_thresh_{};
+  double distance_thresh_{};
   std::map<int, TranTarget *> id2detection_;
+  std::map<int, geometry_msgs::TransformStamped> map2detections_last_;
   dynamic_reconfigure::Server<KalmanConfig> *d_srv_;
-  ros::Time last_detection_time_;
   bool begin_flag_ = false;
   hardware_interface::RobotStateHandle robot_state_handle_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;
-
+  tf2::Transform map2camera_tf_;
 };
 
 }

@@ -3,12 +3,12 @@
 //
 
 #include "rm_gimbal_controller/kalman_filter.h"
+#include <rm_common/ori_tool.h>
 
 namespace rm_gimbal_controllers {
 
-
 TranTarget::TranTarget(double dt, double q_x, double q_dx,
-                                  double r_x, double r_dx) {
+                       double r_x, double r_dx) {
   a_ <<
      1., dt, 0., 0., 0., 0., 0., 0.,
       0., 1., 0., 0., 0., 0., 0., 0.,
@@ -20,13 +20,13 @@ TranTarget::TranTarget(double dt, double q_x, double q_dx,
       0., 0., 0., 0., 0., 0., 0., 1.;
   b_ <<
      0., 0., 0., 0., 0., 0., 0., 0.,
-     0., 0., 0., 0., 0., 0., 0., 0.,
-     0., 0., 0., 0., 0., 0., 0., 0.,
-     0., 0., 0., 0., 0., 0., 0., 0.,
-     0., 0., 0., 0., 0., 0., 0., 0.,
-     0., 0., 0., 0., 0., 0., 0., 0.,
-     0., 0., 0., 0., 0., 0., 0., 0.,
-     0., 0., 0., 0., 0., 0., 0., 0.;
+      0., 0., 0., 0., 0., 0., 0., 0.,
+      0., 0., 0., 0., 0., 0., 0., 0.,
+      0., 0., 0., 0., 0., 0., 0., 0.,
+      0., 0., 0., 0., 0., 0., 0., 0.,
+      0., 0., 0., 0., 0., 0., 0., 0.,
+      0., 0., 0., 0., 0., 0., 0., 0.,
+      0., 0., 0., 0., 0., 0., 0., 0.;
 
   h_ <<
      1., 0., 0., 0., 0., 0., 0., 0.,
@@ -63,36 +63,53 @@ TranTarget::TranTarget(double dt, double q_x, double q_dx,
 
 }
 
-KalmanFilterTrack::KalmanFilterTrack(hardware_interface::RobotStateHandle &robot_state_handle, ros::NodeHandle &controller_nh) {
+KalmanFilterTrack::KalmanFilterTrack(hardware_interface::RobotStateHandle &robot_state_handle,
+                                     ros::NodeHandle &controller_nh) {
   robot_state_handle_ = robot_state_handle;
   d_srv_ =
-      new dynamic_reconfigure::Server<KalmanConfig>(ros::NodeHandle(controller_nh,"kalman"));
+      new dynamic_reconfigure::Server<KalmanConfig>(ros::NodeHandle(controller_nh, "kalman"));
   dynamic_reconfigure::Server<KalmanConfig>::CallbackType
       cb = boost::bind(&KalmanFilterTrack::reconfigCB, this, _1, _2);
   d_srv_->setCallback(cb);
-  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(controller_nh,"/track", 10));
+  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(controller_nh, "/track", 10));
 }
 
-void KalmanFilterTrack::getState() {
+void KalmanFilterTrack::getStateAndPub() {
   if (!updated_) {
     return;
   } else {
     updated_ = false;
     rm_msgs::TrackDataArray track_data_array;
-    for (const auto &item :id2detection_){
+    for (const auto &item :id2detection_) {
       item.second->predict();
       track_data_array.header.stamp = ros::Time::now();
       rm_msgs::TrackData track_data;
       track_data.id = item.first;
       Vec6<double> state = item.second->getState();
-      track_data.pose.position.x = state[0];
-      track_data.pose.position.y = state[2];
-      track_data.pose.position.z = state[4];
-      track_data.pose.orientation.z = state[6];
-      track_data.speed.linear.x = state[1];
-      track_data.speed.linear.y = state[3];
-      track_data.speed.linear.z = state[5];
-      track_data.speed.angular.z = state[7];
+      track_data.pose2map.position.x = state[0];
+      track_data.pose2map.position.y = state[2];
+      track_data.pose2map.position.z = state[4];
+      tf2::Quaternion quat_tf;
+      quat_tf.setRPY(0, 0, state[6]);
+      geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
+      track_data.pose2map.orientation = quat_msg;
+
+      track_data.speed2map.linear.x = state[1];
+      track_data.speed2map.linear.y = state[3];
+      track_data.speed2map.linear.z = state[5];
+      track_data.speed2map.angular.z = state[7];
+
+      tf2::Transform camera2detection_tf, map2detection_tf;
+      geometry_msgs::TransformStamped map2detection, map2camera, camera2detection;
+      tf2::fromMsg(map2detection_tf, track_data.pose2map);
+      tf2::fromMsg(track_data, map2detection_tf);
+      camera2detection_tf = map2camera_tf_.inverse() * map2detection_tf;
+      camera2detection.transform = tf2::toMsg(camera2detection_tf);
+
+      track_data.pose2camera.position.x = camera2detection.transform.translation.x;
+      track_data.pose2camera.position.y = camera2detection.transform.translation.y;
+      track_data.pose2camera.position.z = camera2detection.transform.translation.z;
+
       track_data_array.tracks.emplace_back(track_data);
     }
     track_pub_->msg_.tracks.clear();
@@ -102,79 +119,164 @@ void KalmanFilterTrack::getState() {
     }
   }
 }
-void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray>&  detection_rt_buffer) {
-  ros::Time now_detection_time = detection_rt_buffer.readFromRT()->header.stamp;
-  if(!begin_flag_){
-    begin_flag_ = true;
-    last_detection_time_ = now_detection_time;
-    return;
-  }
-  if(now_detection_time == last_detection_time_ ){
-    updated_ = false;
-    return;
-  }
-  for (const auto &detection : detection_rt_buffer.readFromRT()->detections) {
-    geometry_msgs::TransformStamped map2detection_last, map2detection_now;
-    if (id2detection_.find(detection.id) == id2detection_.end())
-      //do we need init with the x,y,z...
-      id2detection_.insert(
-          std::make_pair(detection.id, new TranTarget(0.001, q_x_, q_dx_,
-                                                      r_x_, r_dx_)));
-    try {
-      map2detection_last =
-          robot_state_handle_.lookupTransform("map", "detection" + std::to_string(detection.id),
-                                              last_detection_time_);
-    }
-    catch (tf2::TransformException &ex) {
-      ROS_WARN("%s", ex.what());
-      map2detection_last.header.stamp = last_detection_time_;
-    }
-    try {
-      map2detection_now =
-          robot_state_handle_.lookupTransform("map", "detection" + std::to_string(detection.id),
-                                              now_detection_time);
-    }
-    catch (tf2::TransformException &ex) {
-      ROS_WARN("%s", ex.what());
-      map2detection_now.header.stamp = now_detection_time;
-    }
-    //update last_detection_time_
-    last_detection_time_ = now_detection_time;
-    double dt = map2detection_now.header.stamp.toSec()
-                - map2detection_last.header.stamp.toSec();
-    if (dt <= 0.0005)
-      return;
-    Vec6<double> z; //observe value
-    double x_diff = map2detection_now.transform.translation.x
-                    - map2detection_last.transform.translation.x;
-    double y_diff = map2detection_now.transform.translation.x
-                    - map2detection_last.transform.translation.x;
-    double z_diff = map2detection_now.transform.translation.x
-                    - map2detection_last.transform.translation.x;
 
-    if((std::abs(x_diff) + std::abs(y_diff) + std::abs(z_diff)) > jump_thresh_){
-      updated_ = false;
-      Vec6<double> x;
-      x << map2detection_now.transform.translation.x, 0.,
-            map2detection_now.transform.translation.y, 0.,
-            map2detection_now.transform.translation.z, 0.,
-            0., 0., 0., 0.;
-      id2detection_[detection.id]->clear(x);
-      return;
-    }else{
-      z << map2detection_now.transform.translation.x,
-          x_diff/dt,
-          map2detection_now.transform.translation.y,
-          y_diff/dt,
-          map2detection_now.transform.translation.z,
-          z_diff/dt,
-          map2detection_now.transform.rotation.z,
-          (map2detection_now.transform.rotation.z-map2detection_last.transform.rotation.z)/dt;
-      id2detection_[detection.id]->predict();
-      id2detection_[detection.id]->update(z);
-      updated_ = true;
+void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> &detection_rt_buffer,
+                               double time_compensation) {
+  if (!begin_flag_) {
+    begin_flag_ = true;
+    std::map<int, double> id2distance;
+    for (const auto &detection : detection_rt_buffer.readFromRT()->detections) {
+      geometry_msgs::TransformStamped map2detection, map2camera;
+      tf2::Transform camera2detection_tf, map2detection_tf;
+      try {
+        tf2::fromMsg(detection.pose, camera2detection_tf);
+        map2camera = robot_state_handle_.lookupTransform("map",
+                                                         "camera",
+                                                         detection_rt_buffer.readFromRT()->header.stamp -
+                                                             ros::Duration(time_compensation));
+        tf2::fromMsg(map2camera.transform, map2camera_tf_);
+        map2detection_tf = map2camera_tf_ * camera2detection_tf;
+        map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
+        map2detection.transform.translation.y = map2detection_tf.getOrigin().y();
+        map2detection.transform.translation.z = map2detection_tf.getOrigin().z();
+        map2detection.transform.rotation.x = map2detection_tf.getRotation().x();
+        map2detection.transform.rotation.y = map2detection_tf.getRotation().y();
+        map2detection.transform.rotation.z = map2detection_tf.getRotation().z();
+        map2detection.transform.rotation.w = map2detection_tf.getRotation().w();
+        map2detection.header.stamp = detection_rt_buffer.readFromRT()->header.stamp;
+        map2detection.header.frame_id = "map";
+        map2detection.child_frame_id = "detection" + std::to_string(detection.id);
+      }
+      catch (tf2::TransformException &ex) {
+        ROS_WARN("%s", ex.what());
+      }
+      if (id2distance.find(detection.id) == id2distance.end()) {
+        double distance_square = std::pow(map2camera.transform.translation.x, 2) +
+            std::pow(map2camera.transform.translation.y, 2) +
+            std::pow(map2camera.transform.translation.z, 2);
+        id2distance.insert(std::make_pair(detection.id, distance_square));
+        map2detections_last_.insert(std::make_pair(detection.id, map2detection));
+      } else {
+        double dis_square_new = std::pow(detection.pose.position.x, 2) +
+            std::pow(detection.pose.position.y, 2) + std::pow(detection.pose.position.z, 2);
+        double dis_square_store = id2distance[detection.id];
+        if (dis_square_new < dis_square_store) {
+          map2detections_last_[detection.id] = map2detection;
+        }
+      }
+    }
+    return;
+  }
+
+  std::map<int, geometry_msgs::TransformStamped> map2detections_now;
+  std::map<int, double> id2distance;
+  for (const auto &detection : detection_rt_buffer.readFromRT()->detections) {
+    geometry_msgs::TransformStamped map2detection, map2camera;
+    tf2::Transform camera2detection_tf, map2detection_tf;
+    try {
+      tf2::fromMsg(detection.pose, camera2detection_tf);
+      map2camera = robot_state_handle_.lookupTransform("map",
+                                                       "camera",
+                                                       detection_rt_buffer.readFromRT()->header.stamp -
+                                                           ros::Duration(time_compensation));
+      tf2::fromMsg(map2camera.transform, map2camera_tf_);
+      map2detection_tf = map2camera_tf_ * camera2detection_tf;
+      map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
+      map2detection.transform.translation.y = map2detection_tf.getOrigin().y();
+      map2detection.transform.translation.z = map2detection_tf.getOrigin().z();
+      map2detection.transform.rotation.x = map2detection_tf.getRotation().x();
+      map2detection.transform.rotation.y = map2detection_tf.getRotation().y();
+      map2detection.transform.rotation.z = map2detection_tf.getRotation().z();
+      map2detection.transform.rotation.w = map2detection_tf.getRotation().w();
+      map2detection.header.stamp = detection_rt_buffer.readFromRT()->header.stamp;
+      map2detection.header.frame_id = "map";
+      map2detection.child_frame_id = "detection" + std::to_string(detection.id);
+    }
+    catch (tf2::TransformException &ex) {
+      ROS_WARN("%s", ex.what());
+    }
+    //last have no , now have
+    if (map2detections_last_.find(detection.id) == map2detections_last_.end()) {
+      map2detections_now.insert(std::make_pair(detection.id, map2detection));
+    } else if (id2distance.find(detection.id) == id2distance.end()) {
+      //last have , now have
+      double last_x = map2detections_last_[detection.id].transform.translation.x;
+      double last_y = map2detections_last_[detection.id].transform.translation.x;
+      double last_z = map2detections_last_[detection.id].transform.translation.x;
+      double distance_square = std::pow((map2detection.transform.translation.x - last_x), 2) +
+          std::pow((map2detection.transform.translation.y - last_y), 2) +
+          std::pow((map2detection.transform.translation.z - last_z), 2);
+      id2distance.insert(std::make_pair(detection.id, distance_square));
+      map2detections_now.insert(std::make_pair(detection.id, map2detection));
+    } else {
+      double last_x = map2detections_last_[detection.id].transform.translation.x;
+      double last_y = map2detections_last_[detection.id].transform.translation.x;
+      double last_z = map2detections_last_[detection.id].transform.translation.x;
+      double distance_square = std::pow((map2detection.transform.translation.x - last_x), 2) +
+          std::pow((map2detection.transform.translation.y - last_y), 2) +
+          std::pow((map2detection.transform.translation.z - last_z), 2);
+      if (distance_square < id2distance[detection.id]) {
+        map2detections_now[detection.id] = map2detection;
+      }
     }
   }
+
+  for (const auto &map2detection_last : map2detections_last_) {
+    //last have,we create something that haven't created
+    if (id2detection_.find(map2detection_last.first) == id2detection_.end()) {
+      id2detection_.insert(
+          std::make_pair(map2detection_last.first, new TranTarget(0.001, q_x_, q_dx_,
+                                                                  r_x_, r_dx_)));
+    }
+    //last have, now have no, we predict;
+    if (map2detections_now.find(map2detection_last.first) == map2detections_now.end()) {
+      id2detection_[map2detection_last.first]->predict();
+    } else {
+      //last have, now have, clear or update;
+      geometry_msgs::TransformStamped map2detection_now = map2detections_now[map2detection_last.first];
+      double time_diff, distance_diff;
+      time_diff = (map2detection_now.header.stamp - map2detection_last.second.header.stamp).toSec();
+      distance_diff =
+          std::pow(map2detection_now.transform.translation.x - map2detection_last.second.transform.translation.x, 2) +
+              std::pow(map2detection_now.transform.translation.y - map2detection_last.second.transform.translation.y, 2)
+              +
+                  std::pow(
+                      map2detection_now.transform.translation.z - map2detection_last.second.transform.translation.z, 2);
+      if (time_diff > 0.2 || distance_diff > 3) {
+        Vec6<double> x;
+        x << 0., 0., 0., 0., 0., 0., 0., 0.;
+        id2detection_[map2detection_last.first]->clear(x);
+        continue;
+      } else if (time_diff < 0.0001) {
+        id2detection_[map2detection_last.first]->predict();
+        continue;
+      } else {
+        double dt = map2detection_now.header.stamp.toSec()
+            - map2detection_last.second.header.stamp.toSec();
+        Vec6<double> z; //observe value
+        double now_pos_x, now_pos_y, now_pos_z;
+        double last_pos_x, last_pos_y, last_pos_z;
+        now_pos_x = map2detection_now.transform.translation.x;
+        now_pos_y = map2detection_now.transform.translation.y;
+        now_pos_z = map2detection_now.transform.translation.z;
+        double now_roll, now_pitch, now_yaw;
+        quatToRPY(map2detection_last.second.transform.rotation, now_roll, now_pitch, now_yaw);
+
+        last_pos_x = map2detection_last.second.transform.translation.x;
+        last_pos_y = map2detection_last.second.transform.translation.x;
+        last_pos_z = map2detection_last.second.transform.translation.x;
+        double last_roll, last_pitch, last_yaw;
+        quatToRPY(map2detection_last.second.transform.rotation, last_roll, last_pitch, last_yaw);
+
+        z << now_pos_x, (now_pos_x - last_pos_x) / dt,
+            now_pos_y, (now_pos_y - last_pos_y) / dt,
+            now_pos_z, (now_pos_z - last_pos_z) / dt,
+            now_yaw, (now_yaw - last_yaw) / dt;
+        id2detection_[map2detection_last.first]->update(z);
+      }
+    }
+  }
+  map2detections_last_ = map2detections_now;
 }
 
 void KalmanFilterTrack::reconfigCB(const KalmanConfig &config,
@@ -185,7 +287,8 @@ void KalmanFilterTrack::reconfigCB(const KalmanConfig &config,
   q_dx_ = config.q_dx;
   r_x_ = config.r_x;
   r_dx_ = config.r_dx;
-  jump_thresh_ = config.jump_thresh;
+  time_thresh_ = config.time_thresh;
+  distance_thresh_ = config.distance_thresh;
   for (const auto &item:id2detection_) {
     delete item.second;
   }
