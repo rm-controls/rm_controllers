@@ -18,6 +18,7 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   ChassisBase::init(robot_hw, root_nh, controller_nh);
   wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
+  twist_angular_ = getParam(controller_nh, "twist_angular_", M_PI / 6);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue pose_cov_list;
@@ -175,11 +176,13 @@ void StandardController::twist(const ros::Time &time, const ros::Duration &perio
               roll, pitch, yaw);
     ros::Time now = ros::Time::now();
     double t = now.toSec();
-    double follow_error = angles::shortest_angular_distance(yaw, 1 * sin(t) - yaw);
+    double follow_error = angles::shortest_angular_distance(yaw, twist_angular_ * sin(2 * M_PI * t) - yaw);   //60^.
+
     pid_follow_.computeCommand(follow_error, period);
     vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+
 }
 
 void StandardController::gyro(const ros::Time &time, const ros::Duration &period) {

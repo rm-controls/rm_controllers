@@ -37,6 +37,9 @@ class StandardController : public rm_chassis_base::ChassisBase {
   double wheel_track_{};
   bool enable_odom_tf_{};
   robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
+
+  double twist_angular_{};
+
 };
 } // namespace rm_chassis_controllers
 
