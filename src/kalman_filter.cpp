@@ -71,7 +71,8 @@ KalmanFilterTrack::KalmanFilterTrack(hardware_interface::RobotStateHandle &robot
   dynamic_reconfigure::Server<KalmanConfig>::CallbackType
       cb = boost::bind(&KalmanFilterTrack::reconfigCB, this, _1, _2);
   d_srv_->setCallback(cb);
-  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(controller_nh, "/track", 10));
+  ros::NodeHandle global_nh("~/");
+  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(global_nh, "/track", 10));
 }
 
 void KalmanFilterTrack::getStateAndPub() {
