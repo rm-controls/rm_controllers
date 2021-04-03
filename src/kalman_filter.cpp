@@ -73,6 +73,7 @@ KalmanFilterTrack::KalmanFilterTrack(hardware_interface::RobotStateHandle &robot
   d_srv_->setCallback(cb);
   ros::NodeHandle global_nh("~/");
   track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(global_nh, "/track", 10));
+  track_test_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(global_nh, "/track_test", 10));
 }
 
 void KalmanFilterTrack::getStateAndPub() {
@@ -119,6 +120,7 @@ void KalmanFilterTrack::getStateAndPub() {
 
 void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> &detection_rt_buffer,
                                double time_compensation) {
+  ROS_INFO("I update, ok!");
   ros::Time detection_time = detection_rt_buffer.readFromRT()->header.stamp;
   if (last_detection_time_ != detection_time) {
     last_detection_time_ = detection_time;
@@ -223,6 +225,7 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
       }
     }
 
+    rm_msgs::TrackDataArray track_data_array;
     for (const auto &map2detection_last : map2detections_last_) {
       //last have,we create something that haven't created
       if (id2detection_.find(map2detection_last.first) == id2detection_.end()) {
@@ -272,14 +275,28 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
           double last_roll, last_pitch, last_yaw;
           quatToRPY(map2detection_last.second.transform.rotation, last_roll, last_pitch, last_yaw);
 
+          rm_msgs::TrackData track_data;
+          track_data.pose2map.position.x = now_pos_x;
+          track_data.pose2map.position.y = now_pos_y;
+          track_data.pose2map.position.z = now_pos_z;
+          track_data_array.header.stamp = map2detection_last.second.header.stamp;
+          track_data_array.tracks.emplace_back(track_data);
           z << now_pos_x, (now_pos_x - last_pos_x) / dt,
               now_pos_y, (now_pos_y - last_pos_y) / dt,
               now_pos_z, (now_pos_z - last_pos_z) / dt,
               now_yaw, (now_yaw - last_yaw) / dt;
           id2detection_[map2detection_last.first]->update(z);
+
         }
       }
     }
+
+    track_test_pub_->msg_.tracks.clear();
+    if (track_pub_->trylock()) {
+      track_pub_->msg_ = track_data_array;
+      track_pub_->unlockAndPublish();
+    }
+
     map2detections_last_ = map2detections_now;
 
   } else {

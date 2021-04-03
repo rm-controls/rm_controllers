@@ -68,6 +68,7 @@ class KalmanFilterTrack {
   bool begin_flag_ = false;
   hardware_interface::RobotStateHandle robot_state_handle_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_test_pub_;
   ros::Time last_detection_time_;
   tf2::Transform map2camera_tf_;
 };
