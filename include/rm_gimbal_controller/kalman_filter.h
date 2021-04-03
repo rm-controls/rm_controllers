@@ -20,11 +20,11 @@
 
 namespace rm_gimbal_controllers {
 class TranTarget {
-public:
-  void clear(const Vec6<double> &x) { kf_->clear(x); }
-  void update(const Vec6<double> &z) { kf_->update(z); }
+ public:
+  void clear(const Vec8<double> &x) { kf_->clear(x); }
+  void update(const Vec8<double> &z) { kf_->update(z); }
   void predict() { kf_->predict(u_); }
-  const Vec6<double> &getState() {
+  const Vec8<double> &getState() {
     x_ = kf_->getState();
     return x_;
   }
@@ -34,10 +34,10 @@ public:
              double r_x, double r_dx);
   ~TranTarget() { delete kf_; }
 
-private:
+ private:
   KalmanFilter<double> *kf_;
-  Vec6<double> x_, u_;
-  Mat6<double> a_, b_, h_, q_, r_;
+  Vec8<double> x_, u_;
+  Mat8<double> a_, b_, h_, q_, r_;
 
 };
 

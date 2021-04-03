@@ -68,7 +68,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
 
 void Controller::update(const ros::Time &time, const ros::Duration &period) {
   cmd_ = *cmd_rt_buffer_.readFromRT();
-  updateTf();
+//  updateTf();
 //  updateTrack();
   updateDetectionTf();
 

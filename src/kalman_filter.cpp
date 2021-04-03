@@ -84,7 +84,7 @@ void KalmanFilterTrack::getStateAndPub() {
     track_data_array.header.stamp = ros::Time::now();
     rm_msgs::TrackData track_data;
     track_data.id = item.first;
-    Vec6<double> state = item.second->getState();
+    Vec8<double> state = item.second->getState();
     track_data.pose2map.position.x = state[0];
     track_data.pose2map.position.y = state[2];
     track_data.pose2map.position.z = state[4];
@@ -100,8 +100,7 @@ void KalmanFilterTrack::getStateAndPub() {
 
     tf2::Transform camera2detection_tf, map2detection_tf;
     geometry_msgs::TransformStamped map2detection, map2camera, camera2detection;
-    tf2::fromMsg(map2detection_tf, track_data.pose2map);
-    tf2::fromMsg(track_data, map2detection_tf);
+    tf2::fromMsg(track_data.pose2map, map2detection_tf);
     camera2detection_tf = map2camera_tf_.inverse() * map2detection_tf;
     camera2detection.transform = tf2::toMsg(camera2detection_tf);
 
@@ -250,7 +249,7 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
                         map2detection_now.transform.translation.z - map2detection_last.second.transform.translation.z,
                         2);
         if (time_diff > time_thresh_ || distance_diff > distance_thresh_) {
-          Vec6<double> x;
+          Vec8<double> x;
           x << 0., 0., 0., 0., 0., 0., 0., 0.;
           id2detection_[map2detection_last.first]->clear(x);
           continue;
@@ -260,7 +259,7 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
         } else {
           double dt = map2detection_now.header.stamp.toSec()
               - map2detection_last.second.header.stamp.toSec();
-          Vec6<double> z; //observe value
+          Vec8<double> z; //observe value
           double now_pos_x, now_pos_y, now_pos_z;
           double last_pos_x, last_pos_y, last_pos_z;
           now_pos_x = map2detection_now.transform.translation.x;
