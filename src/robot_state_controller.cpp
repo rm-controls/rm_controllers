@@ -72,7 +72,7 @@ void RobotStateController::update(const ros::Time &time, const ros::Duration &) 
     else if (mimic_iter != mimic_->end())
       tf_transform =
           tf2::kdlToTransform(item.second.segment.pose(
-              jnt_states_.find(mimic_iter->first)->second.getPosition() * mimic_iter->second->multiplier
+              jnt_states_.find(mimic_iter->second->joint_name)->second.getPosition() * mimic_iter->second->multiplier
                   + mimic_iter->second->offset));
     else {
       ROS_WARN_THROTTLE(10, "Joint state with name: \"%s\" was received but not found in URDF",
