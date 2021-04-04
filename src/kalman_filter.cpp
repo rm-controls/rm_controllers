@@ -204,8 +204,8 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
       } else if (id2distance.find(detection.id) == id2distance.end()) {
         //last have , now have
         double last_x = map2detections_last_[detection.id].transform.translation.x;
-        double last_y = map2detections_last_[detection.id].transform.translation.x;
-        double last_z = map2detections_last_[detection.id].transform.translation.x;
+        double last_y = map2detections_last_[detection.id].transform.translation.y;
+        double last_z = map2detections_last_[detection.id].transform.translation.z;
         double distance_square = std::pow((map2detection.transform.translation.x - last_x), 2) +
             std::pow((map2detection.transform.translation.y - last_y), 2) +
             std::pow((map2detection.transform.translation.z - last_z), 2);
@@ -213,8 +213,8 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
         map2detections_now.insert(std::make_pair(detection.id, map2detection));
       } else {
         double last_x = map2detections_last_[detection.id].transform.translation.x;
-        double last_y = map2detections_last_[detection.id].transform.translation.x;
-        double last_z = map2detections_last_[detection.id].transform.translation.x;
+        double last_y = map2detections_last_[detection.id].transform.translation.y;
+        double last_z = map2detections_last_[detection.id].transform.translation.z;
         double distance_square = std::pow((map2detection.transform.translation.x - last_x), 2) +
             std::pow((map2detection.transform.translation.y - last_y), 2) +
             std::pow((map2detection.transform.translation.z - last_z), 2);
@@ -234,7 +234,8 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
       }
       //last have, now have no, we predict;
       if (map2detections_now.find(map2detection_last.first) == map2detections_now.end()) {
-        id2detection_[map2detection_last.first]->predict();
+//        id2detection_[map2detection_last.first]->predict();
+        id2detection_.erase(map2detection_last.first);
       } else {
         //last have, now have, clear or update;
         geometry_msgs::TransformStamped map2detection_now = map2detections_now[map2detection_last.first];
@@ -252,9 +253,11 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
           Vec8<double> x;
           x << 0., 0., 0., 0., 0., 0., 0., 0.;
           id2detection_[map2detection_last.first]->clear(x);
+          ROS_INFO("i am %d, i clear", map2detection_last.first);
           continue;
         } else if (time_diff < 0.0001) {
           id2detection_[map2detection_last.first]->predict();
+          ROS_INFO("i am %d, i predict", map2detection_last.first);
           continue;
         } else {
           double dt = map2detection_now.header.stamp.toSec()
@@ -269,15 +272,21 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
           quatToRPY(map2detection_last.second.transform.rotation, now_roll, now_pitch, now_yaw);
 
           last_pos_x = map2detection_last.second.transform.translation.x;
-          last_pos_y = map2detection_last.second.transform.translation.x;
-          last_pos_z = map2detection_last.second.transform.translation.x;
+          last_pos_y = map2detection_last.second.transform.translation.y;
+          last_pos_z = map2detection_last.second.transform.translation.z;
           double last_roll, last_pitch, last_yaw;
           quatToRPY(map2detection_last.second.transform.rotation, last_roll, last_pitch, last_yaw);
 
           rm_msgs::TrackData track_data;
+          track_data.id = map2detection_last.first;
           track_data.pose2map.position.x = now_pos_x;
           track_data.pose2map.position.y = now_pos_y;
           track_data.pose2map.position.z = now_pos_z;
+          track_data.pose2map.orientation.x = now_yaw;
+          track_data.pose2map.orientation.y = (now_yaw - last_yaw) / dt;
+          track_data.pose2camera.position.x = (now_pos_x - last_pos_x) / dt;
+          track_data.pose2camera.position.y = (now_pos_y - last_pos_y) / dt;
+          track_data.pose2camera.position.z = (now_pos_z - last_pos_z) / dt;
           track_data_array.header.stamp = map2detection_last.second.header.stamp;
           track_data_array.tracks.emplace_back(track_data);
           z << now_pos_x, (now_pos_x - last_pos_x) / dt,
@@ -285,15 +294,15 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
               now_pos_z, (now_pos_z - last_pos_z) / dt,
               now_yaw, (now_yaw - last_yaw) / dt;
           id2detection_[map2detection_last.first]->update(z);
-
+          ROS_INFO("i am %d, i update", map2detection_last.first);
         }
       }
     }
 
     track_test_pub_->msg_.tracks.clear();
-    if (track_pub_->trylock()) {
-      track_pub_->msg_ = track_data_array;
-      track_pub_->unlockAndPublish();
+    if (track_test_pub_->trylock()) {
+      track_test_pub_->msg_ = track_data_array;
+      track_test_pub_->unlockAndPublish();
     }
 
     map2detections_last_ = map2detections_now;
@@ -301,6 +310,7 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
   } else {
     for (const auto &item: id2detection_) {
       item.second->predict();
+      ROS_INFO("i am %d, i predict", item.first);
     }
   }
 
