@@ -7,8 +7,8 @@ controllers:
     publish_rate: 50
   shooter_controller:
     type: rm_shooter_controllers/HeroController
-    joint_friction_lf_name: "left_follow_friction_wheel_joint"
-    joint_friction_rf_name: "right_follow_friction_wheel_joint"
+    joint_friction_lf_name: "left_front_friction_wheel_joint"
+    joint_friction_rf_name: "right_front_friction_wheel_joint"
     joint_friction_lb_name: "left_back_friction_wheel_joint"
     joint_friction_rb_name: "right_back_friction_wheel_joint"
     joint_trigger_name: "trigger_joint"
