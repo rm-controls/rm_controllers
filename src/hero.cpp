@@ -48,10 +48,14 @@ bool HeroController::init(hardware_interface::RobotHW *robot_hw,
 
 void HeroController::push(const ros::Time &time, const ros::Duration &period) {
   ShooterBase::push(time, period);
-  if (joint_friction_lf_.getVelocity() >= 0.95 * friction_qd_des_ && joint_friction_lf_.getVelocity() > 8.0 &&
-      joint_friction_rf_.getVelocity() <= 0.95 * (-friction_qd_des_) && joint_friction_rf_.getVelocity() < -8.0 &&
-      joint_friction_lb_.getVelocity() >= 0.95 * friction_qd_des_ && joint_friction_lb_.getVelocity() > 8.0 &&
-      joint_friction_rb_.getVelocity() <= 0.95 * (-friction_qd_des_) && joint_friction_rb_.getVelocity() < -8.0 &&
+  if (joint_friction_lf_.getVelocity() >= enter_push_qd_coef_ * friction_qd_des_
+      && joint_friction_lf_.getVelocity() > 8.0 &&
+      joint_friction_rf_.getVelocity() <= enter_push_qd_coef_ * (-friction_qd_des_)
+      && joint_friction_rf_.getVelocity() < -8.0 &&
+      joint_friction_lb_.getVelocity() >= enter_push_qd_coef_ * friction_qd_des_
+      && joint_friction_lb_.getVelocity() > 8.0 &&
+      joint_friction_rb_.getVelocity() <= enter_push_qd_coef_ * (-friction_qd_des_)
+      && joint_friction_rb_.getVelocity() < -8.0 &&
       (ros::Time::now() - last_shoot_time_).toSec() >= 1. / cmd_.hz) { // Time to shoot!!!
     trigger_q_des_ = joint_trigger_.getPosition() - config_.push_angle;
     last_shoot_time_ = time;

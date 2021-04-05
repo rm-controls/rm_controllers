@@ -23,8 +23,9 @@ bool ShooterBase::init(hardware_interface::RobotHW *robot_hw,
       .qd_30 = getParam(controller_nh, "qd_30", 0.)};
   config_rt_buffer.initRT(config_);
 
-  // init dynamic reconfigure
-  d_srv_ = new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterBaseConfig>(controller_nh);
+  enter_push_qd_coef_ = getParam(controller_nh, "enter_push_qd_coef", 0.),
+      // init dynamic reconfigure
+      d_srv_ = new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterBaseConfig>::CallbackType cb =
       [this](auto &&PH1, auto &&PH2) {
         reconfigCB(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));

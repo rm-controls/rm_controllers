@@ -51,6 +51,7 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
 
   double friction_qd_des_{};
   double trigger_q_des_{};
+  double enter_push_qd_coef_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool is_start_block_time_ = false;
