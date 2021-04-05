@@ -72,8 +72,8 @@ KalmanFilterTrack::KalmanFilterTrack(hardware_interface::RobotStateHandle &robot
       cb = boost::bind(&KalmanFilterTrack::reconfigCB, this, _1, _2);
   d_srv_->setCallback(cb);
   ros::NodeHandle global_nh("~/");
-  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(global_nh, "/track", 10));
-  track_test_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(global_nh, "/track_test", 10));
+  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(global_nh, "/track", 100));
+  track_test_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(global_nh, "/track_test", 100));
 }
 
 void KalmanFilterTrack::getStateAndPub() {
@@ -119,7 +119,7 @@ void KalmanFilterTrack::getStateAndPub() {
 
 void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> &detection_rt_buffer,
                                double time_compensation) {
-  ROS_INFO("I update, ok!");
+//  ROS_INFO("I update, ok!");
   ros::Time detection_time = detection_rt_buffer.readFromRT()->header.stamp;
   if (last_detection_time_ != detection_time) {
     last_detection_time_ = detection_time;
@@ -232,7 +232,7 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
             std::make_pair(map2detection_last.first, new TranTarget(0.001, q_x_, q_dx_,
                                                                     r_x_, r_dx_)));
       }
-      //last have, now have no, we predict;
+      //last have, now have no, we delete;
       if (map2detections_now.find(map2detection_last.first) == map2detections_now.end()) {
 //        id2detection_[map2detection_last.first]->predict();
         id2detection_.erase(map2detection_last.first);
@@ -269,7 +269,7 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
           now_pos_y = map2detection_now.transform.translation.y;
           now_pos_z = map2detection_now.transform.translation.z;
           double now_roll, now_pitch, now_yaw;
-          quatToRPY(map2detection_last.second.transform.rotation, now_roll, now_pitch, now_yaw);
+          quatToRPY(map2detection_now.transform.rotation, now_roll, now_pitch, now_yaw);
 
           last_pos_x = map2detection_last.second.transform.translation.x;
           last_pos_y = map2detection_last.second.transform.translation.y;
