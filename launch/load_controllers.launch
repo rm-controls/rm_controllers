@@ -1,6 +1,7 @@
 <launch>
     <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, hero, engineer]"/>
     <arg name="load_controller" default="true"/>
+    <arg name="camera_tf" default="true"/>
 
     <rosparam file="$(find rm_shooter_controllers)/config/$(arg robot_type).yaml" command="load"/>
     <rosparam file="$(find rm_gimbal_controllers)/config/$(arg robot_type).yaml" command="load"/>
@@ -17,5 +18,7 @@
 
     <node pkg="tf" type="static_transform_publisher" name=""
           args="0 0 0 0 0 0 1 map base_link 100"/>
+    <node if="$(arg camera_tf)" pkg="tf" type="static_transform_publisher" name="camera_tf_bro"
+          args="0.090 0 -0.046 0.5, 0.5, 0.5, 0.5 pitch camera 100"/>
 
 </launch>
