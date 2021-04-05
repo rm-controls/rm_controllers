@@ -153,9 +153,9 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
           ROS_WARN("%s", ex.what());
         }
         if (id2distance.find(detection.id) == id2distance.end()) {
-          double distance_square = std::pow(map2camera.transform.translation.x, 2) +
-              std::pow(map2camera.transform.translation.y, 2) +
-              std::pow(map2camera.transform.translation.z, 2);
+          double distance_square = std::pow(detection.pose.position.x, 2) +
+              std::pow(detection.pose.position.y, 2) +
+              std::pow(detection.pose.position.z, 2);
           id2distance.insert(std::make_pair(detection.id, distance_square));
           map2detections_last_.insert(std::make_pair(detection.id, map2detection));
         } else {
