@@ -7,21 +7,21 @@ controllers:
     publish_rate: 50
   gimbal_controller:
     type: rm_gimbal_controllers/Controller
-    time_compensation: 0.04
+    time_compensation: 0.004
     publish_rate_error: 100
     yaw:
       joint_name: "yaw_joint"
       lp_cutoff_frequency: 50
       lp_debug: true
       upper: 1e9
-      lower: 1e-9
+      lower: -1e9
       pid: { p: 8, i: 50, d: 0.2, i_clamp_max: 0.1, i_clamp_min: -0.1, antiwindup: true, publish_state: true }
     pitch:
       joint_name: "pitch_joint"
       lp_cutoff_frequency: 30
       lp_debug: true
-      upper: 0.443
-      lower: -0.537
+      upper: 0.885
+      lower: 0.241
       pid: { p: 5, i: 50, d: 0.2, i_clamp_max: 0.1, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
     bullet_solver:
       resistance_coff_qd_10: 0.45
