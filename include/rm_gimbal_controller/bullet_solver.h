@@ -5,7 +5,6 @@
 #ifndef SRC_RM_COMMON_INCLUDE_BULLET_SOLVER_H_
 #define SRC_RM_COMMON_INCLUDE_BULLET_SOLVER_H_
 
-#include <rm_msgs/GimbalTrackCmd.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_buffer.h>
 #include <geometry_msgs/TransformStamped.h>
