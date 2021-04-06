@@ -17,9 +17,9 @@ controllers:
     block_speed: 0.5
     anti_block_angle: 0.15
     anti_block_error: 0.1
-    qd_15: 488.0
-    qd_18: 542.0
-    qd_30: 760.0
+    qd_15: 474.0
+    qd_18: 530.0
+    qd_30: 730.0
     pid_friction_l: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
     pid_friction_r: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
     pid_trigger: { p: 7.4, i: 0.0, d: 0.22, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
