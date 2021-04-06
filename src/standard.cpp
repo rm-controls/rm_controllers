@@ -4,6 +4,7 @@
 #include "rm_gimbal_controller/standard.h"
 
 #include <string>
+
 #include <angles/angles.h>
 #include <rm_common/ros_utilities.h>
 #include <rm_common/ori_tool.h>
@@ -101,6 +102,9 @@ void Controller::rate(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
+    map2gimbal_des_.transform = map2pitch_.transform;
+    map2gimbal_des_.header.stamp = time;
+    robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
   }
 
   double roll{}, pitch{}, yaw{};
