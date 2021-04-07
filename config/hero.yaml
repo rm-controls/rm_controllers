@@ -13,8 +13,8 @@ controllers:
     joint_friction_rb_name: "right_back_friction_wheel_joint"
     joint_trigger_name: "trigger_joint"
     enter_push_qd_coef: 0.95
-    push_angle: 1.4
-    block_effort: 2.9
+    push_angle: 1.2
+    block_effort: 2.95
     block_duration: 0.5
     block_speed: 0.9
     anti_block_angle: 0.3

@@ -24,9 +24,8 @@ class HeroController : public rm_shooter_base::ShooterBase {
  protected:
   void push(const ros::Time &time, const ros::Duration &period) override;
   void moveJoint(const ros::Duration &period) override;
-  hardware_interface::JointHandle joint_friction_lf_{}, joint_friction_rf_{}, joint_friction_lb_{},
-      joint_friction_rb_{}, joint_trigger_{};
-  control_toolbox::Pid pid_friction_lf_{}, pid_friction_rf_{}, pid_friction_lb_{}, pid_friction_rb_{}, pid_trigger_{};
+  hardware_interface::JointHandle joint_friction_lb_{}, joint_friction_rb_{}, joint_trigger_{};
+  control_toolbox::Pid pid_friction_lb_{}, pid_friction_rb_{}, pid_trigger_{};
 };
 
 } // namespace rm_shooter_controllers
