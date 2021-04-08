@@ -15,7 +15,7 @@ controllers:
       lp_debug: true
       upper: 1e9
       lower: -1e9
-      pid: { p: 10, i: 20, d: 0.5, i_clamp_max: 0.2, i_clamp_min: -0.2, antiwindup: true, publish_state: true }
+      pid: { p: 10, i: 60, d: 0.5, i_clamp_max: 1.0, i_clamp_min: -1.0, antiwindup: true, publish_state: true }
     pitch:
       joint_name: "pitch_joint"
       lp_cutoff_frequency: 50
