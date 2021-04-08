@@ -142,6 +142,7 @@ void Controller::track(const ros::Time &time) {
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
     if (error_pub_->trylock()) {
+      error_pub_->msg_.stamp = time;
       error_pub_->msg_.error_pitch = solve_success ? error_pitch_ : 999;
       error_pub_->msg_.error_yaw = solve_success ? error_yaw_ : 999;
       error_pub_->unlockAndPublish();
