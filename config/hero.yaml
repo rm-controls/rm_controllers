@@ -7,23 +7,19 @@ controllers:
     publish_rate: 50
   shooter_controller:
     type: rm_shooter_controllers/HeroController
-    joint_friction_lf_name: "left_front_friction_wheel_joint"
-    joint_friction_rf_name: "right_front_friction_wheel_joint"
     joint_friction_lb_name: "left_back_friction_wheel_joint"
     joint_friction_rb_name: "right_back_friction_wheel_joint"
     joint_trigger_name: "trigger_joint"
     enter_push_qd_coef: 0.95
-    push_angle: 1.2
-    block_effort: 2.95
+    push_angle: 1.0
+    block_effort: 2.9
     block_duration: 0.5
     block_speed: 0.9
     anti_block_angle: 0.3
     anti_block_error: 0.1
     qd_10: 420.0
-    qd_16: 498.0
-    pid_friction_lf: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
-    pid_friction_rf: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
-    pid_friction_lb: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
-    pid_friction_rb: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
-    pid_trigger: { p: 20, i: 0.0, d: 1.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+    qd_16: 478.0
+    pid_friction_lb: { p: 0.002, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
+    pid_friction_rb: { p: 0.002, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
+    pid_trigger: { p: 38.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
     publish_rate: 50
