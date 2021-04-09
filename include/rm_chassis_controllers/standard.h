@@ -32,7 +32,7 @@ class StandardController : public rm_chassis_base::ChassisBase {
   geometry_msgs::Twist iKine(const ros::Duration &period) override;
 
   control_toolbox::Pid pid_rf_, pid_lf_, pid_rb_, pid_lb_;
-  control_toolbox::Pid pid_follow_, pid_twist_;
+  control_toolbox::Pid pid_follow_;
   hardware_interface::JointHandle joint_rf_, joint_lf_, joint_rb_, joint_lb_;
   double wheel_track_{};
   bool enable_odom_tf_{};

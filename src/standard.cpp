@@ -166,7 +166,7 @@ void StandardController::twist(const ros::Time &time, const ros::Duration &perio
     ROS_INFO("[Chassis] Enter TWIST");
 
     recovery(period);
-    pid_twist_.reset();
+    pid_follow_.reset();
   }
 
   tfVelFromYawToBase(time);
