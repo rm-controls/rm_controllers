@@ -18,7 +18,7 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   ChassisBase::init(robot_hw, root_nh, controller_nh);
   wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
-  twist_angular_ = getParam(controller_nh, "twist_angular_", M_PI / 6);
+  twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue pose_cov_list;
@@ -151,10 +151,13 @@ void StandardController::follow(const ros::Time &time, const ros::Duration &peri
 
   tfVelFromYawToBase(time);
   try {
-    double roll{}, pitch{}, follow_error{};
+    double roll{}, pitch{}, yaw{};
     quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", ros::Time(0)).transform.rotation,
-              roll, pitch, follow_error);
-    pid_follow_.computeCommand(follow_error, period);
+              roll, pitch, yaw);
+    double follow_error =
+        angles::shortest_angular_distance(yaw, 0);   //60^.
+
+    pid_follow_.computeCommand(-follow_error, period);
     vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
@@ -176,9 +179,18 @@ void StandardController::twist(const ros::Time &time, const ros::Duration &perio
               roll, pitch, yaw);
     ros::Time now = ros::Time::now();
     double t = now.toSec();
-    double follow_error = angles::shortest_angular_distance(yaw, twist_angular_ * sin(2 * M_PI * t) - yaw);   //60^.
+    double angle[4] = {-0.785, 0.785, 2.355, -2.355};
+    double off_set;
+    for (double i : angle) {
+      if (std::abs(angles::shortest_angular_distance(yaw, i)) < 0.79) {
+        off_set = i;
+        break;
+      }
+    }
+    double follow_error =
+        angles::shortest_angular_distance(yaw, twist_angular_ * sin(2 * M_PI * t) + off_set);
 
-    pid_follow_.computeCommand(follow_error, period);
+    pid_follow_.computeCommand(-follow_error, period);  //The actual output is opposite to the caculated value
     vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
@@ -197,8 +209,7 @@ void StandardController::gyro(const ros::Time &time, const ros::Duration &period
 
 void StandardController::updateOdom(const ros::Time &time, const ros::Duration &period) {
   vel_base_ = iKine(period); // on base_link frame
-  bool need_publish =
-      publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time ? true : false;
+  bool need_publish = publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time;
 
   linear_vel_.x = vel_base_.linear.x;
   linear_vel_.y = vel_base_.linear.y;
