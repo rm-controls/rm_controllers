@@ -11,7 +11,7 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
                        ros::NodeHandle &controller_nh) {
   wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
-  publish_rate_ = getParam(controller_nh, "publish_rate_", 100);
+  publish_rate_ = getParam(controller_nh, "publish_rate", 100);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue twist_cov_list;

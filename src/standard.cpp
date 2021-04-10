@@ -18,7 +18,7 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   ChassisBase::init(robot_hw, root_nh, controller_nh);
   wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
-  twist_angular_ = getParam(controller_nh, "twist_angular_", M_PI / 6);
+  twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue pose_cov_list;

@@ -17,7 +17,7 @@ bool BalanceController::init(hardware_interface::RobotHW *robot_hw,
   ChassisBase::init(robot_hw, root_nh, controller_nh);
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.06);
-  wheel_base_ = getParam(controller_nh, "wheel_base_", 0.405);
+  wheel_base_ = getParam(controller_nh, "wheel_base", 0.405);
   com_pitch_offset_ = getParam(controller_nh, "com_pitch_offset", 0.);
 
   joint_left_ = effort_jnt_interface->getHandle(
