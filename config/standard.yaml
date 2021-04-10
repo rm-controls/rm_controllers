@@ -14,7 +14,7 @@ controllers:
     publish_rate_: 100
     enable_odom_tf: true
     wheel_base: 0.395
-    wheel_track: 0.380
+    wheel_track: 0.400
     wheel_radius: 0.07625
     twist_angular: 0.5233
     pid_rf: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
