@@ -59,8 +59,10 @@ void ShooterBase::update(const ros::Time &time, const ros::Duration &period) {
   else
     friction_qd_des_ = 0.;
 
-  if (state_ == PASSIVE)
+  if (state_ == PASSIVE) {
     passive();
+  } else if (state_ == STOP)
+    stop(time, period);
   else {
     if (state_ == READY)
       ready(period);
@@ -68,8 +70,6 @@ void ShooterBase::update(const ros::Time &time, const ros::Duration &period) {
       push(time, period);
     else if (state_ == BLOCK)
       block(time, period);
-    else if (state_ == STOP)
-      stop(time, period);
     moveJoint(period);
   }
 }
@@ -137,20 +137,6 @@ void ShooterBase::block(const ros::Time &time, const ros::Duration &period) {
     state_changed_ = true;
     ROS_INFO("[Shooter] Exit BLOCK");
   }
-}
-
-void ShooterBase::stop(const ros::Time &time, const ros::Duration &period) {
-  if (state_changed_) { //on enter
-    state_changed_ = false;
-    ROS_INFO("[Shooter] Enter STOP");
-
-    for (unsigned int i = 0; i < pid_friction_vector_.size(); ++i)
-      pid_friction_vector_[i].reset();
-    for (unsigned j = 0; j < pid_trigger_vector_.size(); ++j)
-      pid_trigger_vector_[j].reset();
-  }
-  friction_qd_des_ = 0;
-  trigger_q_des_ = joint_trigger_vector_[0].getPosition();
 }
 
 void ShooterBase::commandCB(const rm_msgs::ShootCmdConstPtr &msg) {

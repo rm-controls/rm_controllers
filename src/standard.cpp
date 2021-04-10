@@ -49,6 +49,25 @@ void StandardController::push(const ros::Time &time, const ros::Duration &period
     ROS_DEBUG("[Shooter] wait for friction wheel");
 }
 
+void StandardController::stop(const ros::Time &time, const ros::Duration &period) {
+  if (state_changed_) { //on enter
+    state_changed_ = false;
+    ROS_INFO("[Shooter] Enter STOP");
+
+    pid_friction_l_.reset();
+    pid_friction_r_.reset();
+    pid_trigger_.reset();
+  }
+  friction_qd_des_ = 0;
+  double friction_l_error = friction_qd_des_ - joint_friction_l_.getVelocity();
+  double friction_r_error = -friction_qd_des_ - joint_friction_r_.getVelocity();
+  pid_friction_l_.computeCommand(friction_l_error, period);
+  pid_friction_r_.computeCommand(friction_r_error, period);
+  joint_friction_l_.setCommand(pid_friction_l_.getCurrentCmd());
+  joint_friction_r_.setCommand(pid_friction_r_.getCurrentCmd());
+  joint_trigger_.setCommand(0);
+}
+
 void StandardController::moveJoint(const ros::Duration &period) {
   double friction_l_error = friction_qd_des_ - joint_friction_l_.getVelocity();
   double friction_r_error = -friction_qd_des_ - joint_friction_r_.getVelocity();

@@ -41,7 +41,7 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   virtual void ready(const ros::Duration &period);
   virtual void push(const ros::Time &time, const ros::Duration &period);
   virtual void block(const ros::Time &time, const ros::Duration &period);
-  virtual void stop(const ros::Time &time, const ros::Duration &period);
+  virtual void stop(const ros::Time &time, const ros::Duration &period) {};
   virtual void moveJoint(const ros::Duration &period) = 0;
   virtual void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
   virtual void reconfigCB(rm_shooter_controllers::ShooterBaseConfig &config, uint32_t /*level*/);

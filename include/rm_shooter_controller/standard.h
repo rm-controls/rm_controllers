@@ -16,13 +16,13 @@ class StandardController : public rm_shooter_base::ShooterBase {
   using rm_shooter_base::ShooterBase::passive;
   using rm_shooter_base::ShooterBase::ready;
   using rm_shooter_base::ShooterBase::block;
-  using rm_shooter_base::ShooterBase::stop;
   using rm_shooter_base::ShooterBase::commandCB;
   using rm_shooter_base::ShooterBase::reconfigCB;
   bool init(hardware_interface::RobotHW *robot_hw,
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
  protected:
   void push(const ros::Time &time, const ros::Duration &period) override;
+  void stop(const ros::Time &time, const ros::Duration &period) override;
   void moveJoint(const ros::Duration &period) override;
   hardware_interface::JointHandle joint_friction_l_{}, joint_friction_r_{}, joint_trigger_{};
   control_toolbox::Pid pid_friction_l_{}, pid_friction_r_{}, pid_trigger_{};
