@@ -9,14 +9,5 @@
             type of hardware interface.
         </description>
     </class>
-    <class name="rm_shooter_controllers/HeroController"
-           type="rm_shooter_controllers::HeroController"
-           base_class_type="controller_interface::ControllerBase">
-        <description>
-            The HeroController is RoboMaster hero robot
-            Shooter controller. It expects a EffortJointInterface
-            type of hardware interface.
-        </description>
-    </class>
 
 </library>
