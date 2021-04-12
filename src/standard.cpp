@@ -44,8 +44,8 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &Controller::commandCB, this);
   cmd_sub_track_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
-  error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
-  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(controller_nh, "track", 100));
+  error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(root_nh, "error_des", 100));
+  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(root_nh, "track", 100));
 
   bullet_solver_ = new Approx3DSolver(nh_bullet_solver);
   kalman_filter_track = new KalmanFilterTrack(robot_state_handle_, controller_nh);
@@ -103,6 +103,9 @@ void Controller::rate(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
+    map2gimbal_des_.transform = map2pitch_.transform;
+    map2gimbal_des_.header.stamp = time;
+    robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
   }
 
   double roll{}, pitch{}, yaw{};
@@ -140,6 +143,7 @@ void Controller::track(const ros::Time &time) {
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
     if (error_pub_->trylock()) {
+      error_pub_->msg_.stamp = time;
       error_pub_->msg_.error_pitch = solve_success ? error_pitch_ : 999;
       error_pub_->msg_.error_yaw = solve_success ? error_yaw_ : 999;
       error_pub_->unlockAndPublish();
@@ -153,7 +157,7 @@ void Controller::track(const ros::Time &time) {
 }
 
 void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
-  if (pitch <= upper_pitch_ && pitch >= lower_pitch_ && yaw <= upper_yaw_ && pitch >= lower_yaw_)
+  if (pitch <= upper_pitch_ && pitch >= lower_pitch_ && yaw <= upper_yaw_ && yaw >= lower_yaw_)
     map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
   map2gimbal_des_.header.stamp = time;
   robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
