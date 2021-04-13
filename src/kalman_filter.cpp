@@ -74,6 +74,7 @@ KalmanFilterTrack::KalmanFilterTrack(hardware_interface::RobotStateHandle &robot
   ros::NodeHandle global_nh("~/");
   track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(global_nh, "/track", 100));
   track_test_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(global_nh, "/track_test", 100));
+  tf_broadcaster_.init(global_nh);
 }
 
 void KalmanFilterTrack::getStateAndPub() {
@@ -148,6 +149,7 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
           map2detection.header.stamp = detection_rt_buffer.readFromRT()->header.stamp;
           map2detection.header.frame_id = "map";
           map2detection.child_frame_id = "detection" + std::to_string(detection.id);
+          tf_broadcaster_.sendTransform(map2detection);
         }
         catch (tf2::TransformException &ex) {
           ROS_WARN("%s", ex.what());
@@ -194,6 +196,7 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
         map2detection.header.stamp = detection_rt_buffer.readFromRT()->header.stamp;
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.id);
+        tf_broadcaster_.sendTransform(map2detection);
       }
       catch (tf2::TransformException &ex) {
         ROS_WARN("%s", ex.what());

@@ -51,7 +51,6 @@ class Controller :
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
   void updateTf();
   void updateDetectionTf();
-  void updateTrack();
   void reconfigCB(rm_gimbal_controllers::GimbalTimeCompensationConfig &config, uint32_t);
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
@@ -75,10 +74,9 @@ class Controller :
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig> *d_srv_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_gimbal_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> detection_rt_buffer_;
-  robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
 
   rm_msgs::GimbalCmd cmd_;
-  double error_yaw_{}, error_pitch_{}, error_yaw_last_, error_pitch_last_;
+  double error_yaw_{}, error_pitch_{};
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
   double publish_rate_{};
   ros::Time last_publish_time_;

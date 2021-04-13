@@ -71,6 +71,7 @@ class KalmanFilterTrack {
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_test_pub_;
   ros::Time last_detection_time_;
   tf2::Transform map2camera_tf_;
+  robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
 };
 
 }
