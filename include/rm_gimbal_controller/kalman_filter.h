@@ -52,14 +52,13 @@ class KalmanFilterTrack {
       delete item.second;
   }
 
-  void
-  update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> &detection_rt_buffer, double time_compensation);
+  void update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> &detection_rt_buffer);
 
  private:
 
   void reconfigCB(const KalmanConfig &config, uint32_t level);
 
-  double q_x_{}, q_dx_{}, r_x_{}, r_dx_{};
+  double q_x_{}, q_dx_{}, r_x_{}, r_dx_{}, time_compensation_{};
   double time_thresh_{};
   double distance_thresh_{};
   std::map<int, TranTarget *> id2detection_;

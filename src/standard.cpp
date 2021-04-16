@@ -18,6 +18,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
+  ros::NodeHandle nh_kalman = ros::NodeHandle(controller_nh, "kalman");
 
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_yaw_ =
@@ -45,22 +46,11 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   cmd_sub_track_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(root_nh, "error_des", 100));
-  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(root_nh, "track", 100));
 
   bullet_solver_ = new Approx3DSolver(nh_bullet_solver);
-  kalman_filter_track = new KalmanFilterTrack(robot_state_handle_, controller_nh);
+  kalman_filter_track = new KalmanFilterTrack(robot_state_handle_, nh_kalman);
   lp_filter_yaw_ = new LowPassFilter(nh_yaw);
   lp_filter_pitch_ = new LowPassFilter(nh_pitch);
-
-  config_ = {
-      .time_compensation = getParam(controller_nh, "time_compensation", 0.)};
-  config_rt_gimbal_buffer_.initRT(config_);
-
-  d_srv_ =
-      new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig>(controller_nh);
-  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig>::CallbackType
-      cb = boost::bind(&Controller::reconfigCB, this, _1, _2);
-  d_srv_->setCallback(cb);
 
   return true;
 }
@@ -192,8 +182,7 @@ void Controller::updateTf() {
 }
 
 void Controller::updateDetectionTf() {
-  config_ = *config_rt_gimbal_buffer_.readFromRT();
-  kalman_filter_track->update(detection_rt_buffer_, config_.time_compensation);
+  kalman_filter_track->update(detection_rt_buffer_);
   kalman_filter_track->getStateAndPub();
 }
 
@@ -203,19 +192,6 @@ void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
 
 void Controller::detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg) {
   detection_rt_buffer_.writeFromNonRT(*msg);
-}
-
-void Controller::reconfigCB(rm_gimbal_controllers::GimbalTimeCompensationConfig &config, uint32_t) {
-  ROS_INFO("[Gimbal] Dynamic params change");
-  if (!dynamic_reconfig_initialized_) {
-    Config init_config = *config_rt_gimbal_buffer_.readFromNonRT(); // config init use yaml
-    config.time_compensation = init_config.time_compensation;
-    dynamic_reconfig_initialized_ = true;
-  }
-  Config config_non_rt{
-      .time_compensation=config.time_compensation
-  };
-  config_rt_gimbal_buffer_.writeFromNonRT(config_non_rt);
 }
 
 } // namespace rm_gimbal_controllers

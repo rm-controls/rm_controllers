@@ -118,8 +118,7 @@ void KalmanFilterTrack::getStateAndPub() {
   }
 }
 
-void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> &detection_rt_buffer,
-                               double time_compensation) {
+void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> &detection_rt_buffer) {
 //  ROS_INFO("I update, ok!");
   ros::Time detection_time = detection_rt_buffer.readFromRT()->header.stamp;
   if (last_detection_time_ != detection_time) {
@@ -136,7 +135,7 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
           map2camera = robot_state_handle_.lookupTransform("map",
                                                            "camera",
                                                            detection_rt_buffer.readFromRT()->header.stamp -
-                                                               ros::Duration(time_compensation));
+                                                               ros::Duration(time_compensation_));
           tf2::fromMsg(map2camera.transform, map2camera_tf_);
           map2detection_tf = map2camera_tf_ * camera2detection_tf;
           map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
@@ -183,7 +182,7 @@ void KalmanFilterTrack::update(realtime_tools::RealtimeBuffer<rm_msgs::TargetDet
         map2camera = robot_state_handle_.lookupTransform("map",
                                                          "camera",
                                                          detection_rt_buffer.readFromRT()->header.stamp -
-                                                             ros::Duration(time_compensation));
+                                                             ros::Duration(time_compensation_));
         tf2::fromMsg(map2camera.transform, map2camera_tf_);
         map2detection_tf = map2camera_tf_ * camera2detection_tf;
         map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
@@ -329,6 +328,7 @@ void KalmanFilterTrack::reconfigCB(const KalmanConfig &config,
   r_dx_ = config.r_dx;
   time_thresh_ = config.time_thresh;
   distance_thresh_ = config.distance_thresh;
+  time_compensation_ = config.time_compensation;
   for (const auto &item:id2detection_) {
     delete item.second;
   }

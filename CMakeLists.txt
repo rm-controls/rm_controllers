@@ -32,7 +32,6 @@ find_package(catkin REQUIRED
 
 generate_dynamic_reconfigure_options(
         cfg/Gimbal.cfg
-        cfg/GimbalTimeCompensation.cfg
         cfg/Kalman.cfg
 )
 

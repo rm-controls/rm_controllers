@@ -69,10 +69,7 @@ class Controller :
   ros::Subscriber cmd_subscriber_;
   ros::Subscriber cmd_sub_track_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError> > error_pub_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
-  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig> *d_srv_{};
-  realtime_tools::RealtimeBuffer<Config> config_rt_gimbal_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> detection_rt_buffer_;
 
   rm_msgs::GimbalCmd cmd_;
@@ -81,8 +78,6 @@ class Controller :
   double publish_rate_{};
   ros::Time last_publish_time_;
   ros::Time last_detection_time_;
-  bool dynamic_reconfig_initialized_ = false;
-  Config config_{};
 
 };
 }
