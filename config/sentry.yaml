@@ -12,6 +12,7 @@ controllers:
     joint_trigger_name: "trigger_joint"
     enter_push_qd_coef: 0.95
     push_angle: 0.8
+    push_angle_error: 0.04
     block_effort: 0.95
     block_duration: 0.05
     block_speed: 0.5
@@ -21,5 +22,5 @@ controllers:
     qd_30: 714.0
     pid_friction_l: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
     pid_friction_r: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
-    pid_trigger: { p: 7.4, i: 0.0, d: 0.22, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+    pid_trigger: { p: 18.4, i: 0.0, d: 0.6, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
     publish_rate: 50

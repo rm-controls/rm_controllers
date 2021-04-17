@@ -24,6 +24,7 @@ bool ShooterBase::init(hardware_interface::RobotHW *robot_hw,
   config_rt_buffer.initRT(config_);
 
   enter_push_qd_coef_ = getParam(controller_nh, "enter_push_qd_coef", 0.),
+      push_angle_error_ = getParam(controller_nh, "push_angle_error", 0.);
       // init dynamic reconfigure
       d_srv_ = new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterBaseConfig>::CallbackType cb =
@@ -135,6 +136,7 @@ void ShooterBase::block(const ros::Time &time, const ros::Duration &period) {
   if (fabs(trigger_q_des_ - joint_trigger_vector_[0].getPosition()) < config_.anti_block_error) {
     state_ = PUSH;
     state_changed_ = true;
+    is_out_from_block_ = true;
     ROS_INFO("[Shooter] Exit BLOCK");
   }
 }

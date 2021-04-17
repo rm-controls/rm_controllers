@@ -43,7 +43,15 @@ void StandardController::push(const ros::Time &time, const ros::Duration &period
       joint_friction_r_.getVelocity() <= enter_push_qd_coef_ * (-friction_qd_des_)
       && joint_friction_r_.getVelocity() < -8.0 &&
       (ros::Time::now() - last_shoot_time_).toSec() >= 1. / cmd_.hz) { // Time to shoot!!!
-    trigger_q_des_ = joint_trigger_.getPosition() - config_.push_angle;
+    if (is_out_from_block_) {
+      trigger_q_des_ = last_trigger_q_des_;
+      if (fabs(trigger_q_des_ - joint_trigger_.getPosition()) <= push_angle_error_) {
+        is_out_from_block_ = false;
+      }
+    } else {
+      trigger_q_des_ = joint_trigger_.getPosition() - config_.push_angle;
+      last_trigger_q_des_ = trigger_q_des_;
+    }
     last_shoot_time_ = time;
   } else
     ROS_DEBUG("[Shooter] wait for friction wheel");
@@ -59,25 +67,23 @@ void StandardController::stop(const ros::Time &time, const ros::Duration &period
     pid_trigger_.reset();
   }
   friction_qd_des_ = 0;
-  double friction_l_error = friction_qd_des_ - joint_friction_l_.getVelocity();
-  double friction_r_error = -friction_qd_des_ - joint_friction_r_.getVelocity();
-  pid_friction_l_.computeCommand(friction_l_error, period);
-  pid_friction_r_.computeCommand(friction_r_error, period);
-  joint_friction_l_.setCommand(pid_friction_l_.getCurrentCmd());
-  joint_friction_r_.setCommand(pid_friction_r_.getCurrentCmd());
+  moveJointFriction(period);
   joint_trigger_.setCommand(0);
 }
 
-void StandardController::moveJoint(const ros::Duration &period) {
+void StandardController::moveJointFriction(const ros::Duration &period) {
   double friction_l_error = friction_qd_des_ - joint_friction_l_.getVelocity();
   double friction_r_error = -friction_qd_des_ - joint_friction_r_.getVelocity();
-  double trigger_error = trigger_q_des_ - joint_trigger_.getPosition();
-
   pid_friction_l_.computeCommand(friction_l_error, period);
   pid_friction_r_.computeCommand(friction_r_error, period);
-  pid_trigger_.computeCommand(trigger_error, period);
   joint_friction_l_.setCommand(pid_friction_l_.getCurrentCmd());
   joint_friction_r_.setCommand(pid_friction_r_.getCurrentCmd());
+}
+
+void StandardController::moveJoint(const ros::Duration &period) {
+  moveJointFriction(period);
+  double trigger_error = trigger_q_des_ - joint_trigger_.getPosition();
+  pid_trigger_.computeCommand(trigger_error, period);
   joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
 }
 

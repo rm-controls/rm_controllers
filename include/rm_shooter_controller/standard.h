@@ -23,6 +23,7 @@ class StandardController : public rm_shooter_base::ShooterBase {
  protected:
   void push(const ros::Time &time, const ros::Duration &period) override;
   void stop(const ros::Time &time, const ros::Duration &period) override;
+  void moveJointFriction(const ros::Duration &period);
   void moveJoint(const ros::Duration &period) override;
   hardware_interface::JointHandle joint_friction_l_{}, joint_friction_r_{}, joint_trigger_{};
   control_toolbox::Pid pid_friction_l_{}, pid_friction_r_{}, pid_trigger_{};

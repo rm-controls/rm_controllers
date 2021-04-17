@@ -49,12 +49,12 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   std::vector<hardware_interface::JointHandle> joint_friction_vector_{}, joint_trigger_vector_{};
   std::vector<control_toolbox::Pid> pid_friction_vector_{}, pid_trigger_vector_{};
 
-  double friction_qd_des_{};
-  double trigger_q_des_{};
-  double enter_push_qd_coef_{};
+  double friction_qd_des_{}, trigger_q_des_{}, last_trigger_q_des_{};
+  double enter_push_qd_coef_{}, push_angle_error_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool is_start_block_time_ = false;
+  bool is_out_from_block_ = false;
 
   ros::Time last_shoot_time_;
   ros::Time block_time_;
