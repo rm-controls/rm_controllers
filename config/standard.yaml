@@ -10,6 +10,7 @@ controllers:
     joint_friction_left_name: "left_friction_wheel_joint"
     joint_friction_right_name: "right_friction_wheel_joint"
     joint_trigger_name: "trigger_joint"
+    joint_magazine_name: "magazine_joint"
     enter_push_qd_coef: 0.95
     push_angle: 0.8
     push_angle_error: 0.04

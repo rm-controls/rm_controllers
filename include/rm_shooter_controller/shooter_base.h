@@ -42,19 +42,23 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   virtual void push(const ros::Time &time, const ros::Duration &period);
   virtual void block(const ros::Time &time, const ros::Duration &period);
   virtual void stop(const ros::Time &time, const ros::Duration &period) {};
+  virtual void magazine(const ros::Time &time, const ros::Duration &period);
   virtual void moveJoint(const ros::Duration &period) = 0;
   virtual void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
   virtual void reconfigCB(rm_shooter_controllers::ShooterBaseConfig &config, uint32_t /*level*/);
 
   std::vector<hardware_interface::JointHandle> joint_friction_vector_{}, joint_trigger_vector_{};
   std::vector<control_toolbox::Pid> pid_friction_vector_{}, pid_trigger_vector_{};
+  hardware_interface::JointHandle joint_magazine_{};
+  control_toolbox::Pid pid_magazine_{};
 
-  double friction_qd_des_{}, trigger_q_des_{}, last_trigger_q_des_{};
+  double friction_qd_des_{}, trigger_q_des_{}, last_trigger_q_des_{}, magazine_q_des_{};
   double enter_push_qd_coef_{}, push_angle_error_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool is_start_block_time_ = false;
   bool is_out_from_block_ = false;
+  bool open_magazine_ = false;
 
   ros::Time last_shoot_time_;
   ros::Time block_time_;

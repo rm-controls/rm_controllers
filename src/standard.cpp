@@ -83,8 +83,11 @@ void StandardController::moveJointFriction(const ros::Duration &period) {
 void StandardController::moveJoint(const ros::Duration &period) {
   moveJointFriction(period);
   double trigger_error = trigger_q_des_ - joint_trigger_.getPosition();
+  double magazine_error = magazine_q_des_ - joint_magazine_.getPosition();
   pid_trigger_.computeCommand(trigger_error, period);
+  pid_magazine_.computeCommand(magazine_error, period);
   joint_trigger_.setCommand(pid_trigger_.getCurrentCmd());
+  joint_magazine_.setCommand(pid_magazine_.getCurrentCmd());
 }
 
 } // namespace rm_shooter_controllers

@@ -25,13 +25,19 @@ bool ShooterBase::init(hardware_interface::RobotHW *robot_hw,
 
   enter_push_qd_coef_ = getParam(controller_nh, "enter_push_qd_coef", 0.),
       push_angle_error_ = getParam(controller_nh, "push_angle_error", 0.);
-      // init dynamic reconfigure
-      d_srv_ = new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterBaseConfig>(controller_nh);
+  // init dynamic reconfigure
+  d_srv_ = new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterBaseConfig>::CallbackType cb =
       [this](auto &&PH1, auto &&PH2) {
         reconfigCB(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
       };
   d_srv_->setCallback(cb);
+
+  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
+  joint_magazine_ = effort_jnt_interface->getHandle(
+      getParam(controller_nh, "joint_magazine_name", std::string("joint_magazine")));
+  if (!pid_magazine_.init(ros::NodeHandle(controller_nh, "pid_magazine")))
+    return false;
 
   cmd_subscriber_ = root_nh.subscribe<rm_msgs::ShootCmd>(
       "cmd_shoot", 1, &ShooterBase::commandCB, this);
@@ -139,6 +145,10 @@ void ShooterBase::block(const ros::Time &time, const ros::Duration &period) {
     is_out_from_block_ = true;
     ROS_INFO("[Shooter] Exit BLOCK");
   }
+}
+
+void ShooterBase::magazine(const ros::Time &time, const ros::Duration &period) {
+
 }
 
 void ShooterBase::commandCB(const rm_msgs::ShootCmdConstPtr &msg) {
