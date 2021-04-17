@@ -9,7 +9,7 @@
 #include <realtime_tools/realtime_buffer.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <visualization_msgs/Marker.h>
-#include <rm_gimbal_controllers/GimbalConfig.h>
+#include <rm_gimbal_controllers/BulletSolverConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/eigen_types.h>
@@ -38,9 +38,9 @@ class BulletSolver {
     config_rt_buffer_.initRT(config_);
 
     d_srv_ =
-        new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig>(controller_nh);
-    dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig>::CallbackType
-        cb = boost::bind(&BulletSolver::reconfigCB, this, _1, _2);
+        new dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>(controller_nh);
+    dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>::CallbackType
+        cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
     d_srv_->setCallback(cb);
 
     path_pub_ = controller_nh.advertise<visualization_msgs::Marker>("bullet_model", 10);
@@ -48,8 +48,8 @@ class BulletSolver {
   virtual ~BulletSolver() = default;
   virtual void setTarget(const DVec<double> &pos, const DVec<double> &vel) = 0;
   virtual void setBulletSpeed(double speed) { bullet_speed_ = speed; };
-  virtual void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t /*level*/) {
-    ROS_INFO("[Gimbal] Dynamic params change");
+  void reconfigCB(rm_gimbal_controllers::BulletSolverConfig &config, uint32_t) {
+    ROS_INFO("[Bullet Solver] Dynamic params change");
     if (!dynamic_reconfig_initialized_) {
       Config init_config = *config_rt_buffer_.readFromNonRT(); // config init use yaml
       config.resistance_coff_qd_10 = init_config.resistance_coff_qd_10;
@@ -86,7 +86,7 @@ class BulletSolver {
  protected:
   double bullet_speed_{};
   ros::Publisher path_pub_;
-  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
+  dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig> *d_srv_{};
   double publish_rate_{};
   ros::Time last_publish_time_;
   bool dynamic_reconfig_initialized_ = false;

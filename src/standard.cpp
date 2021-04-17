@@ -47,8 +47,18 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(root_nh, "error_des", 100));
 
+  // init config
+  config_ = {.time_compensation = getParam(controller_nh, "time_compensation", 0.)};
+  config_rt_buffer_.initRT(config_);
+
+  d_srv_ =
+      new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig>(controller_nh);
+  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig>::CallbackType
+      cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
+  d_srv_->setCallback(cb);
+
   bullet_solver_ = new Approx3DSolver(nh_bullet_solver);
-  kalman_filter_track = new KalmanFilterTrack(robot_state_handle_, nh_kalman);
+  kalman_filter_track_ = new KalmanFilterTrack(robot_state_handle_, nh_kalman);
   lp_filter_yaw_ = new LowPassFilter(nh_yaw);
   lp_filter_pitch_ = new LowPassFilter(nh_pitch);
 
@@ -178,12 +188,39 @@ void Controller::updateTf() {
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
+  for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
+    geometry_msgs::TransformStamped map2camera, map2detection;
+    tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
+    ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
+    config_ = *config_rt_buffer_.readFromRT();
+    if (last_detection_time_ != detection_time) {
+      last_detection_time_ = detection_time;
+      try {
+        tf2::fromMsg(detection.pose, camera2detection_tf);
+        map2camera = robot_state_handle_.lookupTransform("map",
+                                                         "camera",
+                                                         detection_time - ros::Duration(config_.time_compensation));
+        tf2::fromMsg(map2camera.transform, map2camera_tf);
+        map2detection_tf = map2camera_tf * camera2detection_tf;
+        map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
+        map2detection.transform.translation.y = map2detection_tf.getOrigin().y();
+        map2detection.transform.translation.z = map2detection_tf.getOrigin().z();
+        map2detection.transform.rotation.w = map2detection_tf.getRotation().z();
+        map2detection.header.stamp = detection_time;
+        map2detection.header.frame_id = "map";
+        map2detection.child_frame_id = "detection" + std::to_string(detection.id);
+//        tf_broadcaster_.sendTransform(map2detection);
+      }
+      catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+    }
+  }
+
   updateDetectionTf();
 }
 
 void Controller::updateDetectionTf() {
-  kalman_filter_track->update(detection_rt_buffer_);
-  kalman_filter_track->getStateAndPub();
+  kalman_filter_track_->update(detection_rt_buffer_);
+  kalman_filter_track_->getStateAndPub();
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
@@ -193,6 +230,17 @@ void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
 void Controller::detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg) {
   detection_rt_buffer_.writeFromNonRT(*msg);
 }
+
+void Controller::reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t) {
+  ROS_INFO("[Gimbal] Dynamic params change");
+  if (!dynamic_reconfig_initialized_) {
+    Config init_config = *config_rt_buffer_.readFromNonRT(); // config init use yaml
+    config.time_compensation = init_config.time_compensation;
+    dynamic_reconfig_initialized_ = true;
+  }
+  Config config_non_rt{.time_compensation = config.time_compensation};
+  config_rt_buffer_.writeFromNonRT(config_non_rt);
+};
 
 } // namespace rm_gimbal_controllers
 
