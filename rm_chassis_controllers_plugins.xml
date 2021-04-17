@@ -1,18 +1,26 @@
 <library path="lib/librm_chassis_controllers">
 
-  <class name="rm_chassis_controllers/ChassisStandardController"
-         type="rm_chassis_controllers::ChassisStandardController"
+  <class name="rm_chassis_controllers/StandardController"
+         type="rm_chassis_controllers::StandardController"
          base_class_type="controller_interface::ControllerBase">
     <description>
-      The ChassisStandardController is RoboMaster standard robot Chassis controller. It expects a EffortJointInterface
+      The StandardController is RoboMaster standard robot Chassis controller. It expects a EffortJointInterface
       type of hardware interface.
     </description>
   </class>
-  <class name="rm_chassis_controllers/ChassisSentryController"
-         type="rm_chassis_controllers::ChassisSentryController"
+  <class name="rm_chassis_controllers/SentryController"
+         type="rm_chassis_controllers::SentryController"
          base_class_type="controller_interface::ControllerBase">
     <description>
-      The ChassisSentryController is RoboMaster standard robot Chassis controller. It expects a EffortJointInterface
+      The SentryController is RoboMaster standard robot Chassis controller. It expects a EffortJointInterface
+      type of hardware interface.
+    </description>
+  </class>
+  <class name="rm_chassis_controllers/BalanceController"
+         type="rm_chassis_controllers::BalanceController"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+      The BalanceController is RoboMaster balance robot Chassis controller. It expects a EffortJointInterface
       type of hardware interface.
     </description>
   </class>

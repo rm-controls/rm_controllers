@@ -5,17 +5,18 @@ controllers:
   imu_sensor_controller:
     type: imu_sensor_controller/ImuSensorController
     publish_rate: 100
-  chassis_standard_controller:
-    type: rm_chassis_controllers/ChassisStandardController
+  chassis_controller:
+    type: rm_chassis_controllers/StandardController
     joint_lf_name: "front_left_wheel_joint"
     joint_rf_name: "front_right_wheel_joint"
     joint_lb_name: "back_left_wheel_joint"
     joint_rb_name: "back_right_wheel_joint"
     publish_rate_: 100
+    enable_odom_tf: true
     wheel_base: 0.395
-    wheel_track: 0.380
+    wheel_track: 0.400
     wheel_radius: 0.07625
-    timeout_: 1.0
+    twist_angular: 0.5233
     pid_rf: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     pid_rb: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     pid_lf: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true,  publish_state: true }

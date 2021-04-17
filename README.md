@@ -57,6 +57,10 @@ To install all packages from the this repository as Debian packages use
 Or better, use `rosdep`:
 
 	sudo rosdep install --from-paths src
+	
+To install eigen library use
+
+	sudo apt-get install libeigen3-dev
 
 ### Building from Source
 
