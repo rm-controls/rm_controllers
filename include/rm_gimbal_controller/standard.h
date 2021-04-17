@@ -49,15 +49,14 @@ class Controller :
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
   void updateTf();
-  void updateDetectionTf();
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
   hardware_interface::RobotStateHandle robot_state_handle_;
   geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
-  Bullet3DSolver *bullet_solver_{};
-  KalmanFilterTrack *kalman_filter_track_{};
+  bullet_solver::Bullet3DSolver *bullet_solver_{};
+  kalman_filter::KalmanFilterTrack *kalman_filter_track_{};
 
   LowPassFilter *lp_filter_yaw_{};
   LowPassFilter *lp_filter_pitch_{};

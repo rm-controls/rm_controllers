@@ -57,8 +57,8 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
       cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
   d_srv_->setCallback(cb);
 
-  bullet_solver_ = new Approx3DSolver(nh_bullet_solver);
-  kalman_filter_track_ = new KalmanFilterTrack(robot_state_handle_, nh_kalman);
+  bullet_solver_ = new bullet_solver::Approx3DSolver(nh_bullet_solver);
+  kalman_filter_track_ = new kalman_filter::KalmanFilterTrack(nh_kalman);
   lp_filter_yaw_ = new LowPassFilter(nh_yaw);
   lp_filter_pitch_ = new LowPassFilter(nh_pitch);
 
@@ -188,13 +188,13 @@ void Controller::updateTf() {
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
-  for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
-    geometry_msgs::TransformStamped map2camera, map2detection;
-    tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
-    ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
+  ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
+  if (last_detection_time_ != detection_time) {
+    last_detection_time_ = detection_time;
     config_ = *config_rt_buffer_.readFromRT();
-    if (last_detection_time_ != detection_time) {
-      last_detection_time_ = detection_time;
+    for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
+      geometry_msgs::TransformStamped map2camera, map2detection;
+      tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
       try {
         tf2::fromMsg(detection.pose, camera2detection_tf);
         map2camera = robot_state_handle_.lookupTransform("map",
@@ -205,22 +205,20 @@ void Controller::updateTf() {
         map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
         map2detection.transform.translation.y = map2detection_tf.getOrigin().y();
         map2detection.transform.translation.z = map2detection_tf.getOrigin().z();
-        map2detection.transform.rotation.w = map2detection_tf.getRotation().z();
+        map2detection.transform.rotation.x = map2detection_tf.getRotation().x();
+        map2detection.transform.rotation.y = map2detection_tf.getRotation().y();
+        map2detection.transform.rotation.z = map2detection_tf.getRotation().z();
+        map2detection.transform.rotation.w = map2detection_tf.getRotation().w();
         map2detection.header.stamp = detection_time;
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.id);
-//        tf_broadcaster_.sendTransform(map2detection);
+        kalman_filter_track_->input(map2detection);
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     }
-  }
+  } else
+    kalman_filter_track_->perdict();
 
-  updateDetectionTf();
-}
-
-void Controller::updateDetectionTf() {
-  kalman_filter_track_->update(detection_rt_buffer_);
-  kalman_filter_track_->getStateAndPub();
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
