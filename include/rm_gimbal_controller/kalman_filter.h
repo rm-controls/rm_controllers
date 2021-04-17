@@ -33,8 +33,7 @@ class KalmanFilterTrack {
   KalmanFilter<double> *kalman_filter_;
   Vec8<double> x_, u_, x_hat_;
   Mat8<double> a_, b_, h_, q_, r_;
-  double q_x_{}, q_dx_{}, r_x_{}, r_dx_{};
-  geometry_msgs::TransformStamped map2detection_last_;
+  std::map<std::string, geometry_msgs::TransformStamped> map2detection_last_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::KalmanConfig> *d_srv_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::KalmanData>> realtime_pub_;
   ros::Time last_detection_time_;
