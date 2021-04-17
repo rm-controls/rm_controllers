@@ -1,10 +1,6 @@
 <launch>
-   <!-- Make sure to disable timeout -->
-    <rosparam>
-      controllers:
-        chassis_standard_controller:
-          enable_timeout_: false
-    </rosparam>
+  <!-- Make sure to disable timeout -->
+  <rosparam file="$(find rm_chassis_controllers)/test/disable_timeout.yaml" command="load"/>
 
   <!-- Load common test stuff -->
   <include file="$(find rm_chassis_controllers)/launch/load_controllers.launch">

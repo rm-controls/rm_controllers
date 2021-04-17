@@ -7,7 +7,8 @@ TEST_F(StandardChassisTest, testIKine) {
   waitForOdomMsgs();
 
   double r = 0.07625;
-  double wheel_base_and_wheel_track = 0.395 + 0.38;
+  double wheel_base_and_wheel_track = 0.395 + 0.40;
+  double a = wheel_base_and_wheel_track / 2;
 
 
   // zero everything before test
@@ -38,19 +39,19 @@ TEST_F(StandardChassisTest, testIKine) {
   cmd_vel.linear.y = 0.5;
   publish(cmd_chassis, cmd_vel);
   ros::Duration(2.0).sleep();
-  EXPECT_NEAR(0.5 / r, getJointStates().velocity[0], 0.7);
+  EXPECT_NEAR(0.5 / r, getJointStates().velocity[0], 0.8);
   EXPECT_NEAR(-0.5 / r, getJointStates().velocity[1], 0.5);
   EXPECT_NEAR(-0.5 / r, getJointStates().velocity[2], 0.5);
   EXPECT_NEAR(0.5 / r, getJointStates().velocity[3], 0.5);
 
   cmd_vel.linear.y = 0.;
-  cmd_vel.angular.z = 1.0;
+  cmd_vel.angular.z = 0.5;
   publish(cmd_chassis, cmd_vel);
   ros::Duration(2.0).sleep();
-  EXPECT_NEAR(-wheel_base_and_wheel_track / r, getJointStates().velocity[0], 0.7);
-  EXPECT_NEAR(wheel_base_and_wheel_track / r, getJointStates().velocity[1], 1.02);
-  EXPECT_NEAR(-wheel_base_and_wheel_track / r, getJointStates().velocity[2], 0.7);
-  EXPECT_NEAR(wheel_base_and_wheel_track / r, getJointStates().velocity[3], 1.02);
+  EXPECT_NEAR(-a * cmd_vel.angular.z / r, getJointStates().velocity[0], 0.7);
+  EXPECT_NEAR(a * cmd_vel.angular.z / r, getJointStates().velocity[1], 0.7);
+  EXPECT_NEAR(-a * cmd_vel.angular.z / r, getJointStates().velocity[2], 0.7);
+  EXPECT_NEAR(a * cmd_vel.angular.z / r, getJointStates().velocity[3], 0.7);
 
   cmd_vel.angular.z = 0.0;
   publish(cmd_chassis, cmd_vel);
