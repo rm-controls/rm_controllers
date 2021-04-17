@@ -15,6 +15,7 @@
 #include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
 
+namespace bullet_solver {
 struct Config {
   double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
       resistance_coff_qd_30, g, delay, dt, timeout;
@@ -145,4 +146,5 @@ class Approx3DSolver : public Bullet3DSolver {
  private:
   double computeError(double yaw, double pitch, double *error_polar) override;
 };
+}
 #endif //SRC_RM_COMMON_INCLUDE_BULLET_SOLVER_H_

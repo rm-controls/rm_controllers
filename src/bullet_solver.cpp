@@ -6,6 +6,7 @@
 #include <cmath>
 #include <tf/transform_datatypes.h>
 
+namespace bullet_solver {
 ///////////////////////////BulletSolver/////////////////////////////
 void BulletSolver::setResistanceCoefficient(double bullet_speed, Config config) {
   //bullet_speed have 5 value:10,15,16,18,30
@@ -222,4 +223,5 @@ double Approx3DSolver::computeError(double yaw, double pitch, double *error) {
   error[1] = this->target_z_ - rt_bullet_z;
   return std::sqrt(
       std::pow(error[0] * rt_target_rho, 2) + std::pow(error[1], 2));
+}
 }
