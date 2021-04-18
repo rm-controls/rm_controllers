@@ -46,7 +46,6 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   cmd_sub_track_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(root_nh, "error_des", 100));
-//  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(root_nh, "track", 100));
   tf_broadcaster_.init(root_nh);
 
   // init config
@@ -233,30 +232,6 @@ void Controller::getFilteredAndPub(const ros::Time &time, int id) {
 
   target_vel_[id] = kalman_filter_track_->getTwist();
 
-//  try {
-//    camera2detection = robot_state_handle_.lookupTransform("camera",
-//                                                           "detection" + std::to_string(id),
-//                                                           ros::Time(0));
-//  }
-//  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
-//
-//  rm_msgs::TrackData track_data;
-//  track_data.id = id;
-//  track_data.map2detection.position.x = map2detection.transform.translation.x;
-//  track_data.map2detection.position.y = map2detection.transform.translation.y;
-//  track_data.map2detection.position.z = map2detection.transform.translation.z;
-//  track_data.map2detection.orientation = map2detection.transform.rotation;
-//  track_data.camera2detection.position.x = camera2detection.transform.translation.x;
-//  track_data.camera2detection.position.y = camera2detection.transform.translation.y;
-//  track_data.camera2detection.position.z = camera2detection.transform.translation.z;
-//  track_data.camera2detection.orientation = camera2detection.transform.rotation;
-//
-//  track_pub_->msg_.tracks.clear();
-//  if (track_pub_->trylock()) {
-//    track_pub_->msg_.header.stamp = time;
-//    track_pub_->msg_.tracks.push_back(track_data);
-//    track_pub_->unlockAndPublish();
-//  }
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
