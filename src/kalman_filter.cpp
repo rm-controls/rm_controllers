@@ -84,13 +84,11 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh) {
 void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detection) {
   double dt = std::abs(map2detection.header.stamp.toSec()
                            - map2detection_last_.find(map2detection.child_frame_id)->second.header.stamp.toSec());
-  if (dt > 0.02) {
+  if (dt > 0.1) {
     map2detection_last_[map2detection.child_frame_id] = map2detection;
     kalman_filter_->clear(x_);
     return;
   }
-
-  updateQR();
 
   double roll{}, pitch{}, yaw{}, roll_last{}, pitch_last{}, yaw_last{};
   quatToRPY(map2detection.transform.rotation, roll, pitch, yaw);
@@ -111,8 +109,9 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
       - map2detection_last_.find(map2detection.child_frame_id)->second.transform.translation.z) / dt;
   x_[7] = (yaw - yaw_last) / dt;
 
-  kalman_filter_->predict(u_);
-  kalman_filter_->update(x_);
+  updateQR();
+  kalman_filter_->predict(u_, q_);
+  kalman_filter_->update(x_, r_);
   x_hat_ = kalman_filter_->getState();
 
   map2detection_last_[map2detection.child_frame_id] = map2detection;
@@ -134,7 +133,7 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
     kalman_data_.filtered_detection_twist.linear.x = x_hat_[1];
     kalman_data_.filtered_detection_twist.linear.y = x_hat_[3];
     kalman_data_.filtered_detection_twist.linear.z = x_hat_[5];
-    kalman_data_.filtered_detection_twist.angular.z = x_[7];
+    kalman_data_.filtered_detection_twist.angular.z = x_hat_[7];
 
     if (realtime_pub_->trylock()) {
       realtime_pub_->msg_ = kalman_data_;
@@ -170,7 +169,7 @@ void KalmanFilterTrack::updateQR() {
 }
 
 void KalmanFilterTrack::perdict() {
-  kalman_filter_->predict(u_);
+  kalman_filter_->predict(u_, q_);
 }
 
 void KalmanFilterTrack::reconfigCB(rm_gimbal_controllers::KalmanConfig &config, uint32_t) {
