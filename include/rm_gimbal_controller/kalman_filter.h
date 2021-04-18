@@ -22,7 +22,8 @@ class KalmanFilterTrack {
  public:
   explicit KalmanFilterTrack(ros::NodeHandle &nh);
   void input(const geometry_msgs::TransformStamped &map2detection);
-  Vec8<double> output() const;
+  geometry_msgs::TransformStamped getTransform();
+  geometry_msgs::Twist getTwist();
   void perdict();
   void updateQR();
   ~KalmanFilterTrack() = default;
@@ -42,6 +43,8 @@ class KalmanFilterTrack {
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   Config config_{};
   bool dynamic_reconfig_initialized_ = false;
+  bool is_filter_ = false;
+  geometry_msgs::TransformStamped map2detection_;
 };
 }
 

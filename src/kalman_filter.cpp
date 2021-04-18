@@ -82,13 +82,16 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh) {
 }
 
 void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detection) {
+  map2detection_ = map2detection;
   double dt = std::abs(map2detection.header.stamp.toSec()
                            - map2detection_last_.find(map2detection.child_frame_id)->second.header.stamp.toSec());
   if (dt > 0.1) {
     map2detection_last_[map2detection.child_frame_id] = map2detection;
     kalman_filter_->clear(x_);
+    is_filter_ = false;
     return;
   }
+  is_filter_ = true;
 
   double roll{}, pitch{}, yaw{}, roll_last{}, pitch_last{}, yaw_last{};
   quatToRPY(map2detection.transform.rotation, roll, pitch, yaw);
@@ -142,8 +145,25 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   }
 }
 
-Vec8<double> KalmanFilterTrack::output() const {
-  return x_hat_;
+geometry_msgs::TransformStamped KalmanFilterTrack::getTransform() {
+  if (is_filter_) {
+    map2detection_.transform.translation.x = x_hat_[0];
+    map2detection_.transform.translation.y = x_hat_[2];
+    map2detection_.transform.translation.z = x_hat_[4];
+  }
+
+  return map2detection_;
+}
+
+geometry_msgs::Twist KalmanFilterTrack::getTwist() {
+  geometry_msgs::Twist target_vel;
+  if (is_filter_) {
+    target_vel.linear.x = x_hat_[1];
+    target_vel.linear.y = x_hat_[3];
+    target_vel.linear.z = x_hat_[5];
+    target_vel.angular.z = x_hat_[7];
+  }
+  return target_vel;
 }
 
 void KalmanFilterTrack::updateQR() {
