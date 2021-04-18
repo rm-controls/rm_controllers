@@ -12,6 +12,7 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_msgs/GimbalCmd.h>
 #include <rm_msgs/GimbalDesError.h>
+#include <rm_msgs/TrackDataArray.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_msgs/TargetDetectionArray.h>
 #include <rm_gimbal_controllers/GimbalConfig.h>
@@ -48,6 +49,7 @@ class Controller :
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
   void updateTf();
+  void updateTrackAndPub(const ros::Time &time, int id);
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
@@ -66,6 +68,7 @@ class Controller :
   ros::Subscriber cmd_subscriber_;
   ros::Subscriber cmd_sub_track_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError> > error_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> detection_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
