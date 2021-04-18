@@ -25,18 +25,8 @@ void BulletSolver::setResistanceCoefficient(double bullet_speed, Config config) 
 bool Bullet3DSolver::solve(const DVec<double> &angle_init,
                            double target_position_x, double target_position_y, double target_position_z,
                            double target_speed_x, double target_speed_y, double target_speed_z, double bullet_speed) {
-  config_ = *config_rt_buffer_.readFromRT();
-  setResistanceCoefficient(bullet_speed, config_);
-  pos_[0] = target_position_x;
-  pos_[1] = target_position_y;
-  pos_[2] = target_position_z;
-  vel_[0] = target_speed_x;
-  vel_[1] = target_speed_y;
-  vel_[2] = target_speed_z;
-
-  this->setBulletSpeed(bullet_speed);
-  setTarget(pos_, vel_);
-
+  isHit(angle_init, target_position_x, target_position_y, target_position_z,
+        target_speed_x, target_speed_y, target_speed_z, bullet_speed);
   double error_theta_z_init[2]{}, error_theta_z_point[2]{};
   double yaw_point = std::atan2(target_y_, target_x_);
   double pitch_point = std::atan2(
@@ -53,11 +43,7 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init,
     pitch_solved_ = angle_init[1];
   }
 
-  double error_theta_z[2] =
-      {error_init > error_point ? error_theta_z_init[0]
-                                : error_theta_z_point[0],
-       error_init > error_point ? error_theta_z_init[1]
-                                : error_theta_z_point[1]};
+  double error_theta_z[2]{};
   double temp_z = target_x_ / cos(yaw_solved_) * tan(pitch_solved_);
 
   int count = 0;
@@ -83,6 +69,27 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init,
   angle_result_[1] = -pitch_solved_;
 
   return true;
+}
+
+bool Bullet3DSolver::isHit(const DVec<double> &angle_init, double target_position_x,
+                           double target_position_y, double target_position_z,
+                           double target_speed_x, double target_speed_y,
+                           double target_speed_z, double bullet_speed) {
+  config_ = *config_rt_buffer_.readFromRT();
+  setResistanceCoefficient(bullet_speed, config_);
+  pos_[0] = target_position_x;
+  pos_[1] = target_position_y;
+  pos_[2] = target_position_z;
+  vel_[0] = target_speed_x;
+  vel_[1] = target_speed_y;
+  vel_[2] = target_speed_z;
+
+  this->setBulletSpeed(bullet_speed);
+  setTarget(pos_, vel_);
+  double error[2]{};
+  double error_init = computeError(angle_init[0], angle_init[1], error);
+
+  return error_init < 0.001;
 }
 
 std::vector<Vec3<double>> Bullet3DSolver::getPointData3D() {
