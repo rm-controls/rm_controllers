@@ -95,10 +95,7 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
 
   double roll{}, pitch{}, yaw{}, roll_last{}, pitch_last{}, yaw_last{};
   quatToRPY(map2detection.transform.rotation, roll, pitch, yaw);
-  quatToRPY(map2detection_last_.find(map2detection.child_frame_id)->second.transform.rotation,
-            roll_last,
-            pitch_last,
-            yaw_last);
+  quatToRPY(map2detection_last_[map2detection.child_frame_id].transform.rotation, roll_last, pitch_last, yaw_last);
   x_[0] = map2detection.transform.translation.x;
   x_[2] = map2detection.transform.translation.y;
   x_[4] = map2detection.transform.translation.z;
@@ -115,7 +112,7 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   updateQR();
   kalman_filter_->predict(u_, q_);
   kalman_filter_->update(x_, r_);
-  x_hat_ = kalman_filter_->getState();
+  updateState();
 
   map2detection_last_[map2detection.child_frame_id] = map2detection;
 
@@ -190,6 +187,10 @@ void KalmanFilterTrack::updateQR() {
 
 void KalmanFilterTrack::perdict() {
   kalman_filter_->predict(u_, q_);
+}
+
+void KalmanFilterTrack::updateState() {
+  x_hat_ = kalman_filter_->getState();
 }
 
 void KalmanFilterTrack::reconfigCB(rm_gimbal_controllers::KalmanConfig &config, uint32_t) {

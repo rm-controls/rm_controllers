@@ -188,15 +188,14 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
 void Controller::updateTf() {
   try {
     map2pitch_ = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
-
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
-  ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
-  if (last_detection_time_ != detection_time) {
-    last_detection_time_ = detection_time;
-    config_ = *config_rt_buffer_.readFromRT();
-    for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
+  for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
+    ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
+    if (last_detection_time_ != detection_time) {
+      last_detection_time_ = detection_time;
+      config_ = *config_rt_buffer_.readFromRT();
       geometry_msgs::TransformStamped map2camera, map2detection;
       tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
       try {
@@ -217,21 +216,14 @@ void Controller::updateTf() {
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.id);
         kalman_filter_track_->input(map2detection);
-        getFilteredAndPub(detection_time, detection.id);
+        tf_broadcaster_.sendTransform(kalman_filter_track_->getTransform());
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
-    }
-  } else
-    kalman_filter_track_->perdict();
-}
-
-void Controller::getFilteredAndPub(const ros::Time &time, int id) {
-  geometry_msgs::TransformStamped camera2detection, map2detection;
-  map2detection = kalman_filter_track_->getTransform();
-  tf_broadcaster_.sendTransform(map2detection);
-
-  target_vel_[id] = kalman_filter_track_->getTwist();
-
+    } else
+      kalman_filter_track_->perdict();
+    kalman_filter_track_->updateState();
+    target_vel_[detection.id] = kalman_filter_track_->getTwist();
+  }
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {

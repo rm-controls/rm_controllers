@@ -49,7 +49,6 @@ class Controller :
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
   void updateTf();
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
-  void getFilteredAndPub(const ros::Time &time, int id);
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;

@@ -25,6 +25,7 @@ class KalmanFilterTrack {
   geometry_msgs::TransformStamped getTransform();
   geometry_msgs::Twist getTwist();
   void perdict();
+  void updateState();
   void updateQR();
   ~KalmanFilterTrack() = default;
 
