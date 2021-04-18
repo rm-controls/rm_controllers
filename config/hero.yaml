@@ -34,3 +34,9 @@ controllers:
       dt: 0.001
       timeout: 0.001
       publish_rate_model: 50
+    kalman:
+      kalman_debug: true
+      q_x: 1.
+      q_dx: 1.
+      r_x: 1.
+      r_dx: 1.
