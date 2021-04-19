@@ -156,11 +156,6 @@ if (${CATKIN_ENABLE_TESTING})
           test/test_timeout.cpp)
   target_link_libraries(timeout_test ${catkin_LIBRARIES})
 
-  add_rostest_gtest(nan_cmd_vel_test
-          test/test_NAN_cmd.test
-          test/test_NAN_cmd.cpp)
-  target_link_libraries(nan_cmd_vel_test ${catkin_LIBRARIES})
-
   add_rostest_gtest(linear_x_accel_limit_test
           test/test_linear_x_accel_limit.test
           test/test_linear_x_accel_limit.cpp)
