@@ -20,22 +20,6 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
 
-  // Get and check params for covariances
-  XmlRpc::XmlRpcValue pose_cov_list;
-  controller_nh.getParam("pose_covariance_diagonal", pose_cov_list);
-  ROS_ASSERT(pose_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  ROS_ASSERT(pose_cov_list.size() == 6);
-  for (int i = 0; i < pose_cov_list.size(); ++i)
-    ROS_ASSERT(pose_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-
-  odom_pub_->msg_.pose.covariance = {
-      static_cast<double>(pose_cov_list[0]), 0., 0., 0., 0., 0.,
-      0., static_cast<double>(pose_cov_list[1]), 0., 0., 0., 0.,
-      0., 0., static_cast<double>(pose_cov_list[2]), 0., 0., 0.,
-      0., 0., 0., static_cast<double>(pose_cov_list[3]), 0., 0.,
-      0., 0., 0., 0., static_cast<double>(pose_cov_list[4]), 0.,
-      0., 0., 0., 0., 0., static_cast<double>(pose_cov_list[5])};
-
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_rf_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_rf_name", std::string("joint_rf")));
