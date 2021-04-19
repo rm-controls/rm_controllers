@@ -16,9 +16,6 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
                               ros::NodeHandle &root_nh,
                               ros::NodeHandle &controller_nh) {
   ChassisBase::init(robot_hw, root_nh, controller_nh);
-  wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
-  enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
-  twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
 
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_rf_ = effort_jnt_interface->getHandle(
@@ -53,25 +50,6 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   }
 
   return true;
-}
-
-void StandardController::update(const ros::Time &time, const ros::Duration &period) {
-  ChassisBase::update(time, period);
-  updateOdom(time, period);
-
-  if (state_ == rm_chassis_base::PASSIVE)
-    passive();
-  else {
-    if (state_ == rm_chassis_base::RAW)
-      raw(period);
-    else if (state_ == rm_chassis_base::GYRO)
-      gyro(time, period);
-    else if (state_ == rm_chassis_base::FOLLOW)
-      follow(time, period);
-    else if (state_ == rm_chassis_base::TWIST)
-      twist(time, period);
-    moveJoint(period);
-  }
 }
 
 void StandardController::moveJoint(const ros::Duration &period) {

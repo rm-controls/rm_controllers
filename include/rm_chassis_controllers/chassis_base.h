@@ -29,41 +29,47 @@ class ChassisBase : public controller_interface::MultiInterfaceController
     <hardware_interface::EffortJointInterface, hardware_interface::RobotStateInterface> {
  public:
   ChassisBase() = default;
-  virtual bool init(hardware_interface::RobotHW *robot_hw,
-                    ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
-  virtual void update(const ros::Time &time, const ros::Duration &period) override;
+  bool init(hardware_interface::RobotHW *robot_hw,
+            ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
+  void update(const ros::Time &time, const ros::Duration &period) override;
  protected:
-  virtual void passive();
-  virtual void raw(const ros::Duration &period);
-  virtual void follow(const ros::Time &time, const ros::Duration &period) {};
-  virtual void tfVelFromYawToBase(const ros::Time &time);
-  virtual void recovery(const ros::Duration &period);
+  void passive();
+  void raw(const ros::Duration &period);
+  virtual void follow(const ros::Time &time, const ros::Duration &period);
+  virtual void twist(const ros::Time &time, const ros::Duration &period);
+  virtual void gyro(const ros::Time &time, const ros::Duration &period);
   virtual void moveJoint(const ros::Duration &period) = 0;
-  virtual void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
-  virtual void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd);
-  virtual void updateOdom(const ros::Time &time, const ros::Duration &period);
   virtual geometry_msgs::Twist iKine(const ros::Duration &period) = 0;
+  void updateOdom(const ros::Time &time, const ros::Duration &period);
+  void recovery(const ros::Duration &period);
+  void tfVelToBase(const std::string &from);
+  void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
+  void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd);
 
   std::vector<hardware_interface::JointHandle> joint_vector_{};
   hardware_interface::RobotStateHandle robot_state_handle_{};
-  double publish_rate_{}, wheel_base_{}, wheel_radius_{};
+
+  double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{};
+  bool enable_odom_tf_{};
+  RampFilter<double> *ramp_x{}, *ramp_y{}, *ramp_w{};
+
   ros::Time last_publish_time_;
   geometry_msgs::TransformStamped odom2base_{};
   geometry_msgs::Vector3Stamped vel_cmd_{};
   geometry_msgs::Vector3Stamped vel_tfed_{};
-  geometry_msgs::Vector3 linear_vel_{}, angular_vel_{};
   geometry_msgs::Twist vel_base_{};
-
-  RampFilter<double> *ramp_x{}, *ramp_y{}, *ramp_w{};
+  control_toolbox::Pid pid_follow_;
 
   bool state_changed_{};
   StandardState state_ = PASSIVE;
+
+  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
+  robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
   ros::Subscriber cmd_chassis_sub_;
   ros::Subscriber cmd_vel_sub_;
   realtime_tools::RealtimeBuffer<rm_msgs::ChassisCmd> chassis_rt_buffer_;
   realtime_tools::RealtimeBuffer<geometry_msgs::Twist> vel_rt_buffer_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
-  rm_msgs::ChassisCmd cmd_chassis_;
+
 };
 }
 #endif // RM_COMMON_INCLUDE_RM_COMMON_CHASSIS_BASE_H_
