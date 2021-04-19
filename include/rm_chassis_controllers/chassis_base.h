@@ -43,6 +43,7 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   virtual void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd);
   virtual void updateOdom(const ros::Time &time, const ros::Duration &period);
   virtual geometry_msgs::Twist iKine(const ros::Duration &period) = 0;
+  virtual void timeOut(const ros::Time &time);
 
   std::vector<hardware_interface::JointHandle> joint_vector_{};
   hardware_interface::RobotStateHandle robot_state_handle_{};
@@ -64,6 +65,11 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   realtime_tools::RealtimeBuffer<geometry_msgs::Twist> vel_rt_buffer_;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
   rm_msgs::ChassisCmd cmd_chassis_;
+
+  bool enable_timeout_;
+  double timeout_;
+  ros::Time cmd_chassis_callback_time_;
+  ros::Time cmd_vel_callback_time_;
 };
 }
 #endif // RM_COMMON_INCLUDE_RM_COMMON_CHASSIS_BASE_H_

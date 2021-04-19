@@ -120,11 +120,67 @@ target_link_libraries(${PROJECT_NAME}
 #############
 
 if (${CATKIN_ENABLE_TESTING})
-    ## Add gtest based cpp test target and link libraries
-    add_rostest_gtest(standard_chassis_test
-            test/test_standard_chassis.test
-            test/test_standard_chassis.cpp)
-    target_link_libraries(standard_chassis_test ${catkin_LIBRARIES})
+  ## Add gtest based cpp test target and link libraries
+  add_rostest_gtest(standard_chassis_test
+          test/test_standard_chassis.test
+          test/test_standard_chassis.cpp)
+  target_link_libraries(standard_chassis_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(scopperil_test
+          test/test_scopperil.test
+          test/test_scopperil.cpp)
+  target_link_libraries(scopperil_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(default_cmd_publisher_test
+          test/test_default_cmd_publisher.test
+          test/test_default_cmd_publisher.cpp)
+  target_link_libraries(default_cmd_publisher_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(wrong_joint_name_test
+          test/test_wrong_joint_name.test
+          test/test_wrong_joint_name.cpp)
+  target_link_libraries(wrong_joint_name_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(default_odom_frame_test
+          test/test_default_odom_frame.test
+          test/test_default_odom_frame.cpp)
+  target_link_libraries(default_odom_frame_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(odom_tf_test
+          test/test_odom_tf.test
+          test/test_odom_tf.cpp)
+  target_link_libraries(odom_tf_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(timeout_test
+          test/test_timeout.test
+          test/test_timeout.cpp)
+  target_link_libraries(timeout_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(nan_cmd_vel_test
+          test/test_NAN_cmd.test
+          test/test_NAN_cmd.cpp)
+  target_link_libraries(nan_cmd_vel_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(linear_x_accel_limit_test
+          test/test_linear_x_accel_limit.test
+          test/test_linear_x_accel_limit.cpp)
+  target_link_libraries(linear_x_accel_limit_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(linear_y_accel_limit_test
+          test/test_linear_y_accel_limit.test
+          test/test_linear_y_accel_limit.cpp)
+  target_link_libraries(linear_y_accel_limit_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(angular_z_accel_limit_test
+          test/test_angular_z_accel_limit.test
+          test/test_angular_z_accel_limit.cpp)
+  target_link_libraries(angular_z_accel_limit_test ${catkin_LIBRARIES})
+
+  add_rostest_gtest(iKine_test
+          test/test_iKine.test
+          test/test_iKine.cpp)
+  target_link_libraries(iKine_test ${catkin_LIBRARIES})
+
 endif ()
 
 ##########################

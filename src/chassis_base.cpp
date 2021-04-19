@@ -12,6 +12,8 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100);
+  timeout_ = getParam(controller_nh, "timeout", 1.0);
+  enable_timeout_ = getParam(controller_nh, "enable_timeout", true);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue twist_cov_list;
@@ -46,6 +48,10 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
 }
 
 void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
+  if (enable_timeout_) {
+    timeOut(time);
+  }
+
   cmd_chassis_ = *chassis_rt_buffer_.readFromRT();
   ramp_x->setAcc(cmd_chassis_.accel.linear.x);
   ramp_y->setAcc(cmd_chassis_.accel.linear.y);
@@ -118,6 +124,16 @@ void ChassisBase::tfVelFromYawToBase(const ros::Time &time) {
         robot_state_handle_.lookupTransform("base_link", "yaw", ros::Time(0)));
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+}
+
+void ChassisBase::timeOut(const ros::Time &time) {
+  if ((time - cmd_chassis_callback_time_).toSec() > timeout_ || (time - cmd_vel_callback_time_).toSec() > timeout_) {
+    cmd_chassis_.effort_limit = 0;
+    chassis_rt_buffer_.writeFromNonRT(cmd_chassis_);
+    //ROS_INFO_THROTTLE(2.0, "Message cmd_vel and cmd_chassis timeout!");
+  }
+  //else
+  //ROS_INFO_THROTTLE(2.0, "Message cmd_vel and cmd_chassis come in time!");
 }
 
 } // namespace rm_chassis_base
