@@ -74,20 +74,18 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh) {
       cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
   d_srv_->setCallback(cb);
 
-  kalman_filter_ = new KalmanFilter<double>(a_, b_, h_, q_, r_);
-  kalman_filter_->clear(x_);
-
   if (is_debug_)
     realtime_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::KalmanData>(nh, "kalman_filter", 100));
 }
 
-void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detection) {
+void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detection, int id) {
   map2detection_ = map2detection;
-  double dt = std::abs(map2detection.header.stamp.toSec()
-                           - map2detection_last_.find(map2detection.child_frame_id)->second.header.stamp.toSec());
+  double dt = std::abs(map2detection.header.stamp.toSec() - map2detection_last_[id].header.stamp.toSec());
   if (dt > 0.1) {
-    map2detection_last_[map2detection.child_frame_id] = map2detection;
-    kalman_filter_->clear(x_);
+    map2detection_last_[id] = map2detection;
+    if (kalman_filter_[id] == nullptr)
+      kalman_filter_[id] = new KalmanFilter<double>(a_, b_, h_, q_, r_);
+    kalman_filter_[id]->clear(x_);
     is_filter_ = false;
     return;
   }
@@ -95,26 +93,22 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
 
   double roll{}, pitch{}, yaw{}, roll_last{}, pitch_last{}, yaw_last{};
   quatToRPY(map2detection.transform.rotation, roll, pitch, yaw);
-  quatToRPY(map2detection_last_[map2detection.child_frame_id].transform.rotation, roll_last, pitch_last, yaw_last);
+  quatToRPY(map2detection_last_[id].transform.rotation, roll_last, pitch_last, yaw_last);
   x_[0] = map2detection.transform.translation.x;
   x_[2] = map2detection.transform.translation.y;
   x_[4] = map2detection.transform.translation.z;
   x_[6] = yaw;
 
-  x_[1] = (map2detection.transform.translation.x
-      - map2detection_last_.find(map2detection.child_frame_id)->second.transform.translation.x) / dt;
-  x_[3] = (map2detection.transform.translation.y
-      - map2detection_last_.find(map2detection.child_frame_id)->second.transform.translation.y) / dt;
-  x_[5] = (map2detection.transform.translation.z
-      - map2detection_last_.find(map2detection.child_frame_id)->second.transform.translation.z) / dt;
+  x_[1] = (map2detection.transform.translation.x - map2detection_last_[id].transform.translation.x) / dt;
+  x_[3] = (map2detection.transform.translation.y - map2detection_last_[id].transform.translation.y) / dt;
+  x_[5] = (map2detection.transform.translation.z - map2detection_last_[id].transform.translation.z) / dt;
   x_[7] = (yaw - yaw_last) / dt;
 
   updateQR();
-  kalman_filter_->predict(u_, q_);
-  kalman_filter_->update(x_, r_);
-  updateState();
+  kalman_filter_[id]->predict(u_, q_);
+  kalman_filter_[id]->update(x_, r_);
 
-  map2detection_last_[map2detection.child_frame_id] = map2detection;
+  map2detection_last_[id] = map2detection;
 
   if (is_debug_) {
     kalman_data_.header.stamp = map2detection.header.stamp;
@@ -142,8 +136,9 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   }
 }
 
-geometry_msgs::TransformStamped KalmanFilterTrack::getTransform() {
+geometry_msgs::TransformStamped KalmanFilterTrack::getTransform(int id) {
   if (is_filter_) {
+    x_hat_ = kalman_filter_[id]->getState();
     map2detection_.transform.translation.x = x_hat_[0];
     map2detection_.transform.translation.y = x_hat_[2];
     map2detection_.transform.translation.z = x_hat_[4];
@@ -152,9 +147,10 @@ geometry_msgs::TransformStamped KalmanFilterTrack::getTransform() {
   return map2detection_;
 }
 
-geometry_msgs::Twist KalmanFilterTrack::getTwist() {
+geometry_msgs::Twist KalmanFilterTrack::getTwist(int id) {
   geometry_msgs::Twist target_vel;
   if (is_filter_) {
+    x_hat_ = kalman_filter_[id]->getState();
     target_vel.linear.x = x_hat_[1];
     target_vel.linear.y = x_hat_[3];
     target_vel.linear.z = x_hat_[5];
@@ -185,12 +181,8 @@ void KalmanFilterTrack::updateQR() {
       0., 0., 0., 0., 0., 0., 0., config_.r_dx;
 }
 
-void KalmanFilterTrack::perdict() {
-  kalman_filter_->predict(u_, q_);
-}
-
-void KalmanFilterTrack::updateState() {
-  x_hat_ = kalman_filter_->getState();
+void KalmanFilterTrack::perdict(int id) {
+  kalman_filter_[id]->predict(u_, q_);
 }
 
 void KalmanFilterTrack::reconfigCB(rm_gimbal_controllers::KalmanConfig &config, uint32_t) {

@@ -21,21 +21,20 @@ struct Config {
 class KalmanFilterTrack {
  public:
   explicit KalmanFilterTrack(ros::NodeHandle &nh);
-  void input(const geometry_msgs::TransformStamped &map2detection);
-  geometry_msgs::TransformStamped getTransform();
-  geometry_msgs::Twist getTwist();
-  void perdict();
-  void updateState();
+  void input(const geometry_msgs::TransformStamped &map2detection, int id);
+  geometry_msgs::TransformStamped getTransform(int id);
+  geometry_msgs::Twist getTwist(int id);
+  void perdict(int id);
   void updateQR();
   ~KalmanFilterTrack() = default;
 
  private:
   void reconfigCB(rm_gimbal_controllers::KalmanConfig &config, uint32_t);
 
-  KalmanFilter<double> *kalman_filter_;
+  std::map<int, KalmanFilter<double> *> kalman_filter_;
   Vec8<double> x_, u_, x_hat_;
   Mat8<double> a_, b_, h_, q_, r_;
-  std::map<std::string, geometry_msgs::TransformStamped> map2detection_last_;
+  std::map<int, geometry_msgs::TransformStamped> map2detection_last_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::KalmanConfig> *d_srv_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::KalmanData>> realtime_pub_;
   ros::Time last_detection_time_;

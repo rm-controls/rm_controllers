@@ -216,20 +216,19 @@ void Controller::updateTf() {
         map2detection.header.stamp = detection_time;
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.id);
-        kalman_filter_track_->input(map2detection);
+        kalman_filter_track_->input(map2detection, detection.id);
         updateTrackAndPub(detection_time, detection.id);
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     } else
-      kalman_filter_track_->perdict();
-    kalman_filter_track_->updateState();
-    target_vel_[detection.id] = kalman_filter_track_->getTwist();
+      kalman_filter_track_->perdict(detection.id);
+    target_vel_[detection.id] = kalman_filter_track_->getTwist(detection.id);
   }
 }
 
 void Controller::updateTrackAndPub(const ros::Time &time, int id) {
   geometry_msgs::TransformStamped camera2detection, map2detection;
-  map2detection = kalman_filter_track_->getTransform();
+  map2detection = kalman_filter_track_->getTransform(id);
   tf_broadcaster_.sendTransform(map2detection);
 
   try {
