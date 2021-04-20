@@ -112,7 +112,6 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   updateQR();
   kalman_filter_->predict(u_, q_);
   kalman_filter_->update(x_, r_);
-  updateState();
 
   map2detection_last_[map2detection.child_frame_id] = map2detection;
 
@@ -144,6 +143,7 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
 
 geometry_msgs::TransformStamped KalmanFilterTrack::getTransform() {
   if (is_filter_) {
+    x_hat_ = kalman_filter_->getState();
     map2detection_.transform.translation.x = x_hat_[0];
     map2detection_.transform.translation.y = x_hat_[2];
     map2detection_.transform.translation.z = x_hat_[4];
@@ -155,6 +155,7 @@ geometry_msgs::TransformStamped KalmanFilterTrack::getTransform() {
 geometry_msgs::Twist KalmanFilterTrack::getTwist() {
   geometry_msgs::Twist target_vel;
   if (is_filter_) {
+    x_hat_ = kalman_filter_->getState();
     target_vel.linear.x = x_hat_[1];
     target_vel.linear.y = x_hat_[3];
     target_vel.linear.z = x_hat_[5];
@@ -187,10 +188,6 @@ void KalmanFilterTrack::updateQR() {
 
 void KalmanFilterTrack::perdict() {
   kalman_filter_->predict(u_, q_);
-}
-
-void KalmanFilterTrack::updateState() {
-  x_hat_ = kalman_filter_->getState();
 }
 
 void KalmanFilterTrack::reconfigCB(rm_gimbal_controllers::KalmanConfig &config, uint32_t) {
