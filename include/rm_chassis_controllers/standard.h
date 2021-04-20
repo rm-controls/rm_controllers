@@ -18,8 +18,7 @@ class StandardController : public rm_chassis_base::ChassisBase {
 
  private:
   void moveJoint(const ros::Duration &period) override;
-  void updateOdom(const ros::Time &time, const ros::Duration &period);
-  geometry_msgs::Twist iKine(const ros::Duration &period) override;
+  geometry_msgs::Twist forwardKinematics() override;
 
   control_toolbox::Pid pid_rf_, pid_lf_, pid_rb_, pid_lb_;
   control_toolbox::Pid pid_follow_;
