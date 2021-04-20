@@ -31,7 +31,7 @@ class KalmanFilterTrack {
  private:
   void reconfigCB(rm_gimbal_controllers::KalmanConfig &config, uint32_t);
 
-  std::map<int, KalmanFilter<double> *> kalman_filter_;
+  std::map<int, KalmanFilter<double>> kalman_filter_;
   Vec8<double> x_, u_, x_hat_;
   Mat8<double> a_, b_, h_, q_, r_;
   std::map<int, geometry_msgs::TransformStamped> map2detection_last_;
