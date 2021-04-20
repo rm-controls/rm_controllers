@@ -26,5 +26,5 @@ controllers:
     pid_friction_l: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
     pid_friction_r: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
     pid_trigger: { p: 18.4, i: 0.0, d: 0.6, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
-    pid_magazine: {p: 5.0, i: 0.0, d: 0.2, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+    pid_magazine: {p: 0.03, i: 0.5, d: 0.0, i_clamp_max: 0.8, i_clamp_min: -0.8, antiwindup: true, publish_state: true }
     publish_rate: 50

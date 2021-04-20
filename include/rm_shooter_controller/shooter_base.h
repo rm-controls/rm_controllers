@@ -26,7 +26,7 @@ enum State {
 };
 
 enum MagazineState {
-  MAGAZINE_PASSIVE = 0,
+  MAGAZINE_STOP = 0,
   OPEN = 1,
   CLOSE = 2
 };
@@ -87,13 +87,14 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   double enter_push_qd_coef_{}, push_angle_error_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
+  bool magazine_state_changed_ = false;
   bool is_out_from_block_ = false;
 
   Block *block_{};
   ros::Time last_shoot_time_;
 
   State state_ = PASSIVE;
-  MagazineState magazine_state_ = MAGAZINE_PASSIVE;
+  MagazineState magazine_state_{};
   Config config_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer;
   realtime_tools::RealtimeBuffer<rm_msgs::ShootCmd> cmd_rt_buffer_;

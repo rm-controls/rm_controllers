@@ -66,9 +66,10 @@ void ShooterBase::update(const ros::Time &time, const ros::Duration &period) {
     state_ = State(cmd_.mode);
     state_changed_ = true;
   }
-  if (magazine_state_ != cmd_.magazine)
+  if (magazine_state_ != cmd_.magazine) {
     magazine_state_ = MagazineState(cmd_.magazine);
-
+    magazine_state_changed_ = true;
+  }
   if (cmd_.speed == cmd_.SPEED_10M_PER_SECOND)
     friction_qd_des_ = config_.qd_10;
   else if (cmd_.speed == cmd_.SPEED_15M_PER_SECOND)
@@ -87,8 +88,7 @@ void ShooterBase::update(const ros::Time &time, const ros::Duration &period) {
   else if (state_ == STOP) {
     stop(time, period);
     magazine(time, period);
-    if (magazine_state_ != MAGAZINE_PASSIVE)
-      moveMagazineJoint(period);
+    moveMagazineJoint(period);
   } else {
     if (state_ == READY)
       ready(period);
@@ -98,8 +98,7 @@ void ShooterBase::update(const ros::Time &time, const ros::Duration &period) {
       block(time, period);
     moveJoint(period);
     magazine(time, period);
-    if (magazine_state_ != MAGAZINE_PASSIVE)
-      moveMagazineJoint(period);
+    moveMagazineJoint(period);
   }
 }
 
@@ -158,13 +157,13 @@ void ShooterBase::block(const ros::Time &time, const ros::Duration &period) {
 }
 
 void ShooterBase::magazine(const ros::Time &time, const ros::Duration &period) {
-  pid_magazine_.reset();
+  if (magazine_state_changed_)
+    pid_magazine_.reset();
   if (magazine_state_ == OPEN)
-    magazine_q_des_ = joint_magazine_.getPosition() + config_.magazine_q_des;
+    magazine_q_des_ = config_.magazine_q_des;
   else if (magazine_state_ == CLOSE)
-    magazine_q_des_ = joint_magazine_.getPosition() - config_.magazine_q_des;
-
-  if (block_->isBlock(time, joint_magazine_))
+    magazine_q_des_ = -config_.magazine_q_des;
+  else if (magazine_state_ == MAGAZINE_STOP || block_->isBlock(time, joint_magazine_))
     magazine_q_des_ = joint_magazine_.getPosition();
 }
 
