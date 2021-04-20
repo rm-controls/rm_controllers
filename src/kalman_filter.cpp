@@ -83,10 +83,9 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh) {
 
 void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detection) {
   map2detection_ = map2detection;
-  double dt = std::abs(map2detection.header.stamp.toSec()
-                           - map2detection_last_.find(map2detection.child_frame_id)->second.header.stamp.toSec());
+  double dt = std::abs(map2detection.header.stamp.toSec() - map2detection_last_.header.stamp.toSec());
   if (dt > 0.1) {
-    map2detection_last_[map2detection.child_frame_id] = map2detection;
+    map2detection_last_ = map2detection;
     kalman_filter_->clear(x_);
     is_filter_ = false;
     return;
@@ -95,25 +94,22 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
 
   double roll{}, pitch{}, yaw{}, roll_last{}, pitch_last{}, yaw_last{};
   quatToRPY(map2detection.transform.rotation, roll, pitch, yaw);
-  quatToRPY(map2detection_last_[map2detection.child_frame_id].transform.rotation, roll_last, pitch_last, yaw_last);
+  quatToRPY(map2detection_last_.transform.rotation, roll_last, pitch_last, yaw_last);
   x_[0] = map2detection.transform.translation.x;
   x_[2] = map2detection.transform.translation.y;
   x_[4] = map2detection.transform.translation.z;
   x_[6] = yaw;
 
-  x_[1] = (map2detection.transform.translation.x
-      - map2detection_last_.find(map2detection.child_frame_id)->second.transform.translation.x) / dt;
-  x_[3] = (map2detection.transform.translation.y
-      - map2detection_last_.find(map2detection.child_frame_id)->second.transform.translation.y) / dt;
-  x_[5] = (map2detection.transform.translation.z
-      - map2detection_last_.find(map2detection.child_frame_id)->second.transform.translation.z) / dt;
+  x_[1] = (map2detection.transform.translation.x - map2detection_last_.transform.translation.x) / dt;
+  x_[3] = (map2detection.transform.translation.y - map2detection_last_.transform.translation.y) / dt;
+  x_[5] = (map2detection.transform.translation.z - map2detection_last_.transform.translation.z) / dt;
   x_[7] = (yaw - yaw_last) / dt;
 
   updateQR();
   kalman_filter_->predict(u_, q_);
   kalman_filter_->update(x_, r_);
 
-  map2detection_last_[map2detection.child_frame_id] = map2detection;
+  map2detection_last_ = map2detection;
 
   if (is_debug_) {
     kalman_data_.header.stamp = map2detection.header.stamp;

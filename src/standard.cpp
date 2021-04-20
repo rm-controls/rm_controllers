@@ -222,7 +222,6 @@ void Controller::updateTf() {
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     } else
       kalman_filter_track_->perdict();
-    kalman_filter_track_->updateState();
     target_vel_[detection.id] = kalman_filter_track_->getTwist();
   }
 }
