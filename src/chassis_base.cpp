@@ -83,9 +83,9 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
     passive();
   else {
     if (state_ == rm_chassis_base::RAW)
-      raw(period);
+      raw();
     else if (state_ == rm_chassis_base::GYRO)
-      gyro(time, period);
+      gyro();
     else if (state_ == rm_chassis_base::FOLLOW)
       follow(time, period);
     else if (state_ == rm_chassis_base::TWIST)
@@ -109,7 +109,7 @@ void ChassisBase::follow(const ros::Time &time, const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enter FOLLOW");
 
-    recovery(period);
+    recovery();
     pid_follow_.reset();
   }
   tfVelToBase("yaw");
@@ -129,7 +129,7 @@ void ChassisBase::twist(const ros::Time &time, const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enter FOLLOW");
 
-    recovery(period);
+    recovery();
     pid_follow_.reset();
   }
   tfVelToBase("yaw");
@@ -137,8 +137,7 @@ void ChassisBase::twist(const ros::Time &time, const ros::Duration &period) {
     double roll{}, pitch{}, yaw{};
     quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", ros::Time(0)).transform.rotation,
               roll, pitch, yaw);
-    ros::Time now = ros::Time::now();
-    double t = now.toSec();
+
     double angle[4] = {-0.785, 0.785, 2.355, -2.355};
     double off_set;
     for (double i : angle) {
@@ -148,7 +147,7 @@ void ChassisBase::twist(const ros::Time &time, const ros::Duration &period) {
       }
     }
     double follow_error =
-        angles::shortest_angular_distance(yaw, twist_angular_ * sin(2 * M_PI * t) + off_set);
+        angles::shortest_angular_distance(yaw, twist_angular_ * sin(2 * M_PI * time.toSec()) + off_set);
 
     pid_follow_.computeCommand(-follow_error, period);  //The actual output is opposite to the caculated value
     vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
@@ -156,36 +155,76 @@ void ChassisBase::twist(const ros::Time &time, const ros::Duration &period) {
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }
 
-void ChassisBase::gyro(const ros::Time &time, const ros::Duration &period) {
+void ChassisBase::gyro() {
+  if (state_changed_) {
+    state_changed_ = false;
+    ROS_INFO("[Chassis] Enter GYRO");
 
+    recovery();
+  }
+  tfVelToBase("yaw");
 }
 
-void ChassisBase::raw(const ros::Duration &period) {
+void ChassisBase::raw() {
   if (state_changed_) {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enter RAW");
 
-    recovery(period);
+    recovery();
   }
   vel_tfed_ = vel_cmd_;
 }
 
 void ChassisBase::updateOdom(const ros::Time &time, const ros::Duration &period) {
-  bool need_publish = publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time;
-
-  last_publish_time_ = time;
-  // publish odom message
-  if (odom_pub_->trylock()) {
-    odom_pub_->msg_.header.stamp = time;
-    odom_pub_->msg_.twist.twist.linear.x = vel_base_.linear.x;
-    odom_pub_->msg_.twist.twist.linear.y = vel_base_.linear.y;
-    odom_pub_->msg_.twist.twist.angular.z = vel_base_.angular.z;
-    odom_pub_->unlockAndPublish();
+  geometry_msgs::Twist vel_base = forwardKinematics(); // on base_link frame
+  if (enable_odom_tf_) {
+    geometry_msgs::Vector3 linear_vel_odom, angular_vel_odom;
+    try {
+      const geometry_msgs::TransformStamped
+          odom2base = robot_state_handle_.lookupTransform("odom", "base_link", ros::Time(0));
+      tf2::doTransform(vel_base.linear, linear_vel_odom, odom2base);
+      tf2::doTransform(vel_base.angular, angular_vel_odom, odom2base);
+    }
+    catch (tf2::TransformException &ex) {
+      ROS_WARN("%s", ex.what());
+      return;
+    }
+    odom2base_.header.stamp = time;
+    // integral vel to pos and angle
+    odom2base_.transform.translation.x += linear_vel_odom.x * period.toSec();
+    odom2base_.transform.translation.y += linear_vel_odom.y * period.toSec();
+    odom2base_.transform.translation.z += linear_vel_odom.z * period.toSec();
+    double length =
+        std::sqrt(std::pow(angular_vel_odom.x, 2) + std::pow(angular_vel_odom.y, 2) + std::pow(angular_vel_odom.z, 2));
+    if (length > 0.001) { // avoid nan quat
+      tf2::Quaternion odom2base_quat, trans_quat;
+      tf2::fromMsg(odom2base_.transform.rotation, odom2base_quat);
+      trans_quat.setRotation(tf2::Vector3(angular_vel_odom.x / length,
+                                          angular_vel_odom.y / length,
+                                          angular_vel_odom.z / length), length * period.toSec());
+      odom2base_quat = trans_quat * odom2base_quat;
+      odom2base_quat.normalize();
+      odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
+    }
   }
+
+  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
+    if (odom_pub_->trylock()) {
+      odom_pub_->msg_.header.stamp = time;
+      odom_pub_->msg_.twist.twist.linear.x = vel_base.linear.x;
+      odom_pub_->msg_.twist.twist.linear.y = vel_base.linear.y;
+      odom_pub_->msg_.twist.twist.angular.z = vel_base.angular.z;
+      odom_pub_->unlockAndPublish();
+    }
+    if (enable_odom_tf_)
+      tf_broadcaster_.sendTransform(odom2base_);
+    last_publish_time_ = time;
+  } else if (enable_odom_tf_)
+    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 }
 
-void ChassisBase::recovery(const ros::Duration &period) {
-  geometry_msgs::Twist vel = iKine(period);
+void ChassisBase::recovery() {
+  geometry_msgs::Twist vel = forwardKinematics();
 
   ramp_x->clear(vel.linear.x);
   ramp_y->clear(vel.linear.y);

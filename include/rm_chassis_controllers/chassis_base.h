@@ -34,14 +34,14 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   void update(const ros::Time &time, const ros::Duration &period) override;
  protected:
   void passive();
-  void raw(const ros::Duration &period);
-  virtual void follow(const ros::Time &time, const ros::Duration &period);
-  virtual void twist(const ros::Time &time, const ros::Duration &period);
-  virtual void gyro(const ros::Time &time, const ros::Duration &period);
+  void raw();
+  void follow(const ros::Time &time, const ros::Duration &period);
+  void twist(const ros::Time &time, const ros::Duration &period);
+  void gyro();
   virtual void moveJoint(const ros::Duration &period) = 0;
-  virtual geometry_msgs::Twist iKine(const ros::Duration &period) = 0;
+  virtual geometry_msgs::Twist forwardKinematics() = 0;
   void updateOdom(const ros::Time &time, const ros::Duration &period);
-  void recovery(const ros::Duration &period);
+  void recovery();
   void tfVelToBase(const std::string &from);
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd);
@@ -57,7 +57,6 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   geometry_msgs::TransformStamped odom2base_{};
   geometry_msgs::Vector3Stamped vel_cmd_{};
   geometry_msgs::Vector3Stamped vel_tfed_{};
-  geometry_msgs::Twist vel_base_{};
   control_toolbox::Pid pid_follow_;
 
   bool state_changed_{};
