@@ -87,11 +87,8 @@ void BalanceController::dataImuCallback(const sensor_msgs::ImuConstPtr &data) {
   imu_rt_buffer_.writeFromNonRT(*data);
 }
 
-void BalanceController::getK(XmlRpc::XmlRpcValue a,
-                             XmlRpc::XmlRpcValue b,
-                             XmlRpc::XmlRpcValue q,
-                             XmlRpc::XmlRpcValue r) {
-
+void BalanceController::getK(XmlRpc::XmlRpcValue a, XmlRpc::XmlRpcValue b,
+                             XmlRpc::XmlRpcValue q, XmlRpc::XmlRpcValue r) {
   //check a and q
   ROS_ASSERT(a.getType() == XmlRpc::XmlRpcValue::TypeArray);
   ROS_ASSERT(q.getType() == XmlRpc::XmlRpcValue::TypeArray);

@@ -36,8 +36,8 @@ class BalanceController : public ChassisBase {
   sensor_msgs::Imu imu_data_;
 
   // class member about full state feedback controller
-  static const size_t STATE_DIM = 4;
-  static const size_t CONTROL_DIM = 2;
+  static const int STATE_DIM = 4;
+  static const int CONTROL_DIM = 2;
 
   Eigen::Matrix<double, STATE_DIM, 1> x_{}, x_ref_{};
   Eigen::Matrix<double, CONTROL_DIM, 1> u_{};
