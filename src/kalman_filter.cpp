@@ -90,26 +90,33 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
     is_filter_ = false;
     return;
   }
+
   is_filter_ = true;
+  map2detection_new_ = map2detection;
+  double delta_x = map2detection.transform.translation.x - map2detection_last_.transform.translation.x;
+  double delta_y = map2detection.transform.translation.y - map2detection_last_.transform.translation.y;
+  double delta_z = map2detection.transform.translation.z - map2detection_last_.transform.translation.z;
+  if (std::abs(delta_x) > 1. || std::abs(delta_y) > 1. || std::abs(delta_z) > 1.)
+    map2detection_new_.transform = map2detection_last_.transform;
 
   double roll{}, pitch{}, yaw{}, roll_last{}, pitch_last{}, yaw_last{};
-  quatToRPY(map2detection.transform.rotation, roll, pitch, yaw);
+  quatToRPY(map2detection_new_.transform.rotation, roll, pitch, yaw);
   quatToRPY(map2detection_last_.transform.rotation, roll_last, pitch_last, yaw_last);
-  x_[0] = map2detection.transform.translation.x;
-  x_[2] = map2detection.transform.translation.y;
-  x_[4] = map2detection.transform.translation.z;
+  x_[0] = map2detection_new_.transform.translation.x;
+  x_[2] = map2detection_new_.transform.translation.y;
+  x_[4] = map2detection_new_.transform.translation.z;
   x_[6] = yaw;
 
-  x_[1] = (map2detection.transform.translation.x - map2detection_last_.transform.translation.x) / dt;
-  x_[3] = (map2detection.transform.translation.y - map2detection_last_.transform.translation.y) / dt;
-  x_[5] = (map2detection.transform.translation.z - map2detection_last_.transform.translation.z) / dt;
+  x_[1] = (map2detection_new_.transform.translation.x - map2detection_last_.transform.translation.x) / dt;
+  x_[3] = (map2detection_new_.transform.translation.y - map2detection_last_.transform.translation.y) / dt;
+  x_[5] = (map2detection_new_.transform.translation.z - map2detection_last_.transform.translation.z) / dt;
   x_[7] = (yaw - yaw_last) / dt;
 
   updateQR();
   kalman_filter_->predict(u_, q_);
   kalman_filter_->update(x_, r_);
 
-  map2detection_last_ = map2detection;
+  map2detection_last_ = map2detection_new_;
 
   if (is_debug_) {
     kalman_data_.header.stamp = map2detection.header.stamp;

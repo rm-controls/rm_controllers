@@ -45,6 +45,7 @@ class KalmanFilterTrack {
   bool dynamic_reconfig_initialized_ = false;
   bool is_filter_ = false;
   geometry_msgs::TransformStamped map2detection_;
+  geometry_msgs::TransformStamped map2detection_new_;
 };
 }
 
