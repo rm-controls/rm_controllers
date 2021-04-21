@@ -1,15 +1,15 @@
 //
 // Created by flying on 2021/1/18.
 //
-#include "rm_chassis_controllers/standard.h"
+#include "rm_chassis_controllers/mecanum_controller.h"
 #include <rm_common/ros_utilities.h>
 #include <string>
 #include <pluginlib/class_list_macros.hpp>
 
 namespace rm_chassis_controllers {
-bool StandardController::init(hardware_interface::RobotHW *robot_hw,
-                              ros::NodeHandle &root_nh,
-                              ros::NodeHandle &controller_nh) {
+bool MecanumController::init(hardware_interface::RobotHW *robot_hw,
+                             ros::NodeHandle &root_nh,
+                             ros::NodeHandle &controller_nh) {
   ChassisBase::init(robot_hw, root_nh, controller_nh);
 
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
@@ -40,7 +40,7 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   return true;
 }
 
-void StandardController::moveJoint(const ros::Duration &period) {
+void MecanumController::moveJoint(const ros::Duration &period) {
   ramp_x->input(vel_tfed_.vector.x);
   ramp_y->input(vel_tfed_.vector.y);
   ramp_w->input(vel_tfed_.vector.z);
@@ -68,7 +68,7 @@ void StandardController::moveJoint(const ros::Duration &period) {
   joint_lb_.setCommand(scale * pid_lb_.getCurrentCmd());
 }
 
-geometry_msgs::Twist StandardController::forwardKinematics() {
+geometry_msgs::Twist MecanumController::forwardKinematics() {
   geometry_msgs::Twist vel_data;
   double k = wheel_radius_ / 4.0;
   double joint_rf_velocity = joint_rf_.getVelocity();
@@ -87,4 +87,4 @@ geometry_msgs::Twist StandardController::forwardKinematics() {
 
 } // namespace rm_chassis_controllers
 
-PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::StandardController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::MecanumController, controller_interface::ControllerBase)

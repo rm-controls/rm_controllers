@@ -9,9 +9,9 @@
 
 namespace rm_chassis_controllers {
 
-class StandardController : public ChassisBase {
+class MecanumController : public ChassisBase {
  public:
-  StandardController() = default;
+  MecanumController() = default;
   bool init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
 
  private:

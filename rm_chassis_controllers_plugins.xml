@@ -1,7 +1,7 @@
 <library path="lib/librm_chassis_controllers">
 
-  <class name="rm_chassis_controllers/StandardController"
-         type="rm_chassis_controllers::StandardController"
+  <class name="rm_chassis_controllers/MecanumController"
+         type="rm_chassis_controllers::MecanumController"
          base_class_type="controller_interface::ControllerBase">
     <description>
       The StandardController is RoboMaster standard robot Chassis controller. It expects a EffortJointInterface
