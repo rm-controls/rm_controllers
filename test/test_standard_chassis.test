@@ -1,6 +1,8 @@
 <launch>
+  <!-- This test suit for standard,hero,sentry-->
   <!-- Make sure to disable timeout -->
   <rosparam file="$(find rm_chassis_controllers)/test/disable_timeout.yaml" command="load"/>
+  <arg name="type" default="standard"/>
 
   <!-- Load common test stuff -->
   <include file="$(find rm_chassis_controllers)/launch/load_controllers.launch">
