@@ -225,7 +225,7 @@ void Controller::updateTrack() {
   if (track_pub_->trylock()) {
     for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
       track_data.id = detection.id;
-      track_data.pose2camera = detection.pose;
+      track_data.camera2detection = detection.pose;
       track_pub_->msg_.tracks.emplace_back(track_data);
     }
     track_pub_->unlockAndPublish();
