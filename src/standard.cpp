@@ -22,18 +22,21 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
       getParam(controller_nh, "joint_lb_name", std::string("joint_lb")));
   joint_lf_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_lf_name", std::string("joint_lf")));
-  joint_vector_.push_back(joint_rf_);
-  joint_vector_.push_back(joint_rb_);
-  joint_vector_.push_back(joint_lb_);
-  joint_vector_.push_back(joint_lf_);
+  joint_handles_.push_back(&joint_rf_);
+  joint_handles_.push_back(&joint_rb_);
+  joint_handles_.push_back(&joint_lb_);
+  joint_handles_.push_back(&joint_lf_);
 
-  robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
   if (!pid_rf_.init(ros::NodeHandle(controller_nh, "pid_rf")) ||
       !pid_rb_.init(ros::NodeHandle(controller_nh, "pid_rb")) ||
       !pid_lf_.init(ros::NodeHandle(controller_nh, "pid_lf")) ||
       !pid_lb_.init(ros::NodeHandle(controller_nh, "pid_lb")) ||
       !pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow")))
     return false;
+  joint_pids_.push_back(&pid_rb_);
+  joint_pids_.push_back(&pid_rb_);
+  joint_pids_.push_back(&pid_lf_);
+  joint_pids_.push_back(&pid_lb_);
 
   // init odom tf
   if (enable_odom_tf_) {
@@ -69,17 +72,11 @@ void StandardController::moveJoint(const ros::Duration &period) {
   pid_lf_.computeCommand(joint_lf_error, period);
   pid_lb_.computeCommand(joint_lb_error, period);
 
-  // Power limit
-  double real_effort = (std::abs(pid_rf_.getCurrentCmd()) + std::abs(pid_rb_.getCurrentCmd()) +
-      std::abs(pid_lf_.getCurrentCmd()) + std::abs(pid_lb_.getCurrentCmd()));
-  double effort_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.effort_limit;
-  double prop =
-      real_effort > effort_limit ? effort_limit / real_effort : 1.;
-
-  joint_rf_.setCommand(prop * pid_rf_.getCurrentCmd());
-  joint_rb_.setCommand(prop * pid_rb_.getCurrentCmd());
-  joint_lf_.setCommand(prop * pid_lf_.getCurrentCmd());
-  joint_lb_.setCommand(prop * pid_lb_.getCurrentCmd());
+  double scale = getEffortLimitScale();
+  joint_rf_.setCommand(scale * pid_rf_.getCurrentCmd());
+  joint_rb_.setCommand(scale * pid_rb_.getCurrentCmd());
+  joint_lf_.setCommand(scale * pid_lf_.getCurrentCmd());
+  joint_lb_.setCommand(scale * pid_lb_.getCurrentCmd());
 }
 
 geometry_msgs::Twist StandardController::forwardKinematics() {

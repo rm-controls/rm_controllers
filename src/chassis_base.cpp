@@ -7,7 +7,7 @@
 #include <angles/angles.h>
 #include <rm_common/ori_tool.h>
 
-namespace rm_chassis_base {
+namespace rm_chassis_controllers {
 bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
                        ros::NodeHandle &root_nh,
                        ros::NodeHandle &controller_nh) {
@@ -26,6 +26,8 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   ROS_ASSERT(twist_cov_list.size() == 6);
   for (int i = 0; i < twist_cov_list.size(); ++i)
     ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+
+  robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
   // Setup odometry realtime publisher + odom message constant fields
   odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "odom", 100));
@@ -85,16 +87,16 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
 
   updateOdom(time, period);
 
-  if (state_ == rm_chassis_base::PASSIVE)
+  if (state_ == PASSIVE)
     passive();
   else {
-    if (state_ == rm_chassis_base::RAW)
+    if (state_ == RAW)
       raw();
-    else if (state_ == rm_chassis_base::GYRO)
+    else if (state_ == GYRO)
       gyro();
-    else if (state_ == rm_chassis_base::FOLLOW)
+    else if (state_ == FOLLOW)
       follow(time, period);
-    else if (state_ == rm_chassis_base::TWIST)
+    else if (state_ == TWIST)
       twist(time, period);
     moveJoint(period);
   }
@@ -105,8 +107,8 @@ void ChassisBase::passive() {
     state_changed_ = false;
     ROS_INFO("[Chassis] Enter PASSIVE");
 
-    for (unsigned int i = 0; i < joint_vector_.size() - 1; ++i)
-      joint_vector_[i].setCommand(0);
+    for (auto joint:joint_handles_)
+      joint->setCommand(0);
   }
 }
 
@@ -237,6 +239,22 @@ void ChassisBase::recovery() {
   ramp_w->clear(vel.angular.z);
 }
 
+double ChassisBase::getEffortLimitScale() {
+  double real_effort;
+  for (const auto &pid:joint_pids_)
+    real_effort += std::abs(pid->getCurrentCmd());
+  double effort_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.effort_limit;
+  return real_effort > effort_limit ? effort_limit / real_effort : 1.;
+}
+
+void ChassisBase::tfVelToBase(const std::string &from) {
+  try {
+    tf2::doTransform(
+        vel_cmd_, vel_tfed_, robot_state_handle_.lookupTransform(from, "yaw", ros::Time(0)));
+  }
+  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+}
+
 void ChassisBase::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg) {
   cmd_struct_.cmd_chassis_ = *msg;
   cmd_rt_buffer_.writeFromNonRT(cmd_struct_);
@@ -248,13 +266,4 @@ void ChassisBase::cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg) {
   cmd_rt_buffer_.writeFromNonRT(cmd_struct_);
 }
 
-void ChassisBase::tfVelToBase(const std::string &from) {
-  try {
-    tf2::doTransform(
-        vel_cmd_, vel_tfed_,
-        robot_state_handle_.lookupTransform(from, "yaw", ros::Time(0)));
-  }
-  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
-}
-
-} // namespace rm_chassis_base
+} // namespace rm_chassis_controllers

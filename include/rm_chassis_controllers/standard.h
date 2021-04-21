@@ -10,7 +10,7 @@
 
 namespace rm_chassis_controllers {
 
-class StandardController : public rm_chassis_base::ChassisBase {
+class StandardController : public ChassisBase {
  public:
   StandardController() = default;
   bool init(hardware_interface::RobotHW *robot_hw,
@@ -25,6 +25,7 @@ class StandardController : public rm_chassis_base::ChassisBase {
   hardware_interface::JointHandle joint_rf_, joint_lf_, joint_rb_, joint_lb_;
 
 };
+
 } // namespace rm_chassis_controllers
 
 #endif // RM_CHASSIS_CONTROLLER_STANDARD_H

@@ -16,7 +16,7 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
 
-namespace rm_chassis_base {
+namespace rm_chassis_controllers {
 enum StandardState {
   PASSIVE,
   RAW,
@@ -49,10 +49,13 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   void updateOdom(const ros::Time &time, const ros::Duration &period);
   void recovery();
   void tfVelToBase(const std::string &from);
+  double getEffortLimitScale();
+
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg);
 
-  std::vector<hardware_interface::JointHandle> joint_vector_{};
+  std::vector<hardware_interface::JointHandle *> joint_handles_{};
+  std::vector<control_toolbox::Pid *> joint_pids_{};
   hardware_interface::RobotStateHandle robot_state_handle_{};
 
   double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{};
@@ -75,5 +78,7 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   Command cmd_struct_;
   realtime_tools::RealtimeBuffer<Command> cmd_rt_buffer_;
 };
+
 }
+
 #endif // RM_COMMON_INCLUDE_RM_COMMON_CHASSIS_BASE_H_
