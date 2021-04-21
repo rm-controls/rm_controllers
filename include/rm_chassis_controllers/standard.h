@@ -12,8 +12,7 @@ namespace rm_chassis_controllers {
 class StandardController : public ChassisBase {
  public:
   StandardController() = default;
-  bool init(hardware_interface::RobotHW *robot_hw,
-            ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
+  bool init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
 
  private:
   void moveJoint(const ros::Duration &period) override;
