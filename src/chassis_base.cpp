@@ -17,6 +17,8 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   publish_rate_ = getParam(controller_nh, "publish_rate", 100);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
+  timeout_ = getParam(controller_nh, "timeout", 1.0);
+  enable_timeout_ = getParam(controller_nh, "enable_timeout", true);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue twist_cov_list;

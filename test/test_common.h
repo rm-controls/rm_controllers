@@ -12,17 +12,22 @@
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <gazebo_msgs/LinkStates.h>
+#include <sensor_msgs/JointState.h>
 
 const double POSITION_TOLERANCE = 0.05; // 1 mm-s precision
 const double VELOCITY_TOLERANCE = 0.05; // 1 mm-s-1 precision
+const double EPS = 0.01;
 
 class StandardChassisTest : public ::testing::Test {
  public:
   StandardChassisTest() :
       cmd_chassis_pub_(nh_.advertise<rm_msgs::ChassisCmd>("/cmd_chassis", 10)),
       cmd_vel_pub_(nh_.advertise<geometry_msgs::Twist>("/cmd_vel", 10)),
+      vel_cmd_pub_(nh_.advertise<geometry_msgs::Twist>("/vel_cmd", 10)),
+      chassis_cmd_pub_(nh_.advertise<rm_msgs::ChassisCmd>("/chassis_cmd", 10)),
       odom_sub_(nh_.subscribe("/odom", 10, &StandardChassisTest::odomCallback, this)),
       link_states_sub_(nh_.subscribe("/gazebo/link_states", 10, &StandardChassisTest::linkStatesCallback, this)),
+      joint_states_sub_(nh_.subscribe("/joint_states", 10, &StandardChassisTest::jointStatesCallback, this)),
       received_first_odom_(false) {};
 
   ~StandardChassisTest() override {
@@ -53,25 +58,40 @@ class StandardChassisTest : public ::testing::Test {
     cmd_vel_pub_.publish(twist);
   }
 
+  void publishFromWrongTopic(const rm_msgs::ChassisCmd &chassis_cmd, const geometry_msgs::Twist &twist) {
+    chassis_cmd_pub_.publish(chassis_cmd);
+    vel_cmd_pub_.publish(twist);
+  }
+
   const geometry_msgs::Pose &getPose() { return base_link_pose_; }
   const geometry_msgs::Twist &getTwist() { return base_link_twist_; }
+  const nav_msgs::Odometry getLastOdom() { return last_odom_; }
+  const sensor_msgs::JointState getJointStates() { return joint_state_; }
+
+  bool isControllerAlive() const { return (odom_sub_.getNumPublishers() > 0); }
 
  private:
   ros::NodeHandle nh_;
   ros::Publisher cmd_chassis_pub_;
   ros::Publisher cmd_vel_pub_;
+  ros::Publisher vel_cmd_pub_;
+  ros::Publisher chassis_cmd_pub_;
   ros::Subscriber odom_sub_;
   ros::Subscriber link_states_sub_;
+  ros::Subscriber joint_states_sub_;
   nav_msgs::Odometry last_odom_;
   geometry_msgs::Pose base_link_pose_;  //  from Gazebo
   geometry_msgs::Twist base_link_twist_; //  from Gazebo
+  sensor_msgs::JointState joint_state_;
   bool received_first_odom_;
-
-  bool isControllerAlive() const { return (odom_sub_.getNumPublishers() > 0); }
 
   void odomCallback(const nav_msgs::Odometry &odom) {
     last_odom_ = odom;
     received_first_odom_ = true;
+  }
+
+  void jointStatesCallback(const sensor_msgs::JointState &data) {
+    joint_state_ = data;
   }
 
   void linkStatesCallback(const gazebo_msgs::LinkStates &link_states) {
