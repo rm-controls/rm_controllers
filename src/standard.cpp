@@ -4,7 +4,6 @@
 #include "rm_chassis_controllers/standard.h"
 #include <rm_common/ros_utilities.h>
 #include <string>
-#include <angles/angles.h>
 #include <pluginlib/class_list_macros.hpp>
 
 namespace rm_chassis_controllers {
@@ -37,16 +36,6 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   joint_pids_.push_back(&pid_rb_);
   joint_pids_.push_back(&pid_lf_);
   joint_pids_.push_back(&pid_lb_);
-
-  // init odom tf
-  if (enable_odom_tf_) {
-    odom2base_.header.frame_id = "odom";
-    odom2base_.header.stamp = ros::Time::now();
-    odom2base_.child_frame_id = "base_link";
-    odom2base_.transform.rotation.w = 1;
-    tf_broadcaster_.init(root_nh);
-    tf_broadcaster_.sendTransform(odom2base_);
-  }
 
   return true;
 }

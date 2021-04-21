@@ -81,7 +81,7 @@ include_directories(
 add_library(${PROJECT_NAME}
         src/chassis_base.cpp
         src/standard.cpp
-        #        src/sentry.cpp
+        src/sentry.cpp
         #        src/balance.cpp
         )
 
