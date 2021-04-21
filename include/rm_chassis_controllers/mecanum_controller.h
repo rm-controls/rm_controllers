@@ -2,8 +2,8 @@
 // Created by flying on 2021/1/18.
 //
 
-#ifndef RM_CHASSIS_CONTROLLER_STANDARD_H
-#define RM_CHASSIS_CONTROLLER_STANDARD_H
+#ifndef RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
+#define RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
 
 #include <rm_chassis_controllers/chassis_base.h>
 
@@ -25,4 +25,4 @@ class MecanumController : public ChassisBase {
 
 } // namespace rm_chassis_controllers
 
-#endif // RM_CHASSIS_CONTROLLER_STANDARD_H
+#endif // RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
