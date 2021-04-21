@@ -7,6 +7,7 @@
 
     <rosparam file="$(find rm_chassis_controllers)/config/$(arg robot_type).yaml" command="load"/>
     <rosparam if="$(arg ekf)" param="controllers/chassis_controller/enable_odom_tf">false</rosparam>
+    <!-- for test-->
     <rosparam if="$(arg load_bad_yaml)" file="$(find rm_chassis_controllers)/test/wrong.yaml" command="load"/>
 
     <!-- load the controllers -->
