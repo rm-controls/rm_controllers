@@ -13,36 +13,17 @@
 
 namespace rm_chassis_controllers {
 
-class BalanceController : public rm_chassis_base::ChassisBase {
+class BalanceController : public ChassisBase {
  public:
   BalanceController() = default;
-
-  bool init(hardware_interface::RobotHW *robot_hw,
-            ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
-
+  bool init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
   void update(const ros::Time &time, const ros::Duration &period) override;
 
-  using rm_chassis_base::ChassisBase::passive;
-  using rm_chassis_base::ChassisBase::recovery;
-  using rm_chassis_base::ChassisBase::cmdChassisCallback;
-  using rm_chassis_base::ChassisBase::cmdVelCallback;
-  using rm_chassis_base::ChassisBase::tfVelFromYawToBase;
-
  private:
-  void getK(XmlRpc::XmlRpcValue a,
-            XmlRpc::XmlRpcValue b,
-            XmlRpc::XmlRpcValue q,
-            XmlRpc::XmlRpcValue r);
-
-  void raw(const ros::Duration &period) override;
-
-  void follow(const ros::Time &time, const ros::Duration &period) override;
+  void getK(XmlRpc::XmlRpcValue a, XmlRpc::XmlRpcValue b, XmlRpc::XmlRpcValue q, XmlRpc::XmlRpcValue r);
 
   void moveJoint(const ros::Duration &period) override;
-
-  void updateOdom(const ros::Time &time, const ros::Duration &period) override;
-
-  geometry_msgs::Twist iKine(const ros::Duration &period) override;
+  geometry_msgs::Twist forwardKinematics() override;
 
   void dataImuCallback(const sensor_msgs::ImuConstPtr &data);
 
@@ -55,8 +36,8 @@ class BalanceController : public rm_chassis_base::ChassisBase {
   sensor_msgs::Imu imu_data_;
 
   // class member about full state feedback controller
-  static const size_t STATE_DIM = 4;
-  static const size_t CONTROL_DIM = 2;
+  static const int STATE_DIM = 4;
+  static const int CONTROL_DIM = 2;
 
   Eigen::Matrix<double, STATE_DIM, 1> x_{}, x_ref_{};
   Eigen::Matrix<double, CONTROL_DIM, 1> u_{};
