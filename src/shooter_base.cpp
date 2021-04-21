@@ -5,7 +5,7 @@
 #include "rm_shooter_controller/shooter_base.h"
 #include <rm_common/ros_utilities.h>
 
-namespace rm_shooter_base {
+namespace rm_shooter_controllers {
 
 bool Block::isBlock(const ros::Time &time, const hardware_interface::JointHandle joint_handle) {
   bool is_block_now = fabs(joint_handle.getEffort()) > block_config_.block_effort
@@ -160,9 +160,9 @@ void ShooterBase::magazine(const ros::Time &time, const ros::Duration &period) {
   if (magazine_state_changed_)
     pid_magazine_.reset();
   if (magazine_state_ == OPEN)
-    magazine_q_des_ = config_.magazine_q_des;
+    magazine_q_des_ = joint_magazine_.getPosition() + config_.magazine_q_des;
   else if (magazine_state_ == CLOSE)
-    magazine_q_des_ = -config_.magazine_q_des;
+    magazine_q_des_ = joint_magazine_.getPosition() - config_.magazine_q_des;
   else if (magazine_state_ == MAGAZINE_STOP || block_->isBlock(time, joint_magazine_))
     magazine_q_des_ = joint_magazine_.getPosition();
 }
@@ -218,4 +218,4 @@ void ShooterBase::reconfigCB(rm_shooter_controllers::ShooterBaseConfig &config, 
   block_->block_config_rt_buffer_.writeFromNonRT(block_config_non_rt);
 }
 
-} // namespace rm_shooter_base
+} // namespace rm_shooter_controllers

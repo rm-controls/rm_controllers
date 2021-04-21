@@ -15,7 +15,7 @@
 #include <rm_shooter_controllers/ShooterBaseConfig.h>
 #include <rm_msgs/ShootCmd.h>
 
-namespace rm_shooter_base {
+namespace rm_shooter_controllers {
 
 enum State {
   PASSIVE = 0,
@@ -67,16 +67,16 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
                     ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
   virtual void update(const ros::Time &time, const ros::Duration &period) override;
  protected:
-  virtual void passive();
-  virtual void ready(const ros::Duration &period);
-  virtual void push(const ros::Time &time, const ros::Duration &period);
-  virtual void block(const ros::Time &time, const ros::Duration &period);
-  virtual void stop(const ros::Time &time, const ros::Duration &period) {};
-  virtual void magazine(const ros::Time &time, const ros::Duration &period);
-  virtual void moveMagazineJoint(const ros::Duration &period);
   virtual void moveJoint(const ros::Duration &period) = 0;
-  virtual void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
-  virtual void reconfigCB(rm_shooter_controllers::ShooterBaseConfig &config, uint32_t /*level*/);
+  virtual void stop(const ros::Time &time, const ros::Duration &period) {};
+  virtual void push(const ros::Time &time, const ros::Duration &period);
+  void passive();
+  void ready(const ros::Duration &period);
+  void block(const ros::Time &time, const ros::Duration &period);
+  void magazine(const ros::Time &time, const ros::Duration &period);
+  void moveMagazineJoint(const ros::Duration &period);
+  void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
+  void reconfigCB(rm_shooter_controllers::ShooterBaseConfig &config, uint32_t /*level*/);
 
   std::vector<hardware_interface::JointHandle> joint_friction_vector_{}, joint_trigger_vector_{};
   std::vector<control_toolbox::Pid> pid_friction_vector_{}, pid_trigger_vector_{};
@@ -103,5 +103,5 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterBaseConfig> *d_srv_{};
 };
 
-} // namespace rm_shooter_base
+} // namespace rm_shooter_controllers
 #endif //RM_SHOOTER_CONTROLLERS_INCLUDE_RM_SHOOTER_CONTROLLER_SHOOTER_BASE_H_
