@@ -20,9 +20,9 @@
 
 
   <!-- Controller test -->
-  <test test-name="scopperil_test"
+  <test test-name="gyro_test"
         pkg="rm_chassis_controllers"
-        type="scopperil_test"
+        type="gyro_test"
         time-limit="40.0">
   </test>
 </launch>
