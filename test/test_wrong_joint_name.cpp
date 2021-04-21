@@ -11,7 +11,7 @@ TEST_F(StandardChassisTest, testWrongJointName) {
     FAIL() << "Something went wrong while executing test.";
 
   // give up and assume controller load failure after 5 seconds
-  EXPECT_LE(secs, 5);
+  EXPECT_GE(secs, 5);
 }
 
 int main(int argc, char **argv) {
