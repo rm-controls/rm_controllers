@@ -25,6 +25,12 @@ enum StandardState {
   GYRO,
 };
 
+struct Command {
+  geometry_msgs::Twist cmd_vel_;
+  rm_msgs::ChassisCmd cmd_chassis_;
+  ros::Time stamp_;
+};
+
 class ChassisBase : public controller_interface::MultiInterfaceController
     <hardware_interface::EffortJointInterface, hardware_interface::RobotStateInterface> {
  public:
@@ -44,13 +50,16 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   void recovery();
   void tfVelToBase(const std::string &from);
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
-  void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd);
+  void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg);
 
   std::vector<hardware_interface::JointHandle> joint_vector_{};
   hardware_interface::RobotStateHandle robot_state_handle_{};
 
   double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{};
-  bool enable_odom_tf_{};
+  double timeout_{};
+  bool enable_odom_tf_ = false;
+  bool state_changed_ = true;
+  StandardState state_ = PASSIVE;
   RampFilter<double> *ramp_x{}, *ramp_y{}, *ramp_w{};
 
   ros::Time last_publish_time_;
@@ -59,16 +68,12 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   geometry_msgs::Vector3Stamped vel_tfed_{};
   control_toolbox::Pid pid_follow_;
 
-  bool state_changed_{};
-  StandardState state_ = PASSIVE;
-
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
   robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
   ros::Subscriber cmd_chassis_sub_;
   ros::Subscriber cmd_vel_sub_;
-  realtime_tools::RealtimeBuffer<rm_msgs::ChassisCmd> chassis_rt_buffer_;
-  realtime_tools::RealtimeBuffer<geometry_msgs::Twist> vel_rt_buffer_;
-
+  Command cmd_struct_;
+  realtime_tools::RealtimeBuffer<Command> cmd_rt_buffer_;
 };
 }
 #endif // RM_COMMON_INCLUDE_RM_COMMON_CHASSIS_BASE_H_

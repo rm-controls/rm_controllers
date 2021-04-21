@@ -72,10 +72,9 @@ void StandardController::moveJoint(const ros::Duration &period) {
   // Power limit
   double real_effort = (std::abs(pid_rf_.getCurrentCmd()) + std::abs(pid_rb_.getCurrentCmd()) +
       std::abs(pid_lf_.getCurrentCmd()) + std::abs(pid_lb_.getCurrentCmd()));
-
+  double effort_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.effort_limit;
   double prop =
-      real_effort > chassis_rt_buffer_.readFromRT()->effort_limit ? chassis_rt_buffer_.readFromRT()->effort_limit
-          / real_effort : 1.;
+      real_effort > effort_limit ? effort_limit / real_effort : 1.;
 
   joint_rf_.setCommand(prop * pid_rf_.getCurrentCmd());
   joint_rb_.setCommand(prop * pid_rb_.getCurrentCmd());

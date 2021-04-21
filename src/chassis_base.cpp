@@ -18,7 +18,6 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
   timeout_ = getParam(controller_nh, "timeout", 1.0);
-  enable_timeout_ = getParam(controller_nh, "enable_timeout", true);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue twist_cov_list;
@@ -63,16 +62,21 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
 }
 
 void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
-  rm_msgs::ChassisCmd cmd_chassis_ = *chassis_rt_buffer_.readFromRT();
+  rm_msgs::ChassisCmd cmd_chassis_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_;
   ramp_x->setAcc(cmd_chassis_.accel.linear.x);
   ramp_y->setAcc(cmd_chassis_.accel.linear.y);
   ramp_w->setAcc(cmd_chassis_.accel.angular.z);
 
-  geometry_msgs::Twist vel_cmd;
-  vel_cmd = *vel_rt_buffer_.readFromRT();
-  vel_cmd_.vector.x = vel_cmd.linear.x;
-  vel_cmd_.vector.y = vel_cmd.linear.y;
-  vel_cmd_.vector.z = vel_cmd.angular.z;
+  if ((time - cmd_rt_buffer_.readFromRT()->stamp_).toSec() > timeout_) {
+    vel_cmd_.vector.x = 0.;
+    vel_cmd_.vector.y = 0.;
+    vel_cmd_.vector.z = 0.;
+  } else {
+    geometry_msgs::Twist vel_cmd = cmd_rt_buffer_.readFromRT()->cmd_vel_;
+    vel_cmd_.vector.x = vel_cmd.linear.x;
+    vel_cmd_.vector.y = vel_cmd.linear.y;
+    vel_cmd_.vector.z = vel_cmd.angular.z;
+  }
 
   if (state_ != cmd_chassis_.mode) {
     state_ = StandardState(cmd_chassis_.mode);
@@ -234,11 +238,14 @@ void ChassisBase::recovery() {
 }
 
 void ChassisBase::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg) {
-  chassis_rt_buffer_.writeFromNonRT(*msg);
+  cmd_struct_.cmd_chassis_ = *msg;
+  cmd_rt_buffer_.writeFromNonRT(cmd_struct_);
 }
 
-void ChassisBase::cmdVelCallback(const geometry_msgs::Twist::ConstPtr &cmd) {
-  vel_rt_buffer_.writeFromNonRT(*cmd);
+void ChassisBase::cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg) {
+  cmd_struct_.cmd_vel_ = *msg;
+  cmd_struct_.stamp_ = ros::Time::now();
+  cmd_rt_buffer_.writeFromNonRT(cmd_struct_);
 }
 
 void ChassisBase::tfVelToBase(const std::string &from) {
