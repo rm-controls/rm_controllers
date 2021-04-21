@@ -126,10 +126,10 @@ if (${CATKIN_ENABLE_TESTING})
             test/test_standard_chassis.cpp)
     target_link_libraries(standard_chassis_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(scopperil_test
-            test/test_scopperil.test
-            test/test_scopperil.cpp)
-    target_link_libraries(scopperil_test ${catkin_LIBRARIES})
+    add_rostest_gtest(gyro_test
+            test/test_gyro.test
+            test/test_gyro.cpp)
+    target_link_libraries(gyro_test ${catkin_LIBRARIES})
 
     add_rostest_gtest(default_cmd_publisher_test
             test/test_default_cmd_publisher.test
