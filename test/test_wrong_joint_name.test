@@ -2,11 +2,13 @@
   <!-- Make sure to disable timeout -->
   <rosparam file="$(find rm_chassis_controllers)/test/disable_timeout.yaml" command="load"/>
 
+
   <!-- Load common test stuff -->
   <include file="$(find rm_chassis_controllers)/launch/load_controllers.launch">
     <arg name="odom_tf" value="true"/>
     <arg name="yaw_tf" value="false"/>
     <arg name="ekf" default="false"/>
+    <arg name="load_bad_yaml" default="true"/>
   </include>
 
   <include file="$(find rm_gazebo)/launch/empty_world.launch">
