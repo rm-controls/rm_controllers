@@ -9,15 +9,9 @@
 
 namespace rm_shooter_controllers {
 
-class StandardController : public rm_shooter_base::ShooterBase {
+class StandardController : public ShooterBase {
  public:
   StandardController() = default;
-  using rm_shooter_base::ShooterBase::update;
-  using rm_shooter_base::ShooterBase::passive;
-  using rm_shooter_base::ShooterBase::ready;
-  using rm_shooter_base::ShooterBase::block;
-  using rm_shooter_base::ShooterBase::commandCB;
-  using rm_shooter_base::ShooterBase::reconfigCB;
   bool init(hardware_interface::RobotHW *robot_hw,
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
  protected:

@@ -5,7 +5,7 @@
 #include "rm_shooter_controller/shooter_base.h"
 #include <rm_common/ros_utilities.h>
 
-namespace rm_shooter_base {
+namespace rm_shooter_controllers {
 bool ShooterBase::init(hardware_interface::RobotHW *robot_hw,
                        ros::NodeHandle &root_nh,
                        ros::NodeHandle &controller_nh) {
@@ -179,4 +179,4 @@ void ShooterBase::reconfigCB(rm_shooter_controllers::ShooterBaseConfig &config, 
   config_rt_buffer.writeFromNonRT(config_non_rt);
 }
 
-} // namespace rm_shooter_base
+} // namespace rm_shooter_controllers
