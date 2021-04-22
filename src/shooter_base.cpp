@@ -7,7 +7,7 @@
 
 namespace rm_shooter_controllers {
 
-bool Block::isBlock(const ros::Time &time, const hardware_interface::JointHandle joint_handle) {
+bool Block::isBlock(const ros::Time &time, const hardware_interface::JointHandle &joint_handle) {
   bool is_block_now = fabs(joint_handle.getEffort()) > block_config_.block_effort
       && fabs(joint_handle.getVelocity()) < block_config_.block_speed;
   if (is_block_now) {
@@ -28,11 +28,6 @@ bool ShooterBase::init(hardware_interface::RobotHW *robot_hw,
                        ros::NodeHandle &controller_nh) {
   // init config
   config_ = {.push_angle = getParam(controller_nh, "push_angle", 0.),
-      .block_effort = getParam(controller_nh, "block_effort", 0.),
-      .block_duration = getParam(controller_nh, "block_duration", 0.),
-      .block_speed = getParam(controller_nh, "block_speed", 0.),
-      .anti_block_angle = getParam(controller_nh, "anti_block_angle", 0.),
-      .anti_block_error = getParam(controller_nh, "anti_block_error", 0.),
       .qd_10 = getParam(controller_nh, "qd_10", 0.),
       .qd_15 = getParam(controller_nh, "qd_15", 0.),
       .qd_16 = getParam(controller_nh, "qd_16", 0.),
@@ -139,7 +134,8 @@ void ShooterBase::block(const ros::Time &time, const ros::Duration &period) {
 
     trigger_q_des_ = joint_trigger_vector_[0].getPosition() + block_->block_config_.anti_block_angle;
   }
-  if (fabs(trigger_q_des_ - joint_trigger_vector_[0].getPosition()) < block_->block_config_.anti_block_error) {
+  if (fabs(trigger_q_des_ - joint_trigger_vector_[0].getPosition()) < block_->block_config_.anti_block_error ||
+      block_->isBlock(time, joint_trigger_vector_[0])) {
     state_ = PUSH;
     state_changed_ = true;
     is_out_from_block_ = true;

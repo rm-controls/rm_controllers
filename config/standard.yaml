@@ -10,7 +10,6 @@ controllers:
     joint_friction_left_name: "left_friction_wheel_joint"
     joint_friction_right_name: "right_friction_wheel_joint"
     joint_trigger_name: "trigger_joint"
-    joint_magazine_name: "magazine_joint"
     enter_push_qd_coef: 0.95
     push_angle: 0.8
     push_angle_error: 0.04
@@ -19,12 +18,10 @@ controllers:
     block_speed: 0.5
     anti_block_angle: 0.15
     anti_block_error: 0.1
-    magazine_q_des: 0.1
     qd_15: 474.0
     qd_18: 520.0
     qd_30: 714.0
     pid_friction_l: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
     pid_friction_r: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
     pid_trigger: { p: 18.4, i: 0.0, d: 0.6, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
-    pid_magazine: {p: 0.001, i: 0.01, d: 0.001, i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
     publish_rate: 50

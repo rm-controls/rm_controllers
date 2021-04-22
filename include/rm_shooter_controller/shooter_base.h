@@ -26,7 +26,7 @@ enum State {
 };
 
 struct Config {
-  double push_angle, magazine_q_des;
+  double push_angle;
   double qd_10, qd_15, qd_16, qd_18, qd_30;
 };
 
@@ -36,7 +36,7 @@ struct BlockConfig {
 
 class Block {
  public:
-  Block(ros::NodeHandle &controller_nh) {
+  explicit Block(ros::NodeHandle &controller_nh) {
     block_config_ = {.block_effort = getParam(controller_nh, "block_effort", 0.),
         .block_duration = getParam(controller_nh, "block_duration", 0.),
         .block_speed = getParam(controller_nh, "block_speed", 0.),
@@ -44,13 +44,12 @@ class Block {
         .anti_block_error = getParam(controller_nh, "anti_block_error", 0.),};
     block_config_rt_buffer_.initRT(block_config_);
   };
-  bool isBlock(const ros::Time &time, const hardware_interface::JointHandle joint_handle);
+  bool isBlock(const ros::Time &time, const hardware_interface::JointHandle &joint_handle);
 
   BlockConfig block_config_{};
   realtime_tools::RealtimeBuffer<BlockConfig> block_config_rt_buffer_{};
   bool is_start_block_time_ = false;
   ros::Time block_time_;
-
 };
 
 class ShooterBase : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
@@ -77,7 +76,6 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   double enter_push_qd_coef_{}, push_angle_error_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
-  bool is_start_block_time_ = false;
   bool is_out_from_block_ = false;
 
   Block *block_{};
