@@ -21,17 +21,17 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
       getParam(controller_nh, "joint_friction_right_name", std::string("joint_friction_right")));
   joint_trigger_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_trigger_name", std::string("joint_trigger")));
-  joint_friction_vector_.push_back(joint_friction_l_);
-  joint_friction_vector_.push_back(joint_friction_r_);
-  joint_trigger_vector_.push_back(joint_trigger_);
+  joint_friction_handle_.push_back(&joint_friction_l_);
+  joint_friction_handle_.push_back(&joint_friction_r_);
+  joint_trigger_handle_.push_back(&joint_trigger_);
 
   if (!pid_friction_l_.init(ros::NodeHandle(controller_nh, "pid_friction_l"))
       || !pid_friction_r_.init(ros::NodeHandle(controller_nh, "pid_friction_r"))
       || !pid_trigger_.init(ros::NodeHandle(controller_nh, "pid_trigger")))
     return false;
-  pid_friction_vector_.push_back(pid_friction_l_);
-  pid_friction_vector_.push_back(pid_friction_r_);
-  pid_trigger_vector_.push_back(pid_trigger_);
+  pid_friction_vector_.push_back(&pid_friction_l_);
+  pid_friction_vector_.push_back(&pid_friction_r_);
+  pid_trigger_vector_.push_back(&pid_trigger_);
 
   return true;
 }

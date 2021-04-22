@@ -44,7 +44,7 @@ class Block {
         .anti_block_error = getParam(controller_nh, "anti_block_error", 0.),};
     block_config_rt_buffer_.initRT(block_config_);
   };
-  bool isBlock(const ros::Time &time, const hardware_interface::JointHandle &joint_handle);
+  bool isBlock(const ros::Time &time, const hardware_interface::JointHandle *joint_handle);
 
   BlockConfig block_config_{};
   realtime_tools::RealtimeBuffer<BlockConfig> block_config_rt_buffer_{};
@@ -69,8 +69,8 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
   void reconfigCB(rm_shooter_controllers::ShooterBaseConfig &config, uint32_t /*level*/);
 
-  std::vector<hardware_interface::JointHandle> joint_friction_vector_{}, joint_trigger_vector_{};
-  std::vector<control_toolbox::Pid> pid_friction_vector_{}, pid_trigger_vector_{};
+  std::vector<hardware_interface::JointHandle *> joint_friction_handle_{}, joint_trigger_handle_{};
+  std::vector<control_toolbox::Pid *> pid_friction_vector_{}, pid_trigger_vector_{};
 
   double friction_qd_des_{}, trigger_q_des_{}, last_trigger_q_des_{};
   double enter_push_qd_coef_{}, push_angle_error_{};

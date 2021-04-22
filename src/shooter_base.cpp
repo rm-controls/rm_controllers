@@ -7,9 +7,9 @@
 
 namespace rm_shooter_controllers {
 
-bool Block::isBlock(const ros::Time &time, const hardware_interface::JointHandle &joint_handle) {
-  bool is_block_now = fabs(joint_handle.getEffort()) > block_config_.block_effort
-      && fabs(joint_handle.getVelocity()) < block_config_.block_speed;
+bool Block::isBlock(const ros::Time &time, const hardware_interface::JointHandle *joint_handle) {
+  bool is_block_now = fabs(joint_handle->getEffort()) > block_config_.block_effort
+      && fabs(joint_handle->getVelocity()) < block_config_.block_speed;
   if (is_block_now) {
     if (!is_start_block_time_) {
       block_time_ = time;
@@ -94,10 +94,10 @@ void ShooterBase::passive() {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PASSIVE");
 
-    for (unsigned int i = 0; i < joint_friction_vector_.size(); ++i)
-      joint_friction_vector_[i].setCommand(0);
-    for (unsigned int i = 0; i < joint_trigger_vector_.size(); ++i)
-      joint_trigger_vector_[i].setCommand(0);
+    for (auto joint : joint_friction_handle_)
+      joint->setCommand(0);
+    for (auto joint : joint_trigger_handle_)
+      joint->setCommand(0);
   }
 }
 
@@ -105,9 +105,9 @@ void ShooterBase::ready(const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter READY");
-    trigger_q_des_ = joint_trigger_vector_[0].getPosition();
-    for (unsigned int i = 0; i < pid_friction_vector_.size(); ++i)
-      pid_friction_vector_[i].reset();
+    trigger_q_des_ = joint_trigger_handle_[0]->getPosition();
+    for (auto pid : pid_friction_vector_)
+      pid->reset();
   }
 }
 
@@ -116,11 +116,11 @@ void ShooterBase::push(const ros::Time &time, const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PUSH");
 
-    trigger_q_des_ = joint_trigger_vector_[0].getPosition();
-    pid_trigger_vector_[0].reset();
+    trigger_q_des_ = joint_trigger_handle_[0]->getPosition();
+    pid_trigger_vector_[0]->reset();
   }
 
-  if (block_->isBlock(time, joint_trigger_vector_[0])) {
+  if (block_->isBlock(time, joint_trigger_handle_[0])) {
     state_ = BLOCK;
     state_changed_ = true;
     ROS_INFO("[Shooter] Exit PUSH");
@@ -132,10 +132,10 @@ void ShooterBase::block(const ros::Time &time, const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter BLOCK");
 
-    trigger_q_des_ = joint_trigger_vector_[0].getPosition() + block_->block_config_.anti_block_angle;
+    trigger_q_des_ = joint_trigger_handle_[0]->getPosition() + block_->block_config_.anti_block_angle;
   }
-  if (fabs(trigger_q_des_ - joint_trigger_vector_[0].getPosition()) < block_->block_config_.anti_block_error ||
-      block_->isBlock(time, joint_trigger_vector_[0])) {
+  if (fabs(trigger_q_des_ - joint_trigger_handle_[0]->getPosition()) < block_->block_config_.anti_block_error ||
+      block_->isBlock(time, joint_trigger_handle_[0])) {
     state_ = PUSH;
     state_changed_ = true;
     is_out_from_block_ = true;
