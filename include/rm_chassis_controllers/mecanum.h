@@ -2,16 +2,16 @@
 // Created by flying on 2021/1/18.
 //
 
-#ifndef RM_CHASSIS_CONTROLLER_STANDARD_H
-#define RM_CHASSIS_CONTROLLER_STANDARD_H
+#ifndef RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
+#define RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
 
 #include <rm_chassis_controllers/chassis_base.h>
 
 namespace rm_chassis_controllers {
 
-class StandardController : public ChassisBase {
+class MecanumController : public ChassisBase {
  public:
-  StandardController() = default;
+  MecanumController() = default;
   bool init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
 
  private:
@@ -24,4 +24,4 @@ class StandardController : public ChassisBase {
 
 } // namespace rm_chassis_controllers
 
-#endif // RM_CHASSIS_CONTROLLER_STANDARD_H
+#endif // RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
