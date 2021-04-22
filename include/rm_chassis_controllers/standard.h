@@ -19,7 +19,6 @@ class StandardController : public ChassisBase {
   geometry_msgs::Twist forwardKinematics() override;
 
   control_toolbox::Pid pid_rf_, pid_lf_, pid_rb_, pid_lb_;
-  control_toolbox::Pid pid_follow_;
   hardware_interface::JointHandle joint_rf_, joint_lf_, joint_rb_, joint_lb_;
 };
 

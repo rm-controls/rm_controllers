@@ -29,8 +29,7 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   if (!pid_rf_.init(ros::NodeHandle(controller_nh, "pid_rf")) ||
       !pid_rb_.init(ros::NodeHandle(controller_nh, "pid_rb")) ||
       !pid_lf_.init(ros::NodeHandle(controller_nh, "pid_lf")) ||
-      !pid_lb_.init(ros::NodeHandle(controller_nh, "pid_lb")) ||
-      !pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow")))
+      !pid_lb_.init(ros::NodeHandle(controller_nh, "pid_lb")))
     return false;
   joint_pids_.push_back(&pid_rb_);
   joint_pids_.push_back(&pid_rb_);

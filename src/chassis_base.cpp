@@ -60,6 +60,9 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   cmd_vel_sub_ =
       root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisBase::cmdVelCallback, this);
 
+  if (!pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow")))
+    return false;
+
   return true;
 }
 
