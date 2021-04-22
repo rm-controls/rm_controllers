@@ -9,6 +9,7 @@
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
+#include <rm_common/ros_utilities.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_shooter_controllers/ShooterBaseConfig.h>
@@ -25,8 +26,31 @@ enum State {
 };
 
 struct Config {
-  double push_angle, block_effort, block_duration, block_speed, anti_block_angle, anti_block_error;
+  double push_angle, magazine_q_des;
   double qd_10, qd_15, qd_16, qd_18, qd_30;
+};
+
+struct BlockConfig {
+  double block_effort, block_duration, block_speed, anti_block_angle, anti_block_error;
+};
+
+class Block {
+ public:
+  Block(ros::NodeHandle &controller_nh) {
+    block_config_ = {.block_effort = getParam(controller_nh, "block_effort", 0.),
+        .block_duration = getParam(controller_nh, "block_duration", 0.),
+        .block_speed = getParam(controller_nh, "block_speed", 0.),
+        .anti_block_angle = getParam(controller_nh, "anti_block_angle", 0.),
+        .anti_block_error = getParam(controller_nh, "anti_block_error", 0.),};
+    block_config_rt_buffer_.initRT(block_config_);
+  };
+  bool isBlock(const ros::Time &time, const hardware_interface::JointHandle joint_handle);
+
+  BlockConfig block_config_{};
+  realtime_tools::RealtimeBuffer<BlockConfig> block_config_rt_buffer_{};
+  bool is_start_block_time_ = false;
+  ros::Time block_time_;
+
 };
 
 class ShooterBase : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
@@ -56,8 +80,8 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   bool is_start_block_time_ = false;
   bool is_out_from_block_ = false;
 
+  Block *block_{};
   ros::Time last_shoot_time_;
-  ros::Time block_time_;
 
   State state_ = PASSIVE;
   Config config_{};
