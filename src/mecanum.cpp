@@ -1,7 +1,7 @@
 //
 // Created by flying on 2021/1/18.
 //
-#include "rm_chassis_controllers/mecanum_controller.h"
+#include "rm_chassis_controllers/mecanum.h"
 #include <rm_common/ros_utilities.h>
 #include <string>
 #include <pluginlib/class_list_macros.hpp>

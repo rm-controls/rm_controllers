@@ -79,10 +79,10 @@ include_directories(
 
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
-        src/mecanum_controller.cpp
+        src/chassis_base.cpp
+        src/mecanum.cpp
         src/sentry.cpp
         src/balance.cpp
-        src/chassis_base.cpp
         )
 
 ## Specify libraries to link executable targets against
