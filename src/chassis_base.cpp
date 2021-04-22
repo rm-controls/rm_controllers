@@ -250,7 +250,7 @@ double ChassisBase::getEffortLimitScale() {
 void ChassisBase::tfVelToBase(const std::string &from) {
   try {
     tf2::doTransform(
-        vel_cmd_, vel_tfed_, robot_state_handle_.lookupTransform(from, "yaw", ros::Time(0)));
+        vel_cmd_, vel_tfed_, robot_state_handle_.lookupTransform("base_link", from, ros::Time(0)));
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }
