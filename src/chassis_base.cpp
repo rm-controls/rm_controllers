@@ -249,7 +249,7 @@ void ChassisBase::recovery() {
 
 double ChassisBase::getEffortLimitScale() {
   double real_effort;
-  for (const auto &pid:joint_pids_)
+  for (const auto &pid:wheel_pids_)
     real_effort += std::abs(pid->getCurrentCmd());
   double effort_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.effort_limit;
   return real_effort > effort_limit ? effort_limit / real_effort : 1.;
