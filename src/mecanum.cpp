@@ -31,10 +31,10 @@ bool MecanumController::init(hardware_interface::RobotHW *robot_hw,
       !pid_lf_.init(ros::NodeHandle(controller_nh, "pid_lf")) ||
       !pid_lb_.init(ros::NodeHandle(controller_nh, "pid_lb")))
     return false;
-  joint_pids_.push_back(&pid_rb_);
-  joint_pids_.push_back(&pid_rb_);
-  joint_pids_.push_back(&pid_lf_);
-  joint_pids_.push_back(&pid_lb_);
+  wheel_pids_.push_back(&pid_rb_);
+  wheel_pids_.push_back(&pid_rb_);
+  wheel_pids_.push_back(&pid_lf_);
+  wheel_pids_.push_back(&pid_lb_);
 
   return true;
 }

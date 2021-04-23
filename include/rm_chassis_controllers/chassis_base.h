@@ -55,7 +55,7 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg);
 
   std::vector<hardware_interface::JointHandle *> joint_handles_{};
-  std::vector<control_toolbox::Pid *> joint_pids_{};
+  std::vector<control_toolbox::Pid *> wheel_pids_{};
   hardware_interface::RobotStateHandle robot_state_handle_{};
 
   double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{};
@@ -67,8 +67,8 @@ class ChassisBase : public controller_interface::MultiInterfaceController
 
   ros::Time last_publish_time_;
   geometry_msgs::TransformStamped odom2base_{};
-  geometry_msgs::Vector3Stamped vel_cmd_{};
-  geometry_msgs::Vector3Stamped vel_tfed_{};
+  geometry_msgs::Vector3Stamped vel_cmd_{}; // x, y, w
+  geometry_msgs::Vector3Stamped vel_tfed_{}; // x, y, w
   control_toolbox::Pid pid_follow_;
 
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;

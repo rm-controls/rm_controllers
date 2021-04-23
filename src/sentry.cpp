@@ -18,7 +18,7 @@ bool SentryController::init(hardware_interface::RobotHW *robot_hw,
 
   if (!pid_wheel_.init(ros::NodeHandle(controller_nh, "pid_wheel")))
     return false;
-  joint_pids_.push_back(&pid_wheel_);
+  wheel_pids_.push_back(&pid_wheel_);
 
   return true;
 }
