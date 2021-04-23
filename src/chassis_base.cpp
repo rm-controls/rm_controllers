@@ -69,9 +69,6 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
 
 void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
   rm_msgs::ChassisCmd cmd_chassis_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_;
-  ramp_x->setAcc(cmd_chassis_.accel.linear.x);
-  ramp_y->setAcc(cmd_chassis_.accel.linear.y);
-  ramp_w->setAcc(cmd_chassis_.accel.angular.z);
 
   if ((time - cmd_rt_buffer_.readFromRT()->stamp_).toSec() > timeout_) {
     vel_cmd_.vector.x = 0.;
@@ -102,6 +99,13 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
       follow(time, period);
     else if (state_ == TWIST)
       twist(time, period);
+
+    ramp_x->setAcc(cmd_chassis_.accel.linear.x);
+    ramp_y->setAcc(cmd_chassis_.accel.linear.y);
+    ramp_w->setAcc(cmd_chassis_.accel.angular.z);
+    ramp_x->input(vel_tfed_.vector.x);
+    ramp_y->input(vel_tfed_.vector.y);
+    ramp_w->input(vel_tfed_.vector.z);
     moveJoint(period);
   }
 }

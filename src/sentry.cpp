@@ -24,8 +24,6 @@ bool SentryController::init(hardware_interface::RobotHW *robot_hw,
 }
 
 void SentryController::moveJoint(const ros::Duration &period) {
-  ramp_x->input(vel_tfed_.vector.x);
-
   double error = ramp_x->output() / wheel_radius_ - joint_wheel_.getVelocity();
   pid_wheel_.computeCommand(error, period);
   joint_wheel_.setCommand(getEffortLimitScale() * pid_wheel_.getCurrentCmd());

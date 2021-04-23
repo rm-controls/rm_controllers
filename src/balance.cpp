@@ -67,8 +67,6 @@ geometry_msgs::Twist BalanceController::forwardKinematics() {
 }
 
 void BalanceController::moveJoint(const ros::Duration &period) {
-  ramp_x->input(vel_tfed_.vector.x);
-  ramp_w->input(vel_tfed_.vector.z);
   x_ref_(2) = ramp_x->output();
   x_ref_(3) = ramp_w->output();
 
