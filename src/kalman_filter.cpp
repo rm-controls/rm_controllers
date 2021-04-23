@@ -66,6 +66,7 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh) {
       0., 0., 0., 0., 0., 0., config_.r_x, 0.,
       0., 0., 0., 0., 0., 0., 0., config_.r_dx;
   x_ << 0., 0., 0., 0., 0., 0., 0., 0.;
+  x0_ << 0., 0., 0., 0., 0., 0., 0., 0.;
   u_ << 0., 0., 0., 0., 0., 0., 0., 0.;
 
   d_srv_ =
@@ -75,7 +76,7 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh) {
   d_srv_->setCallback(cb);
 
   kalman_filter_ = new KalmanFilter<double>(a_, b_, h_, q_, r_);
-  kalman_filter_->clear(x_);
+  kalman_filter_->clear(x0_);
 
   if (is_debug_)
     realtime_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::KalmanData>(nh, "kalman_filter", 100));
@@ -86,7 +87,10 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   double dt = std::abs(map2detection.header.stamp.toSec() - map2detection_last_.header.stamp.toSec());
   if (dt > 0.1) {
     map2detection_last_ = map2detection;
-    kalman_filter_->clear(x_);
+    x0_[0] = map2detection.transform.translation.x;
+    x0_[2] = map2detection.transform.translation.y;
+    x0_[4] = map2detection.transform.translation.z;
+    kalman_filter_->clear(x0_);
     is_filter_ = false;
     return;
   }

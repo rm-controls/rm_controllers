@@ -36,7 +36,7 @@ class KalmanFilterTrack {
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::KalmanData>> realtime_pub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   ros::Time last_detection_time_;
-  Vec8<double> x_, u_, x_hat_;
+  Vec8<double> x_, x0_, u_, x_hat_;
   Mat8<double> a_, b_, h_, q_, r_;
   bool is_debug_{};
   bool dynamic_reconfig_initialized_ = false;
