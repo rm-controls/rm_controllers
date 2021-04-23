@@ -31,18 +31,15 @@ bool MecanumController::init(hardware_interface::RobotHW *robot_hw,
       !pid_lf_.init(ros::NodeHandle(controller_nh, "pid_lf")) ||
       !pid_lb_.init(ros::NodeHandle(controller_nh, "pid_lb")))
     return false;
-  joint_pids_.push_back(&pid_rb_);
-  joint_pids_.push_back(&pid_rb_);
-  joint_pids_.push_back(&pid_lf_);
-  joint_pids_.push_back(&pid_lb_);
+  wheel_pids_.push_back(&pid_rb_);
+  wheel_pids_.push_back(&pid_rb_);
+  wheel_pids_.push_back(&pid_lf_);
+  wheel_pids_.push_back(&pid_lb_);
 
   return true;
 }
 
 void MecanumController::moveJoint(const ros::Duration &period) {
-  ramp_x->input(vel_tfed_.vector.x);
-  ramp_y->input(vel_tfed_.vector.y);
-  ramp_w->input(vel_tfed_.vector.z);
 
   double a = (wheel_base_ + wheel_track_) / 2.0;
   double joint_rf_des = (ramp_x->output() + ramp_y->output() + ramp_w->output() * a) / wheel_radius_;

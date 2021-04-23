@@ -18,14 +18,12 @@ bool SentryController::init(hardware_interface::RobotHW *robot_hw,
 
   if (!pid_wheel_.init(ros::NodeHandle(controller_nh, "pid_wheel")))
     return false;
-  joint_pids_.push_back(&pid_wheel_);
+  wheel_pids_.push_back(&pid_wheel_);
 
   return true;
 }
 
 void SentryController::moveJoint(const ros::Duration &period) {
-  ramp_x->input(vel_tfed_.vector.x);
-
   double error = ramp_x->output() / wheel_radius_ - joint_wheel_.getVelocity();
   pid_wheel_.computeCommand(error, period);
   joint_wheel_.setCommand(getEffortLimitScale() * pid_wheel_.getCurrentCmd());

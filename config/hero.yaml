@@ -7,10 +7,10 @@ controllers:
     publish_rate: 100
   chassis_controller:
     type: rm_chassis_controllers/MecanumController
-    joint_lf_name: "front_left_wheel_joint"
-    joint_rf_name: "front_right_wheel_joint"
-    joint_lb_name: "back_left_wheel_joint"
-    joint_rb_name: "back_right_wheel_joint"
+    joint_lf_name: "left_front_wheel_joint"
+    joint_rf_name: "right_front_wheel_joint"
+    joint_lb_name: "left_back_wheel_joint"
+    joint_rb_name: "right_back_wheel_joint"
     publish_rate_: 100
     enable_odom_tf: true
     wheel_base: 0.47
