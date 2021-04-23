@@ -36,8 +36,8 @@ bool SwerveController::init(hardware_interface::RobotHW *robot_hw,
         .joint_wheel_ =effort_jnt_interface->getHandle(module.second["wheel"]["name"]),
         .pid_pivot_ = control_toolbox::Pid(),
         .pid_wheel_ = control_toolbox::Pid()};
-    if (!m.pid_pivot_.init(ros::NodeHandle(controller_nh, "pivot/pid")) ||
-        !m.pid_wheel_.init(ros::NodeHandle(controller_nh, "wheel/pid")))
+    if (!m.pid_pivot_.init(ros::NodeHandle(controller_nh, "modules/" + module.first + "/pivot/pid")) ||
+        !m.pid_wheel_.init(ros::NodeHandle(controller_nh, "modules/" + module.first + "/wheel/pid")))
       return false;
     if (module.second["pivot"].hasMember("offset"))
       m.pivot_offset_ = module.second["pivot"]["offset"];
