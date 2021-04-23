@@ -14,7 +14,7 @@ namespace rm_chassis_controllers {
 struct Module {
   int id_;
   Vec2<double> position_;
-  double pivot_offset_;
+  double pivot_offset_, wheel_radius_;
   hardware_interface::JointHandle joint_pivot_, joint_wheel_;
   control_toolbox::Pid pid_pivot_, pid_wheel_;
 };
