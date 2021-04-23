@@ -5,7 +5,7 @@
 #ifndef RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
 #define RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
 
-#include <rm_chassis_controllers/chassis_base.h>
+#include "rm_chassis_controllers/chassis_base.h"
 
 namespace rm_chassis_controllers {
 
