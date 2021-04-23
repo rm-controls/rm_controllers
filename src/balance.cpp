@@ -1,13 +1,14 @@
 //
 // Created by chenzheng on 2021/2/23.
 //
+#include "rm_chassis_controllers/balance.h"
 
-#include <rm_common/ros_utilities.h>
 #include <string>
 #include <angles/angles.h>
-#include <rm_common/ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
-#include "rm_chassis_controllers/balance.h"
+
+#include <rm_common/ros_utilities.h>
+#include <rm_common/ori_tool.h>
 #include <rm_msgs/BalanceState.h>
 
 namespace rm_chassis_controllers {
