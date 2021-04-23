@@ -7,19 +7,16 @@
 
 #include "rm_chassis_controllers/chassis_base.h"
 
-namespace rm_chassis_controllers {
-struct Module {
-  hardware_interface::JointHandle pivot_, wheel_;
-};
+#include <rm_common/eigen_types.h>
 
-class SwerveKinematics {
- public:
-  SwerveKinematics() = default;
-  void addModule();
-  void inverseKinematics(const geometry_msgs::Twist &twist);
-  geometry_msgs::Twist forwardKinematics();
- private:
-//  std::vector<>
+namespace rm_chassis_controllers {
+
+struct Module {
+  int id_;
+  Vec2<double> position_;
+  double pivot_offset_;
+  hardware_interface::JointHandle joint_pivot_, joint_wheel_;
+  control_toolbox::Pid pid_pivot_, pid_wheel_;
 };
 
 class SwerveController : public ChassisBase {
@@ -30,9 +27,7 @@ class SwerveController : public ChassisBase {
  private:
   void moveJoint(const ros::Duration &period) override;
   geometry_msgs::Twist forwardKinematics() override;
-
-  control_toolbox::Pid pid_rf_, pid_lf_, pid_rb_, pid_lb_;
-  hardware_interface::JointHandle joint_rf_, joint_lf_, joint_rb_, joint_lb_;
+  std::vector<Module> modules_;
 };
 
 } // namespace rm_chassis_controllers
