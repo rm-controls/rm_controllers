@@ -21,7 +21,6 @@ bool SwerveController::init(hardware_interface::RobotHW *robot_hw,
     ROS_ASSERT(module.second.hasMember("position"));
     ROS_ASSERT(module.second["position"].getType() == XmlRpc::XmlRpcValue::TypeArray);
     ROS_ASSERT(module.second["position"].size() == 2);
-    ROS_ASSERT(module.second.hasMember("wheel_radius"));
     ROS_ASSERT(module.second.hasMember("pivot"));
     ROS_ASSERT(module.second["pivot"].getType() == XmlRpc::XmlRpcValue::TypeStruct);
     ROS_ASSERT(module.second["pivot"].hasMember("name"));

@@ -8,6 +8,7 @@ controllers:
 
   chassis_controller:
     type: rm_chassis_controllers/SwerveController
+    twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
     modules:
       left_front:
         position: [ 0.2, 0.2 ]
