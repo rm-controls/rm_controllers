@@ -71,10 +71,10 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init,
   return true;
 }
 
-bool Bullet3DSolver::isHit(const DVec<double> &angle_init, double target_position_x,
-                           double target_position_y, double target_position_z,
-                           double target_speed_x, double target_speed_y,
-                           double target_speed_z, double bullet_speed) {
+double Bullet3DSolver::isHit(const DVec<double> &angle_init, double target_position_x,
+                             double target_position_y, double target_position_z,
+                             double target_speed_x, double target_speed_y,
+                             double target_speed_z, double bullet_speed) {
   config_ = *config_rt_buffer_.readFromRT();
   setResistanceCoefficient(bullet_speed, config_);
   pos_[0] = target_position_x;
@@ -86,10 +86,10 @@ bool Bullet3DSolver::isHit(const DVec<double> &angle_init, double target_positio
 
   this->setBulletSpeed(bullet_speed);
   setTarget(pos_, vel_);
-  double error[2]{};
-  double error_init = computeError(angle_init[0], angle_init[1], error);
+  double error_polar[2]{};
+  double error = computeError(angle_init[0], angle_init[1], error_polar);
 
-  return error_init < 0.001;
+  return error;
 }
 
 std::vector<Vec3<double>> Bullet3DSolver::getPointData3D() {

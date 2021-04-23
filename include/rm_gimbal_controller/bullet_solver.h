@@ -80,10 +80,10 @@ class BulletSolver {
                      double target_position_x, double target_position_y, double target_position_z,
                      double target_speed_x, double target_speed_y, double target_speed_z,
                      double bullet_speed) = 0;
-  virtual bool isHit(const DVec<double> &angle_init,
-                     double target_position_x, double target_position_y, double target_position_z,
-                     double target_speed_x, double target_speed_y, double target_speed_z,
-                     double bullet_speed) = 0;
+  virtual double isHit(const DVec<double> &angle_init,
+                       double target_position_x, double target_position_y, double target_position_z,
+                       double target_speed_x, double target_speed_y, double target_speed_z,
+                       double bullet_speed) = 0;
   virtual void modelRviz(double x_offset, double y_offset, double z_offset) = 0;
   void setResistanceCoefficient(double bullet_speed, Config config);
 
@@ -115,10 +115,10 @@ class Bullet3DSolver : public BulletSolver {
              double target_position_x, double target_position_y, double target_position_z,
              double target_speed_x, double target_speed_y, double target_speed_z,
              double bullet_speed) override;
-  bool isHit(const DVec<double> &angle_init,
-             double target_position_x, double target_position_y, double target_position_z,
-             double target_speed_x, double target_speed_y, double target_speed_z,
-             double bullet_speed) override;
+  double isHit(const DVec<double> &angle_init,
+               double target_position_x, double target_position_y, double target_position_z,
+               double target_speed_x, double target_speed_y, double target_speed_z,
+               double bullet_speed) override;
   void modelRviz(double x_offset, double y_offset, double z_offset) override;
   Vec2<double> getResult(const ros::Time &time, geometry_msgs::TransformStamped map2pitch);
   std::vector<Vec3<double>> getPointData3D();
