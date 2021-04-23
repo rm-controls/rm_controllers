@@ -202,7 +202,7 @@ void Controller::updateTf() {
       try {
         tf2::fromMsg(detection.pose, camera2detection_tf);
         map2camera = robot_state_handle_.lookupTransform("map",
-                                                         "camera",
+                                                         "camera_link",
                                                          detection_time - ros::Duration(config_.time_compensation));
         tf2::fromMsg(map2camera.transform, map2camera_tf);
         map2detection_tf = map2camera_tf * camera2detection_tf;
@@ -232,7 +232,7 @@ void Controller::updateTrackAndPub(const ros::Time &time, int id) {
   tf_broadcaster_.sendTransform(map2detection);
 
   try {
-    camera2detection = robot_state_handle_.lookupTransform("camera",
+    camera2detection = robot_state_handle_.lookupTransform("camera_link",
                                                            "detection" + std::to_string(id),
                                                            ros::Time(0));
   }
