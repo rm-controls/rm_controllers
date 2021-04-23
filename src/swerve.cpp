@@ -42,6 +42,9 @@ bool SwerveController::init(hardware_interface::RobotHW *robot_hw,
     if (module.second["pivot"].hasMember("offset"))
       m.pivot_offset_ = module.second["pivot"]["offset"];
 
+    joint_handles_.push_back(effort_jnt_interface->getHandle(module.second["pivot"]["name"]));
+    joint_handles_.push_back(effort_jnt_interface->getHandle(module.second["wheel"]["name"]));
+    wheel_pids_.push_back(&m.pid_wheel_);
     modules_.push_back(m);
   }
   return true;
