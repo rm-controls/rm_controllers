@@ -5,6 +5,7 @@
 #include "rm_chassis_controllers/swerve.h"
 
 #include <angles/angles.h>
+#include <pluginlib/class_list_macros.hpp>
 
 namespace rm_chassis_controllers {
 
@@ -17,33 +18,34 @@ bool SwerveController::init(hardware_interface::RobotHW *robot_hw,
   controller_nh.getParam("modules", modules);
   ROS_ASSERT(modules.getType() == XmlRpc::XmlRpcValue::TypeStruct);
   for (const auto &module:modules) {
-    ROS_ASSERT(modules.hasMember("position"));
-    ROS_ASSERT(modules["position"].getType() == XmlRpc::XmlRpcValue::TypeArray);
-    ROS_ASSERT(modules["position"].size() == 2);
-    ROS_ASSERT(modules.hasMember("wheel_radius"));
-    ROS_ASSERT(modules.hasMember("pivot"));
-    ROS_ASSERT(modules["pivot"].getType() == XmlRpc::XmlRpcValue::TypeStruct);
-    ROS_ASSERT(modules["pivot"].hasMember("name"));
-    ROS_ASSERT(modules.hasMember("wheel"));
-    ROS_ASSERT(modules["wheel"].getType() == XmlRpc::XmlRpcValue::TypeStruct);
-    ROS_ASSERT(modules["wheel"].hasMember("name"));
-    ROS_ASSERT(modules["wheel"].hasMember("radius"));
+    ROS_ASSERT(module.second.hasMember("position"));
+    ROS_ASSERT(module.second["position"].getType() == XmlRpc::XmlRpcValue::TypeArray);
+    ROS_ASSERT(module.second["position"].size() == 2);
+    ROS_ASSERT(module.second.hasMember("wheel_radius"));
+    ROS_ASSERT(module.second.hasMember("pivot"));
+    ROS_ASSERT(module.second["pivot"].getType() == XmlRpc::XmlRpcValue::TypeStruct);
+    ROS_ASSERT(module.second["pivot"].hasMember("name"));
+    ROS_ASSERT(module.second.hasMember("wheel"));
+    ROS_ASSERT(module.second["wheel"].getType() == XmlRpc::XmlRpcValue::TypeStruct);
+    ROS_ASSERT(module.second["wheel"].hasMember("name"));
+    ROS_ASSERT(module.second["wheel"].hasMember("radius"));
 
     auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
-    Module m{.position_= Vec2<double>(modules["position"][0], modules["position"][1]),
-        .wheel_radius_ = modules["wheel"]["radius"],
-        .joint_pivot_ =effort_jnt_interface->getHandle(modules["pivot"]["name"]),
-        .joint_wheel_ =effort_jnt_interface->getHandle(modules["wheel"]["name"]),
+    Module m{.position_= Vec2<double>(module.second["position"][0], module.second["position"][1]),
+        .wheel_radius_ = module.second["wheel"]["radius"],
+        .joint_pivot_ =effort_jnt_interface->getHandle(module.second["pivot"]["name"]),
+        .joint_wheel_ =effort_jnt_interface->getHandle(module.second["wheel"]["name"]),
         .pid_pivot_ = control_toolbox::Pid(),
         .pid_wheel_ = control_toolbox::Pid()};
     if (!m.pid_pivot_.init(ros::NodeHandle(controller_nh, "pivot/pid")) ||
         !m.pid_wheel_.init(ros::NodeHandle(controller_nh, "wheel/pid")))
       return false;
-    if (modules["pivot"].hasMember("offset"))
-      m.pivot_offset_ = modules["pivot"]["offset"];
+    if (module.second["pivot"].hasMember("offset"))
+      m.pivot_offset_ = module.second["pivot"]["offset"];
 
     modules_.push_back(m);
   }
+  return true;
 }
 
 // Ref: https://dominik.win/blog/programming-swerve-drive/
@@ -71,4 +73,9 @@ void SwerveController::moveJoint(const ros::Duration &period) {
     module.joint_wheel_.setCommand(scale * module.pid_wheel_.getCurrentCmd());
 }
 
+geometry_msgs::Twist SwerveController::forwardKinematics() {
+  return geometry_msgs::Twist();
+}
+
+PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::SwerveController, controller_interface::ControllerBase)
 }
