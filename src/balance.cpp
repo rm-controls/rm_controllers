@@ -25,8 +25,8 @@ bool BalanceController::init(hardware_interface::RobotHW *robot_hw,
       getParam(controller_nh, "joint_left_name", std::string("joint_left")));
   joint_right_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_right_name", std::string("joint_right")));
-  joint_handles_.push_back(&joint_left_);
-  joint_handles_.push_back(&joint_right_);
+  joint_handles_.push_back(joint_left_);
+  joint_handles_.push_back(joint_right_);
 
   XmlRpc::XmlRpcValue a, b, q, r;
   controller_nh.getParam("a", a);

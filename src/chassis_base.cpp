@@ -116,7 +116,7 @@ void ChassisBase::passive() {
     ROS_INFO("[Chassis] Enter PASSIVE");
 
     for (auto joint:joint_handles_)
-      joint->setCommand(0);
+      joint.setCommand(0);
   }
 }
 

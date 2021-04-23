@@ -21,10 +21,10 @@ bool MecanumController::init(hardware_interface::RobotHW *robot_hw,
       getParam(controller_nh, "joint_lb_name", std::string("joint_lb")));
   joint_lf_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_lf_name", std::string("joint_lf")));
-  joint_handles_.push_back(&joint_rf_);
-  joint_handles_.push_back(&joint_rb_);
-  joint_handles_.push_back(&joint_lb_);
-  joint_handles_.push_back(&joint_lf_);
+  joint_handles_.push_back(joint_rf_);
+  joint_handles_.push_back(joint_rb_);
+  joint_handles_.push_back(joint_lb_);
+  joint_handles_.push_back(joint_lf_);
 
   if (!pid_rf_.init(ros::NodeHandle(controller_nh, "pid_rf")) ||
       !pid_rb_.init(ros::NodeHandle(controller_nh, "pid_rb")) ||

@@ -14,7 +14,7 @@ bool SentryController::init(hardware_interface::RobotHW *robot_hw,
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_wheel_ = effort_jnt_interface->getHandle(
       getParam(controller_nh, "joint_name", std::string("actuator_wheel")));
-  joint_handles_.push_back(&joint_wheel_);
+  joint_handles_.push_back(joint_wheel_);
 
   if (!pid_wheel_.init(ros::NodeHandle(controller_nh, "pid_wheel")))
     return false;

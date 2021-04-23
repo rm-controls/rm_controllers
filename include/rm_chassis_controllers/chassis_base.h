@@ -54,7 +54,7 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg);
 
-  std::vector<hardware_interface::JointHandle *> joint_handles_{};
+  std::vector<hardware_interface::JointHandle> joint_handles_{};
   std::vector<control_toolbox::Pid *> wheel_pids_{};
   hardware_interface::RobotStateHandle robot_state_handle_{};
 
