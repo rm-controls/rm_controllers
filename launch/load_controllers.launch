@@ -29,6 +29,6 @@
 
     <!--  for test !!! -->
     <node if="$(arg yaw_tf)" pkg="tf" type="static_transform_publisher" name="yaw_tf_publisher"
-          args="0 0 0 0.866 0 0 0.5 map yaw 100"/>
+          args="0 0 0 1 0 0 0 map yaw 100"/>
 
 </launch>

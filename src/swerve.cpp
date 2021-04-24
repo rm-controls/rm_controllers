@@ -75,7 +75,11 @@ void SwerveController::moveJoint(const ros::Duration &period) {
 }
 
 geometry_msgs::Twist SwerveController::forwardKinematics() {
-  return geometry_msgs::Twist();
+  geometry_msgs::Twist vel;
+  vel.linear.x = vel_tfed_.vector.x;
+  vel.linear.y = vel_tfed_.vector.y;
+  vel.angular.z = vel_tfed_.vector.z;
+  return vel;
 }
 
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::SwerveController, controller_interface::ControllerBase)
