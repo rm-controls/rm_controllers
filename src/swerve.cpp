@@ -55,7 +55,7 @@ bool SwerveController::init(hardware_interface::RobotHW *robot_hw,
 void SwerveController::moveJoint(const ros::Duration &period) {
   Vec2<double> vel_center(vel_tfed_.vector.x, vel_tfed_.vector.y);
   for (auto &module:modules_) {
-    Vec2<double> vel = vel_center + vel_tfed_.vector.z * module.position_;
+    Vec2<double> vel = vel_center + vel_tfed_.vector.z * Vec2<double>(-module.position_.y(), module.position_.x());
     double vel_angle = std::atan2(vel.y(), vel.x()) + module.pivot_offset_;
     // Direction flipping and Stray module mitigation
     double error_pivot = std::min(
