@@ -58,11 +58,10 @@ void SwerveController::moveJoint(const ros::Duration &period) {
     Vec2<double> vel = vel_center + vel_tfed_.vector.z * Vec2<double>(-module.position_.y(), module.position_.x());
     double vel_angle = std::atan2(vel.y(), vel.x()) + module.pivot_offset_;
     // Direction flipping and Stray module mitigation
-    double error_pivot = std::min(
-        angles::shortest_angular_distance(module.joint_pivot_.getPosition(), vel_angle),
-        angles::shortest_angular_distance(module.joint_pivot_.getPosition(), vel_angle + M_PI));
-    double wheel_des = vel.norm() / module.wheel_radius_
-        * std::cos(angles::shortest_angular_distance(module.joint_pivot_.getPosition(), vel_angle));
+    double a = angles::shortest_angular_distance(module.joint_pivot_.getPosition(), vel_angle);
+    double b = angles::shortest_angular_distance(module.joint_pivot_.getPosition(), vel_angle + M_PI);
+    double error_pivot = std::abs(a) < std::abs(b) ? a : b;
+    double wheel_des = vel.norm() / module.wheel_radius_ * std::cos(a);
     double error_wheel = wheel_des - module.joint_wheel_.getVelocity();
     // PID
     module.pid_pivot_.computeCommand(error_pivot, period);
