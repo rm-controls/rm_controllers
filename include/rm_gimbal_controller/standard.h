@@ -62,6 +62,8 @@ class Controller :
   LowPassFilter *lp_filter_yaw_{};
   LowPassFilter *lp_filter_pitch_{};
 
+  ros::NodeHandle nh_kalman;
+
   bool state_changed_{};
   Vec2<double> angle_init_{};
   StandardState state_ = PASSIVE;
@@ -77,6 +79,7 @@ class Controller :
   bool dynamic_reconfig_initialized_ = false;
   robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
   std::map<int, geometry_msgs::Twist> target_vel_;
+  std::map<int, kalman_filter::KalmanFilterTrack *> id2kalman_filter_track_;
 
   rm_msgs::GimbalCmd cmd_;
   double error_yaw_{}, error_pitch_{};

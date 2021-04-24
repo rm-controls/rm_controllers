@@ -18,7 +18,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
-  ros::NodeHandle nh_kalman = ros::NodeHandle(controller_nh, "kalman");
+  nh_kalman = ros::NodeHandle(controller_nh, "kalman");
 
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_yaw_ =
@@ -216,19 +216,23 @@ void Controller::updateTf() {
         map2detection.header.stamp = detection_time;
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.id);
-        kalman_filter_track_->input(map2detection);
+
+        if (id2kalman_filter_track_.find(detection.id) == id2kalman_filter_track_.end()) {
+          id2kalman_filter_track_.insert(std::make_pair(detection.id, new kalman_filter::KalmanFilterTrack(nh_kalman)));
+        }
+        id2kalman_filter_track_.find(detection.id)->second->input(map2detection);
         updateTrackAndPub(detection_time, detection.id);
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     } else
-      kalman_filter_track_->perdict();
-    target_vel_[detection.id] = kalman_filter_track_->getTwist();
+      id2kalman_filter_track_.find(detection.id)->second->perdict();
+    target_vel_[detection.id] = id2kalman_filter_track_.find(detection.id)->second->getTwist();
   }
 }
 
 void Controller::updateTrackAndPub(const ros::Time &time, int id) {
   geometry_msgs::TransformStamped camera2detection, map2detection;
-  map2detection = kalman_filter_track_->getTransform();
+  map2detection = id2kalman_filter_track_.find(id)->second->getTransform();
   tf_broadcaster_.sendTransform(map2detection);
 
   try {
