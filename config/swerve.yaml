@@ -16,42 +16,38 @@ controllers:
         position: [ 0.2, 0.2 ]
         pivot:
           name: left_front_pivot_joint
-          offset: 0.
-          pid: { p: 3, i: 0, d: 0.3, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+          <<: &pivot_setting
+            offset: 0.
+            pid: { p: 3, i: 0, d: 0.3, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
         wheel:
           name: left_front_wheel_joint
-          radius: 0.055
-          pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+          <<: &wheel_setting
+            radius: 0.055
+            pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
       right_front:
         position: [ 0.2, -0.2 ]
         pivot:
           name: right_front_pivot_joint
-          offset: 0.
-          pid: { p: 3, i: 0, d: 0.3, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+          <<: *pivot_setting
         wheel:
           name: right_front_wheel_joint
-          radius: 0.055
-          pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+          <<: *wheel_setting
       left_back:
         position: [ -0.2, 0.2 ]
         pivot:
           name: left_back_pivot_joint
-          offset: 0.
-          pid: { p: 3, i: 0, d: 0.3, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+          <<: *pivot_setting
         wheel:
           name: left_back_wheel_joint
-          radius: 0.055
-          pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+          <<: *wheel_setting
       right_back:
         position: [ -0.2, -0.2 ]
         pivot:
           name: right_back_pivot_joint
-          offset: 0.
-          pid: { p: 3, i: 0, d: 0.3, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+          <<: *pivot_setting
         wheel:
           name: right_back_wheel_joint
-          radius: 0.055
-          pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+          <<: *wheel_setting
 
   joint_state_controller:
     type: joint_state_controller/JointStateController
