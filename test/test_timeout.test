@@ -1,22 +1,11 @@
 <launch>
     <!-- This test suit for standard,hero,sentry-->
-    <arg name="type" default="standard"/>
-
-    <!-- Load common test stuff -->
-    <include file="$(find rm_chassis_controllers)/launch/load_controllers.launch">
-        <arg name="robot_type" value="$(arg type)"/>
+    <include file="$(find rm_chassis_controllers)/test/common.launch">
+        <arg name="type" value="standard"/>
+        <arg name="disable_timeout" value="false"/>
+        <arg name="disable_odom_tf" value="false"/>
         <arg name="odom_tf" value="true"/>
         <arg name="yaw_tf" value="false"/>
-        <arg name="ekf" default="false"/>
-    </include>
-
-    <include file="$(find rm_gazebo)/launch/empty_world.launch">
-        <arg name="robot_type" value="$(arg type)"/>
-        <arg name="load_chassis" default="true"/>
-        <arg name="load_gimbal" default="false"/>
-        <arg name="load_shooter" default="false"/>
-        <arg name="load_arm" default="false"/>
-        <arg name="paused" default="false"/>
     </include>
 
     <!-- Controller test -->
