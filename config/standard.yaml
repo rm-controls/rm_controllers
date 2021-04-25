@@ -13,7 +13,7 @@ controllers:
     enter_push_qd_coef: 0.95
     push_angle: 0.8
     push_angle_error: 0.04
-    block_effort: 0.95
+    block_effort: 0.9
     block_duration: 0.05
     block_speed: 0.5
     anti_block_angle: 0.15
