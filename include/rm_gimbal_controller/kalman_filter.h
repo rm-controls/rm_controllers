@@ -20,7 +20,7 @@ struct Config {
 };
 class KalmanFilterTrack {
  public:
-  explicit KalmanFilterTrack(ros::NodeHandle &nh);
+  explicit KalmanFilterTrack(ros::NodeHandle &nh, int id);
   void input(const geometry_msgs::TransformStamped &map2detection);
   geometry_msgs::TransformStamped getTransform();
   geometry_msgs::Twist getTwist();

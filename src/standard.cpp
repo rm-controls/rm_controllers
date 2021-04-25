@@ -18,7 +18,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
-  nh_kalman = ros::NodeHandle(controller_nh, "kalman");
+  nh_kalman_ = ros::NodeHandle(controller_nh, "kalman");
 
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_yaw_ =
@@ -42,8 +42,8 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   map2gimbal_des_.transform.rotation.w = 1.;
   controller_nh.param("publish_rate_error", publish_rate_, 100.0);
 
-  cmd_subscriber_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &Controller::commandCB, this);
-  cmd_sub_track_ =
+  cmd_gimbal_sub_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &Controller::commandCB, this);
+  data_detection_sub_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(root_nh, "error_des", 100));
   track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(root_nh, "track", 100));
@@ -60,7 +60,6 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   d_srv_->setCallback(cb);
 
   bullet_solver_ = new bullet_solver::Approx3DSolver(nh_bullet_solver);
-  kalman_filter_track_ = new kalman_filter::KalmanFilterTrack(nh_kalman);
   lp_filter_yaw_ = new LowPassFilter(nh_yaw);
   lp_filter_pitch_ = new LowPassFilter(nh_pitch);
 
@@ -193,6 +192,9 @@ void Controller::updateTf() {
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
   for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
+    if (kalman_filters_track_.find(detection.id) == kalman_filters_track_.end())
+      kalman_filters_track_.insert(std::make_pair(detection.id,
+                                                  new kalman_filter::KalmanFilterTrack(nh_kalman_, detection.id)));
     ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
     if (last_detection_time_ != detection_time) {
       last_detection_time_ = detection_time;
@@ -217,22 +219,19 @@ void Controller::updateTf() {
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.id);
 
-        if (id2kalman_filter_track_.find(detection.id) == id2kalman_filter_track_.end()) {
-          id2kalman_filter_track_.insert(std::make_pair(detection.id, new kalman_filter::KalmanFilterTrack(nh_kalman)));
-        }
-        id2kalman_filter_track_.find(detection.id)->second->input(map2detection);
+        kalman_filters_track_.find(detection.id)->second->input(map2detection);
         updateTrackAndPub(detection_time, detection.id);
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     } else
-      id2kalman_filter_track_.find(detection.id)->second->perdict();
-    target_vel_[detection.id] = id2kalman_filter_track_.find(detection.id)->second->getTwist();
+      kalman_filters_track_.find(detection.id)->second->perdict();
+    target_vel_[detection.id] = kalman_filters_track_.find(detection.id)->second->getTwist();
   }
 }
 
 void Controller::updateTrackAndPub(const ros::Time &time, int id) {
   geometry_msgs::TransformStamped camera2detection, map2detection;
-  map2detection = id2kalman_filter_track_.find(id)->second->getTransform();
+  map2detection = kalman_filters_track_.find(id)->second->getTransform();
   tf_broadcaster_.sendTransform(map2detection);
 
   try {

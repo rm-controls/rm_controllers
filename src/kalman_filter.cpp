@@ -8,7 +8,7 @@
 #define  SAMPLE_RATE 1000.
 
 namespace kalman_filter {
-KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh) {
+KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
   is_debug_ = getParam(nh, "kalman_debug", false);
 
   // init config
@@ -79,7 +79,7 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh) {
   kalman_filter_->clear(x0_);
 
   if (is_debug_)
-    realtime_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::KalmanData>(nh, "kalman_filter", 100));
+    realtime_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::KalmanData>(nh, "id" + std::to_string(id), 100));
 }
 
 void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detection) {

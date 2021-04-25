@@ -52,42 +52,44 @@ class Controller :
   void updateTrackAndPub(const ros::Time &time, int id);
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
 
+  ros::Time last_publish_time_;
+  ros::Time last_detection_time_;
+  ros::NodeHandle nh_kalman_;
+
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
   hardware_interface::RobotStateHandle robot_state_handle_;
-  geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
-  bullet_solver::Bullet3DSolver *bullet_solver_{};
-  kalman_filter::KalmanFilterTrack *kalman_filter_track_{};
 
+  bullet_solver::Bullet3DSolver *bullet_solver_{};
   LowPassFilter *lp_filter_yaw_{};
   LowPassFilter *lp_filter_pitch_{};
 
-  ros::NodeHandle nh_kalman;
-
-  bool state_changed_{};
-  Vec2<double> angle_init_{};
-  StandardState state_ = PASSIVE;
-  ros::Subscriber cmd_subscriber_;
-  ros::Subscriber cmd_sub_track_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError> > error_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;
+  ros::Subscriber cmd_gimbal_sub_;
+  ros::Subscriber data_detection_sub_;
+  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
+  robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
+
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> detection_rt_buffer_;
-  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
-  Config config_{};
-  bool dynamic_reconfig_initialized_ = false;
-  robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
-  std::map<int, geometry_msgs::Twist> target_vel_;
-  std::map<int, kalman_filter::KalmanFilterTrack *> id2kalman_filter_track_;
 
+  geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
   rm_msgs::GimbalCmd cmd_;
+
   double error_yaw_{}, error_pitch_{};
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
   double publish_rate_{};
-  ros::Time last_publish_time_;
-  ros::Time last_detection_time_;
+  bool dynamic_reconfig_initialized_ = false;
+  bool state_changed_{};
+  Vec2<double> angle_init_{};
 
+  Config config_{};
+  StandardState state_ = PASSIVE;
+
+  std::map<int, geometry_msgs::Twist> target_vel_;
+  std::map<int, kalman_filter::KalmanFilterTrack *> kalman_filters_track_;
 };
 }
 
