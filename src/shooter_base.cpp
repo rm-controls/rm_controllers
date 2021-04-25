@@ -123,7 +123,7 @@ void ShooterBase::push(const ros::Time &time, const ros::Duration &period) {
   if (block_->isBlock(time, joint_trigger_handle_[0])) {
     state_ = BLOCK;
     state_changed_ = true;
-    block_->block_time_ = time;
+    block_->is_start_block_time_ = false;
     ROS_INFO("[Shooter] Exit PUSH");
   }
 }
@@ -139,6 +139,7 @@ void ShooterBase::block(const ros::Time &time, const ros::Duration &period) {
       block_->isBlock(time, joint_trigger_handle_[0])) {
     state_ = PUSH;
     state_changed_ = true;
+    block_->is_start_block_time_ = false;
     is_out_from_block_ = true;
     ROS_INFO("[Shooter] Exit BLOCK");
   }
