@@ -53,7 +53,6 @@ class Controller :
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
 
   ros::Time last_publish_time_;
-  ros::Time last_detection_time_;
   ros::NodeHandle nh_kalman_;
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
@@ -90,6 +89,7 @@ class Controller :
 
   std::map<int, geometry_msgs::Twist> target_vel_;
   std::map<int, kalman_filter::KalmanFilterTrack *> kalman_filters_track_;
+  std::map<int, ros::Time> last_detection_time_;
 };
 }
 

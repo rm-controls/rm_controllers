@@ -196,8 +196,8 @@ void Controller::updateTf() {
       kalman_filters_track_.insert(std::make_pair(detection.id,
                                                   new kalman_filter::KalmanFilterTrack(nh_kalman_, detection.id)));
     ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
-    if (last_detection_time_ != detection_time) {
-      last_detection_time_ = detection_time;
+    if (last_detection_time_.find(detection.id)->second != detection_time) {
+      last_detection_time_[detection.id] = detection_time;
       config_ = *config_rt_buffer_.readFromRT();
       geometry_msgs::TransformStamped map2camera, map2detection;
       tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
