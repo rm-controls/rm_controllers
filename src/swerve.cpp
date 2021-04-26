@@ -31,20 +31,21 @@ bool SwerveController::init(hardware_interface::RobotHW *robot_hw,
 
     auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
     Module m{.position_= Vec2<double>(module.second["position"][0], module.second["position"][1]),
+        .pivot_offset_ = module.second["pivot"]["offset"],
         .wheel_radius_ = module.second["wheel"]["radius"],
         .joint_pivot_ =effort_jnt_interface->getHandle(module.second["pivot"]["name"]),
         .joint_wheel_ =effort_jnt_interface->getHandle(module.second["wheel"]["name"]),
-        .pid_pivot_ = control_toolbox::Pid(),
-        .pid_wheel_ = control_toolbox::Pid()};
-    if (!m.pid_pivot_.init(ros::NodeHandle(controller_nh, "modules/" + module.first + "/pivot/pid")) ||
-        !m.pid_wheel_.init(ros::NodeHandle(controller_nh, "modules/" + module.first + "/wheel/pid")))
+        .pid_pivot_ = new control_toolbox::Pid(),
+        .pid_wheel_ = new control_toolbox::Pid()};
+    if (!m.pid_pivot_->init(ros::NodeHandle(controller_nh, "modules/" + module.first + "/pivot/pid")) ||
+        !m.pid_wheel_->init(ros::NodeHandle(controller_nh, "modules/" + module.first + "/wheel/pid")))
       return false;
     if (module.second["pivot"].hasMember("offset"))
       m.pivot_offset_ = module.second["pivot"]["offset"];
 
     joint_handles_.push_back(effort_jnt_interface->getHandle(module.second["pivot"]["name"]));
     joint_handles_.push_back(effort_jnt_interface->getHandle(module.second["wheel"]["name"]));
-    wheel_pids_.push_back(&m.pid_wheel_);
+    wheel_pids_.push_back(m.pid_wheel_);
     modules_.push_back(m);
   }
   return true;
@@ -64,14 +65,14 @@ void SwerveController::moveJoint(const ros::Duration &period) {
     double wheel_des = vel.norm() / module.wheel_radius_ * std::cos(a);
     double error_wheel = wheel_des - module.joint_wheel_.getVelocity();
     // PID
-    module.pid_pivot_.computeCommand(error_pivot, period);
-    module.pid_wheel_.computeCommand(error_wheel, period);
-    module.joint_pivot_.setCommand(module.pid_pivot_.getCurrentCmd());
+    module.pid_pivot_->computeCommand(error_pivot, period);
+    module.pid_wheel_->computeCommand(error_wheel, period);
+    module.joint_pivot_.setCommand(module.pid_pivot_->getCurrentCmd());
   }
   // Effort limit
   double scale = getEffortLimitScale();
   for (auto &module:modules_)
-    module.joint_wheel_.setCommand(scale * module.pid_wheel_.getCurrentCmd());
+    module.joint_wheel_.setCommand(scale * module.pid_wheel_->getCurrentCmd());
 }
 
 geometry_msgs::Twist SwerveController::forwardKinematics() {
