@@ -7,10 +7,10 @@
     </include>
 
     <!-- Controller test -->
-    <test test-name="linear_x_accel_limit_test"
+    <test test-name="sentry_linear_x_accel_limit_test"
           pkg="rm_chassis_controllers"
-          type="linear_x_accel_limit_test"
-          time-limit="40.0">
+          type="sentry_linear_x_accel_limit_test"
+          time-limit="100.0">
     </test>
 
 </launch>

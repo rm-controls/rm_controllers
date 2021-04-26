@@ -30,11 +30,12 @@
 
     <include if="$(arg load_sentry_world)" file="$(find rm_gazebo)/launch/sentry_world.launch">
         <arg name="robot_type" value="sentry"/>
-        <arg name="load_chassis" default="true"/>
-        <arg name="load_gimbal" default="false"/>
-        <arg name="load_shooter" default="false"/>
-        <arg name="load_arm" default="false"/>
-        <arg name="paused" default="false"/>
+        <arg name="x_pos" value="-2.0"/>
+        <arg name="load_chassis" value="true"/>
+        <arg name="load_gimbal" value="false"/>
+        <arg name="load_shooter" value="false"/>
+        <arg name="load_arm" value="false"/>
+        <arg name="paused" value="false"/>
     </include>
 
 </launch>

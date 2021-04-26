@@ -186,6 +186,11 @@ if (${CATKIN_ENABLE_TESTING})
             test/test_sentry_iKine.cpp)
     target_link_libraries(sentry_iKine_test ${catkin_LIBRARIES})
 
+    add_rostest_gtest(sentry_linear_x_accel_limit_test
+            test/test_linear_x_accel_limit_sentry.test
+            test/test_linear_x_accel_limit_sentry.cpp)
+    target_link_libraries(sentry_linear_x_accel_limit_test ${catkin_LIBRARIES})
+
 endif ()
 
 ##########################
