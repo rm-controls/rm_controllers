@@ -17,21 +17,19 @@ TEST_F(StandardChassisTest, testIKine) {
 
   cmd_chassis.mode = cmd_chassis.RAW;
   cmd_chassis.effort_limit = 99;
-  cmd_chassis.accel.linear.x = 8;
-  cmd_chassis.accel.linear.y = 8;
-  cmd_chassis.accel.angular.z = 8;
+  cmd_chassis.accel.linear.x = 20;
 
   publish(cmd_chassis, cmd_vel);
-  ros::Duration(2.0).sleep();
+  ros::Duration(5.0).sleep();
 
-  cmd_vel.linear.x = 0.5;
+  cmd_vel.linear.x = 0.25;
   publish(cmd_chassis, cmd_vel);
-  ros::Duration(2.0).sleep();
-  EXPECT_NEAR(0.5, getJointStates().velocity[0] * r, VELOCITY_TOLERANCE);
+  ros::Duration(10.0).sleep();
+  EXPECT_NEAR(cmd_vel.linear.x, getJointStates().velocity[0] * r, 0.06);
 
   cmd_vel.linear.x = 0.;
   publish(cmd_chassis, cmd_vel);
-  ros::Duration(2.0).sleep();
+  ros::Duration(5.0).sleep();
 }
 
 int main(int argc, char **argv) {
