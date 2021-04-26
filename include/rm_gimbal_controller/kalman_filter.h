@@ -38,6 +38,8 @@ class KalmanFilterTrack {
   ros::Time last_detection_time_;
   Vec8<double> x_, x0_, u_, x_hat_;
   Mat8<double> a_, b_, h_, q_, r_;
+  double last_pos_x_hat_{}, last_pos_y_hat_{}, last_pos_z_hat_{};
+  double last_last_pos_x_hat_{}, last_last_pos_y_hat_{}, last_last_pos_z_hat_{};
   bool is_debug_{};
   bool dynamic_reconfig_initialized_ = false;
   bool is_filter_ = false;
