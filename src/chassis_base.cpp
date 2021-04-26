@@ -143,7 +143,7 @@ void ChassisBase::follow(const ros::Time &time, const ros::Duration &period) {
 void ChassisBase::twist(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) {
     state_changed_ = false;
-    ROS_INFO("[Chassis] Enter FOLLOW");
+    ROS_INFO("[Chassis] Enter TWIST");
 
     recovery();
     pid_follow_.reset();
