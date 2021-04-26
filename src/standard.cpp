@@ -105,13 +105,13 @@ void Controller::rate(const ros::Time &time, const ros::Duration &period) {
     map2gimbal_des_.transform = map2pitch_.transform;
     map2gimbal_des_.header.stamp = time;
     robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
+  } else {
+    double roll{}, pitch{}, yaw{};
+    quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
+    setDes(time,
+           yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_yaw,
+           pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
   }
-
-  double roll{}, pitch{}, yaw{};
-  quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
-  setDes(time,
-         yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_yaw,
-         pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
 }
 
 void Controller::track(const ros::Time &time) {
