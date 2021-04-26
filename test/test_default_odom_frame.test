@@ -2,9 +2,7 @@
     <!-- This test suit for standard,hero,sentry-->
     <include file="$(find rm_chassis_controllers)/test/common.launch">
         <arg name="type" value="standard"/>
-        <arg name="disable_timeout" value="true"/>
         <arg name="odom_tf" value="false"/>
-        <arg name="yaw_tf" value="false"/>
     </include>
 
     <!-- Controller test -->

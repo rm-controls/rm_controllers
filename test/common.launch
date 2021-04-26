@@ -3,6 +3,8 @@
     <arg name="disable_timeout" default="true"/>
     <arg name="disable_odom_tf" default="false"/>
     <arg name="load_wrong_yaml" default="false"/>
+    <arg name="load_empty_world" default="true"/>
+    <arg name="load_sentry_world" default="false"/>
     <arg name="odom_tf" default="true"/>
     <arg name="yaw_tf" default="false"/>
 
@@ -17,8 +19,17 @@
         <arg name="yaw_tf" value="$(arg yaw_tf)"/>
     </include>
 
-    <include file="$(find rm_gazebo)/launch/empty_world.launch">
+    <include if="$(arg load_empty_world)" file="$(find rm_gazebo)/launch/empty_world.launch">
         <arg name="robot_type" value="$(arg type)"/>
+        <arg name="load_chassis" default="true"/>
+        <arg name="load_gimbal" default="false"/>
+        <arg name="load_shooter" default="false"/>
+        <arg name="load_arm" default="false"/>
+        <arg name="paused" default="false"/>
+    </include>
+
+    <include if="$(arg load_sentry_world)" file="$(find rm_gazebo)/launch/sentry_world.launch">
+        <arg name="robot_type" value="sentry"/>
         <arg name="load_chassis" default="true"/>
         <arg name="load_gimbal" default="false"/>
         <arg name="load_shooter" default="false"/>
