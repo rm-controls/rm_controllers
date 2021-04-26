@@ -6,9 +6,9 @@
     </include>
 
     <!-- Controller test -->
-    <test test-name="iKine_test"
+    <test test-name="mecanum_iKine_test"
           pkg="rm_chassis_controllers"
-          type="iKine_test"
+          type="mecanum_iKine_test"
           time-limit="80.0">
     </test>
 </launch>
