@@ -101,9 +101,9 @@ class Bullet3DSolver : public BulletSolver {
  public:
   using BulletSolver::BulletSolver;
   void setTarget(const DVec<double> &pos, const DVec<double> &vel) override {
-    target_x_ = pos[0] + vel[0] * config_.delay;
-    target_y_ = pos[1] + vel[1] * config_.delay;
-    target_z_ = pos[2] + vel[2] * config_.delay;
+    target_x_ = pos[0] + vel[0] * (config_.delay + this->fly_time_);
+    target_y_ = pos[1] + vel[1] * (config_.delay + this->fly_time_);
+    target_z_ = pos[2] + vel[2] * (config_.delay + this->fly_time_);
     target_dx_ = vel[0];
     target_dy_ = vel[1];
     target_dz_ = vel[2];
@@ -113,7 +113,7 @@ class Bullet3DSolver : public BulletSolver {
              double target_speed_x, double target_speed_y, double target_speed_z,
              double bullet_speed) override;
   void modelRviz(double x_offset, double y_offset, double z_offset) override;
-  Vec2<double> getResult(const ros::Time &time, geometry_msgs::TransformStamped map2pitch);
+  Vec2<double> getResult(const ros::Time &time, const geometry_msgs::TransformStamped &map2pitch);
   std::vector<Vec3<double>> getPointData3D();
  protected:
   virtual double computeError(double yaw, double pitch, double *error_polar) = 0;
