@@ -45,6 +45,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   cmd_gimbal_sub_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &Controller::commandCB, this);
   data_detection_sub_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
+  camera_sub_ = root_nh.subscribe<sensor_msgs::CameraInfo>("galaxy_camera/camera_info", 1, &Controller::cameraCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(root_nh, "error_des", 100));
   track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(root_nh, "track", 100));
   tf_broadcaster_.init(root_nh);
@@ -220,16 +221,16 @@ void Controller::updateTf() {
         map2detection.child_frame_id = "detection" + std::to_string(detection.id);
 
         kalman_filters_track_.find(detection.id)->second->input(map2detection);
-        updateTrackAndPub(detection_time, detection.id);
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     } else
-      kalman_filters_track_.find(detection.id)->second->perdict();
+      updateTrackAndPub(detection.id);
+    kalman_filters_track_.find(detection.id)->second->perdict();
     target_vel_[detection.id] = kalman_filters_track_.find(detection.id)->second->getTwist();
   }
 }
 
-void Controller::updateTrackAndPub(const ros::Time &time, int id) {
+void Controller::updateTrackAndPub(int id) {
   geometry_msgs::TransformStamped camera2detection, map2detection;
   map2detection = kalman_filters_track_.find(id)->second->getTransform();
   tf_broadcaster_.sendTransform(map2detection);
@@ -241,22 +242,27 @@ void Controller::updateTrackAndPub(const ros::Time &time, int id) {
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
-  rm_msgs::TrackData track_data;
-  track_data.id = id;
-  track_data.map2detection.position.x = map2detection.transform.translation.x;
-  track_data.map2detection.position.y = map2detection.transform.translation.y;
-  track_data.map2detection.position.z = map2detection.transform.translation.z;
-  track_data.map2detection.orientation = map2detection.transform.rotation;
-  track_data.camera2detection.position.x = camera2detection.transform.translation.x;
-  track_data.camera2detection.position.y = camera2detection.transform.translation.y;
-  track_data.camera2detection.position.z = camera2detection.transform.translation.z;
-  track_data.camera2detection.orientation = camera2detection.transform.rotation;
+  ros::Time camera_time = camera_rt_buffer_.readFromRT()->header.stamp;
+  if (last_camera_time_ != camera_time) {
+    last_camera_time_ = camera_time;
 
-  track_pub_->msg_.tracks.clear();
-  if (track_pub_->trylock()) {
-    track_pub_->msg_.header.stamp = time;
-    track_pub_->msg_.tracks.push_back(track_data);
-    track_pub_->unlockAndPublish();
+    rm_msgs::TrackData track_data;
+    track_data.id = id;
+    track_data.map2detection.position.x = map2detection.transform.translation.x;
+    track_data.map2detection.position.y = map2detection.transform.translation.y;
+    track_data.map2detection.position.z = map2detection.transform.translation.z;
+    track_data.map2detection.orientation = map2detection.transform.rotation;
+    track_data.camera2detection.position.x = camera2detection.transform.translation.x;
+    track_data.camera2detection.position.y = camera2detection.transform.translation.y;
+    track_data.camera2detection.position.z = camera2detection.transform.translation.z;
+    track_data.camera2detection.orientation = camera2detection.transform.rotation;
+
+    track_pub_->msg_.tracks.clear();
+    if (track_pub_->trylock()) {
+      track_pub_->msg_.header.stamp = camera_time;
+      track_pub_->msg_.tracks.push_back(track_data);
+      track_pub_->unlockAndPublish();
+    }
   }
 }
 
@@ -266,6 +272,10 @@ void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
 
 void Controller::detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg) {
   detection_rt_buffer_.writeFromNonRT(*msg);
+}
+
+void Controller::cameraCB(const sensor_msgs::CameraInfoConstPtr &msg) {
+  camera_rt_buffer_.writeFromNonRT(*msg);
 }
 
 void Controller::reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t) {

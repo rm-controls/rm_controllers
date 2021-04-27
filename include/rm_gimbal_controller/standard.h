@@ -19,6 +19,7 @@
 #include <rm_gimbal_controller/bullet_solver.h>
 #include <rm_gimbal_controller/kalman_filter.h>
 #include <visualization_msgs/Marker.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <rm_common/filters/lp_filter.h>
 
 namespace rm_gimbal_controllers {
@@ -48,11 +49,13 @@ class Controller :
   void moveJoint(const ros::Time &time, const ros::Duration &period);
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
+  void cameraCB(const sensor_msgs::CameraInfoConstPtr &msg);
   void updateTf();
-  void updateTrackAndPub(const ros::Time &time, int id);
+  void updateTrackAndPub(int id);
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
 
   ros::Time last_publish_time_;
+  ros::Time last_camera_time_{};
   ros::NodeHandle nh_kalman_;
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
@@ -67,11 +70,13 @@ class Controller :
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_detection_sub_;
+  ros::Subscriber camera_sub_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
   robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
 
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> detection_rt_buffer_;
+  realtime_tools::RealtimeBuffer<sensor_msgs::CameraInfo> camera_rt_buffer_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
 
   geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
