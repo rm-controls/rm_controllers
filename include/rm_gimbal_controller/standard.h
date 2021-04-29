@@ -65,13 +65,13 @@ class Controller :
   StandardState state_ = PASSIVE;
   ros::Subscriber cmd_subscriber_;
   ros::Subscriber cmd_sub_track_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError> > error_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalTimeCompensationConfig> *d_srv_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_gimbal_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> detection_rt_buffer_;
-  robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
+  rm_common::TfRtBroadcaster tf_broadcaster_{};
 
   rm_msgs::GimbalCmd cmd_;
   double error_yaw_{}, error_pitch_{}, error_yaw_last_, error_pitch_last_;
