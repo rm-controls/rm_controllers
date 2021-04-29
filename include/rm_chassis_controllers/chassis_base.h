@@ -72,7 +72,7 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   control_toolbox::Pid pid_follow_;
 
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
-  robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
+  rm_common::TfRtBroadcaster tf_broadcaster_{};
   ros::Subscriber cmd_chassis_sub_;
   ros::Subscriber cmd_vel_sub_;
   Command cmd_struct_;
