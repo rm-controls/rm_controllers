@@ -48,8 +48,8 @@ class RobotStateController : public controller_interface::MultiInterfaceControll
   std::map<std::string, hardware_interface::JointStateHandle> jnt_states_;
   std::map<std::string, SegmentPair> segments_, segments_fixed_;
 
-  TfRtBroadcaster tf_broadcaster_;
-  StaticTfRtBroadcaster static_tf_broadcaster_;
+  rm_common::TfRtBroadcaster tf_broadcaster_;
+  rm_common::StaticTfRtBroadcaster static_tf_broadcaster_;
 
   tf2_ros::Buffer *tf_buffer_{};
   tf2_ros::TransformListener *tf_listener_{};
