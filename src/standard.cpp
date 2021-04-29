@@ -138,7 +138,7 @@ void Controller::track(const ros::Time &time) {
         map2detection.transform.translation.z - map2pitch_.transform.translation.z,
         target_vel_[cmd_rt_buffer_.readFromRT()->target_id].linear.x,
         target_vel_[cmd_rt_buffer_.readFromRT()->target_id].linear.y,
-        target_vel_[cmd_rt_buffer_.readFromRT()->target_id].linear.z,
+        0,
         cmd_.bullet_speed);
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }

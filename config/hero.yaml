@@ -7,7 +7,7 @@ controllers:
     publish_rate: 50
   gimbal_controller:
     type: rm_gimbal_controllers/Controller
-    time_compensation: 0.05
+    time_compensation: 0.06
     publish_rate: 100
     yaw:
       joint_name: "yaw_joint"
@@ -30,7 +30,7 @@ controllers:
       resistance_coff_qd_18: 0.55
       resistance_coff_qd_30: 3.0
       g: 9.81
-      delay: 0.2
+      delay: 0.0
       dt: 0.001
       timeout: 0.001
       publish_rate_model: 50
@@ -38,5 +38,5 @@ controllers:
       kalman_debug: true
       q_x: 1.
       q_dx: 1.
-      r_x: 300.
-      r_dx: 300.
+      r_x: 20.
+      r_dx: 100.
