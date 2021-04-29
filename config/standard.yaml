@@ -38,5 +38,5 @@ controllers:
       kalman_debug: true
       q_x: 1.
       q_dx: 1.
-      r_x: 1.
+      r_x: 10.
       r_dx: 150.
