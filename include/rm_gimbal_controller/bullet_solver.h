@@ -80,7 +80,7 @@ class BulletSolver {
                      double target_position_x, double target_position_y, double target_position_z,
                      double target_speed_x, double target_speed_y, double target_speed_z,
                      double bullet_speed) = 0;
-  virtual double isHit(const DVec<double> &angle_init,
+  virtual double isHit(const DVec<double> &angle,
                        double target_position_x, double target_position_y, double target_position_z,
                        double target_speed_x, double target_speed_y, double target_speed_z,
                        double bullet_speed) = 0;
@@ -115,7 +115,7 @@ class Bullet3DSolver : public BulletSolver {
              double target_position_x, double target_position_y, double target_position_z,
              double target_speed_x, double target_speed_y, double target_speed_z,
              double bullet_speed) override;
-  double isHit(const DVec<double> &angle_init,
+  double isHit(const DVec<double> &angle,
                double target_position_x, double target_position_y, double target_position_z,
                double target_speed_x, double target_speed_y, double target_speed_z,
                double bullet_speed) override;

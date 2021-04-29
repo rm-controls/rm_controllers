@@ -71,7 +71,7 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init,
   return true;
 }
 
-double Bullet3DSolver::isHit(const DVec<double> &angle_init, double target_position_x,
+double Bullet3DSolver::isHit(const DVec<double> &angle, double target_position_x,
                              double target_position_y, double target_position_z,
                              double target_speed_x, double target_speed_y,
                              double target_speed_z, double bullet_speed) {
@@ -87,7 +87,7 @@ double Bullet3DSolver::isHit(const DVec<double> &angle_init, double target_posit
   this->setBulletSpeed(bullet_speed);
   setTarget(pos_, vel_);
   double error_polar[2]{};
-  double error = computeError(angle_init[0], angle_init[1], error_polar);
+  double error = computeError(angle[0], angle[1], error_polar);
 
   return error;
 }
