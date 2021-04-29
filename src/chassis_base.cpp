@@ -82,7 +82,7 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
   }
 
   if (state_ != cmd_chassis_.mode) {
-    state_ = StandardState(cmd_chassis_.mode);
+    state_ = State(cmd_chassis_.mode);
     state_changed_ = true;
   }
 

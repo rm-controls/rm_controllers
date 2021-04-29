@@ -17,7 +17,7 @@
 #include <nav_msgs/Odometry.h>
 
 namespace rm_chassis_controllers {
-enum StandardState {
+enum State {
   PASSIVE,
   RAW,
   FOLLOW,
@@ -62,7 +62,7 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   double timeout_{};
   bool enable_odom_tf_ = false;
   bool state_changed_ = true;
-  StandardState state_ = PASSIVE;
+  State state_ = PASSIVE;
   RampFilter<double> *ramp_x{}, *ramp_y{}, *ramp_w{};
 
   ros::Time last_publish_time_;
