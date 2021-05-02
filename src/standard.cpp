@@ -105,13 +105,13 @@ void Controller::rate(const ros::Time &time, const ros::Duration &period) {
     map2gimbal_des_.transform = map2pitch_.transform;
     map2gimbal_des_.header.stamp = time;
     robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
+  } else {
+    double roll{}, pitch{}, yaw{};
+    quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
+    setDes(time,
+           yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_yaw,
+           pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
   }
-
-  double roll{}, pitch{}, yaw{};
-  quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
-  setDes(time,
-         yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_yaw,
-         pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
 }
 
 void Controller::track(const ros::Time &time) {
@@ -123,6 +123,7 @@ void Controller::track(const ros::Time &time) {
   }
   bool solve_success = false;
   double roll, pitch, yaw;
+  double error;
   try {
     quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
     angle_init_[0] = yaw;
@@ -136,18 +137,19 @@ void Controller::track(const ros::Time &time) {
         map2detection.transform.translation.x - map2pitch_.transform.translation.x,
         map2detection.transform.translation.y - map2pitch_.transform.translation.y,
         map2detection.transform.translation.z - map2pitch_.transform.translation.z,
-        target_vel_[cmd_rt_buffer_.readFromRT()->target_id].linear.x,
-        target_vel_[cmd_rt_buffer_.readFromRT()->target_id].linear.y,
-        0,
-        cmd_.bullet_speed);
+        0, 0, 0, cmd_.bullet_speed);
+    error = bullet_solver_->isHit(angle_init_,
+                                  map2detection.transform.translation.x - map2pitch_.transform.translation.x,
+                                  map2detection.transform.translation.y - map2pitch_.transform.translation.y,
+                                  map2detection.transform.translation.z - map2pitch_.transform.translation.z,
+                                  0, 0, 0, cmd_.bullet_speed);
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
     if (error_pub_->trylock()) {
       error_pub_->msg_.stamp = time;
-      error_pub_->msg_.error_pitch = solve_success ? error_pitch_ : 999;
-      error_pub_->msg_.error_yaw = solve_success ? error_yaw_ : 999;
+      error_pub_->msg_.error = solve_success ? error : 999;
       error_pub_->unlockAndPublish();
     }
     last_publish_time_ = time;
