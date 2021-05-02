@@ -13,19 +13,19 @@ controllers:
     twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
     modules:
       left_front:
-        position: [ 0.2, 0.2 ]
+        position: [ 0.159, 0.150 ]
         pivot:
           name: left_front_pivot_joint
           <<: &pivot_setting
             offset: 0.
-            pid: { p: 3, i: 0, d: 0.3, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+            pid: { p: 20, i: 0, d: 0.1, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
         wheel:
           name: left_front_wheel_joint
           <<: &wheel_setting
             radius: 0.055
             pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
       right_front:
-        position: [ 0.2, -0.2 ]
+        position: [ 0.160, -0.150 ]
         pivot:
           name: right_front_pivot_joint
           <<: *pivot_setting
@@ -33,7 +33,7 @@ controllers:
           name: right_front_wheel_joint
           <<: *wheel_setting
       left_back:
-        position: [ -0.2, 0.2 ]
+        position: [ -0.165, 0.150 ]
         pivot:
           name: left_back_pivot_joint
           <<: *pivot_setting
@@ -41,7 +41,7 @@ controllers:
           name: left_back_wheel_joint
           <<: *wheel_setting
       right_back:
-        position: [ -0.2, -0.2 ]
+        position: [ -0.160, -0.150 ]
         pivot:
           name: right_back_pivot_joint
           <<: *pivot_setting
