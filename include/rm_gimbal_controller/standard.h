@@ -85,6 +85,7 @@ class Controller :
   double error_yaw_{}, error_pitch_{};
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
   double publish_rate_{};
+  double same_id_distance_{}, saved_id_distance_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_{};
   Vec2<double> angle_init_{};
@@ -95,6 +96,9 @@ class Controller :
   std::map<int, geometry_msgs::Twist> target_vel_;
   std::map<int, kalman_filter::KalmanFilterTrack *> kalman_filters_track_;
   std::map<int, ros::Time> last_detection_time_;
+  std::map<int, geometry_msgs::Pose> last_detection_;
+  std::map<int, geometry_msgs::Pose> now_detection_;
+  std::map<int, geometry_msgs::Pose>::iterator detect_id_;
 };
 }
 

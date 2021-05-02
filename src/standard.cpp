@@ -201,17 +201,36 @@ void Controller::updateTf() {
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
   for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
-    if (kalman_filters_track_.find(detection.id) == kalman_filters_track_.end())
-      kalman_filters_track_.insert(std::make_pair(detection.id,
-                                                  new kalman_filter::KalmanFilterTrack(nh_kalman_, detection.id)));
+    detect_id_ = now_detection_.find(detection.id);
+    if (detect_id_ == now_detection_.end()) {
+      now_detection_.insert(std::make_pair(detection.id, detection.pose));
+    } else {
+      saved_id_distance_ =
+          std::pow(detection.pose.position.x - last_detection_.find(detection.id)->second.position.x, 2)
+              + std::pow(detection.pose.position.y - last_detection_.find(detection.id)->second.position.y, 2)
+              + std::pow(detection.pose.position.z - last_detection_.find(detection.id)->second.position.z, 2);
+      same_id_distance_ =
+          std::pow(detect_id_->second.position.x - last_detection_.find(detection.id)->second.position.x, 2)
+              + std::pow(detect_id_->second.position.y - last_detection_.find(detection.id)->second.position.y, 2)
+              + std::pow(detect_id_->second.position.z - last_detection_.find(detection.id)->second.position.z, 2);
+      if (same_id_distance_ > saved_id_distance_) {
+        now_detection_[detection.id] = detect_id_->second;
+      }
+    }
+    last_detection_ = now_detection_;
+  }
+  for (const auto &detection:now_detection_) {
+    if (kalman_filters_track_.find(detection.first) == kalman_filters_track_.end())
+      kalman_filters_track_.insert(std::make_pair(detection.first,
+                                                  new kalman_filter::KalmanFilterTrack(nh_kalman_, detection.first)));
     ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
-    if (last_detection_time_.find(detection.id)->second != detection_time) {
-      last_detection_time_[detection.id] = detection_time;
+    if (last_detection_time_.find(detection.first)->second != detection_time) {
+      last_detection_time_[detection.first] = detection_time;
       config_ = *config_rt_buffer_.readFromRT();
       geometry_msgs::TransformStamped map2camera, map2detection;
       tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
       try {
-        tf2::fromMsg(detection.pose, camera2detection_tf);
+        tf2::fromMsg(detection.second, camera2detection_tf);
         map2camera = robot_state_handle_.lookupTransform("map",
                                                          "camera_link",
                                                          detection_time - ros::Duration(config_.time_compensation));
@@ -226,18 +245,19 @@ void Controller::updateTf() {
         map2detection.transform.rotation.w = map2detection_tf.getRotation().w();
         map2detection.header.stamp = detection_time;
         map2detection.header.frame_id = "map";
-        map2detection.child_frame_id = "detection" + std::to_string(detection.id);
+        map2detection.child_frame_id = "detection" + std::to_string(detection.first);
 
-        kalman_filters_track_.find(detection.id)->second->input(map2detection);
-        tf_broadcaster_.sendTransform(kalman_filters_track_.find(detection.id)->second->getTransform());
-        target_vel_[detection.id] = kalman_filters_track_.find(detection.id)->second->getTwist();
+        kalman_filters_track_.find(detection.first)->second->input(map2detection);
+        tf_broadcaster_.sendTransform(kalman_filters_track_.find(detection.first)->second->getTransform());
+        target_vel_[detection.first] = kalman_filters_track_.find(detection.first)->second->getTwist();
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     }
 
-    updateTrackAndPub(detection.id);
-    kalman_filters_track_.find(detection.id)->second->perdict();
+    updateTrackAndPub(detection.first);
+    kalman_filters_track_.find(detection.first)->second->perdict();
   }
+  now_detection_.clear();
 }
 
 void Controller::updateTrackAndPub(int id) {
