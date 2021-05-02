@@ -96,12 +96,12 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   }
 
   is_filter_ = true;
-  map2detection_new_ = map2detection;
+  map2detection_new_.header.stamp = map2detection.header.stamp;
   double delta_x = map2detection.transform.translation.x - map2detection_last_.transform.translation.x;
   double delta_y = map2detection.transform.translation.y - map2detection_last_.transform.translation.y;
   double delta_z = map2detection.transform.translation.z - map2detection_last_.transform.translation.z;
-  if (std::abs(delta_x) > 0.5 || std::abs(delta_y) > 0.5 || std::abs(delta_z) > 0.5)
-    map2detection_new_.transform = map2detection_last_.transform;
+  if (std::abs(delta_x) < 0.5 && std::abs(delta_y) < 0.5 && std::abs(delta_z) < 0.5)
+    map2detection_new_.transform = map2detection.transform;
 
   double roll{}, pitch{}, yaw{}, roll_last{}, pitch_last{}, yaw_last{};
   quatToRPY(map2detection_new_.transform.rotation, roll, pitch, yaw);
