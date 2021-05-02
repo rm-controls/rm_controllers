@@ -75,8 +75,7 @@ void RobotStateController::update(const ros::Time &time, const ros::Duration &) 
               jnt_states_.find(mimic_iter->second->joint_name)->second.getPosition() * mimic_iter->second->multiplier
                   + mimic_iter->second->offset));
     else {
-      ROS_WARN_THROTTLE(10, "Joint state with name: \"%s\" was received but not found in URDF",
-                        item.first.c_str());
+      ROS_WARN_THROTTLE(10, "Joint state with name: \"%s\" was received but not found in URDF", item.first.c_str());
       continue;
     }
     tf_transform.header.stamp = time;
