@@ -1,32 +1,14 @@
 <launch>
-  <!-- This test suit for standard,hero,not sentry-->
-  <!-- Make sure to disable timeout -->
-  <rosparam file="$(find rm_chassis_controllers)/test/disable_timeout.yaml" command="load"/>
-  <arg name="type" default="standard"/>
+    <!-- Launch common-->
+    <include file="$(find rm_chassis_controllers)/test/common.launch">
+        <arg name="type" value="standard"/>
+    </include>
 
-
-  <!-- Load common test stuff -->
-  <include file="$(find rm_chassis_controllers)/launch/load_controllers.launch">
-    <arg name="robot_type" value="$(arg type)"/>
-    <arg name="odom_tf" value="true"/>
-    <arg name="ekf" default="false"/>
-    <arg name="yaw_tf" default="false"/>
-  </include>
-
-  <include file="$(find rm_gazebo)/launch/empty_world.launch">
-    <arg name="robot_type" value="$(arg type)"/>
-    <arg name="load_chassis" default="true"/>
-    <arg name="load_gimbal" default="false"/>
-    <arg name="load_shooter" default="false"/>
-    <arg name="load_arm" default="false"/>
-    <arg name="paused" default="false"/>
-  </include>
-
-  <!-- Controller test -->
-  <test test-name="linear_y_accel_limit_test"
-        pkg="rm_chassis_controllers"
-        type="linear_y_accel_limit_test"
-        time-limit="40.0">
-  </test>
+    <!-- Controller test -->
+    <test test-name="linear_y_accel_limit_test"
+          pkg="rm_chassis_controllers"
+          type="linear_y_accel_limit_test"
+          time-limit="40.0">
+    </test>
 
 </launch>

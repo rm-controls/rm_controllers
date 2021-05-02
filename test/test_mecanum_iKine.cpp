@@ -49,8 +49,8 @@ TEST_F(StandardChassisTest, testIKine) {
   publish(cmd_chassis, cmd_vel);
   ros::Duration(2.0).sleep();
   EXPECT_NEAR(-a * cmd_vel.angular.z / r, getJointStates().velocity[0], 0.7);
-  EXPECT_NEAR(a * cmd_vel.angular.z / r, getJointStates().velocity[1], 0.7);
-  EXPECT_NEAR(-a * cmd_vel.angular.z / r, getJointStates().velocity[2], 0.7);
+  EXPECT_NEAR(-a * cmd_vel.angular.z / r, getJointStates().velocity[1], 0.7);
+  EXPECT_NEAR(a * cmd_vel.angular.z / r, getJointStates().velocity[2], 0.7);
   EXPECT_NEAR(a * cmd_vel.angular.z / r, getJointStates().velocity[3], 0.7);
 
   cmd_vel.angular.z = 0.0;
