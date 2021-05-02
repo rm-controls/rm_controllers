@@ -137,12 +137,18 @@ void Controller::track(const ros::Time &time) {
         map2detection.transform.translation.x - map2pitch_.transform.translation.x,
         map2detection.transform.translation.y - map2pitch_.transform.translation.y,
         map2detection.transform.translation.z - map2pitch_.transform.translation.z,
-        0, 0, 0, cmd_.bullet_speed);
+        target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.x,
+        target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.y,
+        0,
+        cmd_.bullet_speed);
     error = bullet_solver_->isHit(angle_init_,
                                   map2detection.transform.translation.x - map2pitch_.transform.translation.x,
                                   map2detection.transform.translation.y - map2pitch_.transform.translation.y,
                                   map2detection.transform.translation.z - map2pitch_.transform.translation.z,
-                                  0, 0, 0, cmd_.bullet_speed);
+                                  target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.x,
+                                  target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.y,
+                                  0,
+                                  cmd_.bullet_speed);
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
@@ -223,30 +229,32 @@ void Controller::updateTf() {
         map2detection.child_frame_id = "detection" + std::to_string(detection.id);
 
         kalman_filters_track_.find(detection.id)->second->input(map2detection);
+        tf_broadcaster_.sendTransform(kalman_filters_track_.find(detection.id)->second->getTransform());
+        target_vel_[detection.id] = kalman_filters_track_.find(detection.id)->second->getTwist();
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
-    } else
-      updateTrackAndPub(detection.id);
+    }
+
+    updateTrackAndPub(detection.id);
     kalman_filters_track_.find(detection.id)->second->perdict();
-    target_vel_[detection.id] = kalman_filters_track_.find(detection.id)->second->getTwist();
   }
 }
 
 void Controller::updateTrackAndPub(int id) {
-  geometry_msgs::TransformStamped camera2detection, map2detection;
-  map2detection = kalman_filters_track_.find(id)->second->getTransform();
-  tf_broadcaster_.sendTransform(map2detection);
-
-  try {
-    camera2detection = robot_state_handle_.lookupTransform("camera_link",
-                                                           "detection" + std::to_string(id),
-                                                           ros::Time(0));
-  }
-  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
-
   ros::Time camera_time = camera_rt_buffer_.readFromRT()->header.stamp;
   if (last_camera_time_ != camera_time) {
     last_camera_time_ = camera_time;
+
+    geometry_msgs::TransformStamped camera2detection, map2detection;
+    try {
+      camera2detection = robot_state_handle_.lookupTransform("camera_link",
+                                                             "detection" + std::to_string(id),
+                                                             ros::Time(0));
+      map2detection = robot_state_handle_.lookupTransform("map",
+                                                          "detection" + std::to_string(id),
+                                                          ros::Time(0));
+    }
+    catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
     rm_msgs::TrackData track_data;
     track_data.id = id;

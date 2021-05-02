@@ -72,7 +72,7 @@ class Controller :
   ros::Subscriber data_detection_sub_;
   ros::Subscriber camera_sub_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
-  robot_state_controller::TfRtBroadcaster tf_broadcaster_{};
+  rm_common::TfRtBroadcaster tf_broadcaster_{};
 
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TargetDetectionArray> detection_rt_buffer_;
