@@ -126,18 +126,26 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   x_[4] = map2detection_new_.transform.translation.z;
   x_[6] = yaw;
 
-  x_[1] = last_pos_hat_.x - last_last_pos_hat_.x < 0.2 ? (last_pos_hat_.x - last_last_pos_hat_.x) / dt : x_[1];
-  x_[3] = last_pos_hat_.y - last_last_pos_hat_.y < 0.2 ? (last_pos_hat_.y - last_last_pos_hat_.y) / dt : x_[3];
-  x_[5] = last_pos_hat_.z - last_last_pos_hat_.z < 0.2 ? (last_pos_hat_.z - last_last_pos_hat_.z) / dt : x_[5];
+  x_[1] = (last_pos_hat_.x - last_last_pos_hat_.x) / dt < 5.0 ? (last_pos_hat_.x - last_last_pos_hat_.x) / dt : 0.0;
+  x_[3] = (last_pos_hat_.y - last_last_pos_hat_.y) / dt < 5.0 ? (last_pos_hat_.y - last_last_pos_hat_.y) / dt : 0.0;
+  x_[5] = (last_pos_hat_.z - last_last_pos_hat_.z) / dt < 5.0 ? (last_pos_hat_.z - last_last_pos_hat_.z) / dt : 0.0;
   x_[7] = (yaw - yaw_last) / dt;
-  last_last_pos_hat_ = last_pos_hat_;
 
   updateQR();
   kalman_filter_->predict(u_, q_);
   kalman_filter_->update(x_, r_);
 
+  if (std::abs(map2detection_new_.transform.translation.y - map2detection_last_.transform.translation.y) > 0.2) {
+    last_last_pos_hat_.y = map2detection_new_.transform.translation.y;
+    last_pos_hat_.y = last_last_pos_hat_.y + dt * x_hat_[3];
+  } else {
+    last_last_pos_hat_.y = last_pos_hat_.y;
+    last_pos_hat_.y = kalman_filter_->getState()[2];
+  }
+
+  last_last_pos_hat_.x = last_pos_hat_.x;
+  last_last_pos_hat_.z = last_pos_hat_.z;
   last_pos_hat_.x = kalman_filter_->getState()[0];
-  last_pos_hat_.y = kalman_filter_->getState()[2];
   last_pos_hat_.z = kalman_filter_->getState()[4];
   map2detection_last_ = map2detection_new_;
 

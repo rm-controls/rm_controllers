@@ -45,7 +45,7 @@ controllers:
       q_z_vel: 1.
       q_yaw_vel: 1.
       r_x_pos: 15.
-      r_y_pos: 15.
+      r_y_pos: 0.
       r_z_pos: 15.
       r_yaw_pos: 15.
       r_x_vel: 1000.
