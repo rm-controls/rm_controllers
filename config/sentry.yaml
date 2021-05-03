@@ -36,7 +36,19 @@ controllers:
       publish_rate_model: 50
     kalman:
       kalman_debug: true
-      q_x: 1.
-      q_dx: 1.
-      r_x: 300.
-      r_dx: 300.
+      q_x_pos: 1.
+      q_y_pos: 1.
+      q_z_pos: 1.
+      q_yaw_pos: 1.
+      q_x_vel: 1.
+      q_y_vel: 1.
+      q_z_vel: 1.
+      q_yaw_vel: 1.
+      r_x_pos: 15.
+      r_y_pos: 15.
+      r_z_pos: 15.
+      r_yaw_pos: 15.
+      r_x_vel: 1000.
+      r_y_vel: 1000.
+      r_z_vel: 1000.
+      r_yaw_vel: 1000.

@@ -16,7 +16,8 @@
 
 namespace kalman_filter {
 struct Config {
-  double q_x, q_dx, r_x, r_dx;
+  double q_x_pos, q_y_pos, q_z_pos, q_yaw_pos, q_x_vel, q_y_vel, q_z_vel, q_yaw_vel,
+      r_x_pos, r_y_pos, r_z_pos, r_yaw_pos, r_x_vel, r_y_vel, r_z_vel, r_yaw_vel;
 };
 class KalmanFilterTrack {
  public:

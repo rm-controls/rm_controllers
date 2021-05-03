@@ -12,10 +12,23 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
   is_debug_ = getParam(nh, "kalman_debug", false);
 
   // init config
-  config_ = {.q_x = getParam(nh, "q_x", 1.),
-      .q_dx = getParam(nh, "q_dx", 1.),
-      .r_x = getParam(nh, "r_x", 1.),
-      .r_dx = getParam(nh, "r_dx", 1.)
+  config_ = {
+      .q_x_pos = getParam(nh, "q_x_pos", 1.),
+      .q_y_pos = getParam(nh, "q_y_pos", 1.),
+      .q_z_pos = getParam(nh, "q_z_pos", 1.),
+      .q_yaw_pos = getParam(nh, "q_yaw_pos", 1.),
+      .q_x_vel = getParam(nh, "q_x_vel", 1.),
+      .q_y_vel = getParam(nh, "q_y_vel", 1.),
+      .q_z_vel = getParam(nh, "q_z_vel", 1.),
+      .q_yaw_vel = getParam(nh, "q_yaw_vel", 1.),
+      .r_x_pos = getParam(nh, "r_x_pos", 1.),
+      .r_y_pos = getParam(nh, "r_y_pos", 1.),
+      .r_z_pos = getParam(nh, "r_z_pos", 1.),
+      .r_yaw_pos = getParam(nh, "r_yaw_pos", 1.),
+      .r_x_vel = getParam(nh, "r_x_vel", 1.),
+      .r_y_vel = getParam(nh, "r_y_vel", 1.),
+      .r_z_vel = getParam(nh, "r_z_vel", 1.),
+      .r_yaw_vel = getParam(nh, "r_yaw_vel", 1.)
   };
   config_rt_buffer_.initRT(config_);
 
@@ -48,23 +61,23 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
       0., 0., 0., 0., 0., 0., 1., 0.,
       0., 0., 0., 0., 0., 0., 0., 1.;
   q_ <<
-     config_.q_x, 0., 0., 0., 0., 0., 0., 0.,
-      0., config_.q_dx, 0., 0., 0., 0., 0., 0.,
-      0., 0., config_.q_x, 0., 0., 0., 0., 0.,
-      0., 0., 0., config_.q_dx, 0., 0., 0., 0.,
-      0., 0., 0., 0., config_.q_x, 0., 0., 0.,
-      0., 0., 0., 0., 0., config_.q_dx, 0., 0.,
-      0., 0., 0., 0., 0., 0., config_.q_x, 0.,
-      0., 0., 0., 0., 0., 0., 0., config_.q_dx;
+     config_.q_x_pos, 0., 0., 0., 0., 0., 0., 0.,
+      0., config_.q_x_vel, 0., 0., 0., 0., 0., 0.,
+      0., 0., config_.q_y_pos, 0., 0., 0., 0., 0.,
+      0., 0., 0., config_.q_y_vel, 0., 0., 0., 0.,
+      0., 0., 0., 0., config_.q_z_pos, 0., 0., 0.,
+      0., 0., 0., 0., 0., config_.q_z_vel, 0., 0.,
+      0., 0., 0., 0., 0., 0., config_.q_yaw_pos, 0.,
+      0., 0., 0., 0., 0., 0., 0., config_.q_yaw_vel;
   r_ <<
-     config_.r_x, 0., 0., 0., 0., 0., 0., 0.,
-      0., config_.r_dx, 0., 0., 0., 0., 0., 0.,
-      0., 0., config_.r_x, 0., 0., 0., 0., 0.,
-      0., 0., 0., config_.r_dx, 0., 0., 0., 0.,
-      0., 0., 0., 0., config_.r_x, 0., 0., 0.,
-      0., 0., 0., 0., 0., config_.r_dx, 0., 0.,
-      0., 0., 0., 0., 0., 0., config_.r_x, 0.,
-      0., 0., 0., 0., 0., 0., 0., config_.r_dx;
+     config_.r_x_pos, 0., 0., 0., 0., 0., 0., 0.,
+      0., config_.r_x_vel, 0., 0., 0., 0., 0., 0.,
+      0., 0., config_.r_y_pos, 0., 0., 0., 0., 0.,
+      0., 0., 0., config_.r_y_vel, 0., 0., 0., 0.,
+      0., 0., 0., 0., config_.r_z_pos, 0., 0., 0.,
+      0., 0., 0., 0., 0., config_.r_z_vel, 0., 0.,
+      0., 0., 0., 0., 0., 0., config_.r_yaw_pos, 0.,
+      0., 0., 0., 0., 0., 0., 0., config_.r_yaw_vel;
   x_ << 0., 0., 0., 0., 0., 0., 0., 0.;
   x0_ << 0., 0., 0., 0., 0., 0., 0., 0.;
   u_ << 0., 0., 0., 0., 0., 0., 0., 0.;
@@ -181,23 +194,23 @@ geometry_msgs::Twist KalmanFilterTrack::getTwist() {
 void KalmanFilterTrack::updateQR() {
   config_ = *config_rt_buffer_.readFromRT();
   q_ <<
-     config_.q_x, 0., 0., 0., 0., 0., 0., 0.,
-      0., config_.q_dx, 0., 0., 0., 0., 0., 0.,
-      0., 0., config_.q_x, 0., 0., 0., 0., 0.,
-      0., 0., 0., config_.q_dx, 0., 0., 0., 0.,
-      0., 0., 0., 0., config_.q_x, 0., 0., 0.,
-      0., 0., 0., 0., 0., config_.q_dx, 0., 0.,
-      0., 0., 0., 0., 0., 0., config_.q_x, 0.,
-      0., 0., 0., 0., 0., 0., 0., config_.q_dx;
+     config_.q_x_pos, 0., 0., 0., 0., 0., 0., 0.,
+      0., config_.q_x_vel, 0., 0., 0., 0., 0., 0.,
+      0., 0., config_.q_y_pos, 0., 0., 0., 0., 0.,
+      0., 0., 0., config_.q_y_vel, 0., 0., 0., 0.,
+      0., 0., 0., 0., config_.q_z_pos, 0., 0., 0.,
+      0., 0., 0., 0., 0., config_.q_z_vel, 0., 0.,
+      0., 0., 0., 0., 0., 0., config_.q_yaw_pos, 0.,
+      0., 0., 0., 0., 0., 0., 0., config_.q_yaw_vel;
   r_ <<
-     config_.r_x, 0., 0., 0., 0., 0., 0., 0.,
-      0., config_.r_dx, 0., 0., 0., 0., 0., 0.,
-      0., 0., config_.r_x, 0., 0., 0., 0., 0.,
-      0., 0., 0., config_.r_dx, 0., 0., 0., 0.,
-      0., 0., 0., 0., config_.r_x, 0., 0., 0.,
-      0., 0., 0., 0., 0., config_.r_dx, 0., 0.,
-      0., 0., 0., 0., 0., 0., config_.r_x, 0.,
-      0., 0., 0., 0., 0., 0., 0., config_.r_dx;
+     config_.r_x_pos, 0., 0., 0., 0., 0., 0., 0.,
+      0., config_.r_x_vel, 0., 0., 0., 0., 0., 0.,
+      0., 0., config_.r_y_pos, 0., 0., 0., 0., 0.,
+      0., 0., 0., config_.r_y_vel, 0., 0., 0., 0.,
+      0., 0., 0., 0., config_.r_z_pos, 0., 0., 0.,
+      0., 0., 0., 0., 0., config_.r_z_vel, 0., 0.,
+      0., 0., 0., 0., 0., 0., config_.r_yaw_pos, 0.,
+      0., 0., 0., 0., 0., 0., 0., config_.r_yaw_vel;
 }
 
 void KalmanFilterTrack::perdict() {
@@ -208,17 +221,41 @@ void KalmanFilterTrack::reconfigCB(rm_gimbal_controllers::KalmanConfig &config, 
   ROS_INFO("[Track] Dynamic params change");
   if (!dynamic_reconfig_initialized_) {
     Config init_config = *config_rt_buffer_.readFromNonRT(); // config init use yaml
-    config.q_x = init_config.q_x;
-    config.q_dx = init_config.q_dx;
-    config.r_x = init_config.r_x;
-    config.r_dx = init_config.r_dx;
+    config.q_x_pos = init_config.q_x_pos;
+    config.q_y_pos = init_config.q_y_pos;
+    config.q_z_pos = init_config.q_z_pos;
+    config.q_yaw_pos = init_config.q_yaw_pos;
+    config.q_x_vel = init_config.q_x_vel;
+    config.q_y_vel = init_config.q_y_vel;
+    config.q_z_vel = init_config.q_z_vel;
+    config.q_yaw_vel = init_config.q_yaw_vel;
+    config.r_x_pos = init_config.r_x_pos;
+    config.r_y_pos = init_config.r_y_pos;
+    config.r_z_pos = init_config.r_z_pos;
+    config.r_yaw_pos = init_config.r_yaw_pos;
+    config.r_x_vel = init_config.r_x_vel;
+    config.r_y_vel = init_config.r_y_vel;
+    config.r_z_vel = init_config.r_z_vel;
+    config.r_yaw_vel = init_config.r_yaw_vel;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{
-      .q_x =config.q_x,
-      .q_dx =config.q_dx,
-      .r_x =config.r_x,
-      .r_dx =config.r_dx
+      .q_x_pos = config.q_x_pos,
+      .q_y_pos = config.q_y_pos,
+      .q_z_pos = config.q_z_pos,
+      .q_yaw_pos = config.q_yaw_pos,
+      .q_x_vel = config.q_x_vel,
+      .q_y_vel = config.q_y_vel,
+      .q_z_vel = config.q_z_vel,
+      .q_yaw_vel = config.q_yaw_vel,
+      .r_x_pos = config.r_x_pos,
+      .r_y_pos = config.r_y_pos,
+      .r_z_pos = config.r_z_pos,
+      .r_yaw_pos = config.r_yaw_pos,
+      .r_x_vel = config.r_x_vel,
+      .r_y_vel = config.r_y_vel,
+      .r_z_vel = config.r_z_vel,
+      .r_yaw_vel = config.r_yaw_vel
   };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
