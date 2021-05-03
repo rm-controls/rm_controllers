@@ -4,7 +4,6 @@
 
 #include <rm_common/ros_utilities.h>
 #include <string>
-#include <angles/angles.h>
 #include <pluginlib/class_list_macros.hpp>
 #include "rm_shooter_controller/standard.h"
 
