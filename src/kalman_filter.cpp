@@ -87,6 +87,8 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   double dt = std::abs(map2detection.header.stamp.toSec() - map2detection_last_.header.stamp.toSec());
   if (dt > 0.1) {
     map2detection_last_ = map2detection;
+    last_pos_hat_ = map2detection.transform.translation;
+    last_last_pos_hat_ = map2detection.transform.translation;
     x0_[0] = map2detection.transform.translation.x;
     x0_[2] = map2detection.transform.translation.y;
     x0_[4] = map2detection.transform.translation.z;
@@ -111,22 +113,19 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   x_[4] = map2detection_new_.transform.translation.z;
   x_[6] = yaw;
 
-  x_[1] = (last_pos_x_hat_ - last_last_pos_x_hat_) / dt;
-  x_[3] = (last_pos_y_hat_ - last_last_pos_y_hat_) / dt;
-  x_[5] = (last_pos_z_hat_ - last_last_pos_z_hat_) / dt;
+  x_[1] = last_pos_hat_.x - last_last_pos_hat_.x < 0.2 ? (last_pos_hat_.x - last_last_pos_hat_.x) / dt : x_[1];
+  x_[3] = last_pos_hat_.y - last_last_pos_hat_.y < 0.2 ? (last_pos_hat_.y - last_last_pos_hat_.y) / dt : x_[3];
+  x_[5] = last_pos_hat_.z - last_last_pos_hat_.z < 0.2 ? (last_pos_hat_.z - last_last_pos_hat_.z) / dt : x_[5];
   x_[7] = (yaw - yaw_last) / dt;
-
-  last_last_pos_x_hat_ = last_pos_x_hat_;
-  last_last_pos_y_hat_ = last_pos_y_hat_;
-  last_last_pos_z_hat_ = last_pos_z_hat_;
+  last_last_pos_hat_ = last_pos_hat_;
 
   updateQR();
   kalman_filter_->predict(u_, q_);
   kalman_filter_->update(x_, r_);
 
-  last_pos_x_hat_ = kalman_filter_->getState()[0];
-  last_pos_y_hat_ = kalman_filter_->getState()[2];
-  last_pos_z_hat_ = kalman_filter_->getState()[4];
+  last_pos_hat_.x = kalman_filter_->getState()[0];
+  last_pos_hat_.y = kalman_filter_->getState()[2];
+  last_pos_hat_.z = kalman_filter_->getState()[4];
   map2detection_last_ = map2detection_new_;
 
   if (is_debug_) {

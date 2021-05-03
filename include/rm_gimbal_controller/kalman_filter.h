@@ -38,12 +38,12 @@ class KalmanFilterTrack {
   ros::Time last_detection_time_;
   Vec8<double> x_, x0_, u_, x_hat_;
   Mat8<double> a_, b_, h_, q_, r_;
-  double last_pos_x_hat_{}, last_pos_y_hat_{}, last_pos_z_hat_{};
-  double last_last_pos_x_hat_{}, last_last_pos_y_hat_{}, last_last_pos_z_hat_{};
   bool is_debug_{};
   bool dynamic_reconfig_initialized_ = false;
   bool is_filter_ = false;
   Config config_{};
+  geometry_msgs::Vector3 last_pos_hat_{};
+  geometry_msgs::Vector3 last_last_pos_hat_{};
   geometry_msgs::TransformStamped map2detection_;
   geometry_msgs::TransformStamped map2detection_new_;
   geometry_msgs::TransformStamped map2detection_last_;
