@@ -138,7 +138,7 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
                                                                         : 0.0;
   x_[5] = std::abs((last_pos_hat_.z - last_last_pos_hat_.z)) / dt < 5.0 ? (last_pos_hat_.z - last_last_pos_hat_.z) / dt
                                                                         : 0.0;
-  x_[7] = (yaw - yaw_last) / dt;
+  x_[7] = std::abs((yaw - yaw_last) / dt) < 10.0 ? (yaw - yaw_last) / dt : x_[7];
 
   updateQR();
   kalman_filter_->predict(u_, q_);
@@ -156,6 +156,7 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
     kalman_data_.real_detection_pose.position.x = x_[0];
     kalman_data_.real_detection_pose.position.y = x_[2];
     kalman_data_.real_detection_pose.position.z = x_[4];
+    kalman_data_.real_detection_pose.orientation.z = x_[6];
     kalman_data_.real_detection_twist.linear.x = x_[1];
     kalman_data_.real_detection_twist.linear.y = x_[3];
     kalman_data_.real_detection_twist.linear.z = x_[5];
@@ -165,6 +166,7 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
     kalman_data_.filtered_detection_pose.position.x = x_hat_[0];
     kalman_data_.filtered_detection_pose.position.y = x_hat_[2];
     kalman_data_.filtered_detection_pose.position.z = x_hat_[4];
+    kalman_data_.filtered_detection_pose.orientation.z = x_hat_[6];
     kalman_data_.filtered_detection_twist.linear.x = x_hat_[1];
     kalman_data_.filtered_detection_twist.linear.y = x_hat_[3];
     kalman_data_.filtered_detection_twist.linear.z = x_hat_[5];
