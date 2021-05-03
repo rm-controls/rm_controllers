@@ -200,26 +200,33 @@ void Controller::updateTf() {
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
+  std::map<int, geometry_msgs::Pose> now_detection;
+  double now_distance, last_distance;
+
+  //Select the only target pose
   for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
-    detect_id_ = now_detection_.find(detection.id);
-    if (detect_id_ == now_detection_.end()) {
-      now_detection_.insert(std::make_pair(detection.id, detection.pose));
-    } else {
-      saved_id_distance_ =
+    if (now_detection.find(detection.id) == now_detection.end())
+      now_detection.insert(std::make_pair(detection.id, detection.pose));
+    else {
+      now_distance = std::sqrt(
           std::pow(detection.pose.position.x - last_detection_.find(detection.id)->second.position.x, 2)
               + std::pow(detection.pose.position.y - last_detection_.find(detection.id)->second.position.y, 2)
-              + std::pow(detection.pose.position.z - last_detection_.find(detection.id)->second.position.z, 2);
-      same_id_distance_ =
-          std::pow(detect_id_->second.position.x - last_detection_.find(detection.id)->second.position.x, 2)
-              + std::pow(detect_id_->second.position.y - last_detection_.find(detection.id)->second.position.y, 2)
-              + std::pow(detect_id_->second.position.z - last_detection_.find(detection.id)->second.position.z, 2);
-      if (same_id_distance_ > saved_id_distance_) {
-        now_detection_[detection.id] = detect_id_->second;
-      }
+              + std::pow(detection.pose.position.z - last_detection_.find(detection.id)->second.position.z, 2));
+      last_distance = std::sqrt(
+          std::pow(now_detection.find(detection.id)->second.position.x
+                       - last_detection_.find(detection.id)->second.position.x, 2) +
+              std::pow(now_detection.find(detection.id)->second.position.y
+                           - last_detection_.find(detection.id)->second.position.y, 2) +
+              std::pow(now_detection.find(detection.id)->second.position.z
+                           - last_detection_.find(detection.id)->second.position.z, 2));
+      if (now_distance < last_distance)
+        now_detection[detection.id] = detection.pose;
     }
-    last_detection_ = now_detection_;
   }
-  for (const auto &detection:now_detection_) {
+  last_detection_ = now_detection;
+
+  //Filtering the targets with different id
+  for (const auto &detection:now_detection) {
     if (kalman_filters_track_.find(detection.first) == kalman_filters_track_.end())
       kalman_filters_track_.insert(std::make_pair(detection.first,
                                                   new kalman_filter::KalmanFilterTrack(nh_kalman_, detection.first)));
@@ -257,7 +264,6 @@ void Controller::updateTf() {
     updateTrackAndPub(detection.first);
     kalman_filters_track_.find(detection.first)->second->perdict();
   }
-  now_detection_.clear();
 }
 
 void Controller::updateTrackAndPub(int id) {
