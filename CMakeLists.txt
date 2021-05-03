@@ -96,7 +96,7 @@ target_link_libraries(${PROJECT_NAME} bullet_solver ${catkin_LIBRARIES})
 
 ## Mark executables and/or libraries for installation
 install(
-        TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_core
+        TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
         RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
