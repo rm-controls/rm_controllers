@@ -47,8 +47,8 @@ controllers:
       r_x_pos: 100.
       r_y_pos: 100.
       r_z_pos: 100.
-      r_yaw_pos: 100.
+      r_yaw_pos: 1.
       r_x_vel: 100.
       r_y_vel: 100.
       r_z_vel: 100.
-      r_yaw_vel: 100.
+      r_yaw_vel: 500.

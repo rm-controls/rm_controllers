@@ -79,7 +79,6 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
       0., 0., 0., 0., 0., 0., config_.r_yaw_pos, 0.,
       0., 0., 0., 0., 0., 0., 0., config_.r_yaw_vel;
   x_ << 0., 0., 0., 0., 0., 0., 0., 0.;
-  x0_ << 0., 0., 0., 0., 0., 0., 0., 0.;
   u_ << 0., 0., 0., 0., 0., 0., 0., 0.;
 
   d_srv_ =
@@ -89,7 +88,7 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
   d_srv_->setCallback(cb);
 
   kalman_filter_ = new KalmanFilter<double>(a_, b_, h_, q_, r_);
-  kalman_filter_->clear(x0_);
+  kalman_filter_->clear(x_);
 
   if (is_debug_)
     realtime_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::KalmanData>(nh, "id" + std::to_string(id), 100));
@@ -97,48 +96,59 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
 
 void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detection) {
   map2detection_ = map2detection;
+  Vec8<double> x0{};
   double dt = std::abs(map2detection.header.stamp.toSec() - map2detection_last_.header.stamp.toSec());
   double delta_x = map2detection.transform.translation.x - map2detection_last_.transform.translation.x;
   double delta_y = map2detection.transform.translation.y - map2detection_last_.transform.translation.y;
   double delta_z = map2detection.transform.translation.z - map2detection_last_.transform.translation.z;
+  double roll{}, pitch{}, yaw{};
+  quatToRPY(map2detection.transform.rotation, roll, pitch, yaw);
 
-  if (dt > 0.1 || std::abs(delta_y) > 0.2) {
+  if (dt > 0.5 || std::abs(delta_y) > 0.2) {
     map2detection_last_ = map2detection;
     last_pos_hat_ = map2detection.transform.translation;
     last_last_pos_hat_ = map2detection.transform.translation;
-    if (std::abs(delta_y) > 0.2) {
-      last_last_pos_hat_.y = map2detection_new_.transform.translation.y;
+    x0[0] = map2detection.transform.translation.x;
+    x0[2] = map2detection.transform.translation.y;
+    x0[4] = map2detection.transform.translation.z;
+    x0[6] = yaw;
+
+    //If true, the target is in the gyroscope
+    if (dt < 0.5 && std::abs(delta_y) > 0.2) {
+      last_last_pos_hat_.y = map2detection_now_.transform.translation.y;
       last_pos_hat_.y = last_last_pos_hat_.y + dt * x_hat_[3];
-      x0_[3] = (last_pos_hat_.y - last_last_pos_hat_.y) / dt;
+      x0[3] = (last_pos_hat_.y - last_last_pos_hat_.y) / dt;
+      x0[7] = x_hat_[7];
     }
-    x0_[0] = map2detection.transform.translation.x;
-    x0_[2] = map2detection.transform.translation.y;
-    x0_[4] = map2detection.transform.translation.z;
-    kalman_filter_->clear(x0_);
+
+    kalman_filter_->clear(x0);
     is_filter_ = false;
     return;
   }
 
   is_filter_ = true;
-  map2detection_new_.header.stamp = map2detection.header.stamp;
+  map2detection_now_.header.stamp = map2detection.header.stamp;
   if (std::abs(delta_x) < 0.5 && std::abs(delta_y) < 0.5 && std::abs(delta_z) < 0.5)
-    map2detection_new_.transform = map2detection.transform;
+    map2detection_now_.transform = map2detection.transform;
 
-  double roll{}, pitch{}, yaw{}, roll_last{}, pitch_last{}, yaw_last{};
-  quatToRPY(map2detection_new_.transform.rotation, roll, pitch, yaw);
+  double roll_now{}, pitch_now{}, yaw_now{}, roll_last{}, pitch_last{}, yaw_last{};
+  quatToRPY(map2detection_now_.transform.rotation, roll_now, pitch_now, yaw_now);
   quatToRPY(map2detection_last_.transform.rotation, roll_last, pitch_last, yaw_last);
-  x_[0] = map2detection_new_.transform.translation.x;
-  x_[2] = map2detection_new_.transform.translation.y;
-  x_[4] = map2detection_new_.transform.translation.z;
-  x_[6] = yaw;
+  yaw_now = yaw_now > 0.0 ? yaw_now - 3.14 : yaw_now + 3.14;
+  yaw_last = yaw_last > 0.0 ? yaw_last - 3.14 : yaw_last + 3.14;
 
-  x_[1] = std::abs((last_pos_hat_.x - last_last_pos_hat_.x) / dt) < 5.0 ? (last_pos_hat_.x - last_last_pos_hat_.x) / dt
-                                                                        : 0.0;
-  x_[3] = std::abs((last_pos_hat_.y - last_last_pos_hat_.y)) / dt < 5.0 ? (last_pos_hat_.y - last_last_pos_hat_.y) / dt
-                                                                        : 0.0;
-  x_[5] = std::abs((last_pos_hat_.z - last_last_pos_hat_.z)) / dt < 5.0 ? (last_pos_hat_.z - last_last_pos_hat_.z) / dt
-                                                                        : 0.0;
-  x_[7] = std::abs((yaw - yaw_last) / dt) < 10.0 ? (yaw - yaw_last) / dt : x_[7];
+  x_[0] = map2detection_now_.transform.translation.x;
+  x_[2] = map2detection_now_.transform.translation.y;
+  x_[4] = map2detection_now_.transform.translation.z;
+  x_[6] = yaw_now;
+
+  x_[1] = std::abs((last_pos_hat_.x - last_last_pos_hat_.x) / dt) < 5.0 ?
+          (last_pos_hat_.x - last_last_pos_hat_.x) / dt : x_[1];
+  x_[3] = std::abs((last_pos_hat_.y - last_last_pos_hat_.y)) / dt < 5.0 ?
+          (last_pos_hat_.y - last_last_pos_hat_.y) / dt : x_[3];
+  x_[5] = std::abs((last_pos_hat_.z - last_last_pos_hat_.z)) / dt < 5.0 ?
+          (last_pos_hat_.z - last_last_pos_hat_.z) / dt : x_[5];
+  x_[7] = std::abs((yaw_now - yaw_last) / dt) < 10.0 ? (yaw_now - yaw_last) / dt : x_[7];
 
   updateQR();
   kalman_filter_->predict(u_, q_);
@@ -148,7 +158,7 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   last_pos_hat_.x = kalman_filter_->getState()[0];
   last_pos_hat_.y = kalman_filter_->getState()[2];
   last_pos_hat_.z = kalman_filter_->getState()[4];
-  map2detection_last_ = map2detection_new_;
+  map2detection_last_ = map2detection_now_;
 
   if (is_debug_) {
     kalman_data_.header.stamp = map2detection.header.stamp;
