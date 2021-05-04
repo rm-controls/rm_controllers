@@ -84,11 +84,11 @@ include_directories(
 add_library(bullet_solver src/bullet_solver.cpp)
 add_library(${PROJECT_NAME} src/standard.cpp)
 
-## Declare cpp executables
-
 ## Specify libraries to link executable targets against
 target_link_libraries(bullet_solver ${catkin_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} bullet_solver ${catkin_LIBRARIES})
+
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 
 #############
 ## Install ##
