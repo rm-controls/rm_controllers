@@ -77,15 +77,11 @@ add_library(${PROJECT_NAME}
         src/shooter_base.cpp
         src/standard.cpp)
 
-## Declare cpp executables
-#add_executable(${PROJECT_NAME}
-#    src/${PROJECT_NAME}_node.cpp
-#    src/RosPackageTemplate.cpp
-#    )
-
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES})
+
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 
 #############
 ## Install ##
