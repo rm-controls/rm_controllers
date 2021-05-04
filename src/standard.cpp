@@ -125,9 +125,11 @@ void Controller::track(const ros::Time &time) {
   double roll, pitch, yaw;
   double error;
   try {
-    quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
-    angle_init_[0] = yaw;
-    angle_init_[1] = -pitch;
+    if (last_solve_success_) {
+      quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
+      angle_init_[0] = yaw;
+      angle_init_[1] = -pitch;
+    }
     geometry_msgs::TransformStamped map2detection =
         robot_state_handle_.lookupTransform("map",
                                             "detection" + std::to_string(cmd_rt_buffer_.readFromRT()->target_id),
@@ -163,7 +165,8 @@ void Controller::track(const ros::Time &time) {
   if (solve_success)
     setDes(time, bullet_solver_->getResult(time, map2pitch_)[0], bullet_solver_->getResult(time, map2pitch_)[1]);
   else
-    setDes(time, yaw, pitch);
+    setDes(time, angle_init_[0], -angle_init_[1]);
+  last_solve_success_ = solve_success;
 }
 
 void Controller::setDes(const ros::Time &time, double yaw, double pitch) {

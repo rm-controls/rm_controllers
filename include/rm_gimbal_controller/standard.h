@@ -87,6 +87,7 @@ class Controller :
   double publish_rate_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_{};
+  bool last_solve_success_{};
   Vec2<double> angle_init_{};
 
   Config config_{};
