@@ -16,6 +16,7 @@ controllers:
     wheel_base: 0.395
     wheel_track: 0.400
     wheel_radius: 0.07625
+    power_coeff: 2.2
     twist_angular: 0.5233
     pid_rf: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     pid_rb: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }

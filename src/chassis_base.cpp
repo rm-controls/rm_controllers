@@ -17,6 +17,7 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   publish_rate_ = getParam(controller_nh, "publish_rate", 100);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
+  power_coeff_ = getParam(controller_nh, "power_coeff", 0.);
   timeout_ = getParam(controller_nh, "timeout", 1.0);
 
   // Get and check params for covariances
@@ -248,10 +249,12 @@ void ChassisBase::recovery() {
 }
 
 double ChassisBase::getEffortLimitScale() {
-  double real_effort;
+  double total_vel, real_effort;
+  for (const auto &joint:joint_handles_)  //TODO: remove the velocity of the swerve drive pivot
+    total_vel += std::abs(joint->getVelocity());
   for (const auto &pid:wheel_pids_)
     real_effort += std::abs(pid->getCurrentCmd());
-  double effort_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.effort_limit;
+  double effort_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit / total_vel * power_coeff_;
   return real_effort > effort_limit ? effort_limit / real_effort : 1.;
 }
 
