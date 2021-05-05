@@ -138,11 +138,11 @@ void Controller::track(const ros::Time &time) {
         map2detection.transform.translation.y - map2pitch_.transform.translation.y,
         map2detection.transform.translation.z - map2pitch_.transform.translation.z,
         0, 0, 0, cmd_.bullet_speed);
-    error = bullet_solver_->isHit(angle_init_,
-                                  map2detection.transform.translation.x - map2pitch_.transform.translation.x,
-                                  map2detection.transform.translation.y - map2pitch_.transform.translation.y,
-                                  map2detection.transform.translation.z - map2pitch_.transform.translation.z,
-                                  0, 0, 0, cmd_.bullet_speed);
+    error = bullet_solver_->gimbalError(angle_init_,
+                                        map2detection.transform.translation.x - map2pitch_.transform.translation.x,
+                                        map2detection.transform.translation.y - map2pitch_.transform.translation.y,
+                                        map2detection.transform.translation.z - map2pitch_.transform.translation.z,
+                                        0, 0, 0, cmd_.bullet_speed);
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 

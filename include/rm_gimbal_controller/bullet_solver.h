@@ -80,10 +80,10 @@ class BulletSolver {
                      double target_position_x, double target_position_y, double target_position_z,
                      double target_speed_x, double target_speed_y, double target_speed_z,
                      double bullet_speed) = 0;
-  virtual double isHit(const DVec<double> &angle,
-                       double target_position_x, double target_position_y, double target_position_z,
-                       double target_speed_x, double target_speed_y, double target_speed_z,
-                       double bullet_speed) = 0;
+  virtual double gimbalError(const DVec<double> &angle,
+                             double target_position_x, double target_position_y, double target_position_z,
+                             double target_speed_x, double target_speed_y, double target_speed_z,
+                             double bullet_speed) = 0;
   virtual void modelRviz(double x_offset, double y_offset, double z_offset) = 0;
   void setResistanceCoefficient(double bullet_speed, Config config);
 
@@ -115,10 +115,10 @@ class Bullet3DSolver : public BulletSolver {
              double target_position_x, double target_position_y, double target_position_z,
              double target_speed_x, double target_speed_y, double target_speed_z,
              double bullet_speed) override;
-  double isHit(const DVec<double> &angle,
-               double target_position_x, double target_position_y, double target_position_z,
-               double target_speed_x, double target_speed_y, double target_speed_z,
-               double bullet_speed) override;
+  double gimbalError(const DVec<double> &angle,
+                     double target_position_x, double target_position_y, double target_position_z,
+                     double target_speed_x, double target_speed_y, double target_speed_z,
+                     double bullet_speed) override;
   void modelRviz(double x_offset, double y_offset, double z_offset) override;
   Vec2<double> getResult(const ros::Time &time, geometry_msgs::TransformStamped map2pitch);
   std::vector<Vec3<double>> getPointData3D();
@@ -138,7 +138,7 @@ class Iter3DSolver : public Bullet3DSolver {
  public:
   using Bullet3DSolver::Bullet3DSolver;
   using Bullet3DSolver::solve;
-  using Bullet3DSolver::isHit;
+  using Bullet3DSolver::gimbalError;
   using Bullet3DSolver::getPointData3D;
   using Bullet3DSolver::getResult;
  private:
@@ -149,7 +149,7 @@ class Approx3DSolver : public Bullet3DSolver {
  public:
   using Bullet3DSolver::Bullet3DSolver;
   using Bullet3DSolver::solve;
-  using Bullet3DSolver::isHit;
+  using Bullet3DSolver::gimbalError;
   using Bullet3DSolver::getPointData3D;
   using Bullet3DSolver::getResult;
  private:

@@ -25,8 +25,18 @@ void BulletSolver::setResistanceCoefficient(double bullet_speed, Config config) 
 bool Bullet3DSolver::solve(const DVec<double> &angle_init,
                            double target_position_x, double target_position_y, double target_position_z,
                            double target_speed_x, double target_speed_y, double target_speed_z, double bullet_speed) {
-  isHit(angle_init, target_position_x, target_position_y, target_position_z,
-        target_speed_x, target_speed_y, target_speed_z, bullet_speed);
+  config_ = *config_rt_buffer_.readFromRT();
+  setResistanceCoefficient(bullet_speed, config_);
+  pos_[0] = target_position_x;
+  pos_[1] = target_position_y;
+  pos_[2] = target_position_z;
+  vel_[0] = target_speed_x;
+  vel_[1] = target_speed_y;
+  vel_[2] = target_speed_z;
+
+  this->setBulletSpeed(bullet_speed);
+  setTarget(pos_, vel_);
+
   double error_theta_z_init[2]{}, error_theta_z_point[2]{};
   double yaw_point = std::atan2(target_y_, target_x_);
   double pitch_point = std::atan2(
@@ -71,10 +81,10 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init,
   return true;
 }
 
-double Bullet3DSolver::isHit(const DVec<double> &angle, double target_position_x,
-                             double target_position_y, double target_position_z,
-                             double target_speed_x, double target_speed_y,
-                             double target_speed_z, double bullet_speed) {
+double Bullet3DSolver::gimbalError(const DVec<double> &angle, double target_position_x,
+                                   double target_position_y, double target_position_z,
+                                   double target_speed_x, double target_speed_y,
+                                   double target_speed_z, double bullet_speed) {
   config_ = *config_rt_buffer_.readFromRT();
   setResistanceCoefficient(bullet_speed, config_);
   pos_[0] = target_position_x;
