@@ -4,6 +4,7 @@
         <arg name="load_empty_world" value="false"/>
         <arg name="load_sentry_world" value="true"/>
         <arg name="disable_timeout" value="false"/>
+        <arg name="mecanum_chassis" value="false"/>
     </include>
 
     <!-- Controller test -->
