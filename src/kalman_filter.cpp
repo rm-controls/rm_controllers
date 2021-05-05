@@ -104,17 +104,16 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
   double roll{}, pitch{}, yaw{};
   quatToRPY(map2detection.transform.rotation, roll, pitch, yaw);
 
-  if (dt > 0.5 || std::abs(delta_y) > 0.2) {
+  if (dt > 0.5 || std::abs(delta_y) > 0.15) {
     map2detection_last_ = map2detection;
     last_pos_hat_ = map2detection.transform.translation;
     last_last_pos_hat_ = map2detection.transform.translation;
     x0[0] = map2detection.transform.translation.x;
     x0[2] = map2detection.transform.translation.y;
     x0[4] = map2detection.transform.translation.z;
-    x0[6] = yaw;
 
     //If true, the target is in the gyroscope
-    if (dt < 0.5 && std::abs(delta_y) > 0.2) {
+    if (dt < 0.5 && std::abs(delta_y) > 0.15) {
       last_last_pos_hat_.y = map2detection_now_.transform.translation.y;
       last_pos_hat_.y = last_last_pos_hat_.y + dt * x_hat_[3];
       x0[3] = (last_pos_hat_.y - last_last_pos_hat_.y) / dt;
