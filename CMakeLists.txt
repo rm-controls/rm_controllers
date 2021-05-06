@@ -28,6 +28,7 @@ find_package(catkin REQUIRED
         tf2_geometry_msgs
         visualization_msgs
         dynamic_reconfigure
+        angles
         )
 
 generate_dynamic_reconfigure_options(
@@ -65,6 +66,7 @@ catkin_package(
         tf2_geometry_msgs
         visualization_msgs
         dynamic_reconfigure
+        angles
         DEPENDS
 )
 
@@ -82,36 +84,40 @@ include_directories(
 add_library(bullet_solver src/bullet_solver.cpp)
 add_library(${PROJECT_NAME} src/standard.cpp)
 
-## Declare cpp executables
-
 ## Specify libraries to link executable targets against
 target_link_libraries(bullet_solver ${catkin_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} bullet_solver ${catkin_LIBRARIES})
+
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 
 #############
 ## Install ##
 #############
 
 ## Mark executables and/or libraries for installation
-#install(
-#    TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_core
-#    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
-#
-## Mark cpp header files for installation
-#install(
-#    DIRECTORY include/${PROJECT_NAME}/
-#    DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#    FILES_MATCHING PATTERN "*.hpp"
-#)
-#
-## Mark other files for installation
-#install(
-#    DIRECTORY doc
-#    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-#)
+install(
+        TARGETS ${PROJECT_NAME}
+        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# Mark cpp header files for installation
+install(
+        DIRECTORY include/${PROJECT_NAME}/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+        FILES_MATCHING PATTERN "*.h"
+)
+
+# Mark other files for installation
+install(
+        DIRECTORY config launch
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
+install(
+        FILES rm_gimbal_controllers_plugins.xml
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 #############
 ## Testing ##
