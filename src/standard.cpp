@@ -138,22 +138,23 @@ void Controller::track(const ros::Time &time) {
         map2detection.transform.translation.y - map2pitch_.transform.translation.y,
         map2detection.transform.translation.z - map2pitch_.transform.translation.z,
         0, 0, 0, cmd_.bullet_speed);
-    error = bullet_solver_->gimbalError(angle_init_,
-                                        map2detection.transform.translation.x - map2pitch_.transform.translation.x,
-                                        map2detection.transform.translation.y - map2pitch_.transform.translation.y,
-                                        map2detection.transform.translation.z - map2pitch_.transform.translation.z,
-                                        0, 0, 0, cmd_.bullet_speed);
+
+    if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
+      if (error_pub_->trylock()) {
+        error = bullet_solver_->gimbalError(angle_init_,
+                                            map2detection.transform.translation.x - map2pitch_.transform.translation.x,
+                                            map2detection.transform.translation.y - map2pitch_.transform.translation.y,
+                                            map2detection.transform.translation.z - map2pitch_.transform.translation.z,
+                                            0, 0, 0, cmd_.bullet_speed);
+        error_pub_->msg_.stamp = time;
+        error_pub_->msg_.error = solve_success ? error : 999;
+        error_pub_->unlockAndPublish();
+      }
+      last_publish_time_ = time;
+    }
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
-  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
-    if (error_pub_->trylock()) {
-      error_pub_->msg_.stamp = time;
-      error_pub_->msg_.error = solve_success ? error : 999;
-      error_pub_->unlockAndPublish();
-    }
-    last_publish_time_ = time;
-  }
   if (solve_success)
     setDes(time, bullet_solver_->getResult(time, map2pitch_)[0], bullet_solver_->getResult(time, map2pitch_)[1]);
   else
