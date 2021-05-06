@@ -124,21 +124,33 @@ void Controller::track(const ros::Time &time) {
   bool solve_success = false;
   double roll, pitch, yaw;
   double error;
-  try {
-    if (last_solve_success_) {
-      quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
-      angle_init_[0] = yaw;
-      angle_init_[1] = -pitch;
+
+  if (last_solve_success_) {
+    quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
+    angle_init_[0] = yaw;
+    angle_init_[1] = -pitch;
+  }
+
+  if (kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id) != kalman_filters_track_.end()) {
+    geometry_msgs::TransformStamped
+        map2detection = kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getTransform();
+    if (kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->isGyro()) {
+      geometry_msgs::Vector3
+          center = kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getCenter();
+      target_pos_.x = center.x;
+      target_pos_.y = center.y;
+      target_pos_.z = center.z;
+    } else {
+      target_pos_.x = map2detection.transform.translation.x;
+      target_pos_.y = map2detection.transform.translation.y;
+      target_pos_.z = map2detection.transform.translation.z;
     }
-    geometry_msgs::TransformStamped map2detection =
-        robot_state_handle_.lookupTransform("map",
-                                            "detection" + std::to_string(cmd_rt_buffer_.readFromRT()->target_id),
-                                            ros::Time(0));
+
     solve_success = bullet_solver_->solve(
         angle_init_,
-        map2detection.transform.translation.x - map2pitch_.transform.translation.x,
-        map2detection.transform.translation.y - map2pitch_.transform.translation.y,
-        map2detection.transform.translation.z - map2pitch_.transform.translation.z,
+        target_pos_.x - map2pitch_.transform.translation.x,
+        target_pos_.y - map2pitch_.transform.translation.y,
+        target_pos_.z - map2pitch_.transform.translation.z,
         target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.x,
         target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.y,
         0,
@@ -152,7 +164,6 @@ void Controller::track(const ros::Time &time) {
                                   0,
                                   cmd_.bullet_speed);
   }
-  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
     if (error_pub_->trylock()) {
@@ -263,6 +274,9 @@ void Controller::updateTf() {
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     }
+
+    if (now_detection.empty())
+      target_vel_.clear();
 
     updateTrackAndPub(detection.first);
     kalman_filters_track_.find(detection.first)->second->perdict();

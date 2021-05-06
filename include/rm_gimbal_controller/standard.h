@@ -80,6 +80,7 @@ class Controller :
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
 
   geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
+  geometry_msgs::Vector3 target_pos_{};
   rm_msgs::GimbalCmd cmd_;
 
   double error_yaw_{}, error_pitch_{};

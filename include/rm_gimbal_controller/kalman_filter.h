@@ -27,27 +27,35 @@ class KalmanFilterTrack {
   geometry_msgs::Twist getTwist();
   void perdict();
   void updateQR();
+  geometry_msgs::Vector3 getCenter() const;
+  bool isGyro() const;
   ~KalmanFilterTrack() = default;
 
  private:
-  void reconfigCB(rm_gimbal_controllers::KalmanConfig &config, uint32_t);
-
+  ros::Time last_detection_time_;
+  ros::Time enter_gyro_time_;
   KalmanFilter<double> *kalman_filter_;
-  dynamic_reconfigure::Server<rm_gimbal_controllers::KalmanConfig> *d_srv_;
+
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::KalmanData>> realtime_pub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
-  ros::Time last_detection_time_;
+  dynamic_reconfigure::Server<rm_gimbal_controllers::KalmanConfig> *d_srv_;
+  void reconfigCB(rm_gimbal_controllers::KalmanConfig &config, uint32_t);
+
   Vec8<double> x_, u_, x_hat_;
   Mat8<double> a_, b_, h_, q_, r_;
   bool is_debug_{};
-  bool dynamic_reconfig_initialized_ = false;
-  bool is_filter_ = false;
+  bool dynamic_reconfig_initialized_{};
+  bool is_filter_{};
+  bool is_gyro_{};
+  int switch_count_{};
   Config config_{};
+
   geometry_msgs::Vector3 last_pos_hat_{};
   geometry_msgs::Vector3 last_last_pos_hat_{};
-  geometry_msgs::TransformStamped map2detection_;
-  geometry_msgs::TransformStamped map2detection_now_;
-  geometry_msgs::TransformStamped map2detection_last_;
+  geometry_msgs::Vector3 center_{};
+  geometry_msgs::TransformStamped map2detection_{};
+  geometry_msgs::TransformStamped map2detection_now_{};
+  geometry_msgs::TransformStamped map2detection_last_{};
   rm_msgs::KalmanData kalman_data_;
 };
 }
