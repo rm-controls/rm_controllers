@@ -134,17 +134,10 @@ void Controller::track(const ros::Time &time) {
   if (kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id) != kalman_filters_track_.end()) {
     geometry_msgs::TransformStamped
         map2detection = kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getTransform();
-    if (kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->isGyro()) {
-      geometry_msgs::Vector3
-          center = kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getCenter();
-      target_pos_.x = center.x;
-      target_pos_.y = center.y;
-      target_pos_.z = center.z;
-    } else {
-      target_pos_.x = map2detection.transform.translation.x;
-      target_pos_.y = map2detection.transform.translation.y;
-      target_pos_.z = map2detection.transform.translation.z;
-    }
+    if (kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->isGyro())
+      target_pos_ = kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getCenter();
+    else
+      target_pos_ = map2detection.transform.translation;
 
     solve_success = bullet_solver_->solve(
         angle_init_,
