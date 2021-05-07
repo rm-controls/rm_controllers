@@ -62,7 +62,7 @@ geometry_msgs::Twist BalanceController::forwardKinematics() {
   return vel_data;
 }
 
-void BalanceController::moveJoint(const ros::Duration &period) {
+void BalanceController::moveJoint(const ros::Time &time, const ros::Duration &period) {
   x_ref_(2) = ramp_x->output();
   x_ref_(3) = ramp_w->output();
 

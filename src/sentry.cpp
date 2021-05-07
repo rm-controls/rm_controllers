@@ -17,8 +17,9 @@ bool SentryController::init(hardware_interface::RobotHW *robot_hw,
   return true;
 }
 
-void SentryController::moveJoint(const ros::Duration &period) {
+void SentryController::moveJoint(const ros::Time &time, const ros::Duration &period) {
   ctrl_wheel_.setCommand(ramp_x->output());
+  ctrl_wheel_.update(time, period);
 }
 
 geometry_msgs::Twist SentryController::forwardKinematics() {

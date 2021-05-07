@@ -44,7 +44,7 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   void follow(const ros::Time &time, const ros::Duration &period);
   void twist(const ros::Time &time, const ros::Duration &period);
   void gyro();
-  virtual void moveJoint(const ros::Duration &period) = 0;
+  virtual void moveJoint(const ros::Time &time, const ros::Duration &period) = 0;
   virtual geometry_msgs::Twist forwardKinematics() = 0;
   void updateOdom(const ros::Time &time, const ros::Duration &period);
   void recovery();

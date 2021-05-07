@@ -27,13 +27,16 @@ bool MecanumController::init(hardware_interface::RobotHW *robot_hw,
   return true;
 }
 
-void MecanumController::moveJoint(const ros::Duration &period) {
-
+void MecanumController::moveJoint(const ros::Time &time, const ros::Duration &period) {
   double a = (wheel_base_ + wheel_track_) / 2.0;
   ctrl_lf_.setCommand((ramp_x->output() - ramp_y->output() - ramp_w->output() * a) / wheel_radius_);
   ctrl_rf_.setCommand((ramp_x->output() + ramp_y->output() + ramp_w->output() * a) / wheel_radius_);
   ctrl_lb_.setCommand((ramp_x->output() + ramp_y->output() - ramp_w->output() * a) / wheel_radius_);
   ctrl_rb_.setCommand((ramp_x->output() - ramp_y->output() + ramp_w->output() * a) / wheel_radius_);
+  ctrl_lf_.update(time, period);
+  ctrl_rf_.update(time, period);
+  ctrl_lb_.update(time, period);
+  ctrl_rb_.update(time, period);
 }
 
 geometry_msgs::Twist MecanumController::forwardKinematics() {

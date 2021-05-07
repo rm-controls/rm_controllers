@@ -21,7 +21,7 @@ class BalanceController : public ChassisBase {
 
  private:
   void getK(XmlRpc::XmlRpcValue a, XmlRpc::XmlRpcValue b, XmlRpc::XmlRpcValue q, XmlRpc::XmlRpcValue r);
-  void moveJoint(const ros::Duration &period) override;
+  void moveJoint(const ros::Time &time, const ros::Duration &period) override;
   geometry_msgs::Twist forwardKinematics() override;
   void dataImuCallback(const sensor_msgs::ImuConstPtr &data);
 

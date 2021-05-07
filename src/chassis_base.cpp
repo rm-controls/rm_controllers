@@ -107,7 +107,7 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
     ramp_x->input(vel_tfed_.vector.x);
     ramp_y->input(vel_tfed_.vector.y);
     ramp_w->input(vel_tfed_.vector.z);
-    moveJoint(period);
+    moveJoint(time, period);
   }
 }
 
