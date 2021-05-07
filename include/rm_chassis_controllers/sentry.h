@@ -18,9 +18,7 @@ class SentryController : public ChassisBase {
   void moveJoint(const ros::Duration &period) override;
   geometry_msgs::Twist forwardKinematics() override;
 
-  control_toolbox::Pid pid_wheel_;
-  hardware_interface::JointHandle joint_wheel_;
-  geometry_msgs::TransformStamped odom2base_{};
+  effort_controllers::JointVelocityController ctrl_wheel_;
 };
 
 }

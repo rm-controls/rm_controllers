@@ -16,17 +16,14 @@ bool BalanceController::init(hardware_interface::RobotHW *robot_hw,
                              ros::NodeHandle &root_nh,
                              ros::NodeHandle &controller_nh) {
   ChassisBase::init(robot_hw, root_nh, controller_nh);
-  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
-  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.06);
-  wheel_base_ = getParam(controller_nh, "wheel_base", 0.405);
   com_pitch_offset_ = getParam(controller_nh, "com_pitch_offset", 0.);
 
-  joint_left_ = effort_jnt_interface->getHandle(
+  joint_left_ = effort_joint_interface_->getHandle(
       getParam(controller_nh, "joint_left_name", std::string("joint_left")));
-  joint_right_ = effort_jnt_interface->getHandle(
+  joint_right_ = effort_joint_interface_->getHandle(
       getParam(controller_nh, "joint_right_name", std::string("joint_right")));
-  joint_handles_.push_back(&joint_left_);
-  joint_handles_.push_back(&joint_right_);
+  joint_handles_.push_back(joint_left_);
+  joint_handles_.push_back(joint_right_);
 
   XmlRpc::XmlRpcValue a, b, q, r;
   controller_nh.getParam("a", a);
@@ -35,8 +32,7 @@ bool BalanceController::init(hardware_interface::RobotHW *robot_hw,
   controller_nh.getParam("r", r);
   getK(a, b, q, r);
   state_real_pub_ = root_nh.advertise<rm_msgs::BalanceState>("state_real", 100);
-  data_imu_sub_ =
-      root_nh.subscribe<sensor_msgs::Imu>("base_imu", 1, &BalanceController::dataImuCallback, this);
+  data_imu_sub_ = root_nh.subscribe<sensor_msgs::Imu>("base_imu", 1, &BalanceController::dataImuCallback, this);
 
   return true;
 }
@@ -70,11 +66,10 @@ void BalanceController::moveJoint(const ros::Duration &period) {
   x_ref_(2) = ramp_x->output();
   x_ref_(3) = ramp_w->output();
 
-  vel_data_ = forwardKinematics();
   imu_data_ = *imu_rt_buffer_.readFromRT();
   double roll{}, pitch{}, yaw{};
   quatToRPY(imu_data_.orientation, roll, pitch, yaw);
-  x_ << pitch + com_pitch_offset_, imu_data_.angular_velocity.y, vel_data_.linear.x
+  x_ << pitch + com_pitch_offset_, imu_data_.angular_velocity.y, forwardKinematics().linear.x
       + imu_data_.angular_velocity.y * 0.147, imu_data_.angular_velocity.z;
 
   u_ = k_ * (x_ref_ - x_);
@@ -88,7 +83,7 @@ void BalanceController::dataImuCallback(const sensor_msgs::ImuConstPtr &data) {
 
 void BalanceController::getK(XmlRpc::XmlRpcValue a, XmlRpc::XmlRpcValue b,
                              XmlRpc::XmlRpcValue q, XmlRpc::XmlRpcValue r) {
-  //check a and q
+  // Check a and q
   ROS_ASSERT(a.getType() == XmlRpc::XmlRpcValue::TypeArray);
   ROS_ASSERT(q.getType() == XmlRpc::XmlRpcValue::TypeArray);
   ROS_ASSERT(a.size() == STATE_DIM);
@@ -113,8 +108,7 @@ void BalanceController::getK(XmlRpc::XmlRpcValue a, XmlRpc::XmlRpcValue b,
         q_(i, j) = static_cast<int>(q[i][j]);
     }
   }
-
-  //check b
+  // Check b
   ROS_ASSERT(b.getType() == XmlRpc::XmlRpcValue::TypeArray);
   ROS_ASSERT(b.size() == STATE_DIM);
   for (int i = 0; i < STATE_DIM; ++i) {
@@ -129,8 +123,7 @@ void BalanceController::getK(XmlRpc::XmlRpcValue a, XmlRpc::XmlRpcValue b,
         b_(i, j) = static_cast<int>(b[i][j]);
     }
   }
-
-  //check r
+  // Check r
   ROS_ASSERT(r.getType() == XmlRpc::XmlRpcValue::TypeArray);
   ROS_ASSERT(r.size() == CONTROL_DIM);
   for (int i = 0; i < CONTROL_DIM; ++i) {
