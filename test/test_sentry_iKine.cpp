@@ -9,26 +9,19 @@ TEST_F(StandardChassisTest, testIKine) {
   double r = 0.025;
 
   // zero everything before test
-  geometry_msgs::Twist cmd_vel{};
-  rm_msgs::ChassisCmd cmd_chassis{};
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.0;
-
-  cmd_chassis.mode = cmd_chassis.RAW;
-  cmd_chassis.effort_limit = 99;
-  cmd_chassis.accel.linear.x = 20;
-
-  publish(cmd_chassis, cmd_vel);
-  ros::Duration(5.0).sleep();
-
-  cmd_vel.linear.x = 0.25;
-  publish(cmd_chassis, cmd_vel);
+  this->zeroCmdVel();
+  this->zeroCmdChassis();
+  this->publish();
   ros::Duration(10.0).sleep();
-  EXPECT_NEAR(cmd_vel.linear.x, getJointStates().velocity[0] * r, 0.06);
 
-  cmd_vel.linear.x = 0.;
-  publish(cmd_chassis, cmd_vel);
+  this->cmd_chassis_.accel.linear.x = 20;
+  this->cmd_vel_.linear.x = 0.016;
+  publish();
+  ros::Duration(10.0).sleep();
+  EXPECT_NEAR(this->cmd_vel_.linear.x, getJointStates().velocity[0] * r, 0.06);
+
+  this->cmd_vel_.linear.x = 0.;
+  publish();
   ros::Duration(5.0).sleep();
 }
 
