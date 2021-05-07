@@ -117,8 +117,6 @@ void Controller::rate(const ros::Time &time, const ros::Duration &period) {
 void Controller::track(const ros::Time &time) {
   if (state_changed_) { //on enter
     state_changed_ = false;
-    error_yaw_ = 999;
-    error_pitch_ = 999;
     ROS_INFO("[Gimbal] Enter TRACK");
   }
   bool solve_success = false;
@@ -189,12 +187,13 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
     ROS_WARN("%s", ex.what());
     return;
   }
+  double error_yaw{}, error_pitch{};
   double roll_des, pitch_des, yaw_des;  // desired position
   quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
-  error_yaw_ = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
-  error_pitch_ = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
-  lp_filter_yaw_->input(error_yaw_, time);
-  lp_filter_pitch_->input(error_pitch_, time);
+  error_yaw = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
+  error_pitch = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
+  lp_filter_yaw_->input(error_yaw, time);
+  lp_filter_pitch_->input(error_pitch, time);
   pid_yaw_.computeCommand(lp_filter_yaw_->output(), period);
   pid_pitch_.computeCommand(lp_filter_pitch_->output(), period);
   joint_yaw_.setCommand(pid_yaw_.getCurrentCmd());

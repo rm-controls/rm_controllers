@@ -83,7 +83,6 @@ class Controller :
   geometry_msgs::Vector3 target_pos_{};
   rm_msgs::GimbalCmd cmd_;
 
-  double error_yaw_{}, error_pitch_{};
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
   double publish_rate_{};
   bool dynamic_reconfig_initialized_ = false;
