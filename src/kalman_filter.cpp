@@ -10,6 +10,7 @@
 namespace kalman_filter {
 KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
   is_debug_ = getParam(nh, "kalman_debug", false);
+  int moving_average_data_num = getParam(nh, "moving_average_data_num", 30);
 
   // init config
   config_ = {
@@ -90,6 +91,12 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
 
   kalman_filter_ = new KalmanFilter<double>(a_, b_, h_, q_, r_);
   kalman_filter_->clear(x_);
+  moving_average_filter_x_ = new MovingAverageFilter<double>(moving_average_data_num);
+  moving_average_filter_x_->clear();
+  moving_average_filter_y_ = new MovingAverageFilter<double>(moving_average_data_num);
+  moving_average_filter_y_->clear();
+  moving_average_filter_z_ = new MovingAverageFilter<double>(moving_average_data_num);
+  moving_average_filter_z_->clear();
 
   if (is_debug_)
     realtime_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::KalmanData>(nh, "id" + std::to_string(id), 100));
@@ -108,6 +115,9 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
     x0[2] = map2detection.transform.translation.y;
     x0[4] = map2detection.transform.translation.z;
     kalman_filter_->clear(x0);
+    moving_average_filter_x_->clear();
+    moving_average_filter_y_->clear();
+    moving_average_filter_z_->clear();
     is_filter_ = false;
     is_gyro_ = false;
     switch_count_ = 0;
@@ -124,27 +134,17 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
     map2detection_now_.transform = map2detection.transform;
   map2detection_ = map2detection_now_;
 
-  double delta = map2detection.transform.translation.y - map2detection_last_.transform.translation.y;
+  double delta = map2detection_now_.transform.translation.y - map2detection_last_.transform.translation.y;
   //If true, the target armor is switching
   if (std::abs(delta) > 0.1) {
     x0[0] = map2detection_now_.transform.translation.x;
     x0[2] = map2detection_now_.transform.translation.y;
     x0[4] = map2detection_now_.transform.translation.z;
-
     last_last_pos_hat_.y = map2detection_now_.transform.translation.y;
     last_pos_hat_.y = last_last_pos_hat_.y + dt * x_hat_[3];
     x0[3] = (last_pos_hat_.y - last_last_pos_hat_.y) / dt;
     kalman_filter_->clear(x0);
-    geometry_msgs::Vector3 center;
-    center.x = map2detection_now_.transform.translation.x;
-    center.y = map2detection_now_.transform.translation.y + delta > 0.0 ? -0.2 : 0.2;
-    center.z = map2detection_now_.transform.translation.z;
-    if (std::abs(center.y - center_.y) > 0.3)
-      center_.y = center.y;
-    if (std::abs(center.x - center_.x) > 0.1)
-      center_.x = center.x;
-    if (std::abs(center.z - center_.z) > 0.1)
-      center_.z = center.z;
+
     //if switch number bigger than 3, so it is in gyro
     if (switch_count_ <= 3)
       switch_count_++;
@@ -154,6 +154,13 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
     }
   } else
     is_gyro_ = std::abs(map2detection_now_.header.stamp.toSec() - enter_gyro_time_.toSec()) <= 1.0;
+
+  moving_average_filter_x_->input(map2detection_now_.transform.translation.x);
+  moving_average_filter_y_->input(map2detection_now_.transform.translation.y);
+  moving_average_filter_z_->input(map2detection_now_.transform.translation.z);
+  center_.x = moving_average_filter_x_->output();
+  center_.y = moving_average_filter_y_->output();
+  center_.z = moving_average_filter_z_->output();
 
   double roll_now{}, pitch_now{}, yaw_now{}, roll_last{}, pitch_last{}, yaw_last{};
   quatToRPY(map2detection_now_.transform.rotation, roll_now, pitch_now, yaw_now);

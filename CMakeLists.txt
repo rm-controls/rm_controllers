@@ -32,8 +32,8 @@ find_package(catkin REQUIRED
 
 generate_dynamic_reconfigure_options(
         cfg/BulletSolver.cfg
-        cfg/Gimbal.cfg
         cfg/Kalman.cfg
+        cfg/Gimbal.cfg
 )
 
 ###################################

@@ -11,6 +11,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <rm_common/ros_utilities.h>
 #include <rm_common/filters/kalman_filter.h>
+#include <rm_common/filters/filters.h>
 #include <rm_msgs/KalmanData.h>
 #include <rm_gimbal_controllers/KalmanConfig.h>
 
@@ -35,6 +36,9 @@ class KalmanFilterTrack {
   ros::Time last_detection_time_;
   ros::Time enter_gyro_time_;
   KalmanFilter<double> *kalman_filter_;
+  MovingAverageFilter<double> *moving_average_filter_x_;
+  MovingAverageFilter<double> *moving_average_filter_y_;
+  MovingAverageFilter<double> *moving_average_filter_z_;
 
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::KalmanData>> realtime_pub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
