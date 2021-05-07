@@ -7,29 +7,20 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
     ros::Duration(0.1).sleep();
   }
 // zero everything before test
-  geometry_msgs::Twist cmd_vel{};
-  rm_msgs::ChassisCmd cmd_chassis{};
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.0;
-
-  cmd_chassis.mode = cmd_chassis.RAW;
-  cmd_chassis.effort_limit = 99;
-  cmd_chassis.accel.linear.x = 0;
-  cmd_chassis.accel.linear.y = 0;
-  cmd_chassis.accel.angular.z = 0;
-
-  publish(cmd_chassis, cmd_vel);
+  this->zeroCmdVel();
+  this->zeroCmdChassis();
+  this->publish();
   ros::Duration(3.0).sleep();
+
 // get initial odom and base_link
   nav_msgs::Odometry old_odom = getLastOdom();
   geometry_msgs::Pose old_base_link_pose = getPose();    //  from Gazebo
   geometry_msgs::Twist old_base_link_twist = getTwist(); //  from Gazebo
-// send a big command
-  cmd_vel.angular.z = 1.0;
-  cmd_chassis.accel.angular.z = 10.0;
-  publish(cmd_chassis, cmd_vel);
-// wait for a while
+
+// send a big command,wait for a while
+  this->cmd_vel_.angular.z = 1.0;
+  this->cmd_chassis_.accel.angular.z = 10.0;
+  this->publish();
   ros::Duration(1.0).sleep();
 
   nav_msgs::Odometry new_odom = getLastOdom();
@@ -45,18 +36,18 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   EXPECT_LT(fabs(new_base_link_pose.position.x - old_base_link_pose.position.x), POSITION_TOLERANCE);
   EXPECT_LT(fabs(new_base_link_pose.position.y - old_base_link_pose.position.y), POSITION_TOLERANCE);
 
-  cmd_vel.angular.z = 0.0;
-  cmd_chassis.accel.angular.z = 10.0;
-  publish(cmd_chassis, cmd_vel);
+  this->cmd_vel_.angular.z = 0.0;
+  this->cmd_chassis_.accel.angular.z = 10.0;
+  this->publish();
   ros::Duration(3.0).sleep();
 
   old_odom = getLastOdom();
   old_base_link_pose = getPose();   //  from Gazebo
   old_base_link_twist = getTwist(); //  from Gazebo
 
-  cmd_vel.angular.z = 1.0;
-  cmd_chassis.accel.angular.z = 0.5;
-  publish(cmd_chassis, cmd_vel);
+  this->cmd_vel_.angular.z = 1.0;
+  this->cmd_chassis_.accel.angular.z = 0.5;
+  this->publish();
   ros::Duration(1.0).sleep();
 
   new_odom = getLastOdom();
@@ -71,9 +62,9 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   EXPECT_LT(fabs(new_base_link_pose.position.x - old_base_link_pose.position.x), POSITION_TOLERANCE);
   EXPECT_LT(fabs(new_base_link_pose.position.y - old_base_link_pose.position.y), POSITION_TOLERANCE);
 
-  cmd_vel.angular.z = 0.0;
-  cmd_chassis.accel.angular.z = 0.0;
-  publish(cmd_chassis, cmd_vel);
+  this->cmd_vel_.angular.z = 0.0;
+  this->cmd_chassis_.accel.angular.z = 0.0;
+  this->publish();
 }
 
 int main(int argc, char **argv) {

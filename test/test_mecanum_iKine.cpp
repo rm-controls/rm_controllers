@@ -12,49 +12,43 @@ TEST_F(StandardChassisTest, testIKine) {
 
 
   // zero everything before test
-  geometry_msgs::Twist cmd_vel{};
-  rm_msgs::ChassisCmd cmd_chassis{};
-  cmd_vel.linear.x = 0.0;
-  cmd_vel.linear.y = 0.0;
-  cmd_vel.angular.z = 0.0;
-
-  cmd_chassis.mode = cmd_chassis.RAW;
-  cmd_chassis.effort_limit = 99;
-  cmd_chassis.accel.linear.x = 8;
-  cmd_chassis.accel.linear.y = 8;
-  cmd_chassis.accel.angular.z = 8;
-
-  publish(cmd_chassis, cmd_vel);
+  this->zeroCmdVel();
+  this->zeroCmdChassis();
+  this->publish();
   ros::Duration(2.0).sleep();
 
-  cmd_vel.linear.x = 0.5;
-  publish(cmd_chassis, cmd_vel);
+  this->cmd_vel_.linear.x = 0.5;
+  this->cmd_chassis_.accel.linear.x = 8.0;
+  publish();
   ros::Duration(2.0).sleep();
   EXPECT_NEAR(0.5 / r, getJointStates().velocity[0], 0.3);
   EXPECT_NEAR(0.5 / r, getJointStates().velocity[1], 0.3);
   EXPECT_NEAR(0.5 / r, getJointStates().velocity[2], 0.3);
   EXPECT_NEAR(0.5 / r, getJointStates().velocity[3], 0.3);
 
-  cmd_vel.linear.x = 0.;
-  cmd_vel.linear.y = 0.5;
-  publish(cmd_chassis, cmd_vel);
+  this->cmd_vel_.linear.x = 0.0;
+  this->cmd_vel_.linear.y = 0.5;
+  this->cmd_chassis_.accel.linear.y = 8.0;
+  publish();
   ros::Duration(2.0).sleep();
   EXPECT_NEAR(0.5 / r, getJointStates().velocity[0], 0.8);
   EXPECT_NEAR(-0.5 / r, getJointStates().velocity[1], 0.5);
   EXPECT_NEAR(-0.5 / r, getJointStates().velocity[2], 0.5);
   EXPECT_NEAR(0.5 / r, getJointStates().velocity[3], 0.5);
 
-  cmd_vel.linear.y = 0.;
-  cmd_vel.angular.z = 0.5;
-  publish(cmd_chassis, cmd_vel);
+  this->cmd_vel_.linear.y = 0.;
+  this->cmd_vel_.angular.z = 0.5;
+  this->cmd_chassis_.accel.angular.z = 8.0;
+  publish();
   ros::Duration(2.0).sleep();
-  EXPECT_NEAR(-a * cmd_vel.angular.z / r, getJointStates().velocity[0], 0.7);
-  EXPECT_NEAR(-a * cmd_vel.angular.z / r, getJointStates().velocity[1], 0.7);
-  EXPECT_NEAR(a * cmd_vel.angular.z / r, getJointStates().velocity[2], 0.7);
-  EXPECT_NEAR(a * cmd_vel.angular.z / r, getJointStates().velocity[3], 0.7);
+  EXPECT_NEAR(-a * this->cmd_vel_.angular.z / r, getJointStates().velocity[0], 0.7);
+  EXPECT_NEAR(-a * this->cmd_vel_.angular.z / r, getJointStates().velocity[1], 0.7);
+  EXPECT_NEAR(a * this->cmd_vel_.angular.z / r, getJointStates().velocity[2], 0.7);
+  EXPECT_NEAR(a * this->cmd_vel_.angular.z / r, getJointStates().velocity[3], 0.7);
 
-  cmd_vel.angular.z = 0.0;
-  publish(cmd_chassis, cmd_vel);
+  this->cmd_vel_.angular.z = 0.0;
+  this->cmd_chassis_.accel.angular.z = 8.0;
+  publish();
   ros::Duration(2.0).sleep();
 
 }

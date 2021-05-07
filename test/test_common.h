@@ -53,22 +53,47 @@ class StandardChassisTest : public ::testing::Test {
       FAIL() << "Something went wrong while executing test.";
   }
 
-  void publish(const rm_msgs::ChassisCmd &chassis_cmd, const geometry_msgs::Twist &twist) {
-    cmd_chassis_pub_.publish(chassis_cmd);
-    cmd_vel_pub_.publish(twist);
-  }
-
-  void publishFromWrongTopic(const rm_msgs::ChassisCmd &chassis_cmd, const geometry_msgs::Twist &twist) {
-    chassis_cmd_pub_.publish(chassis_cmd);
-    vel_cmd_pub_.publish(twist);
-  }
-
   const geometry_msgs::Pose &getPose() { return base_link_pose_; }
   const geometry_msgs::Twist &getTwist() { return base_link_twist_; }
   const nav_msgs::Odometry getLastOdom() { return last_odom_; }
   const sensor_msgs::JointState getJointStates() { return joint_state_; }
 
   bool isControllerAlive() const { return (odom_sub_.getNumPublishers() > 0); }
+
+  geometry_msgs::Twist cmd_vel_{};
+  rm_msgs::ChassisCmd cmd_chassis_{};
+
+  void publish(const rm_msgs::ChassisCmd &chassis_cmd, const geometry_msgs::Twist &twist) {
+    cmd_chassis_pub_.publish(chassis_cmd);
+    cmd_vel_pub_.publish(twist);
+  }
+  void publish() {
+    cmd_chassis_pub_.publish(cmd_chassis_);
+    cmd_vel_pub_.publish(cmd_vel_);
+  }
+
+  void publishFromWrongTopic(const rm_msgs::ChassisCmd &chassis_cmd, const geometry_msgs::Twist &twist) {
+    chassis_cmd_pub_.publish(chassis_cmd);
+    vel_cmd_pub_.publish(twist);
+  }
+  void publishFromWrongTopic() {
+    chassis_cmd_pub_.publish(cmd_chassis_);
+    vel_cmd_pub_.publish(cmd_vel_);
+  }
+
+  void zeroCmdVel() {
+    cmd_vel_.linear.x = 0.0;
+    cmd_vel_.linear.y = 0.0;
+    cmd_vel_.angular.z = 0.0;
+  }
+
+  void zeroCmdChassis() {
+    cmd_chassis_.mode = cmd_chassis_.RAW;
+    cmd_chassis_.accel.linear.x = 0.0;
+    cmd_chassis_.accel.linear.y = 0.0;
+    cmd_chassis_.accel.angular.z = 0.0;
+    cmd_chassis_.effort_limit = 99;
+  }
 
  private:
   ros::NodeHandle nh_;
