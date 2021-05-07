@@ -10,7 +10,7 @@
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_common/filters/filters.h>
-#include <control_toolbox/pid.h>
+#include <effort_controllers/joint_velocity_controller.h>
 #include <rm_msgs/ChassisCmd.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
@@ -44,22 +44,21 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   void follow(const ros::Time &time, const ros::Duration &period);
   void twist(const ros::Time &time, const ros::Duration &period);
   void gyro();
-  virtual void moveJoint(const ros::Duration &period) = 0;
+  virtual void moveJoint(const ros::Time &time, const ros::Duration &period) = 0;
   virtual geometry_msgs::Twist forwardKinematics() = 0;
   void updateOdom(const ros::Time &time, const ros::Duration &period);
   void recovery();
   void tfVelToBase(const std::string &from);
-  double getEffortLimitScale();
+  void powerLimit();
 
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg);
 
-  std::vector<hardware_interface::JointHandle *> joint_handles_{};
-  std::vector<control_toolbox::Pid *> wheel_pids_{};
+  hardware_interface::EffortJointInterface *effort_joint_interface_{};
+  std::vector<hardware_interface::JointHandle> joint_handles_{};
   hardware_interface::RobotStateHandle robot_state_handle_{};
 
-  double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{};
-  double timeout_{};
+  double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, power_coeff_{}, timeout_{};
   bool enable_odom_tf_ = false;
   bool state_changed_ = true;
   State state_ = PASSIVE;
