@@ -9,12 +9,13 @@
 #include <realtime_tools/realtime_buffer.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <visualization_msgs/Marker.h>
-#include <rm_gimbal_controllers/GimbalConfig.h>
+#include <rm_gimbal_controllers/BulletSolverConfig.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
 
+namespace bullet_solver {
 struct Config {
   double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
       resistance_coff_qd_30, g, delay, dt, timeout;
@@ -38,9 +39,9 @@ class BulletSolver {
     config_rt_buffer_.initRT(config_);
 
     d_srv_ =
-        new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig>(controller_nh);
-    dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig>::CallbackType
-        cb = boost::bind(&BulletSolver::reconfigCB, this, _1, _2);
+        new dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>(controller_nh);
+    dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>::CallbackType
+        cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
     d_srv_->setCallback(cb);
 
     path_pub_ = controller_nh.advertise<visualization_msgs::Marker>("bullet_model", 10);
@@ -48,8 +49,8 @@ class BulletSolver {
   virtual ~BulletSolver() = default;
   virtual void setTarget(const DVec<double> &pos, const DVec<double> &vel) = 0;
   virtual void setBulletSpeed(double speed) { bullet_speed_ = speed; };
-  virtual void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t /*level*/) {
-    ROS_INFO("[Gimbal] Dynamic params change");
+  void reconfigCB(rm_gimbal_controllers::BulletSolverConfig &config, uint32_t) {
+    ROS_INFO("[Bullet Solver] Dynamic params change");
     if (!dynamic_reconfig_initialized_) {
       Config init_config = *config_rt_buffer_.readFromNonRT(); // config init use yaml
       config.resistance_coff_qd_10 = init_config.resistance_coff_qd_10;
@@ -90,7 +91,7 @@ class BulletSolver {
  protected:
   double bullet_speed_{};
   ros::Publisher path_pub_;
-  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalConfig> *d_srv_{};
+  dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig> *d_srv_{};
   double publish_rate_{};
   ros::Time last_publish_time_;
   bool dynamic_reconfig_initialized_ = false;
@@ -104,9 +105,9 @@ class Bullet3DSolver : public BulletSolver {
  public:
   using BulletSolver::BulletSolver;
   void setTarget(const DVec<double> &pos, const DVec<double> &vel) override {
-    target_x_ = pos[0] + vel[0] * config_.delay;
-    target_y_ = pos[1] + vel[1] * config_.delay;
-    target_z_ = pos[2] + vel[2] * config_.delay;
+    target_x_ = pos[0] + vel[0] * (config_.delay + this->fly_time_);
+    target_y_ = pos[1] + vel[1] * (config_.delay + this->fly_time_);
+    target_z_ = pos[2] + vel[2] * (config_.delay + this->fly_time_);
     target_dx_ = vel[0];
     target_dy_ = vel[1];
     target_dz_ = vel[2];
@@ -120,7 +121,7 @@ class Bullet3DSolver : public BulletSolver {
                      double target_speed_x, double target_speed_y, double target_speed_z,
                      double bullet_speed) override;
   void modelRviz(double x_offset, double y_offset, double z_offset) override;
-  Vec2<double> getResult(const ros::Time &time, geometry_msgs::TransformStamped map2pitch);
+  Vec2<double> getResult(const ros::Time &time, const geometry_msgs::TransformStamped &map2pitch);
   std::vector<Vec3<double>> getPointData3D();
  protected:
   virtual double computeError(double yaw, double pitch, double *error_polar) = 0;
@@ -155,4 +156,5 @@ class Approx3DSolver : public Bullet3DSolver {
  private:
   double computeError(double yaw, double pitch, double *error_polar) override;
 };
+}
 #endif //SRC_RM_COMMON_INCLUDE_BULLET_SOLVER_H_

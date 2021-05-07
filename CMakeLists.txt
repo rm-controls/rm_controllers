@@ -32,8 +32,9 @@ find_package(catkin REQUIRED
         )
 
 generate_dynamic_reconfigure_options(
+        cfg/BulletSolver.cfg
+        cfg/Kalman.cfg
         cfg/Gimbal.cfg
-        cfg/GimbalTimeCompensation.cfg
 )
 
 ###################################
@@ -82,11 +83,13 @@ include_directories(
 
 ## Declare a cpp library
 add_library(bullet_solver src/bullet_solver.cpp)
+add_library(kalman_filter src/kalman_filter.cpp)
 add_library(${PROJECT_NAME} src/standard.cpp)
 
 ## Specify libraries to link executable targets against
 target_link_libraries(bullet_solver ${catkin_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} bullet_solver ${catkin_LIBRARIES})
+target_link_libraries(kalman_filter ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} bullet_solver kalman_filter ${catkin_LIBRARIES})
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 
