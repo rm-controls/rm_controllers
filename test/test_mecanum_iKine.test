@@ -1,14 +1,14 @@
 <launch>
-    <!-- This test suit for standard,hero,sentry-->
+    <!-- This test suit for standard,hero,not sentry-->
+    <!-- Launch common-->
     <include file="$(find rm_chassis_controllers)/test/common.launch">
         <arg name="type" value="standard"/>
     </include>
 
     <!-- Controller test -->
-    <test test-name="default_cmd_publisher_test"
+    <test test-name="mecanum_iKine_test"
           pkg="rm_chassis_controllers"
-          type="default_cmd_publisher_test"
-          time-limit="40.0">
+          type="mecanum_iKine_test"
+          time-limit="80.0">
     </test>
-
 </launch>
