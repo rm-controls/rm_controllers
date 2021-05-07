@@ -1,0 +1,40 @@
+<launch>
+    <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, hero, engineer]"/>
+    <arg name="odom_tf" default="true"/>
+    <arg name="mecanum_chassis" default="true"/>
+
+    <!--arg for test-->
+    <arg name="yaw_tf" default="false"/>
+    <arg name="load_wrong_yaml" default="false"/>
+    <arg name="disable_odom_tf" default="false"/>
+    <arg name="disable_timeout" default="true"/>
+
+
+    <rosparam file="$(find rm_chassis_controllers)/config/$(arg robot_type).yaml" command="load"/>
+    <rosparam if="$(arg mecanum_chassis)" file="$(find rm_chassis_controllers)/config/mecanum.yaml" command="load"/>
+
+    <!-- for test-->
+    <rosparam if="$(arg load_wrong_yaml)" file="$(find rm_chassis_controllers)/test/wrong.yaml" command="load"/>
+    <rosparam if="$(arg disable_odom_tf)" file="$(find rm_chassis_controllers)/test/disable_odom_tf.yaml"
+              command="load"/>
+    <rosparam if="$(arg disable_timeout)" file="$(find rm_chassis_controllers)/test/disable_timeout.yaml"
+              command="load"/>
+
+    <!-- load the controllers -->
+    <node name="$(arg robot_type)_spawner" pkg="controller_manager" type="spawner"
+          respawn="false" output="screen"
+          args="
+          controllers/robot_state_controller
+          controllers/imu_sensor_controller
+          controllers/chassis_controller
+          controllers/joint_state_controller
+  "/>
+
+    <node if="$(arg odom_tf)" pkg="tf" type="static_transform_publisher" name="$(arg robot_type)_odom_tf_publisher"
+          args="0 0 0 0 0 0 1 map odom 100"/>
+
+    <!--  for test !!! -->
+    <node if="$(arg yaw_tf)" pkg="tf" type="static_transform_publisher" name="$(arg robot_type)_yaw_tf_publisher"
+          args="0 0 0 0.866 0 0 0.5 map yaw 100"/>
+
+</launch>
