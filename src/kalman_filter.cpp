@@ -84,7 +84,7 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
   u_ << 0., 0., 0., 0., 0., 0., 0., 0.;
 
   d_srv_ =
-      new dynamic_reconfigure::Server<rm_gimbal_controllers::KalmanConfig>(nh);
+      new dynamic_reconfigure::Server<rm_gimbal_controllers::KalmanConfig>(ros::NodeHandle(nh, std::to_string(id)));
   dynamic_reconfigure::Server<rm_gimbal_controllers::KalmanConfig>::CallbackType
       cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
   d_srv_->setCallback(cb);
