@@ -28,6 +28,7 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   for (int i = 0; i < twist_cov_list.size(); ++i)
     ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
+  effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
   // Setup odometry realtime publisher + odom message constant fields
@@ -107,7 +108,7 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
     ramp_x->input(vel_tfed_.vector.x);
     ramp_y->input(vel_tfed_.vector.y);
     ramp_w->input(vel_tfed_.vector.z);
-    moveJoint(period);
+    moveJoint(time, period);
   }
 }
 
@@ -117,7 +118,7 @@ void ChassisBase::passive() {
     ROS_INFO("[Chassis] Enter PASSIVE");
 
     for (auto joint:joint_handles_)
-      joint->setCommand(0);
+      joint.setCommand(0);
   }
 }
 
@@ -248,15 +249,13 @@ void ChassisBase::recovery() {
   ramp_w->clear(vel.angular.z);
 }
 
-double ChassisBase::getEffortLimitScale() {
-  double total_vel, real_effort;
-  for (const auto &joint:joint_handles_)  //TODO: remove the velocity of the swerve drive pivot
-    total_vel += std::abs(joint->getVelocity());
-  for (const auto &pid:wheel_pids_)
-    real_effort += std::abs(pid->getCurrentCmd());
-  double effort_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit / total_vel * power_coeff_;
-  return real_effort > effort_limit ? effort_limit / real_effort : 1.;
-}
+//double ChassisBase::getEffortLimitScale() {
+//  double real_effort;
+//  for (const auto &pid:wheel_pids_)
+//    real_effort += std::abs(pid->getCurrentCmd());
+//  double effort_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.effort_limit;
+//  return real_effort > effort_limit ? effort_limit / real_effort : 1.;
+//}
 
 void ChassisBase::tfVelToBase(const std::string &from) {
   try {

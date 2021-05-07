@@ -5,9 +5,7 @@
     <arg name="yaw_tf" default="false"/>
     <arg name="mecanum_chassis" default="true"/>
 
-
     <rosparam file="$(find rm_chassis_controllers)/config/$(arg robot_type).yaml" command="load"/>
-    <rosparam if="$(arg mecanum_chassis)" file="$(find rm_chassis_controllers)/config/mecanum.yaml" command="load"/>
     <rosparam if="$(arg ekf)" param="controllers/chassis_controller/enable_odom_tf">false</rosparam>
 
     <!-- load the controllers -->
@@ -16,8 +14,8 @@
           args="
           controllers/robot_state_controller
           controllers/imu_sensor_controller
-          controllers/chassis_controller
           controllers/joint_state_controller
+          controllers/chassis_controller
   "/>
 
     <node if="$(arg ekf)" pkg="robot_localization" type="ekf_localization_node" name="ekf_localization"
