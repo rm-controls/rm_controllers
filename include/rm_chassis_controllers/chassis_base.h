@@ -49,7 +49,7 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   void updateOdom(const ros::Time &time, const ros::Duration &period);
   void recovery();
   void tfVelToBase(const std::string &from);
-//  double getEffortLimitScale();
+  void powerLimit();
 
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr &msg);
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr &msg);
