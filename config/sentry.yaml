@@ -7,10 +7,11 @@ controllers:
     publish_rate: 100
   chassis_controller:
     type: rm_chassis_controllers/SentryController
-    joint_name: "drive_joint"
-    publish_rate_: 100
+    publish_rate: 100
     wheel_radius: 0.0250
-    pid_wheel: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    wheel:
+      name: "drive_wheel_joint"
+      pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
   joint_state_controller:
     type: joint_state_controller/JointStateController
