@@ -91,11 +91,15 @@ install(
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.h"
 )
+install(
+        FILES robot_state_controller_plugin.xml
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
-# Mark other files for installation
+## Mark other files for installation
 #install(
-#        DIRECTORY doc
-#        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+#    DIRECTORY doc
+#    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 #)
 
 #############
