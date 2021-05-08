@@ -92,7 +92,7 @@ class StandardChassisTest : public ::testing::Test {
     cmd_chassis_.accel.linear.x = 0.0;
     cmd_chassis_.accel.linear.y = 0.0;
     cmd_chassis_.accel.angular.z = 0.0;
-    cmd_chassis_.effort_limit = 99;
+    cmd_chassis_.power_limit = 99;
   }
 
  private:
