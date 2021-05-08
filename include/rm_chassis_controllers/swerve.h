@@ -8,14 +8,15 @@
 #include "rm_chassis_controllers/chassis_base.h"
 
 #include <rm_common/eigen_types.h>
+#include <effort_controllers/joint_position_controller.h>
 
 namespace rm_chassis_controllers {
 
 struct Module {
   Vec2<double> position_;
   double pivot_offset_, wheel_radius_;
-  hardware_interface::JointHandle joint_pivot_, joint_wheel_;
-  control_toolbox::Pid *pid_pivot_{}, *pid_wheel_{};
+  effort_controllers::JointPositionController *ctrl_pivot_;
+  effort_controllers::JointVelocityController *ctrl_wheel_;
 };
 
 class SwerveController : public ChassisBase {
@@ -24,7 +25,7 @@ class SwerveController : public ChassisBase {
   bool init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
 
  private:
-  void moveJoint(const ros::Duration &period) override;
+  void moveJoint(const ros::Time &time, const ros::Duration &period) override;
   geometry_msgs::Twist forwardKinematics() override;
   std::vector<Module> modules_;
 };
