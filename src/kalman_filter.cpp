@@ -10,7 +10,7 @@
 namespace kalman_filter {
 KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
   is_debug_ = getParam(nh, "kalman_debug", false);
-  int moving_average_data_num = getParam(nh, "moving_average_data_num", 30);
+  moving_average_data_num_ = getParam(nh, "moving_average_data_num", 30);
 
   // init config
   config_ = {
@@ -91,11 +91,11 @@ KalmanFilterTrack::KalmanFilterTrack(ros::NodeHandle &nh, int id) {
 
   kalman_filter_ = new KalmanFilter<double>(a_, b_, h_, q_, r_);
   kalman_filter_->clear(x_);
-  moving_average_filter_x_ = new MovingAverageFilter<double>(moving_average_data_num);
+  moving_average_filter_x_ = new MovingAverageFilter<double>(moving_average_data_num_);
   moving_average_filter_x_->clear();
-  moving_average_filter_y_ = new MovingAverageFilter<double>(moving_average_data_num);
+  moving_average_filter_y_ = new MovingAverageFilter<double>(moving_average_data_num_);
   moving_average_filter_y_->clear();
-  moving_average_filter_z_ = new MovingAverageFilter<double>(moving_average_data_num);
+  moving_average_filter_z_ = new MovingAverageFilter<double>(moving_average_data_num_);
   moving_average_filter_z_->clear();
 
   if (is_debug_)
@@ -115,9 +115,11 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
     x0[2] = map2detection.transform.translation.y;
     x0[4] = map2detection.transform.translation.z;
     kalman_filter_->clear(x0);
-    moving_average_filter_x_->clear();
-    moving_average_filter_y_->clear();
-    moving_average_filter_z_->clear();
+    for (int i = 0; i < moving_average_data_num_; ++i) {
+      moving_average_filter_x_->input(map2detection.transform.translation.x);
+      moving_average_filter_y_->input(map2detection.transform.translation.y);
+      moving_average_filter_z_->input(map2detection.transform.translation.z);
+    }
     is_filter_ = false;
     is_gyro_ = false;
     switch_count_ = 0;
@@ -199,9 +201,9 @@ void KalmanFilterTrack::input(const geometry_msgs::TransformStamped &map2detecti
     kalman_data_.real_detection_pose.position.y = x_[2];
     kalman_data_.real_detection_pose.position.z = x_[4];
     kalman_data_.real_detection_pose.orientation.z = x_[6];
-    kalman_data_.real_detection_twist.linear.x = x_[1];
-    kalman_data_.real_detection_twist.linear.y = x_[3];
-    kalman_data_.real_detection_twist.linear.z = x_[5];
+    kalman_data_.real_detection_twist.linear.x = center_.x;
+    kalman_data_.real_detection_twist.linear.y = center_.y;
+    kalman_data_.real_detection_twist.linear.z = center_.z;
     kalman_data_.real_detection_twist.angular.z = x_[7];
 
     kalman_data_.filtered_detection_pose.position.x = x_hat_[0];

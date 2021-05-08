@@ -52,6 +52,7 @@ class KalmanFilterTrack {
   bool is_filter_{};
   bool is_gyro_{};
   int switch_count_{};
+  int moving_average_data_num_{};
   Config config_{};
 
   geometry_msgs::Vector3 last_pos_hat_{};
