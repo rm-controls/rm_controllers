@@ -1,27 +1,7 @@
 controllers:
-  robot_state_controller:
-    type: robot_state_controller/RobotStateController
-    publish_rate: 100
-  imu_sensor_controller:
-    type: imu_sensor_controller/ImuSensorController
-    publish_rate: 100
   chassis_controller:
-    type: rm_chassis_controllers/StandardController
-    joint_lf_name: "left_front_wheel_joint"
-    joint_rf_name: "right_front_wheel_joint"
-    joint_lb_name: "left_back_wheel_joint"
-    joint_rb_name: "right_back_wheel_joint"
-    enable_odom_tf: false
-    publish_rate_: 100
     wheel_base: 0.395
     wheel_track: 0.380
-    wheel_radius: 0.07625
-    pid_rf: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
-    pid_rb: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
-    pid_lf: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true,  publish_state: true }
-    pid_lb: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    power_coeff: 2.2
+    twist_angular: 0.5233
     pid_follow: { p: 5, i: 0, d: 0.8, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
-    twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
-  joint_state_controller:
-    type: joint_state_controller/JointStateController
-    publish_rate: 100

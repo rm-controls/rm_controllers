@@ -15,12 +15,10 @@ class SentryController : public ChassisBase {
   bool init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
 
  private:
-  void moveJoint(const ros::Duration &period) override;
+  void moveJoint(const ros::Time &time, const ros::Duration &period) override;
   geometry_msgs::Twist forwardKinematics() override;
 
-  control_toolbox::Pid pid_wheel_;
-  hardware_interface::JointHandle joint_wheel_;
-  geometry_msgs::TransformStamped odom2base_{};
+  effort_controllers::JointVelocityController ctrl_wheel_;
 };
 
 }

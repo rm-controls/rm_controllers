@@ -11,73 +11,44 @@ bool MecanumController::init(hardware_interface::RobotHW *robot_hw,
                              ros::NodeHandle &root_nh,
                              ros::NodeHandle &controller_nh) {
   ChassisBase::init(robot_hw, root_nh, controller_nh);
-
-  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
-  joint_rf_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_rf_name", std::string("joint_rf")));
-  joint_rb_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_rb_name", std::string("joint_rb")));
-  joint_lb_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_lb_name", std::string("joint_lb")));
-  joint_lf_ = effort_jnt_interface->getHandle(
-      getParam(controller_nh, "joint_lf_name", std::string("joint_lf")));
-  joint_handles_.push_back(joint_rf_);
-  joint_handles_.push_back(joint_rb_);
-  joint_handles_.push_back(joint_lb_);
-  joint_handles_.push_back(joint_lf_);
-
-  if (!pid_rf_.init(ros::NodeHandle(controller_nh, "pid_rf")) ||
-      !pid_rb_.init(ros::NodeHandle(controller_nh, "pid_rb")) ||
-      !pid_lf_.init(ros::NodeHandle(controller_nh, "pid_lf")) ||
-      !pid_lb_.init(ros::NodeHandle(controller_nh, "pid_lb")))
+  ros::NodeHandle nh_lf = ros::NodeHandle(controller_nh, "left_front");
+  ros::NodeHandle nh_rf = ros::NodeHandle(controller_nh, "right_front");
+  ros::NodeHandle nh_lb = ros::NodeHandle(controller_nh, "left_back");
+  ros::NodeHandle nh_rb = ros::NodeHandle(controller_nh, "right_back");
+  if (!ctrl_lf_.init(effort_joint_interface_, nh_lf) ||
+      !ctrl_rf_.init(effort_joint_interface_, nh_rf) ||
+      !ctrl_lb_.init(effort_joint_interface_, nh_lb) ||
+      !ctrl_rb_.init(effort_joint_interface_, nh_rb))
     return false;
-  wheel_pids_.push_back(&pid_rb_);
-  wheel_pids_.push_back(&pid_rb_);
-  wheel_pids_.push_back(&pid_lf_);
-  wheel_pids_.push_back(&pid_lb_);
-
+  joint_handles_.push_back(ctrl_lf_.joint_);
+  joint_handles_.push_back(ctrl_rf_.joint_);
+  joint_handles_.push_back(ctrl_lb_.joint_);
+  joint_handles_.push_back(ctrl_rb_.joint_);
   return true;
 }
 
-void MecanumController::moveJoint(const ros::Duration &period) {
-
+void MecanumController::moveJoint(const ros::Time &time, const ros::Duration &period) {
   double a = (wheel_base_ + wheel_track_) / 2.0;
-  double joint_rf_des = (ramp_x->output() + ramp_y->output() + ramp_w->output() * a) / wheel_radius_;
-  double joint_lf_des = (ramp_x->output() - ramp_y->output() - ramp_w->output() * a) / wheel_radius_;
-  double joint_lb_des = (ramp_x->output() + ramp_y->output() - ramp_w->output() * a) / wheel_radius_;
-  double joint_rb_des = (ramp_x->output() - ramp_y->output() + ramp_w->output() * a) / wheel_radius_;
-
-  double joint_rf_error = joint_rf_des - joint_rf_.getVelocity();
-  double joint_rb_error = joint_rb_des - joint_rb_.getVelocity();
-  double joint_lf_error = joint_lf_des - joint_lf_.getVelocity();
-  double joint_lb_error = joint_lb_des - joint_lb_.getVelocity();
-
-  pid_rf_.computeCommand(joint_rf_error, period);
-  pid_rb_.computeCommand(joint_rb_error, period);
-  pid_lf_.computeCommand(joint_lf_error, period);
-  pid_lb_.computeCommand(joint_lb_error, period);
-
-  double scale = getEffortLimitScale();
-  joint_rf_.setCommand(scale * pid_rf_.getCurrentCmd());
-  joint_rb_.setCommand(scale * pid_rb_.getCurrentCmd());
-  joint_lf_.setCommand(scale * pid_lf_.getCurrentCmd());
-  joint_lb_.setCommand(scale * pid_lb_.getCurrentCmd());
+  ctrl_lf_.setCommand((ramp_x->output() - ramp_y->output() - ramp_w->output() * a) / wheel_radius_);
+  ctrl_rf_.setCommand((ramp_x->output() + ramp_y->output() + ramp_w->output() * a) / wheel_radius_);
+  ctrl_lb_.setCommand((ramp_x->output() + ramp_y->output() - ramp_w->output() * a) / wheel_radius_);
+  ctrl_rb_.setCommand((ramp_x->output() - ramp_y->output() + ramp_w->output() * a) / wheel_radius_);
+  ctrl_lf_.update(time, period);
+  ctrl_rf_.update(time, period);
+  ctrl_lb_.update(time, period);
+  ctrl_rb_.update(time, period);
 }
 
 geometry_msgs::Twist MecanumController::forwardKinematics() {
   geometry_msgs::Twist vel_data;
   double k = wheel_radius_ / 4.0;
-  double joint_rf_velocity = joint_rf_.getVelocity();
-  double joint_rb_velocity = joint_rb_.getVelocity();
-  double joint_lf_velocity = joint_lf_.getVelocity();
-  double joint_lb_velocity = joint_lb_.getVelocity();
-  vel_data.linear.x =
-      (joint_rf_velocity + joint_lf_velocity + joint_lb_velocity + joint_rb_velocity) * k;
-  vel_data.linear.y =
-      (joint_rf_velocity - joint_lf_velocity + joint_lb_velocity - joint_rb_velocity) * k;
-  vel_data.angular.z =
-      2 * (joint_rf_velocity - joint_lf_velocity - joint_lb_velocity + joint_rb_velocity) * k
-          / (wheel_base_ + wheel_track_);
+  double lf_velocity = ctrl_lf_.joint_.getVelocity();
+  double rf_velocity = ctrl_rf_.joint_.getVelocity();
+  double lb_velocity = ctrl_lb_.joint_.getVelocity();
+  double rb_velocity = ctrl_rb_.joint_.getVelocity();
+  vel_data.linear.x = (rf_velocity + lf_velocity + lb_velocity + rb_velocity) * k;
+  vel_data.linear.y = (rf_velocity - lf_velocity + lb_velocity - rb_velocity) * k;
+  vel_data.angular.z = 2 * (rf_velocity - lf_velocity - lb_velocity + rb_velocity) * k / (wheel_base_ + wheel_track_);
   return vel_data;
 }
 

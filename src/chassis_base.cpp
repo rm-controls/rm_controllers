@@ -3,9 +3,10 @@
 //
 #include "rm_chassis_controllers/chassis_base.h"
 #include <rm_common/ros_utilities.h>
+#include <rm_common/math_utilities.h>
+#include <rm_common/ori_tool.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <angles/angles.h>
-#include <rm_common/ori_tool.h>
 
 namespace rm_chassis_controllers {
 bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
@@ -17,6 +18,7 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   publish_rate_ = getParam(controller_nh, "publish_rate", 100);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
+  power_coeff_ = getParam(controller_nh, "power_coeff", 0.);
   timeout_ = getParam(controller_nh, "timeout", 1.0);
 
   // Get and check params for covariances
@@ -27,6 +29,7 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   for (int i = 0; i < twist_cov_list.size(); ++i)
     ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
+  effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
   // Setup odometry realtime publisher + odom message constant fields
@@ -82,7 +85,7 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
   }
 
   if (state_ != cmd_chassis_.mode) {
-    state_ = StandardState(cmd_chassis_.mode);
+    state_ = State(cmd_chassis_.mode);
     state_changed_ = true;
   }
 
@@ -106,7 +109,8 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
     ramp_x->input(vel_tfed_.vector.x);
     ramp_y->input(vel_tfed_.vector.y);
     ramp_w->input(vel_tfed_.vector.z);
-    moveJoint(period);
+    moveJoint(time, period);
+    powerLimit();
   }
 }
 
@@ -247,12 +251,20 @@ void ChassisBase::recovery() {
   ramp_w->clear(vel.angular.z);
 }
 
-double ChassisBase::getEffortLimitScale() {
-  double real_effort;
-  for (const auto &pid:wheel_pids_)
-    real_effort += std::abs(pid->getCurrentCmd());
-  double effort_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.effort_limit;
-  return real_effort > effort_limit ? effort_limit / real_effort : 1.;
+void ChassisBase::powerLimit() {
+  double total_effort;
+  double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
+  for (const auto &joint:joint_handles_) // Loop all chassis joint
+    if (joint.getName().find("wheel") != std::string::npos)
+      // The pivot joint of swerve drive doesn't need power limit
+      total_effort += std::abs(joint.getCommand());
+  if (total_effort < 1e-9)
+    return;
+  for (auto joint:joint_handles_) {
+    double cmd_effort = joint.getCommand();
+    double max_effort = power_coeff_ * std::abs(cmd_effort / total_effort * power_limit / joint.getVelocity());
+    joint.setCommand(minAbs(cmd_effort, max_effort));
+  }
 }
 
 void ChassisBase::tfVelToBase(const std::string &from) {

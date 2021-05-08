@@ -25,6 +25,7 @@ find_package(catkin REQUIRED
         forward_command_controller
         realtime_tools
         control_toolbox
+        effort_controllers
         tf2
         tf2_geometry_msgs
         angles
@@ -60,6 +61,7 @@ catkin_package(
         forward_command_controller
         realtime_tools
         control_toolbox
+        effort_controllers
         tf2
         tf2_geometry_msgs
         angles
@@ -127,6 +129,11 @@ if (${CATKIN_ENABLE_TESTING})
             test/test_standard_chassis.cpp)
     target_link_libraries(standard_chassis_test ${catkin_LIBRARIES})
 
+    add_rostest_gtest(sentry_chassis_test
+            test/test_sentry_chassis.test
+            test/test_sentry_chassis.cpp)
+    target_link_libraries(sentry_chassis_test ${catkin_LIBRARIES})
+
     add_rostest_gtest(gyro_test
             test/test_gyro.test
             test/test_gyro.cpp)
@@ -172,10 +179,20 @@ if (${CATKIN_ENABLE_TESTING})
             test/test_angular_z_accel_limit.cpp)
     target_link_libraries(angular_z_accel_limit_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(iKine_test
-            test/test_iKine.test
-            test/test_iKine.cpp)
-    target_link_libraries(iKine_test ${catkin_LIBRARIES})
+    add_rostest_gtest(mecanum_iKine_test
+            test/test_mecanum_iKine.test
+            test/test_mecanum_iKine.cpp)
+    target_link_libraries(mecanum_iKine_test ${catkin_LIBRARIES})
+
+    add_rostest_gtest(sentry_iKine_test
+            test/test_sentry_iKine.test
+            test/test_sentry_iKine.cpp)
+    target_link_libraries(sentry_iKine_test ${catkin_LIBRARIES})
+
+    add_rostest_gtest(sentry_linear_x_accel_limit_test
+            test/test_linear_x_accel_limit_sentry.test
+            test/test_linear_x_accel_limit_sentry.cpp)
+    target_link_libraries(sentry_linear_x_accel_limit_test ${catkin_LIBRARIES})
 
 endif ()
 
