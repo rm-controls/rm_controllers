@@ -18,7 +18,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
-  nh_kalman_ = ros::NodeHandle(controller_nh, "kalman");
+  nh_moving_average_filter_ = ros::NodeHandle(controller_nh, "moving_average_filter");
 
   auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   joint_yaw_ =
@@ -129,11 +129,12 @@ void Controller::track(const ros::Time &time) {
     angle_init_[1] = -pitch;
   }
 
-  if (kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id) != kalman_filters_track_.end()) {
-    geometry_msgs::TransformStamped
-        map2detection = kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getTransform();
-    if (kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->isGyro())
-      target_pos_ = kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getCenter();
+  if (moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)
+      != moving_average_filters_track_.end()) {
+    geometry_msgs::TransformStamped map2detection =
+        moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getTransform();
+    if (moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->isGyro())
+      target_pos_ = moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getCenter();
     else
       target_pos_ = map2detection.transform.translation;
 
@@ -142,8 +143,8 @@ void Controller::track(const ros::Time &time) {
         target_pos_.x - map2pitch_.transform.translation.x,
         target_pos_.y - map2pitch_.transform.translation.y,
         target_pos_.z - map2pitch_.transform.translation.z,
-        target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.x,
-        target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.y,
+        0,
+        0,
         0,
         cmd_.bullet_speed);
 
@@ -153,8 +154,8 @@ void Controller::track(const ros::Time &time) {
                                             target_pos_.x - map2pitch_.transform.translation.x,
                                             target_pos_.y - map2pitch_.transform.translation.y,
                                             target_pos_.z - map2pitch_.transform.translation.z,
-                                            target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.x,
-                                            target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.y,
+                                            target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.x,
+                                            target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.y,
                                             0,
                                             cmd_.bullet_speed);
         error_pub_->msg_.stamp = time;
@@ -187,7 +188,7 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
     ROS_WARN("%s", ex.what());
     return;
   }
-  double error_yaw{}, error_pitch{};
+  double error_yaw, error_pitch;
   double roll_des, pitch_des, yaw_des;  // desired position
   quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
   error_yaw = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
@@ -233,9 +234,11 @@ void Controller::updateTf() {
 
   //Filtering the targets with different id
   for (const auto &detection:now_detection) {
-    if (kalman_filters_track_.find(detection.first) == kalman_filters_track_.end())
-      kalman_filters_track_.insert(std::make_pair(detection.first,
-                                                  new kalman_filter::KalmanFilterTrack(nh_kalman_, detection.first)));
+    if (moving_average_filters_track_.find(detection.first) == moving_average_filters_track_.end())
+      moving_average_filters_track_.insert(std::make_pair(detection.first,
+                                                          new moving_average_filter::MovingAverageFilterTrack(
+                                                              nh_moving_average_filter_,
+                                                              detection.first)));
     ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
     if (last_detection_time_.find(detection.first)->second != detection_time) {
       last_detection_time_[detection.first] = detection_time;
@@ -260,18 +263,16 @@ void Controller::updateTf() {
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.first);
 
-        kalman_filters_track_.find(detection.first)->second->input(map2detection);
-        tf_broadcaster_.sendTransform(kalman_filters_track_.find(detection.first)->second->getTransform());
-        target_vel_[detection.first] = kalman_filters_track_.find(detection.first)->second->getTwist();
+        moving_average_filters_track_.find(detection.first)->second->input(map2detection);
+        tf_broadcaster_.sendTransform(moving_average_filters_track_.find(detection.first)->second->getTransform());
+        target_vel_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getTwist();
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     }
-
     if (now_detection.empty())
       target_vel_.clear();
 
     updateTrackAndPub(detection.first);
-    kalman_filters_track_.find(detection.first)->second->perdict();
   }
 }
 

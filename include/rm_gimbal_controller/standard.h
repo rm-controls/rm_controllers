@@ -17,7 +17,7 @@
 #include <rm_msgs/TargetDetectionArray.h>
 #include <rm_gimbal_controllers/GimbalConfig.h>
 #include <rm_gimbal_controller/bullet_solver.h>
-#include <rm_gimbal_controller/kalman_filter.h>
+#include <rm_gimbal_controller/moving_average_filter.h>
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <rm_common/filters/lp_filter.h>
@@ -56,7 +56,7 @@ class Controller :
 
   ros::Time last_publish_time_;
   ros::Time last_camera_time_{};
-  ros::NodeHandle nh_kalman_;
+  ros::NodeHandle nh_moving_average_filter_;
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
   hardware_interface::JointHandle joint_yaw_, joint_pitch_;
@@ -93,8 +93,8 @@ class Controller :
   Config config_{};
   StandardState state_ = PASSIVE;
 
-  std::map<int, geometry_msgs::Twist> target_vel_;
-  std::map<int, kalman_filter::KalmanFilterTrack *> kalman_filters_track_;
+  std::map<int, geometry_msgs::Vector3> target_vel_;
+  std::map<int, moving_average_filter::MovingAverageFilterTrack *> moving_average_filters_track_;
   std::map<int, ros::Time> last_detection_time_;
   std::map<int, geometry_msgs::Pose> last_detection_;
 };
