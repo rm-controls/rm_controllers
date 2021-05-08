@@ -231,6 +231,7 @@ void Controller::updateTf() {
   }
   last_detection_ = now_detection;
 
+  bool new_detection_coming{};
   //Filtering the targets with different id
   for (const auto &detection:now_detection) {
     if (kalman_filters_track_.find(detection.first) == kalman_filters_track_.end())
@@ -238,6 +239,10 @@ void Controller::updateTf() {
                                                   new kalman_filter::KalmanFilterTrack(nh_kalman_, detection.first)));
     ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
     if (last_detection_time_.find(detection.first)->second != detection_time) {
+      if (!new_detection_coming) {
+        new_detection_coming = true;
+        track_pub_->msg_.tracks.clear();
+      }
       last_detection_time_[detection.first] = detection_time;
       config_ = *config_rt_buffer_.readFromRT();
       geometry_msgs::TransformStamped map2camera, map2detection;
@@ -263,52 +268,50 @@ void Controller::updateTf() {
         kalman_filters_track_.find(detection.first)->second->input(map2detection);
         tf_broadcaster_.sendTransform(kalman_filters_track_.find(detection.first)->second->getTransform());
         target_vel_[detection.first] = kalman_filters_track_.find(detection.first)->second->getTwist();
+        updateTrack(detection.first);
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     }
 
     if (now_detection.empty())
       target_vel_.clear();
-
-    updateTrackAndPub(detection.first);
     kalman_filters_track_.find(detection.first)->second->perdict();
   }
-}
 
-void Controller::updateTrackAndPub(int id) {
   ros::Time camera_time = camera_rt_buffer_.readFromRT()->header.stamp;
   if (last_camera_time_ != camera_time) {
     last_camera_time_ = camera_time;
-
-    geometry_msgs::TransformStamped camera2detection, map2detection;
-    try {
-      camera2detection = robot_state_handle_.lookupTransform("camera_link",
-                                                             "detection" + std::to_string(id),
-                                                             ros::Time(0));
-      map2detection = robot_state_handle_.lookupTransform("map",
-                                                          "detection" + std::to_string(id),
-                                                          ros::Time(0));
-    }
-    catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
-
-    rm_msgs::TrackData track_data;
-    track_data.id = id;
-    track_data.map2detection.position.x = map2detection.transform.translation.x;
-    track_data.map2detection.position.y = map2detection.transform.translation.y;
-    track_data.map2detection.position.z = map2detection.transform.translation.z;
-    track_data.map2detection.orientation = map2detection.transform.rotation;
-    track_data.camera2detection.position.x = camera2detection.transform.translation.x;
-    track_data.camera2detection.position.y = camera2detection.transform.translation.y;
-    track_data.camera2detection.position.z = camera2detection.transform.translation.z;
-    track_data.camera2detection.orientation = camera2detection.transform.rotation;
-
-    track_pub_->msg_.tracks.clear();
     if (track_pub_->trylock()) {
       track_pub_->msg_.header.stamp = camera_time;
-      track_pub_->msg_.tracks.push_back(track_data);
       track_pub_->unlockAndPublish();
     }
   }
+}
+
+void Controller::updateTrack(int id) {
+  geometry_msgs::TransformStamped camera2detection, map2detection;
+  try {
+    camera2detection = robot_state_handle_.lookupTransform("camera_link",
+                                                           "detection" + std::to_string(id),
+                                                           ros::Time(0));
+    map2detection = robot_state_handle_.lookupTransform("map",
+                                                        "detection" + std::to_string(id),
+                                                        ros::Time(0));
+  }
+  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+
+  rm_msgs::TrackData track_data;
+  track_data.id = id;
+  track_data.map2detection.position.x = map2detection.transform.translation.x;
+  track_data.map2detection.position.y = map2detection.transform.translation.y;
+  track_data.map2detection.position.z = map2detection.transform.translation.z;
+  track_data.map2detection.orientation = map2detection.transform.rotation;
+  track_data.camera2detection.position.x = camera2detection.transform.translation.x;
+  track_data.camera2detection.position.y = camera2detection.transform.translation.y;
+  track_data.camera2detection.position.z = camera2detection.transform.translation.z;
+  track_data.camera2detection.orientation = camera2detection.transform.rotation;
+
+  track_pub_->msg_.tracks.push_back(track_data);
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {
