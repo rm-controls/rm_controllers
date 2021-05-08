@@ -50,6 +50,7 @@ class MovingAverageFilterTrack {
   geometry_msgs::TransformStamped output_map2detection_{};
   geometry_msgs::Vector3 output_vel_{};
   geometry_msgs::Vector3 output_center_{};
+  geometry_msgs::Vector3 last_output_pos_{};
   rm_msgs::MovingAverageData moving_average_data_{};
 };
 }

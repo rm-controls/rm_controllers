@@ -35,6 +35,7 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
     now_map2detection_ = map2detection;
     last_map2detection_ = map2detection;
     output_map2detection_ = map2detection;
+    last_output_pos_ = map2detection.transform.translation;
     for (int i = 0; i < pos_data_num_; ++i) {
       ma_filter_pos_x_->input(map2detection.transform.translation.x);
       ma_filter_pos_y_->input(map2detection.transform.translation.y);
@@ -90,9 +91,6 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   double pos_x = now_map2detection_.transform.translation.x;
   double pos_y = now_map2detection_.transform.translation.y;
   double pos_z = now_map2detection_.transform.translation.z;
-  double vel_x = (now_map2detection_.transform.translation.x - last_map2detection_.transform.translation.x) / dt;
-  double vel_y = (now_map2detection_.transform.translation.y - last_map2detection_.transform.translation.y) / dt;
-  double vel_z = (now_map2detection_.transform.translation.z - last_map2detection_.transform.translation.z) / dt;
 
   //pos filter
   ma_filter_pos_x_->input(pos_x);
@@ -104,12 +102,16 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   output_map2detection_.transform.translation.z = ma_filter_pos_z_->output();
 
   //vel filter
+  double vel_x = (output_map2detection_.transform.translation.x - last_output_pos_.x) / dt;
+  double vel_y = (output_map2detection_.transform.translation.y - last_output_pos_.y) / dt;
+  double vel_z = (output_map2detection_.transform.translation.z - last_output_pos_.z) / dt;
   ma_filter_vel_x_->input(vel_x);
   ma_filter_vel_y_->input(vel_y);
   ma_filter_vel_z_->input(vel_z);
   output_vel_.x = ma_filter_vel_x_->output();
   output_vel_.y = ma_filter_vel_y_->output();
   output_vel_.z = ma_filter_vel_z_->output();
+  last_output_pos_ = output_map2detection_.transform.translation;
 
   //center filter
   ma_filter_center_x_->input(pos_x);

@@ -143,8 +143,8 @@ void Controller::track(const ros::Time &time) {
         target_pos_.x - map2pitch_.transform.translation.x,
         target_pos_.y - map2pitch_.transform.translation.y,
         target_pos_.z - map2pitch_.transform.translation.z,
-        0,
-        0,
+        target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.x,
+        target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.y,
         0,
         cmd_.bullet_speed);
 
