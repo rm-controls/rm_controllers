@@ -102,9 +102,15 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   output_map2detection_.transform.translation.z = ma_filter_pos_z_->output();
 
   //vel filter
-  double vel_x = (output_map2detection_.transform.translation.x - last_output_pos_.x) / dt;
-  double vel_y = (output_map2detection_.transform.translation.y - last_output_pos_.y) / dt;
-  double vel_z = (output_map2detection_.transform.translation.z - last_output_pos_.z) / dt;
+  double vel_x =
+      std::abs((output_map2detection_.transform.translation.x - last_output_pos_.x) / dt - output_vel_.x) < 5.0 ?
+      (output_map2detection_.transform.translation.x - last_output_pos_.x) / dt : output_vel_.x;
+  double vel_y =
+      std::abs((output_map2detection_.transform.translation.y - last_output_pos_.y) / dt - output_vel_.y) < 5.0 ?
+      (output_map2detection_.transform.translation.y - last_output_pos_.y) / dt : output_vel_.y;
+  double vel_z =
+      std::abs((output_map2detection_.transform.translation.z - last_output_pos_.z) / dt - output_vel_.z) < 5.0 ?
+      (output_map2detection_.transform.translation.z - last_output_pos_.z) / dt : output_vel_.z;
   ma_filter_vel_x_->input(vel_x);
   ma_filter_vel_y_->input(vel_y);
   ma_filter_vel_z_->input(vel_z);

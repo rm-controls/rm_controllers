@@ -151,15 +151,15 @@ void Controller::track(const ros::Time &time) {
     if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
       if (error_pub_->trylock()) {
         error = bullet_solver_->gimbalError(angle_init_,
-                                            target_pos_.x - map2pitch_.transform.translation.x,
-                                            target_pos_.y - map2pitch_.transform.translation.y,
-                                            target_pos_.z - map2pitch_.transform.translation.z,
+                                            map2detection.transform.translation.x - map2pitch_.transform.translation.x,
+                                            map2detection.transform.translation.y - map2pitch_.transform.translation.y,
+                                            map2detection.transform.translation.z - map2pitch_.transform.translation.z,
                                             target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.x,
                                             target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.y,
                                             0,
                                             cmd_.bullet_speed);
         error_pub_->msg_.stamp = time;
-        error_pub_->msg_.error = solve_success ? error : 999;
+        error_pub_->msg_.error = solve_success ? error : 10;
         error_pub_->unlockAndPublish();
       }
       last_publish_time_ = time;
