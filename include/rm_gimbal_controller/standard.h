@@ -51,7 +51,7 @@ class Controller :
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
   void cameraCB(const sensor_msgs::CameraInfoConstPtr &msg);
   void updateTf();
-  void updateTrackAndPub(int id);
+  void updateTrack(int id);
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
 
   ros::Time last_publish_time_;
