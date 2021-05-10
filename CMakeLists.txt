@@ -90,8 +90,6 @@ target_link_libraries(bullet_solver ${catkin_LIBRARIES})
 target_link_libraries(moving_average_filter ${catkin_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} bullet_solver moving_average_filter ${catkin_LIBRARIES})
 
-add_dependencies(kalman_filter ${PROJECT_NAME}_gencfg)
-
 #############
 ## Install ##
 #############

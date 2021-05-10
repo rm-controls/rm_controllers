@@ -38,4 +38,4 @@ controllers:
       is_debug: true
       pos_data_num: 10
       vel_data_num: 40
-      center_data_num: 500
+      center_data_num: 100
