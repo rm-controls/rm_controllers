@@ -206,6 +206,7 @@ void ChassisBase::updateOdom(const ros::Time &time, const ros::Duration &period)
       tf2::doTransform(vel_base.angular, angular_vel_odom, odom2base);
     }
     catch (tf2::TransformException &ex) {
+      tf_broadcaster_.sendTransform(odom2base_);  //TODO: For some reason, the sendTransform in init sometime not work?
       ROS_WARN("%s", ex.what());
       return;
     }
