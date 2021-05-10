@@ -6,25 +6,25 @@ TEST_F(StandardChassisTest, testScopperil) {
   waitForController();
 
   // zero everything before test
-  rm_msgs::ChassisCmd chassis_cmd{};
-  geometry_msgs::Twist cmd_vel{};
-  publish(chassis_cmd, cmd_vel);
+  this->zeroCmdVel();
+  this->zeroCmdChassis();
+  this->cmd_chassis_.mode = cmd_chassis_.PASSIVE;
+  this->publish();
   ros::Duration(0.5).sleep();
 
-  chassis_cmd.mode = chassis_cmd.GYRO;
-  chassis_cmd.effort_limit = 99;
-  chassis_cmd.accel.linear.x = 10;
-  chassis_cmd.accel.linear.y = 10;
-  chassis_cmd.accel.angular.z = 10;
+  this->cmd_chassis_.mode = cmd_chassis_.GYRO;
+  this->cmd_chassis_.accel.linear.x = 10;
+  this->cmd_chassis_.accel.linear.y = 10;
+  this->cmd_chassis_.accel.angular.z = 10;
 
-  cmd_vel.linear.x = 0.5;
-  cmd_vel.linear.y = 0;
-  cmd_vel.angular.z = 0.5;
+  this->cmd_vel_.linear.x = 0.5;
+  //cmd_vel.linear.y = 0;
+  this->cmd_vel_.angular.z = 0.5;
 
-  publish(chassis_cmd, cmd_vel);
+  this->publish();
   ros::Duration(10).sleep();
 
-  EXPECT_NEAR(cmd_vel.linear.x, getTwist().linear.x, VELOCITY_TOLERANCE);
+  EXPECT_NEAR(this->cmd_vel_.linear.x, getTwist().linear.x, VELOCITY_TOLERANCE);
 
 }
 

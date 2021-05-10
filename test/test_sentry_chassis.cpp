@@ -8,23 +8,20 @@ TEST_F(StandardChassisTest, testForward) {
   waitForController();
 
   // zero everything before test
-  rm_msgs::ChassisCmd chassis_cmd{};
-  geometry_msgs::Twist cmd_vel{};
-  publish(chassis_cmd, cmd_vel);
+  this->zeroCmdVel();
+  this->zeroCmdChassis();
+  this->publish();
   ros::Duration(5.0).sleep();
 
   // send a velocity command of 0.25 m/s
-  chassis_cmd.mode = chassis_cmd.RAW;
-  chassis_cmd.effort_limit = 99;
-  chassis_cmd.accel.linear.x = 20;
-
-  cmd_vel.linear.x = 0.20;
-  publish(chassis_cmd, cmd_vel);
+  this->cmd_chassis_.accel.linear.x = 20;
+  this->cmd_vel_.linear.x = 0.016;
+  publish();
   ros::Duration(10.0).sleep();
-  EXPECT_NEAR(cmd_vel.linear.x, getLastOdom().twist.twist.linear.x, VELOCITY_TOLERANCE);
+  EXPECT_NEAR(this->cmd_vel_.linear.x, getLastOdom().twist.twist.linear.x, VELOCITY_TOLERANCE);
 
-  cmd_vel.linear.x = 0.;
-  publish(chassis_cmd, cmd_vel);
+  this->cmd_vel_.linear.x = 0.;
+  publish();
   ros::Duration(5.0).sleep();
 }
 

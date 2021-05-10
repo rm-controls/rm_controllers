@@ -5,7 +5,6 @@
         <arg name="load_sentry_world" value="true"/>
         <arg name="disable_odom_tf" value="true"/>
         <arg name="odom_tf" value="false"/>
-        <arg name="mecanum_chassis" value="false"/>
     </include>
 
     <!-- Controller test -->
