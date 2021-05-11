@@ -28,8 +28,8 @@ controllers:
     wheel_base: 0.47
     wheel_track: 0.48
     power:
-      coeff: 0.8
-      min_vel: 0
+      coeff: 0.65
+      min_vel: 6.5
     twist_angular: 0.5233
     pid_follow: { p: 8, i: 0, d: 4.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]

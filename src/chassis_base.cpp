@@ -19,7 +19,7 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
   power_coeff_ = getParam(controller_nh, "power/coeff", 0.);
-  power_min_vel_ = getParam(controller_nh, "power/min_vel", 0.);
+  power_min_vel_ = getParam(controller_nh, "power/min_vel", 10.);
   timeout_ = getParam(controller_nh, "timeout", 1.0);
 
   // Get and check params for covariances
@@ -170,7 +170,7 @@ void ChassisBase::twist(const ros::Time &time, const ros::Duration &period) {
     double follow_error =
         angles::shortest_angular_distance(yaw, twist_angular_ * sin(2 * M_PI * time.toSec()) + off_set);
 
-    pid_follow_.computeCommand(-follow_error, period);  //The actual output is opposite to the caculated value
+    pid_follow_.computeCommand(-follow_error, period);  //The actual output is opposite to the calculated value
     vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
@@ -212,7 +212,7 @@ void ChassisBase::updateOdom(const ros::Time &time, const ros::Duration &period)
       return;
     }
     odom2base_.header.stamp = time;
-    // integral vel to pos and anglepower_min_vel_
+    // integral vel to pos and angle
     odom2base_.transform.translation.x += linear_vel_odom.x * period.toSec();
     odom2base_.transform.translation.y += linear_vel_odom.y * period.toSec();
     odom2base_.transform.translation.z += linear_vel_odom.z * period.toSec();
@@ -263,11 +263,17 @@ void ChassisBase::powerLimit() {
   if (total_effort < 1e-9)
     return;
   for (auto joint:joint_handles_) {
-    double cmd_effort = joint.getCommand();
-    double vel = joint.getVelocity();
-    vel = std::fabs(vel) > power_min_vel_ ? vel : power_min_vel_;
-    double max_effort = std::fabs(cmd_effort / total_effort * power_limit / vel * power_coeff_);
-    joint.setCommand(minAbs(cmd_effort, max_effort));
+    if (joint.getName().find("wheel") != std::string::npos) {
+      double cmd_effort = joint.getCommand();
+      double vel = joint.getVelocity();
+      if (std::fabs(vel) > power_min_vel_) {
+        double max_effort = std::fabs(cmd_effort / total_effort * power_limit / joint.getVelocity() * power_coeff_);
+        joint.setCommand(minAbs(cmd_effort, max_effort));
+      } else {
+        double max_effort = std::fabs(cmd_effort / total_effort * power_limit / power_min_vel_ * power_coeff_);
+        joint.setCommand(minAbs(cmd_effort, max_effort));
+      }
+    }
   }
 }
 
