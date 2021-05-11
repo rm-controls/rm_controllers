@@ -1,5 +1,5 @@
 <launch>
-    <arg name="robot_type" default="standard" doc="Robot type [standard, hero, engineer]"/>
+    <arg name="robot_type" default="standard"/>
     <arg name="odom_tf" default="true"/>
 
     <!--arg for test-->

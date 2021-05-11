@@ -1,5 +1,5 @@
 <launch>
-    <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, hero, engineer]"/>
+    <arg name="robot_type" default="standard" doc="Robot type [standard, hero, engineer]"/>
     <arg name="ekf" default="false"/>
     <arg name="odom_tf" default="true"/>
     <arg name="yaw_tf" default="false"/>
