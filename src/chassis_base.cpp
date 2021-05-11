@@ -265,14 +265,13 @@ void ChassisBase::powerLimit() {
   for (auto joint:joint_handles_) {
     if (joint.getName().find("wheel") != std::string::npos) {
       double cmd_effort = joint.getCommand();
-      double vel = joint.getVelocity();
-      if (std::fabs(vel) > power_min_vel_) {
-        double max_effort = std::fabs(cmd_effort / total_effort * power_limit / joint.getVelocity() * power_coeff_);
-        joint.setCommand(minAbs(cmd_effort, max_effort));
-      } else {
-        double max_effort = std::fabs(cmd_effort / total_effort * power_limit / power_min_vel_ * power_coeff_);
-        joint.setCommand(minAbs(cmd_effort, max_effort));
-      }
+      //TODO: O3 bug when using:
+      // double vel = joint.getVelocity();
+      // double max_effort = std::abs(power_coeff_ * cmd_effort / total_effort * power_limit /
+      //          (std::abs(vel) > power_min_vel_ ? vel : power_min_vel_));
+      double max_effort = std::abs(power_coeff_ * cmd_effort / total_effort * power_limit /
+          (std::abs(joint.getVelocity()) > power_min_vel_ ? joint.getVelocity() : power_min_vel_));
+      joint.setCommand(minAbs(cmd_effort, max_effort));
     }
   }
 }
