@@ -19,7 +19,7 @@
         <arg name="yaw_tf" value="$(arg yaw_tf)"/>
     </include>
 
-    <include if="$(arg load_empty_world)" file="$(find rm_gazebo)/launch/empty_world.launch">
+    <include if="$(arg load_empty_world)" file="$(find rm_chassis_controllers)/test/empty_world.launch">
         <arg name="robot_type" value="$(arg type)"/>
         <arg name="load_chassis" default="true"/>
         <arg name="load_gimbal" default="false"/>
