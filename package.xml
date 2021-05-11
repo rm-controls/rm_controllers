@@ -18,6 +18,7 @@
 
     <depend>rm_msgs</depend>
     <depend>rm_common</depend>
+    <depend>robot_state_controller</depend>
 
     <depend>pluginlib</depend>
     <depend>hardware_interface</depend>
