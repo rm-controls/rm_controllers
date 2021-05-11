@@ -18,7 +18,8 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   publish_rate_ = getParam(controller_nh, "publish_rate", 100);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
-  power_coeff_ = getParam(controller_nh, "power_coeff", 0.);
+  power_coeff_ = getParam(controller_nh, "power/coeff", 0.);
+  power_min_vel_ = getParam(controller_nh, "power/min_vel", 0.);
   timeout_ = getParam(controller_nh, "timeout", 1.0);
 
   // Get and check params for covariances
@@ -211,7 +212,7 @@ void ChassisBase::updateOdom(const ros::Time &time, const ros::Duration &period)
       return;
     }
     odom2base_.header.stamp = time;
-    // integral vel to pos and angle
+    // integral vel to pos and anglepower_min_vel_
     odom2base_.transform.translation.x += linear_vel_odom.x * period.toSec();
     odom2base_.transform.translation.y += linear_vel_odom.y * period.toSec();
     odom2base_.transform.translation.z += linear_vel_odom.z * period.toSec();
@@ -263,7 +264,9 @@ void ChassisBase::powerLimit() {
     return;
   for (auto joint:joint_handles_) {
     double cmd_effort = joint.getCommand();
-    double max_effort = power_coeff_ * std::abs(cmd_effort / total_effort * power_limit / joint.getVelocity());
+    double vel = joint.getVelocity();
+    vel = std::fabs(vel) > power_min_vel_ ? vel : power_min_vel_;
+    double max_effort = std::fabs(cmd_effort / total_effort * power_limit / vel * power_coeff_);
     joint.setCommand(minAbs(cmd_effort, max_effort));
   }
 }

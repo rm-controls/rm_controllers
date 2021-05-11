@@ -58,7 +58,8 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   std::vector<hardware_interface::JointHandle> joint_handles_{};
   hardware_interface::RobotStateHandle robot_state_handle_{};
 
-  double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, power_coeff_{}, timeout_{};
+  double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{},
+      power_coeff_{}, power_min_vel_{}, timeout_{};
   bool enable_odom_tf_ = false;
   bool state_changed_ = true;
   State state_ = PASSIVE;
