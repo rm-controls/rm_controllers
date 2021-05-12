@@ -10,7 +10,7 @@ controllers:
     publish_rate: 100
   chassis_controller:
     type: rm_chassis_controllers/MecanumController
-    publish_rate_: 100
+    publish_rate: 100
     enable_odom_tf: true
     wheel_radius: 0.07625
     left_front:
