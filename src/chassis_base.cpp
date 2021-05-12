@@ -19,8 +19,8 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
       !controller_nh.getParam("twist_angular", twist_angular_) ||
       !controller_nh.getParam("enable_odom_tf", enable_odom_tf_) ||
       !controller_nh.getParam("power/coeff", power_coeff_) ||
-      !controller_nh.getParam("power/min_vel", twist_angular_) ||
-      !controller_nh.getParam("time", timeout_)) {
+      !controller_nh.getParam("power/min_vel", power_min_vel_) ||
+      !controller_nh.getParam("timeout", timeout_)) {
     ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
