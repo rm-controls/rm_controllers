@@ -12,15 +12,18 @@ namespace rm_chassis_controllers {
 bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
                        ros::NodeHandle &root_nh,
                        ros::NodeHandle &controller_nh) {
-  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
-  wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
-  wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
-  publish_rate_ = getParam(controller_nh, "publish_rate", 100);
-  twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
-  enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
-  power_coeff_ = getParam(controller_nh, "power/coeff", 0.);
-  power_min_vel_ = getParam(controller_nh, "power/min_vel", 10.);
-  timeout_ = getParam(controller_nh, "timeout", 1.0);
+  if (!controller_nh.getParam("wheel_radius", wheel_radius_) ||
+      !controller_nh.getParam("wheel_base", wheel_base_) ||
+      !controller_nh.getParam("wheel_track", wheel_track_) ||
+      !controller_nh.getParam("publish_rate", publish_rate_) ||
+      !controller_nh.getParam("twist_angular", twist_angular_) ||
+      !controller_nh.getParam("enable_odom_tf", enable_odom_tf_) ||
+      !controller_nh.getParam("power/coeff", power_coeff_) ||
+      !controller_nh.getParam("power/min_vel", twist_angular_) ||
+      !controller_nh.getParam("time", timeout_)) {
+    ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue twist_cov_list;
