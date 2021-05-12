@@ -12,14 +12,18 @@ namespace rm_chassis_controllers {
 bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
                        ros::NodeHandle &root_nh,
                        ros::NodeHandle &controller_nh) {
-  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.07625);
-  wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
-  wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
-  publish_rate_ = getParam(controller_nh, "publish_rate", 100);
-  twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
-  enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
-  power_coeff_ = getParam(controller_nh, "power_coeff", 0.);
-  timeout_ = getParam(controller_nh, "timeout", 1.0);
+  if (!controller_nh.getParam("wheel_radius", wheel_radius_) ||
+      !controller_nh.getParam("wheel_base", wheel_base_) ||
+      !controller_nh.getParam("wheel_track", wheel_track_) ||
+      !controller_nh.getParam("publish_rate", publish_rate_) ||
+      !controller_nh.getParam("twist_angular", twist_angular_) ||
+      !controller_nh.getParam("enable_odom_tf", enable_odom_tf_) ||
+      !controller_nh.getParam("power/coeff", power_coeff_) ||
+      !controller_nh.getParam("power/min_vel", twist_angular_) ||
+      !controller_nh.getParam("time", timeout_)) {
+    ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue twist_cov_list;
@@ -169,7 +173,7 @@ void ChassisBase::twist(const ros::Time &time, const ros::Duration &period) {
     double follow_error =
         angles::shortest_angular_distance(yaw, twist_angular_ * sin(2 * M_PI * time.toSec()) + off_set);
 
-    pid_follow_.computeCommand(-follow_error, period);  //The actual output is opposite to the caculated value
+    pid_follow_.computeCommand(-follow_error, period);  //The actual output is opposite to the calculated value
     vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
@@ -262,9 +266,16 @@ void ChassisBase::powerLimit() {
   if (total_effort < 1e-9)
     return;
   for (auto joint:joint_handles_) {
-    double cmd_effort = joint.getCommand();
-    double max_effort = power_coeff_ * std::abs(cmd_effort / total_effort * power_limit / joint.getVelocity());
-    joint.setCommand(minAbs(cmd_effort, max_effort));
+    if (joint.getName().find("wheel") != std::string::npos) {
+      double cmd_effort = joint.getCommand();
+      //TODO: O3 bug when using:
+      // double vel = joint.getVelocity();
+      // double max_effort = std::abs(power_coeff_ * cmd_effort / total_effort * power_limit /
+      //          (std::abs(vel) > power_min_vel_ ? vel : power_min_vel_));
+      double max_effort = std::abs(power_coeff_ * cmd_effort / total_effort * power_limit /
+          (std::abs(joint.getVelocity()) > power_min_vel_ ? joint.getVelocity() : power_min_vel_));
+      joint.setCommand(minAbs(cmd_effort, max_effort));
+    }
   }
 }
 
