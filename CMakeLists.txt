@@ -18,7 +18,6 @@ find_package(catkin REQUIRED
 
         rm_msgs
         rm_common
-        robot_state_controller
 
         pluginlib
         hardware_interface
@@ -55,8 +54,6 @@ catkin_package(
 
         rm_msgs
         rm_common
-        robot_state_controller
-
 
         pluginlib
         hardware_interface
