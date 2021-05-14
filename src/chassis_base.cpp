@@ -163,7 +163,7 @@ void ChassisBase::twist(const ros::Time &time, const ros::Duration &period) {
               roll, pitch, yaw);
 
     double angle[4] = {-0.785, 0.785, 2.355, -2.355};
-    double off_set;
+    double off_set = 0.0;
     for (double i : angle) {
       if (std::abs(angles::shortest_angular_distance(yaw, i)) < 0.79) {
         off_set = i;
@@ -257,7 +257,7 @@ void ChassisBase::recovery() {
 }
 
 void ChassisBase::powerLimit() {
-  double total_effort;
+  double total_effort = 0.0;
   double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
   for (const auto &joint:joint_handles_) // Loop all chassis joint
     if (joint.getName().find("wheel") != std::string::npos)
