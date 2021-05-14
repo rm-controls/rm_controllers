@@ -129,17 +129,15 @@ void Controller::track(const ros::Time &time) {
     angle_init_[1] = -pitch;
   }
 
-  if (moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)
-      != moving_average_filters_track_.end()) {
-    geometry_msgs::TransformStamped map2detection =
-        moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getTransform();
+  int target_id = cmd_rt_buffer_.readFromRT()->target_id;
+  if (moving_average_filters_track_.find(target_id) != moving_average_filters_track_.end()) {
     geometry_msgs::Vector3 target_pos{};
     geometry_msgs::Vector3 target_vel{};
-    if (moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->isGyro())
-      target_pos = moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getCenter();
+    if (moving_average_filters_track_.find(target_id)->second->isGyro())
+      target_pos = center_pos_.find(target_id)->second;
     else {
-      target_pos = map2detection.transform.translation;
-      target_vel = moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getTwist();
+      target_pos = detection_pos_.find(target_id)->second;
+      target_vel = detection_vel_.find(target_id)->second;
     }
 
     solve_success = bullet_solver_->solve(
@@ -156,9 +154,9 @@ void Controller::track(const ros::Time &time) {
       if (error_pub_->trylock()) {
         error = bullet_solver_->gimbalError(
             angle_init_,
-            map2detection.transform.translation.x - map2pitch_.transform.translation.x,
-            map2detection.transform.translation.y - map2pitch_.transform.translation.y,
-            map2detection.transform.translation.z - map2pitch_.transform.translation.z - 0.05,
+            detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x,
+            detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y,
+            target_pos.z - map2pitch_.transform.translation.z - 0.05,
             target_vel.x,
             target_vel.y,
             0,
@@ -237,21 +235,17 @@ void Controller::updateTf() {
   }
   last_detection_ = now_detection;
 
-  bool new_detection_coming{};
   //Filtering the targets with different id
-  for (const auto &detection:now_detection) {
-    if (moving_average_filters_track_.find(detection.first) == moving_average_filters_track_.end())
-      moving_average_filters_track_.insert(std::make_pair(detection.first,
-                                                          new moving_average_filter::MovingAverageFilterTrack(
-                                                              nh_moving_average_filter_,
-                                                              detection.first)));
-    ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
-    if (last_detection_time_.find(detection.first)->second != detection_time) {
-      if (!new_detection_coming) {
-        new_detection_coming = true;
-        track_pub_->msg_.tracks.clear();
-      }
-      last_detection_time_[detection.first] = detection_time;
+  ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
+  if (last_detection_time_ != detection_time) {
+    last_detection_time_ = detection_time;
+    track_pub_->msg_.tracks.clear();
+    for (const auto &detection:now_detection) {
+      if (moving_average_filters_track_.find(detection.first) == moving_average_filters_track_.end())
+        moving_average_filters_track_.insert(std::make_pair(detection.first,
+                                                            new moving_average_filter::MovingAverageFilterTrack(
+                                                                nh_moving_average_filter_,
+                                                                detection.first)));
       config_ = *config_rt_buffer_.readFromRT();
       geometry_msgs::TransformStamped map2camera, map2detection;
       tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
@@ -274,6 +268,11 @@ void Controller::updateTf() {
         map2detection.child_frame_id = "detection" + std::to_string(detection.first);
 
         moving_average_filters_track_.find(detection.first)->second->input(map2detection);
+        detection_pos_[detection.first] =
+            moving_average_filters_track_.find(detection.first)->second->getTransform().transform.translation;
+        detection_vel_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getVel();
+        center_pos_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getCenter();
+
         tf_broadcaster_.sendTransform(moving_average_filters_track_.find(detection.first)->second->getTransform());
         updateTrack(detection.first);
       }

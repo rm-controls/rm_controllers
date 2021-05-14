@@ -54,8 +54,9 @@ class Controller :
   void updateTrack(int id);
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
 
-  ros::Time last_publish_time_;
+  ros::Time last_publish_time_{};
   ros::Time last_camera_time_{};
+  ros::Time last_detection_time_{};
   ros::NodeHandle nh_moving_average_filter_;
 
   control_toolbox::Pid pid_yaw_, pid_pitch_;
@@ -93,8 +94,10 @@ class Controller :
   StandardState state_ = PASSIVE;
 
   std::map<int, moving_average_filter::MovingAverageFilterTrack *> moving_average_filters_track_;
-  std::map<int, ros::Time> last_detection_time_;
   std::map<int, geometry_msgs::Pose> last_detection_;
+  std::map<int, geometry_msgs::Vector3> detection_pos_{};
+  std::map<int, geometry_msgs::Vector3> detection_vel_{};
+  std::map<int, geometry_msgs::Vector3> center_pos_{};
 };
 }
 

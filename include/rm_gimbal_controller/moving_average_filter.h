@@ -20,7 +20,7 @@ class MovingAverageFilterTrack {
   explicit MovingAverageFilterTrack(ros::NodeHandle &nh, int id);
   void input(const geometry_msgs::TransformStamped &map2detection);
   geometry_msgs::TransformStamped getTransform() const;
-  geometry_msgs::Vector3 getTwist() const;
+  geometry_msgs::Vector3 getVel() const;
   geometry_msgs::Vector3 getCenter() const;
   bool isGyro() const;
   ~MovingAverageFilterTrack() = default;

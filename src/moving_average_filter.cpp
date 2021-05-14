@@ -62,10 +62,8 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   if (std::abs(delta_x) < 0.5 && std::abs(delta_y) < 0.5 && std::abs(delta_z) < 0.5)
     now_map2detection_.transform = map2detection.transform;
 
-  double delta = std::sqrt(
-      std::pow(now_map2detection_.transform.translation.x - last_map2detection_.transform.translation.x, 2) +
-          std::pow(now_map2detection_.transform.translation.y - last_map2detection_.transform.translation.y, 2));
   //If true, the target armor is switching
+  double delta = now_map2detection_.transform.translation.y - last_map2detection_.transform.translation.y;
   if (std::abs(delta) > 0.1) {
     for (int i = 0; i < pos_data_num_; ++i) {
       ma_filter_pos_x_->input(now_map2detection_.transform.translation.x);
@@ -85,8 +83,11 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
       enter_gyro_time_ = now_map2detection_.header.stamp;
       is_gyro_ = true;
     }
-  } else
-    is_gyro_ = std::abs(now_map2detection_.header.stamp.toSec() - enter_gyro_time_.toSec()) <= 1.0;
+  }
+  if (std::abs(now_map2detection_.header.stamp.toSec() - enter_gyro_time_.toSec()) >= 1.0 && is_gyro_) {
+    is_gyro_ = false;
+    switch_count_ = 0;
+  }
 
   double pos_x = now_map2detection_.transform.translation.x;
   double pos_y = now_map2detection_.transform.translation.y;
@@ -161,7 +162,7 @@ geometry_msgs::TransformStamped MovingAverageFilterTrack::getTransform() const {
   return output_map2detection_;
 }
 
-geometry_msgs::Vector3 MovingAverageFilterTrack::getTwist() const {
+geometry_msgs::Vector3 MovingAverageFilterTrack::getVel() const {
   return output_vel_;
 }
 
