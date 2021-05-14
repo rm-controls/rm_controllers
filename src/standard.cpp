@@ -133,31 +133,36 @@ void Controller::track(const ros::Time &time) {
       != moving_average_filters_track_.end()) {
     geometry_msgs::TransformStamped map2detection =
         moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getTransform();
+    geometry_msgs::Vector3 target_pos{};
+    geometry_msgs::Vector3 target_vel{};
     if (moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->isGyro())
-      target_pos_ = moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getCenter();
-    else
-      target_pos_ = map2detection.transform.translation;
+      target_pos = moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getCenter();
+    else {
+      target_pos = map2detection.transform.translation;
+      target_vel = moving_average_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getTwist();
+    }
 
     solve_success = bullet_solver_->solve(
         angle_init_,
-        target_pos_.x - map2pitch_.transform.translation.x,
-        target_pos_.y - map2pitch_.transform.translation.y,
-        target_pos_.z - map2pitch_.transform.translation.z,
-        target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.x,
-        target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.y,
+        target_pos.x - map2pitch_.transform.translation.x,
+        target_pos.y - map2pitch_.transform.translation.y,
+        target_pos.z - map2pitch_.transform.translation.z - 0.05,
+        target_vel.x,
+        target_vel.y,
         0,
         cmd_.bullet_speed);
 
     if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
       if (error_pub_->trylock()) {
-        error = bullet_solver_->gimbalError(angle_init_,
-                                            map2detection.transform.translation.x - map2pitch_.transform.translation.x,
-                                            map2detection.transform.translation.y - map2pitch_.transform.translation.y,
-                                            map2detection.transform.translation.z - map2pitch_.transform.translation.z,
-                                            target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.x,
-                                            target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.y,
-                                            0,
-                                            cmd_.bullet_speed);
+        error = bullet_solver_->gimbalError(
+            angle_init_,
+            map2detection.transform.translation.x - map2pitch_.transform.translation.x,
+            map2detection.transform.translation.y - map2pitch_.transform.translation.y,
+            map2detection.transform.translation.z - map2pitch_.transform.translation.z - 0.05,
+            target_vel.x,
+            target_vel.y,
+            0,
+            cmd_.bullet_speed);
         error_pub_->msg_.stamp = time;
         error_pub_->msg_.error = solve_success ? error : 10;
         error_pub_->unlockAndPublish();
@@ -270,13 +275,10 @@ void Controller::updateTf() {
 
         moving_average_filters_track_.find(detection.first)->second->input(map2detection);
         tf_broadcaster_.sendTransform(moving_average_filters_track_.find(detection.first)->second->getTransform());
-        target_vel_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getTwist();
         updateTrack(detection.first);
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     }
-    if (now_detection.empty())
-      target_vel_.clear();
   }
 
   ros::Time camera_time = camera_rt_buffer_.readFromRT()->header.stamp;

@@ -10,7 +10,7 @@ MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle &nh, int id) 
   is_debug_ = getParam(nh, "is_debug", false);
   pos_data_num_ = getParam(nh, "pos_data_num", 10);
   vel_data_num_ = getParam(nh, "vel_data_num", 20);
-  center_data_num_ = getParam(nh, "center_data_num", 30);
+  center_data_num_ = getParam(nh, "center_data_num", 100);
 
   ma_filter_pos_x_ = new MovingAverageFilter<double>(pos_data_num_);
   ma_filter_pos_y_ = new MovingAverageFilter<double>(pos_data_num_);
@@ -41,11 +41,9 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
       ma_filter_pos_y_->input(map2detection.transform.translation.y);
       ma_filter_pos_z_->input(map2detection.transform.translation.z);
     }
-    for (int i = 0; i < vel_data_num_; ++i) {
-      ma_filter_vel_x_->input(0);
-      ma_filter_vel_y_->input(0);
-      ma_filter_vel_z_->input(0);
-    }
+    ma_filter_vel_x_->clear();
+    ma_filter_vel_y_->clear();
+    ma_filter_vel_z_->clear();
     for (int i = 0; i < center_data_num_; ++i) {
       ma_filter_center_x_->input(map2detection.transform.translation.x);
       ma_filter_center_y_->input(map2detection.transform.translation.y);
@@ -64,7 +62,9 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   if (std::abs(delta_x) < 0.5 && std::abs(delta_y) < 0.5 && std::abs(delta_z) < 0.5)
     now_map2detection_.transform = map2detection.transform;
 
-  double delta = now_map2detection_.transform.translation.y - last_map2detection_.transform.translation.y;
+  double delta = std::sqrt(
+      std::pow(now_map2detection_.transform.translation.x - last_map2detection_.transform.translation.x, 2) +
+          std::pow(now_map2detection_.transform.translation.y - last_map2detection_.transform.translation.y, 2));
   //If true, the target armor is switching
   if (std::abs(delta) > 0.1) {
     for (int i = 0; i < pos_data_num_; ++i) {
@@ -130,27 +130,28 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   last_map2detection_ = now_map2detection_;
 
   if (is_debug_) {
-    moving_average_data_.header.stamp = now_map2detection_.header.stamp;
+    rm_msgs::MovingAverageData moving_average_data{};
+    moving_average_data.header.stamp = now_map2detection_.header.stamp;
 
-    moving_average_data_.real_pos_x = pos_x;
-    moving_average_data_.real_pos_y = pos_y;
-    moving_average_data_.real_pos_z = pos_z;
-    moving_average_data_.real_vel_x = vel_x;
-    moving_average_data_.real_vel_y = vel_y;
-    moving_average_data_.real_vel_z = vel_z;
+    moving_average_data.real_pos_x = pos_x;
+    moving_average_data.real_pos_y = pos_y;
+    moving_average_data.real_pos_z = pos_z;
+    moving_average_data.real_vel_x = vel_x;
+    moving_average_data.real_vel_y = vel_y;
+    moving_average_data.real_vel_z = vel_z;
 
-    moving_average_data_.filtered_pos_x = output_map2detection_.transform.translation.x;
-    moving_average_data_.filtered_pos_y = output_map2detection_.transform.translation.y;
-    moving_average_data_.filtered_pos_z = output_map2detection_.transform.translation.z;
-    moving_average_data_.filtered_vel_x = output_vel_.x;
-    moving_average_data_.filtered_vel_y = output_vel_.y;
-    moving_average_data_.filtered_vel_z = output_vel_.z;
-    moving_average_data_.filtered_center_x = output_center_.x;
-    moving_average_data_.filtered_center_y = output_center_.y;
-    moving_average_data_.filtered_center_z = output_center_.z;
+    moving_average_data.filtered_pos_x = output_map2detection_.transform.translation.x;
+    moving_average_data.filtered_pos_y = output_map2detection_.transform.translation.y;
+    moving_average_data.filtered_pos_z = output_map2detection_.transform.translation.z;
+    moving_average_data.filtered_vel_x = output_vel_.x;
+    moving_average_data.filtered_vel_y = output_vel_.y;
+    moving_average_data.filtered_vel_z = output_vel_.z;
+    moving_average_data.filtered_center_x = output_center_.x;
+    moving_average_data.filtered_center_y = output_center_.y;
+    moving_average_data.filtered_center_z = output_center_.z;
 
     if (realtime_pub_->trylock()) {
-      realtime_pub_->msg_ = moving_average_data_;
+      realtime_pub_->msg_ = moving_average_data;
       realtime_pub_->unlockAndPublish();
     }
   }

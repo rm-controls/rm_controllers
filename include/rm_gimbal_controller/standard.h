@@ -80,7 +80,6 @@ class Controller :
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
 
   geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
-  geometry_msgs::Vector3 target_pos_{};
   rm_msgs::GimbalCmd cmd_;
 
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
@@ -93,7 +92,6 @@ class Controller :
   Config config_{};
   StandardState state_ = PASSIVE;
 
-  std::map<int, geometry_msgs::Vector3> target_vel_;
   std::map<int, moving_average_filter::MovingAverageFilterTrack *> moving_average_filters_track_;
   std::map<int, ros::Time> last_detection_time_;
   std::map<int, geometry_msgs::Pose> last_detection_;
