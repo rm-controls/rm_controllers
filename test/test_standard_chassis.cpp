@@ -10,29 +10,26 @@ TEST_F(StandardChassisTest, testForward) {
   waitForController();
 
   // zero everything before test
-  rm_msgs::ChassisCmd chassis_cmd{};
-  geometry_msgs::Twist cmd_vel{};
-  publish(chassis_cmd, cmd_vel);
+  this->zeroCmdVel();
+  this->zeroCmdChassis();
+  publish();
   ros::Duration(0.5).sleep();
 
   // send a velocity command of 0.5 m/s
-  chassis_cmd.mode = chassis_cmd.RAW;
-  chassis_cmd.effort_limit = 99;
-  chassis_cmd.accel.linear.x = 8;
-  chassis_cmd.accel.linear.y = 8;
-
-  cmd_vel.linear.x = 0.5;
-  publish(chassis_cmd, cmd_vel);
+  this->cmd_chassis_.accel.linear.x = 8;
+  this->cmd_vel_.linear.x = 0.5;
+  publish();
   ros::Duration(2).sleep();
-  EXPECT_NEAR(cmd_vel.linear.x, getTwist().linear.x, VELOCITY_TOLERANCE);
-  EXPECT_NEAR(cmd_vel.linear.x, getLastOdom().twist.twist.linear.x, VELOCITY_TOLERANCE);
+  EXPECT_NEAR(this->cmd_vel_.linear.x, getTwist().linear.x, VELOCITY_TOLERANCE);
+  EXPECT_NEAR(this->cmd_vel_.linear.x, getLastOdom().twist.twist.linear.x, VELOCITY_TOLERANCE);
 
-  cmd_vel.linear.x = 0.;
-  cmd_vel.linear.y = 0.5;
-  publish(chassis_cmd, cmd_vel);
+  this->cmd_vel_.linear.x = 0.;
+  this->cmd_vel_.linear.y = 0.5;
+  this->cmd_chassis_.accel.linear.y = 8;
+  publish();
   ros::Duration(2).sleep();
-  EXPECT_NEAR(cmd_vel.linear.y, getTwist().linear.y, VELOCITY_TOLERANCE);
-  EXPECT_NEAR(cmd_vel.linear.y, getLastOdom().twist.twist.linear.y, VELOCITY_TOLERANCE);
+  EXPECT_NEAR(this->cmd_vel_.linear.y, getTwist().linear.y, VELOCITY_TOLERANCE);
+  EXPECT_NEAR(this->cmd_vel_.linear.y, getLastOdom().twist.twist.linear.y, VELOCITY_TOLERANCE);
 
 }
 
