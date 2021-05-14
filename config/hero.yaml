@@ -10,7 +10,7 @@ controllers:
     publish_rate: 100
   chassis_controller:
     type: rm_chassis_controllers/MecanumController
-    publish_rate_: 100
+    publish_rate: 100
     enable_odom_tf: true
     wheel_radius: 0.07625
     left_front:
@@ -31,5 +31,6 @@ controllers:
       coeff: 0.65
       min_vel: 6.5
     twist_angular: 0.5233
+    timeout: 0.1
     pid_follow: { p: 8, i: 0, d: 4.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]

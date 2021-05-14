@@ -13,17 +13,17 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
                        ros::NodeHandle &root_nh,
                        ros::NodeHandle &controller_nh) {
   if (!controller_nh.getParam("wheel_radius", wheel_radius_) ||
-      !controller_nh.getParam("wheel_base", wheel_base_) ||
-      !controller_nh.getParam("wheel_track", wheel_track_) ||
       !controller_nh.getParam("publish_rate", publish_rate_) ||
-      !controller_nh.getParam("twist_angular", twist_angular_) ||
-      !controller_nh.getParam("enable_odom_tf", enable_odom_tf_) ||
       !controller_nh.getParam("power/coeff", power_coeff_) ||
       !controller_nh.getParam("power/min_vel", power_min_vel_) ||
       !controller_nh.getParam("timeout", timeout_)) {
     ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+  wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
+  wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
+  twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
+  enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue twist_cov_list;
@@ -163,7 +163,7 @@ void ChassisBase::twist(const ros::Time &time, const ros::Duration &period) {
               roll, pitch, yaw);
 
     double angle[4] = {-0.785, 0.785, 2.355, -2.355};
-    double off_set;
+    double off_set = 0.0;
     for (double i : angle) {
       if (std::abs(angles::shortest_angular_distance(yaw, i)) < 0.79) {
         off_set = i;
@@ -257,7 +257,7 @@ void ChassisBase::recovery() {
 }
 
 void ChassisBase::powerLimit() {
-  double total_effort;
+  double total_effort = 0.0;
   double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
   for (const auto &joint:joint_handles_) // Loop all chassis joint
     if (joint.getName().find("wheel") != std::string::npos)
