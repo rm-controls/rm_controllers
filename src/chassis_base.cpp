@@ -12,14 +12,14 @@ namespace rm_chassis_controllers {
 bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
                        ros::NodeHandle &root_nh,
                        ros::NodeHandle &controller_nh) {
-  if (!controller_nh.getParam("wheel_radius", wheel_radius_) ||
-      !controller_nh.getParam("publish_rate", publish_rate_) ||
+  if (!controller_nh.getParam("publish_rate", publish_rate_) ||
       !controller_nh.getParam("power/coeff", power_coeff_) ||
       !controller_nh.getParam("power/min_vel", power_min_vel_) ||
       !controller_nh.getParam("timeout", timeout_)) {
     ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.02);
   wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
   wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
