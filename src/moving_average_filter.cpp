@@ -29,7 +29,7 @@ MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle &nh, int id) 
 }
 
 void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2detection) {
-  //initialize the first time it enters the filter
+  // Initialize the first time it enters the filter
   double dt = std::abs(map2detection.header.stamp.toSec() - last_map2detection_.header.stamp.toSec());
   if (dt > 0.5) {
     now_map2detection_ = map2detection;
@@ -54,7 +54,7 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
     return;
   }
 
-  //abandon obvious error data
+  // Abandon obvious error data
   now_map2detection_.header.stamp = map2detection.header.stamp;
   double delta_x = map2detection.transform.translation.x - last_map2detection_.transform.translation.x;
   double delta_y = map2detection.transform.translation.y - last_map2detection_.transform.translation.y;
@@ -62,7 +62,7 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   if (std::abs(delta_x) < 0.5 && std::abs(delta_y) < 0.5 && std::abs(delta_z) < 0.5)
     now_map2detection_.transform = map2detection.transform;
 
-  //If true, the target armor is switching
+  // If true, the target armor is switching
   double delta = now_map2detection_.transform.translation.y - last_map2detection_.transform.translation.y;
   if (std::abs(delta) > 0.1) {
     for (int i = 0; i < pos_data_num_; ++i) {
@@ -76,7 +76,7 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
       ma_filter_vel_z_->input(output_vel_.z);
     }
 
-    //if switch number bigger than 3, so it is in gyro
+    // If switch number bigger than 3, so it is in gyro
     if (switch_count_ <= 3)
       switch_count_++;
     else {
@@ -93,7 +93,7 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   double pos_y = now_map2detection_.transform.translation.y;
   double pos_z = now_map2detection_.transform.translation.z;
 
-  //pos filter
+  // filter pos
   ma_filter_pos_x_->input(pos_x);
   ma_filter_pos_y_->input(pos_y);
   ma_filter_pos_z_->input(pos_z);
@@ -102,7 +102,7 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   output_map2detection_.transform.translation.y = ma_filter_pos_y_->output();
   output_map2detection_.transform.translation.z = ma_filter_pos_z_->output();
 
-  //vel filter
+  // filter vel
   double vel_x =
       std::abs((output_map2detection_.transform.translation.x - last_output_pos_.x) / dt - output_vel_.x) < 5.0 ?
       (output_map2detection_.transform.translation.x - last_output_pos_.x) / dt : output_vel_.x;
@@ -120,7 +120,7 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   output_vel_.z = ma_filter_vel_z_->output();
   last_output_pos_ = output_map2detection_.transform.translation;
 
-  //center filter
+  // filter center
   ma_filter_center_x_->input(pos_x);
   ma_filter_center_y_->input(pos_y);
   ma_filter_center_z_->input(pos_z);
