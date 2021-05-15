@@ -98,6 +98,7 @@ class Controller :
   std::map<int, geometry_msgs::Vector3> detection_pos_{};
   std::map<int, geometry_msgs::Vector3> detection_vel_{};
   std::map<int, geometry_msgs::Vector3> center_pos_{};
+  std::map<int, double> gyro_vel_{};
 };
 }
 

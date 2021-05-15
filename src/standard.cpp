@@ -133,11 +133,14 @@ void Controller::track(const ros::Time &time) {
   if (moving_average_filters_track_.find(target_id) != moving_average_filters_track_.end()) {
     geometry_msgs::Vector3 target_pos{};
     geometry_msgs::Vector3 target_vel{};
-    if (moving_average_filters_track_.find(target_id)->second->isGyro())
+    geometry_msgs::Vector3 detection_error_vel{};
+    if (moving_average_filters_track_.find(target_id)->second->isGyro()) {
       target_pos = center_pos_.find(target_id)->second;
-    else {
+      detection_error_vel.y = gyro_vel_.find(target_id)->second;
+    } else {
       target_pos = detection_pos_.find(target_id)->second;
       target_vel = detection_vel_.find(target_id)->second;
+      detection_error_vel = detection_vel_.find(target_id)->second;
     }
 
     solve_success = bullet_solver_->solve(
@@ -157,8 +160,8 @@ void Controller::track(const ros::Time &time) {
             detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x,
             detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y,
             target_pos.z - map2pitch_.transform.translation.z - 0.05,
-            target_vel.x,
-            target_vel.y,
+            detection_error_vel.x,
+            detection_error_vel.y,
             0,
             cmd_.bullet_speed);
         error_pub_->msg_.stamp = time;
@@ -272,6 +275,7 @@ void Controller::updateTf() {
             moving_average_filters_track_.find(detection.first)->second->getTransform().transform.translation;
         detection_vel_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getVel();
         center_pos_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getCenter();
+        gyro_vel_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getGyroVel();
 
         tf_broadcaster_.sendTransform(moving_average_filters_track_.find(detection.first)->second->getTransform());
         updateTrack(detection.first);

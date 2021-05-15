@@ -11,6 +11,7 @@ MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle &nh, int id) 
   pos_data_num_ = getParam(nh, "pos_data_num", 10);
   vel_data_num_ = getParam(nh, "vel_data_num", 20);
   center_data_num_ = getParam(nh, "center_data_num", 100);
+  gyro_vel_data_num_ = getParam(nh, "gyro_vel_data_num", 5);
 
   ma_filter_pos_x_ = new MovingAverageFilter<double>(pos_data_num_);
   ma_filter_pos_y_ = new MovingAverageFilter<double>(pos_data_num_);
@@ -21,6 +22,7 @@ MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle &nh, int id) 
   ma_filter_center_x_ = new MovingAverageFilter<double>(center_data_num_);
   ma_filter_center_y_ = new MovingAverageFilter<double>(center_data_num_);
   ma_filter_center_z_ = new MovingAverageFilter<double>(center_data_num_);
+  ma_filter_gyro_vel_ = new MovingAverageFilter<double>(gyro_vel_data_num_);
 
   if (is_debug_)
     realtime_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::MovingAverageData>(nh,
@@ -65,6 +67,9 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   // If true, the target armor is switching
   double delta = now_map2detection_.transform.translation.y - last_map2detection_.transform.translation.y;
   if (std::abs(delta) > 0.1) {
+    last_appearance_map2detection_ = appearance_map2detection_;
+    appearance_map2detection_ = now_map2detection_;
+    disappearance_map2detection_ = last_map2detection_;
     for (int i = 0; i < pos_data_num_; ++i) {
       ma_filter_pos_x_->input(now_map2detection_.transform.translation.x);
       ma_filter_pos_y_->input(now_map2detection_.transform.translation.y);
@@ -128,6 +133,17 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   output_center_.y = ma_filter_center_y_->output();
   output_center_.z = ma_filter_center_z_->output();
 
+  // filter gyro vel
+  double gyro_vel =
+      (disappearance_map2detection_.transform.translation.y - last_appearance_map2detection_.transform.translation.y)
+          / (disappearance_map2detection_.header.stamp.toSec() - last_appearance_map2detection_.header.stamp.toSec());
+  if (is_gyro_ && !std::isnan(gyro_vel) && last_gyro_vel_ != gyro_vel) {
+    ma_filter_gyro_vel_->input(last_gyro_vel_);
+    last_gyro_vel_ = gyro_vel;
+  } else
+    ma_filter_gyro_vel_->clear();
+  output_gyro_vel_ = ma_filter_gyro_vel_->output();
+
   last_map2detection_ = now_map2detection_;
 
   if (is_debug_) {
@@ -150,6 +166,7 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
     moving_average_data.filtered_center_x = output_center_.x;
     moving_average_data.filtered_center_y = output_center_.y;
     moving_average_data.filtered_center_z = output_center_.z;
+    moving_average_data.gyro_vel = output_gyro_vel_;
 
     if (realtime_pub_->trylock()) {
       realtime_pub_->msg_ = moving_average_data;
@@ -168,6 +185,10 @@ geometry_msgs::Vector3 MovingAverageFilterTrack::getVel() const {
 
 geometry_msgs::Vector3 MovingAverageFilterTrack::getCenter() const {
   return output_center_;
+}
+
+double MovingAverageFilterTrack::getGyroVel() const {
+  return output_gyro_vel_;
 }
 
 bool MovingAverageFilterTrack::isGyro() const {

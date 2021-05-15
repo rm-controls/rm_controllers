@@ -39,3 +39,4 @@ controllers:
       pos_data_num: 10
       vel_data_num: 20
       center_data_num: 100
+      gyro_vel_data_num: 1
