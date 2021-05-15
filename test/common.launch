@@ -28,7 +28,7 @@
         <arg name="paused" default="false"/>
     </include>
 
-    <include if="$(arg load_sentry_world)" file="$(find rm_gazebo)/launch/sentry_world.launch">
+    <include if="$(arg load_sentry_world)" file="$(find rm_chassis_controllers)/test/sentry_world.launch">
         <arg name="robot_type" value="sentry"/>
         <arg name="x_pos" value="-2.0"/>
         <arg name="load_chassis" value="true"/>
