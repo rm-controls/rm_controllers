@@ -26,6 +26,11 @@ TEST_F(StandardChassisTest, testScopperil) {
 
   EXPECT_NEAR(this->cmd_vel_.linear.x, getTwist().linear.x, VELOCITY_TOLERANCE);
 
+  this->zeroCmdVel();
+  this->zeroCmdChassis();
+  this->publish();
+  ros::Duration(2.0).sleep();
+
 }
 
 int main(int argc, char **argv) {
