@@ -5,7 +5,8 @@
 #ifndef RM_SHOOTER_CONTROLLERS_INCLUDE_RM_SHOOTER_CONTROLLER_SHOOTER_BASE_H_
 #define RM_SHOOTER_CONTROLLERS_INCLUDE_RM_SHOOTER_CONTROLLER_SHOOTER_BASE_H_
 
-#include <control_toolbox/pid.h>
+#include <effort_controllers/joint_velocity_controller.h>
+#include <effort_controllers/joint_position_controller.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
@@ -60,7 +61,7 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
                     ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
   virtual void update(const ros::Time &time, const ros::Duration &period) override;
  protected:
-  virtual void moveJoint(const ros::Duration &period) = 0;
+  virtual void moveJoint(const ros::Time &time, const ros::Duration &period) = 0;
   virtual void stop(const ros::Time &time, const ros::Duration &period) {};
   virtual void push(const ros::Time &time, const ros::Duration &period);
   void passive();
@@ -69,8 +70,8 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
   void reconfigCB(rm_shooter_controllers::ShooterBaseConfig &config, uint32_t /*level*/);
 
-  std::vector<hardware_interface::JointHandle *> joint_friction_handle_{}, joint_trigger_handle_{};
-  std::vector<control_toolbox::Pid *> pid_friction_vector_{}, pid_trigger_vector_{};
+  hardware_interface::EffortJointInterface *effort_joint_interface_{};
+  std::vector<hardware_interface::JointHandle> joint_friction_handle_{}, joint_trigger_handle_{};
 
   double friction_qd_des_{}, trigger_q_des_{}, last_trigger_q_des_{};
   double enter_push_qd_coef_{}, push_angle_error_{};

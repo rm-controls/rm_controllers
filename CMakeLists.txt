@@ -24,6 +24,7 @@ find_package(catkin REQUIRED
         forward_command_controller
         realtime_tools
         control_toolbox
+        effort_controllers
         dynamic_reconfigure
         )
 
@@ -57,6 +58,7 @@ catkin_package(
         forward_command_controller
         realtime_tools
         control_toolbox
+        effort_controllers
         dynamic_reconfigure
         DEPENDS
 )
