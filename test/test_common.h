@@ -15,7 +15,7 @@
 #include <sensor_msgs/JointState.h>
 
 const double POSITION_TOLERANCE = 0.15; // 1 mm-s precision
-const double VELOCITY_TOLERANCE = 0.05; // 1 mm-s-1 precision
+const double VELOCITY_TOLERANCE = 0.15; // 1 mm-s-1 precision
 const double EPS = 0.01;
 
 class StandardChassisTest : public ::testing::Test {
