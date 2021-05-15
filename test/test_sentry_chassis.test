@@ -1,0 +1,15 @@
+<launch>
+    <include file="$(find rm_chassis_controllers)/test/common.launch">
+        <arg name="type" value="sentry"/>
+        <arg name="load_empty_world" value="false"/>
+        <arg name="load_sentry_world" value="true"/>
+    </include>
+
+
+    <!-- Controller test -->
+    <test test-name="sentry_chassis_test"
+          pkg="rm_chassis_controllers"
+          type="sentry_chassis_test"
+          time-limit="40.0">
+    </test>
+</launch>

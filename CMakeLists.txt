@@ -173,13 +173,25 @@ if (${CATKIN_ENABLE_TESTING})
             test/test_angular_z_accel_limit.cpp)
     target_link_libraries(angular_z_accel_limit_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(mecanum_iKine_test
-            test/test_mecanum_iKine.test
-            test/test_mecanum_iKine.cpp)
-    target_link_libraries(mecanum_iKine_test ${catkin_LIBRARIES})
+    add_rostest_gtest(sentry_linear_x_accel_limit_test
+            test/test_linear_x_accel_limit_sentry.test
+            test/test_linear_x_accel_limit_sentry.cpp)
+    target_link_libraries(sentry_linear_x_accel_limit_test ${catkin_LIBRARIES})
 
+    add_rostest_gtest(sentry_chassis_test
+            test/test_sentry_chassis.test
+            test/test_sentry_chassis.cpp)
+    target_link_libraries(sentry_chassis_test ${catkin_LIBRARIES})
 
+    #    add_rostest_gtest(mecanum_iKine_test
+    #            test/test_mecanum_iKine.test
+    #            test/test_mecanum_iKine.cpp)
+    #    target_link_libraries(mecanum_iKine_test ${catkin_LIBRARIES})
 
+    #    add_rostest_gtest(sentry_iKine_test
+    #            test/test_sentry_iKine.test
+    #            test/test_sentry_iKine.cpp)
+    #    target_link_libraries(sentry_iKine_test ${catkin_LIBRARIES})
 
 endif ()
 
