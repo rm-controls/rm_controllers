@@ -33,8 +33,8 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), POSITION_TOLERANCE);
 
   EXPECT_LT(fabs(new_base_link_twist.angular.z - old_base_link_twist.angular.z), 2.0 + VELOCITY_TOLERANCE);
-  EXPECT_LT(fabs(new_base_link_pose.position.x - old_base_link_pose.position.x), POSITION_TOLERANCE);
-  EXPECT_LT(fabs(new_base_link_pose.position.y - old_base_link_pose.position.y), POSITION_TOLERANCE);
+  EXPECT_LT(fabs(new_base_link_pose.position.x - old_base_link_pose.position.x), 0.08);
+  EXPECT_LT(fabs(new_base_link_pose.position.y - old_base_link_pose.position.y), 0.08);
 
   this->cmd_vel_.angular.z = 0.0;
   this->cmd_chassis_.accel.angular.z = 10.0;

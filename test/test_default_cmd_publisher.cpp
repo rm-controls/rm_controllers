@@ -18,7 +18,7 @@ TEST_F(StandardChassisTest, testDefaultVelAndChassisCmd) {
   this->publishFromWrongTopic();
   ros::Duration(1.0).sleep();
 
-  EXPECT_NEAR(0.0, getTwist().linear.x, VELOCITY_TOLERANCE);
+  EXPECT_NEAR(0.1, getTwist().linear.x, VELOCITY_TOLERANCE);
 
   this->publish();
   ros::Duration(1.0).sleep();

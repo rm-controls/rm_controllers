@@ -14,7 +14,7 @@
 #include <gazebo_msgs/LinkStates.h>
 #include <sensor_msgs/JointState.h>
 
-const double POSITION_TOLERANCE = 0.05; // 1 mm-s precision
+const double POSITION_TOLERANCE = 0.08; // 1 mm-s precision
 const double VELOCITY_TOLERANCE = 0.05; // 1 mm-s-1 precision
 const double EPS = 0.01;
 
