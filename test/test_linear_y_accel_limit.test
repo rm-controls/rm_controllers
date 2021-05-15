@@ -1,0 +1,14 @@
+<launch>
+    <!-- Launch common-->
+    <include file="$(find rm_chassis_controllers)/test/common.launch">
+        <arg name="type" value="standard"/>
+    </include>
+
+    <!-- Controller test -->
+    <test test-name="linear_y_accel_limit_test"
+          pkg="rm_chassis_controllers"
+          type="linear_y_accel_limit_test"
+          time-limit="40.0">
+    </test>
+
+</launch>
