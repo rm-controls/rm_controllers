@@ -88,7 +88,6 @@ class Controller :
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_{};
   bool last_solve_success_{};
-  Vec2<double> angle_init_{};
 
   Config config_{};
   StandardState state_ = PASSIVE;
@@ -97,7 +96,7 @@ class Controller :
   std::map<int, geometry_msgs::Pose> last_detection_;
   std::map<int, geometry_msgs::Vector3> detection_pos_{};
   std::map<int, geometry_msgs::Vector3> detection_vel_{};
-  std::map<int, geometry_msgs::Vector3> center_pos_{};
+  std::map<int, geometry_msgs::Point> center_pos_{};
   std::map<int, double> gyro_vel_{};
 };
 }

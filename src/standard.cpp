@@ -121,49 +121,82 @@ void Controller::track(const ros::Time &time) {
   }
   bool solve_success = false;
   double roll, pitch, yaw;
-  double error;
+  Vec2<double> angle_init{};
+  Vec2<double> gyro_angle_init{};
+  geometry_msgs::TransformStamped yaw2detection, yaw2pitch;
 
   if (last_solve_success_) {
     quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
-    angle_init_[0] = yaw;
-    angle_init_[1] = -pitch;
+    angle_init[0] = yaw;
+    angle_init[1] = -pitch;
+    gyro_angle_init = angle_init;
   }
 
   int target_id = cmd_rt_buffer_.readFromRT()->target_id;
+  try {
+    yaw2detection = robot_state_handle_.lookupTransform(
+        "yaw", "detection" + std::to_string(target_id),
+        ros::Time(0));
+    yaw2pitch = robot_state_handle_.lookupTransform("yaw", "pitch", detection_rt_buffer_.readFromRT()->header.stamp);
+  }
+  catch (tf2::TransformException &ex) {
+    ROS_WARN("%s", ex.what());
+    return;
+  }
+
   if (moving_average_filters_track_.find(target_id) != moving_average_filters_track_.end()) {
-    geometry_msgs::Vector3 target_pos{};
-    geometry_msgs::Vector3 target_vel{};
-    geometry_msgs::Vector3 detection_error_vel{};
+    geometry_msgs::Vector3 target_pos[2]{};
+    geometry_msgs::Vector3 target_vel[2]{};
+    geometry_msgs::Point center_pos_yaw;
+
     if (moving_average_filters_track_.find(target_id)->second->isGyro()) {
-      target_pos = center_pos_.find(target_id)->second;
-      detection_error_vel.y = gyro_vel_.find(target_id)->second;
+      try {
+        tf2::doTransform(center_pos_.find(target_id)->second, center_pos_yaw, robot_state_handle_.lookupTransform(
+            "yaw", "map", detection_rt_buffer_.readFromRT()->header.stamp));
+      }
+      catch (tf2::TransformException &ex) {
+        ROS_WARN("%s", ex.what());
+        return;
+      }
+      target_pos[0].x = center_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
+      target_pos[0].y = center_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
+      target_pos[0].z = center_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z;
+      target_pos[1].x = center_pos_yaw.x - yaw2pitch.transform.translation.x;
+      target_pos[1].y = yaw2detection.transform.translation.y - yaw2pitch.transform.translation.y;
+      target_pos[1].z = center_pos_yaw.z - yaw2pitch.transform.translation.z;
+
+      target_vel[1].y = gyro_vel_.find(target_id)->second;
+      gyro_angle_init[0] = 0;
     } else {
-      target_pos = detection_pos_.find(target_id)->second;
-      target_vel = detection_vel_.find(target_id)->second;
-      detection_error_vel = detection_vel_.find(target_id)->second;
+      target_pos[0].x = detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
+      target_pos[0].y = detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
+      target_pos[0].z = detection_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z;
+      target_pos[1] = target_pos[0];
+
+      target_vel[0] = detection_vel_.find(target_id)->second;
+      target_vel[1] = target_vel[0];
     }
 
     solve_success = bullet_solver_->solve(
-        angle_init_,
-        target_pos.x - map2pitch_.transform.translation.x,
-        target_pos.y - map2pitch_.transform.translation.y,
-        target_pos.z - map2pitch_.transform.translation.z - 0.05,
-        target_vel.x,
-        target_vel.y,
-        0,
+        angle_init,
+        target_pos[0].x, target_pos[0].y, target_pos[0].z,
+        target_vel[0].x, target_vel[0].y, 0,
         cmd_.bullet_speed);
 
     if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
       if (error_pub_->trylock()) {
+        double error, error_delta;
         error = bullet_solver_->gimbalError(
-            angle_init_,
-            detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x,
-            detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y,
-            target_pos.z - map2pitch_.transform.translation.z - 0.05,
-            detection_error_vel.x,
-            detection_error_vel.y,
-            0,
+            gyro_angle_init,
+            target_pos[1].x, target_pos[1].y, target_pos[1].z,
+            0., target_vel[1].y, 0,
             cmd_.bullet_speed);
+        error_delta = bullet_solver_->gimbalError(
+            gyro_angle_init, target_pos[1].x,
+            target_pos[1].y + moving_average_filters_track_.find(target_id)->second->getDelta(),
+            target_pos[1].z, 0., target_vel[1].y, 0, cmd_.bullet_speed);
+        error = error < error_delta ? error : error_delta;
+
         error_pub_->msg_.stamp = time;
         error_pub_->msg_.error = solve_success ? error : 10;
         error_pub_->unlockAndPublish();
@@ -174,7 +207,7 @@ void Controller::track(const ros::Time &time) {
   if (solve_success)
     setDes(time, bullet_solver_->getResult(time, map2pitch_)[0], bullet_solver_->getResult(time, map2pitch_)[1]);
   else
-    setDes(time, angle_init_[0], -angle_init_[1]);
+    setDes(time, angle_init[0], -angle_init[1]);
   last_solve_success_ = solve_success;
 }
 
@@ -248,7 +281,8 @@ void Controller::updateTf() {
         moving_average_filters_track_.insert(std::make_pair(detection.first,
                                                             new moving_average_filter::MovingAverageFilterTrack(
                                                                 nh_moving_average_filter_,
-                                                                detection.first)));
+                                                                detection.first,
+                                                                robot_state_handle_)));
       config_ = *config_rt_buffer_.readFromRT();
       geometry_msgs::TransformStamped map2camera, map2detection;
       tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
