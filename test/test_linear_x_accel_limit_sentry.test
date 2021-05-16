@@ -10,7 +10,7 @@
     <test test-name="sentry_linear_x_accel_limit_test"
           pkg="rm_chassis_controllers"
           type="sentry_linear_x_accel_limit_test"
-          time-limit="200.0">
+          time-limit="1000.0">
     </test>
 
 </launch>
