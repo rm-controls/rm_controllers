@@ -60,6 +60,8 @@ void ShooterBase::update(const ros::Time &time, const ros::Duration &period) {
   block_->block_config_ = *block_->block_config_rt_buffer_.readFromRT();
 
   if (state_ != cmd_.mode && state_ != BLOCK) {
+    if (state_ == PASSIVE)
+      change_from_passive_ = true;
     state_ = State(cmd_.mode);
     state_changed_ = true;
   }
@@ -109,8 +111,10 @@ void ShooterBase::ready(const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter READY");
 
-    if (change_from_passive_)
+    if (change_from_passive_) {
       trigger_q_des_ = joint_trigger_handle_[0].getPosition();
+      change_from_passive_ = false;
+    }
   }
 }
 
@@ -119,7 +123,10 @@ void ShooterBase::push(const ros::Time &time, const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PUSH");
 
-    trigger_q_des_ = joint_trigger_handle_[0].getPosition();
+    if (change_from_passive_) {
+      trigger_q_des_ = joint_trigger_handle_[0].getPosition();
+      change_from_passive_ = false;
+    }
   }
 
   if (block_->isBlock(time, &joint_trigger_handle_[0])) {
