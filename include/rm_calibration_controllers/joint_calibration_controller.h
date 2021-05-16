@@ -29,7 +29,7 @@ class JointCalibrationController : public controller_interface::MultiInterfaceCo
   ros::ServiceServer is_calibrated_srv_;
 //  enum { INITIALIZED, BEGINNING, MOVING_TO_LOW, MOVING_TO_HIGH, CALIBRATED }; for GPIO switch
   enum { INITIALIZED, MOVING, CALIBRATED };
-  int state_{};
+  int state_{}, countdown_{};
   double vel_search_{}, threshold_{};
   hardware_interface::ActuatorExtraHandle actuator_;
   effort_controllers::JointVelocityController velocity_ctrl_;

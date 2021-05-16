@@ -1,0 +1,14 @@
+controllers:
+  robot_state_controller:
+    type: robot_state_controller/RobotStateController
+    publish_rate: 100
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 100
+  calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: pitch_joint
+    actuator: pitch_joint_motor
+    search_velocity: -3.0
+    threshold: 1e-3
+    pid: { p: 0.3, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }

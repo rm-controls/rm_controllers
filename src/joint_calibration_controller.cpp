@@ -35,11 +35,6 @@ bool JointCalibrationController::init(hardware_interface::RobotHW *robot_hw,
     ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (vel_search_ < 0) {
-    vel_search_ *= -1.;
-    ROS_ERROR("Negative search velocity is not supported for joint %s. Making the search velocity positive.",
-              velocity_ctrl_.getJointName().c_str());
-  }
   if (!controller_nh.getParam("threshold", threshold_)) {
     ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
@@ -64,18 +59,26 @@ void JointCalibrationController::update(const ros::Time &time, const ros::Durati
   switch (state_) {
     case INITIALIZED: {
       velocity_ctrl_.setCommand(vel_search_);
+      countdown_ = 200;
       state_ = MOVING;
       break;
     }
     case MOVING: {
-      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < threshold_) {
+      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < threshold_)
+        countdown_--;
+      else
+        countdown_ = 200;
+      if (countdown_ < 0) {
         velocity_ctrl_.setCommand(0);
         actuator_.setOffset(-actuator_.getPosition());
         state_ = CALIBRATED;
       }
       break;
     }
-    case CALIBRATED:break;
+    case CALIBRATED: {
+      velocity_ctrl_.joint_.setCommand(0.);
+      break;
+    }
   }
   if (state_ != CALIBRATED)
     velocity_ctrl_.update(time, period);
