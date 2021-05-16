@@ -23,11 +23,11 @@ class MovingAverageFilterTrack {
                                     int id,
                                     hardware_interface::RobotStateHandle robot_state_handle);
   void input(const geometry_msgs::TransformStamped &map2detection);
-  geometry_msgs::TransformStamped getTransform() const;
-  geometry_msgs::Vector3 getVel() const;
-  geometry_msgs::Point getCenter() const;
-  double getGyroVel() const;
-  bool isGyro() const;
+  geometry_msgs::TransformStamped getTransform() const { return output_map2detection_; }
+  geometry_msgs::Vector3 getVel() const { return output_vel_; }
+  geometry_msgs::Point getCenter() const { return output_center_; }
+  double getGyroVel() const { return output_gyro_vel_; }
+  bool isGyro() const { return is_gyro_; }
   double getDelta() const { return delta_; }
   ~MovingAverageFilterTrack() = default;
  private:

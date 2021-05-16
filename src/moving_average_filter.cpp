@@ -201,24 +201,4 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
     }
   }
 }
-
-geometry_msgs::TransformStamped MovingAverageFilterTrack::getTransform() const {
-  return output_map2detection_;
-}
-
-geometry_msgs::Vector3 MovingAverageFilterTrack::getVel() const {
-  return output_vel_;
-}
-
-geometry_msgs::Point MovingAverageFilterTrack::getCenter() const {
-  return output_center_;
-}
-
-double MovingAverageFilterTrack::getGyroVel() const {
-  return output_gyro_vel_;
-}
-
-bool MovingAverageFilterTrack::isGyro() const {
-  return is_gyro_;
-}
 }
