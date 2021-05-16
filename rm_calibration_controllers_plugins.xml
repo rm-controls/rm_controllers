@@ -1,0 +1,6 @@
+<library path="lib/librm_calibration_controllers">
+
+    <class name="rm_calibration_controllers/JointCalibrationController"
+           type="rm_calibration_controllers::JointCalibrationController"
+           base_class_type="controller_interface::ControllerBase"/>
+</library>
