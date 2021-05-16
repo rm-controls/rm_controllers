@@ -108,7 +108,9 @@ void ShooterBase::ready(const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter READY");
-    trigger_q_des_ = joint_trigger_handle_[0].getPosition();
+
+    if (change_from_passive_)
+      trigger_q_des_ = joint_trigger_handle_[0].getPosition();
   }
 }
 
