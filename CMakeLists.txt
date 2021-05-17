@@ -24,6 +24,7 @@ find_package(catkin REQUIRED
         forward_command_controller
         realtime_tools
         control_toolbox
+        effort_controllers
         tf2
         tf2_geometry_msgs
         visualization_msgs
@@ -62,6 +63,7 @@ catkin_package(
         forward_command_controller
         realtime_tools
         control_toolbox
+        effort_controllers
         tf2
         tf2_geometry_msgs
         visualization_msgs

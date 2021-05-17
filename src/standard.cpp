@@ -20,21 +20,16 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
   nh_moving_average_filter_ = ros::NodeHandle(controller_nh, "moving_average_filter");
 
-  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
-  joint_yaw_ =
-      effort_jnt_interface->getHandle(getParam(nh_yaw, "joint_name", std::string("joint_yaw")));
-  joint_pitch_ =
-      effort_jnt_interface->getHandle(getParam(nh_pitch, "joint_name", std::string("joint_pitch")));
+  effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
+  robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
   upper_yaw_ = getParam(nh_yaw, "upper", 1e9);
   lower_yaw_ = getParam(nh_yaw, "lower", -1e9);
   upper_pitch_ = getParam(nh_pitch, "upper", 1e9);
   lower_pitch_ = getParam(nh_pitch, "lower", -1e9);
 
-  robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
-
-  if (!pid_yaw_.init(ros::NodeHandle(nh_yaw, "pid")) ||
-      !pid_pitch_.init(ros::NodeHandle(nh_pitch, "pid")))
+  if (!ctrl_yaw_.init(effort_joint_interface_, nh_yaw) ||
+      !ctrl_pitch_.init(effort_joint_interface_, nh_pitch))
     return false;
 
   map2gimbal_des_.header.frame_id = "map";
@@ -61,8 +56,6 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   d_srv_->setCallback(cb);
 
   bullet_solver_ = new bullet_solver::Approx3DSolver(nh_bullet_solver);
-  lp_filter_yaw_ = new LowPassFilter(nh_yaw);
-  lp_filter_pitch_ = new LowPassFilter(nh_pitch);
 
   return true;
 }
@@ -93,9 +86,8 @@ void Controller::passive() {
     ROS_INFO("[Gimbal] Enter PASSIVE");
   }
 
-  joint_yaw_.setCommand(0);
-  joint_pitch_.setCommand(0);
-  pid_yaw_.reset();
+  ctrl_yaw_.joint_.setCommand(0);
+  ctrl_pitch_.joint_.setCommand(0);
 }
 
 void Controller::rate(const ros::Time &time, const ros::Duration &period) {
@@ -227,17 +219,14 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
     ROS_WARN("%s", ex.what());
     return;
   }
-  double error_yaw, error_pitch;
   double roll_des, pitch_des, yaw_des;  // desired position
   quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
-  error_yaw = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
-  error_pitch = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
-  lp_filter_yaw_->input(error_yaw, time);
-  lp_filter_pitch_->input(error_pitch, time);
-  pid_yaw_.computeCommand(lp_filter_yaw_->output(), period);
-  pid_pitch_.computeCommand(lp_filter_pitch_->output(), period);
-  joint_yaw_.setCommand(pid_yaw_.getCurrentCmd());
-  joint_pitch_.setCommand(pid_pitch_.getCurrentCmd());
+
+  ctrl_yaw_.setCommand(yaw_des, 0);
+  ctrl_pitch_.setCommand(pitch_des, 0);
+
+  ctrl_yaw_.update(time, period);
+  ctrl_pitch_.update(time, period);
 }
 
 void Controller::updateTf() {

@@ -5,7 +5,7 @@
 #ifndef RM_GIMBAL_CONTROLLER_STANDARD_H
 #define RM_GIMBAL_CONTROLLER_STANDARD_H
 
-#include <control_toolbox/pid.h>
+#include <effort_controllers/joint_position_controller.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
@@ -20,7 +20,6 @@
 #include <rm_gimbal_controller/moving_average_filter.h>
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <rm_common/filters/lp_filter.h>
 
 namespace rm_gimbal_controllers {
 enum StandardState {
@@ -59,13 +58,12 @@ class Controller :
   ros::Time last_detection_time_{};
   ros::NodeHandle nh_moving_average_filter_;
 
-  control_toolbox::Pid pid_yaw_, pid_pitch_;
-  hardware_interface::JointHandle joint_yaw_, joint_pitch_;
+  hardware_interface::EffortJointInterface *effort_joint_interface_{};
   hardware_interface::RobotStateHandle robot_state_handle_;
 
+  effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
+
   bullet_solver::Bullet3DSolver *bullet_solver_{};
-  LowPassFilter *lp_filter_yaw_{};
-  LowPassFilter *lp_filter_pitch_{};
 
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError> > error_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;
