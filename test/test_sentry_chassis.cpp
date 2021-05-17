@@ -11,18 +11,18 @@ TEST_F(StandardChassisTest, testForward) {
   this->zeroCmdVel();
   this->zeroCmdChassis();
   this->publish();
-  ros::Duration(5.0).sleep();
+  ros::Duration(0.5).sleep();
 
   // send a velocity command of 0.25 m/s
   this->cmd_chassis_.accel.linear.x = 20;
   this->cmd_vel_.linear.x = 0.016;
   publish();
-  ros::Duration(10.0).sleep();
+  ros::Duration(2.0).sleep();
   EXPECT_NEAR(this->cmd_vel_.linear.x, getLastOdom().twist.twist.linear.x, VELOCITY_TOLERANCE);
 
   this->cmd_vel_.linear.x = 0.;
   publish();
-  ros::Duration(5.0).sleep();
+  ros::Duration(2.0).sleep();
 }
 
 int main(int argc, char **argv) {

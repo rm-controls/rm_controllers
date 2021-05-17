@@ -10,6 +10,6 @@
     <test test-name="sentry_chassis_test"
           pkg="rm_chassis_controllers"
           type="sentry_chassis_test"
-          time-limit="1000.0">
+          time-limit="40.0">
     </test>
 </launch>

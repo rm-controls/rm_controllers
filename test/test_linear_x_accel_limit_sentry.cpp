@@ -10,7 +10,7 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   this->zeroCmdVel();
   this->zeroCmdChassis();
   this->publish();
-  ros::Duration(10.0).sleep();
+  ros::Duration(2.5).sleep();
 
 // get initial odom
   nav_msgs::Odometry old_odom = getLastOdom();
@@ -19,7 +19,7 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   this->cmd_chassis_.accel.linear.x = 20.0;
   publish();
 // wait for a while
-  ros::Duration(10.0).sleep();
+  ros::Duration(1.0).sleep();
 
   nav_msgs::Odometry new_odom = getLastOdom();
 
@@ -31,14 +31,14 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   this->cmd_vel_.linear.x = 0.0;
   this->cmd_chassis_.accel.linear.x = 20.0;
   publish();
-  ros::Duration(15.0).sleep();
+  ros::Duration(5.0).sleep();
 
   old_odom = getLastOdom();
 
   this->cmd_vel_.linear.x = 0.2;
   this->cmd_chassis_.accel.linear.x = 0.5;
   publish();
-  ros::Duration(10.0).sleep();
+  ros::Duration(1.0).sleep();
 
   new_odom = getLastOdom();
 
