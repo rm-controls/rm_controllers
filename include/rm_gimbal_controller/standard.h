@@ -5,7 +5,7 @@
 #ifndef RM_GIMBAL_CONTROLLER_STANDARD_H
 #define RM_GIMBAL_CONTROLLER_STANDARD_H
 
-#include <control_toolbox/pid.h>
+#include <effort_controllers/joint_position_controller.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
@@ -17,10 +17,9 @@
 #include <rm_msgs/TargetDetectionArray.h>
 #include <rm_gimbal_controllers/GimbalConfig.h>
 #include <rm_gimbal_controller/bullet_solver.h>
-#include <rm_gimbal_controller/kalman_filter.h>
+#include <rm_gimbal_controller/moving_average_filter.h>
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <rm_common/filters/lp_filter.h>
 
 namespace rm_gimbal_controllers {
 enum StandardState {
@@ -54,17 +53,17 @@ class Controller :
   void updateTrack(int id);
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
 
-  ros::Time last_publish_time_;
+  ros::Time last_publish_time_{};
   ros::Time last_camera_time_{};
-  ros::NodeHandle nh_kalman_;
+  ros::Time last_detection_time_{};
+  ros::NodeHandle nh_moving_average_filter_;
 
-  control_toolbox::Pid pid_yaw_, pid_pitch_;
-  hardware_interface::JointHandle joint_yaw_, joint_pitch_;
+  hardware_interface::EffortJointInterface *effort_joint_interface_{};
   hardware_interface::RobotStateHandle robot_state_handle_;
 
+  effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
+
   bullet_solver::Bullet3DSolver *bullet_solver_{};
-  LowPassFilter *lp_filter_yaw_{};
-  LowPassFilter *lp_filter_pitch_{};
 
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError> > error_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;
@@ -80,7 +79,6 @@ class Controller :
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
 
   geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
-  geometry_msgs::Vector3 target_pos_{};
   rm_msgs::GimbalCmd cmd_;
 
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
@@ -88,15 +86,16 @@ class Controller :
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_{};
   bool last_solve_success_{};
-  Vec2<double> angle_init_{};
 
   Config config_{};
   StandardState state_ = PASSIVE;
 
-  std::map<int, geometry_msgs::Twist> target_vel_;
-  std::map<int, kalman_filter::KalmanFilterTrack *> kalman_filters_track_;
-  std::map<int, ros::Time> last_detection_time_;
+  std::map<int, moving_average_filter::MovingAverageFilterTrack *> moving_average_filters_track_;
   std::map<int, geometry_msgs::Pose> last_detection_;
+  std::map<int, geometry_msgs::Vector3> detection_pos_{};
+  std::map<int, geometry_msgs::Vector3> detection_vel_{};
+  std::map<int, geometry_msgs::Point> center_pos_{};
+  std::map<int, double> gyro_vel_{};
 };
 }
 

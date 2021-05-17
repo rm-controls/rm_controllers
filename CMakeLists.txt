@@ -24,6 +24,7 @@ find_package(catkin REQUIRED
         forward_command_controller
         realtime_tools
         control_toolbox
+        effort_controllers
         tf2
         tf2_geometry_msgs
         visualization_msgs
@@ -33,7 +34,6 @@ find_package(catkin REQUIRED
 
 generate_dynamic_reconfigure_options(
         cfg/BulletSolver.cfg
-        cfg/Kalman.cfg
         cfg/Gimbal.cfg
 )
 
@@ -63,6 +63,7 @@ catkin_package(
         forward_command_controller
         realtime_tools
         control_toolbox
+        effort_controllers
         tf2
         tf2_geometry_msgs
         visualization_msgs
@@ -83,15 +84,13 @@ include_directories(
 
 ## Declare a cpp library
 add_library(bullet_solver src/bullet_solver.cpp)
-add_library(kalman_filter src/kalman_filter.cpp)
+add_library(moving_average_filter src/moving_average_filter.cpp)
 add_library(${PROJECT_NAME} src/standard.cpp)
 
 ## Specify libraries to link executable targets against
 target_link_libraries(bullet_solver ${catkin_LIBRARIES})
-target_link_libraries(kalman_filter ${catkin_LIBRARIES})
-target_link_libraries(${PROJECT_NAME} bullet_solver kalman_filter ${catkin_LIBRARIES})
-
-add_dependencies(kalman_filter ${PROJECT_NAME}_gencfg)
+target_link_libraries(moving_average_filter ${catkin_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} bullet_solver moving_average_filter ${catkin_LIBRARIES})
 
 #############
 ## Install ##

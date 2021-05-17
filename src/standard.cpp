@@ -18,23 +18,18 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
-  nh_kalman_ = ros::NodeHandle(controller_nh, "kalman");
+  nh_moving_average_filter_ = ros::NodeHandle(controller_nh, "moving_average_filter");
 
-  auto *effort_jnt_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
-  joint_yaw_ =
-      effort_jnt_interface->getHandle(getParam(nh_yaw, "joint_name", std::string("joint_yaw")));
-  joint_pitch_ =
-      effort_jnt_interface->getHandle(getParam(nh_pitch, "joint_name", std::string("joint_pitch")));
+  effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
+  robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
   upper_yaw_ = getParam(nh_yaw, "upper", 1e9);
   lower_yaw_ = getParam(nh_yaw, "lower", -1e9);
   upper_pitch_ = getParam(nh_pitch, "upper", 1e9);
   lower_pitch_ = getParam(nh_pitch, "lower", -1e9);
 
-  robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
-
-  if (!pid_yaw_.init(ros::NodeHandle(nh_yaw, "pid")) ||
-      !pid_pitch_.init(ros::NodeHandle(nh_pitch, "pid")))
+  if (!ctrl_yaw_.init(effort_joint_interface_, nh_yaw) ||
+      !ctrl_pitch_.init(effort_joint_interface_, nh_pitch))
     return false;
 
   map2gimbal_des_.header.frame_id = "map";
@@ -61,8 +56,6 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   d_srv_->setCallback(cb);
 
   bullet_solver_ = new bullet_solver::Approx3DSolver(nh_bullet_solver);
-  lp_filter_yaw_ = new LowPassFilter(nh_yaw);
-  lp_filter_pitch_ = new LowPassFilter(nh_pitch);
 
   return true;
 }
@@ -93,9 +86,8 @@ void Controller::passive() {
     ROS_INFO("[Gimbal] Enter PASSIVE");
   }
 
-  joint_yaw_.setCommand(0);
-  joint_pitch_.setCommand(0);
-  pid_yaw_.reset();
+  ctrl_yaw_.joint_.setCommand(0);
+  ctrl_pitch_.joint_.setCommand(0);
 }
 
 void Controller::rate(const ros::Time &time, const ros::Duration &period) {
@@ -121,44 +113,84 @@ void Controller::track(const ros::Time &time) {
   }
   bool solve_success = false;
   double roll, pitch, yaw;
-  double error;
+  Vec2<double> angle_init{};
+  Vec2<double> gyro_angle_init{};
+  geometry_msgs::TransformStamped yaw2detection, yaw2pitch;
 
   if (last_solve_success_) {
     quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
-    angle_init_[0] = yaw;
-    angle_init_[1] = -pitch;
+    angle_init[0] = yaw;
+    angle_init[1] = -pitch;
+    gyro_angle_init = angle_init;
   }
 
-  if (kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id) != kalman_filters_track_.end()) {
-    geometry_msgs::TransformStamped
-        map2detection = kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getTransform();
-    if (kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->isGyro())
-      target_pos_ = kalman_filters_track_.find(cmd_rt_buffer_.readFromRT()->target_id)->second->getCenter();
-    else
-      target_pos_ = map2detection.transform.translation;
+  int target_id = cmd_rt_buffer_.readFromRT()->target_id;
+  try {
+    yaw2detection = robot_state_handle_.lookupTransform(
+        "yaw", "detection" + std::to_string(target_id),
+        ros::Time(0));
+    yaw2pitch = robot_state_handle_.lookupTransform("yaw", "pitch", detection_rt_buffer_.readFromRT()->header.stamp);
+  }
+  catch (tf2::TransformException &ex) {
+    ROS_WARN("%s", ex.what());
+    return;
+  }
+
+  if (moving_average_filters_track_.find(target_id) != moving_average_filters_track_.end()) {
+    geometry_msgs::Vector3 target_pos[2]{};
+    geometry_msgs::Vector3 target_vel[2]{};
+    geometry_msgs::Point center_pos_yaw;
+
+    if (moving_average_filters_track_.find(target_id)->second->isGyro()) {
+      try {
+        tf2::doTransform(center_pos_.find(target_id)->second, center_pos_yaw, robot_state_handle_.lookupTransform(
+            "yaw", "map", detection_rt_buffer_.readFromRT()->header.stamp));
+      }
+      catch (tf2::TransformException &ex) {
+        ROS_WARN("%s", ex.what());
+        return;
+      }
+      target_pos[0].x = center_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
+      target_pos[0].y = center_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
+      target_pos[0].z = center_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z;
+      target_pos[1].x = center_pos_yaw.x - yaw2pitch.transform.translation.x;
+      target_pos[1].y = yaw2detection.transform.translation.y - yaw2pitch.transform.translation.y;
+      target_pos[1].z = center_pos_yaw.z - yaw2pitch.transform.translation.z;
+
+      target_vel[1].y = gyro_vel_.find(target_id)->second;
+      gyro_angle_init[0] = 0;
+    } else {
+      target_pos[0].x = detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
+      target_pos[0].y = detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
+      target_pos[0].z = detection_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z;
+      target_pos[1] = target_pos[0];
+
+      target_vel[0] = detection_vel_.find(target_id)->second;
+      target_vel[1] = target_vel[0];
+    }
 
     solve_success = bullet_solver_->solve(
-        angle_init_,
-        target_pos_.x - map2pitch_.transform.translation.x,
-        target_pos_.y - map2pitch_.transform.translation.y,
-        target_pos_.z - map2pitch_.transform.translation.z,
-        target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.x,
-        target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.y,
-        0,
+        angle_init,
+        target_pos[0].x, target_pos[0].y, target_pos[0].z,
+        target_vel[0].x, target_vel[0].y, 0,
         cmd_.bullet_speed);
 
     if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
       if (error_pub_->trylock()) {
-        error = bullet_solver_->gimbalError(angle_init_,
-                                            target_pos_.x - map2pitch_.transform.translation.x,
-                                            target_pos_.y - map2pitch_.transform.translation.y,
-                                            target_pos_.z - map2pitch_.transform.translation.z,
-                                            target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.x,
-                                            target_vel_.find(cmd_rt_buffer_.readFromRT()->target_id)->second.linear.y,
-                                            0,
-                                            cmd_.bullet_speed);
+        double error, error_delta;
+        error = bullet_solver_->gimbalError(
+            gyro_angle_init,
+            target_pos[1].x, target_pos[1].y, target_pos[1].z,
+            0., target_vel[1].y, 0,
+            cmd_.bullet_speed);
+        error_delta = bullet_solver_->gimbalError(
+            gyro_angle_init, target_pos[1].x,
+            target_pos[1].y + moving_average_filters_track_.find(target_id)->second->getDelta(),
+            target_pos[1].z, 0., target_vel[1].y, 0, cmd_.bullet_speed);
+        error = error < error_delta ? error : error_delta;
+
         error_pub_->msg_.stamp = time;
-        error_pub_->msg_.error = solve_success ? error : 999;
+        error_pub_->msg_.error = solve_success ? error : 10;
         error_pub_->unlockAndPublish();
       }
       last_publish_time_ = time;
@@ -167,7 +199,7 @@ void Controller::track(const ros::Time &time) {
   if (solve_success)
     setDes(time, bullet_solver_->getResult(time, map2pitch_)[0], bullet_solver_->getResult(time, map2pitch_)[1]);
   else
-    setDes(time, angle_init_[0], -angle_init_[1]);
+    setDes(time, angle_init[0], -angle_init[1]);
   last_solve_success_ = solve_success;
 }
 
@@ -179,25 +211,25 @@ void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
 }
 
 void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
-  geometry_msgs::TransformStamped base2des;
+  geometry_msgs::TransformStamped base2des, map2base, last_map2base;
   try {
     base2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
+    map2base = robot_state_handle_.lookupTransform("map", "base_link", time);
+    last_map2base = robot_state_handle_.lookupTransform("map", "base_link", time - period);
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
     return;
   }
-  double error_yaw{}, error_pitch{};
   double roll_des, pitch_des, yaw_des;  // desired position
   quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
-  error_yaw = angles::shortest_angular_distance(joint_yaw_.getPosition(), yaw_des);
-  error_pitch = angles::shortest_angular_distance(joint_pitch_.getPosition(), pitch_des);
-  lp_filter_yaw_->input(error_yaw, time);
-  lp_filter_pitch_->input(error_pitch, time);
-  pid_yaw_.computeCommand(lp_filter_yaw_->output(), period);
-  pid_pitch_.computeCommand(lp_filter_pitch_->output(), period);
-  joint_yaw_.setCommand(pid_yaw_.getCurrentCmd());
-  joint_pitch_.setCommand(pid_pitch_.getCurrentCmd());
+  double yaw_vel =
+      (yawFromQuat(map2base.transform.rotation) - yawFromQuat(last_map2base.transform.rotation)) / period.toSec();
+  ctrl_yaw_.setCommand(yaw_des, -yaw_vel);
+  ctrl_pitch_.setCommand(pitch_des, 0);
+
+  ctrl_yaw_.update(time, period);
+  ctrl_pitch_.update(time, period);
 }
 
 void Controller::updateTf() {
@@ -231,19 +263,18 @@ void Controller::updateTf() {
   }
   last_detection_ = now_detection;
 
-  bool new_detection_coming{};
   //Filtering the targets with different id
-  for (const auto &detection:now_detection) {
-    if (kalman_filters_track_.find(detection.first) == kalman_filters_track_.end())
-      kalman_filters_track_.insert(std::make_pair(detection.first,
-                                                  new kalman_filter::KalmanFilterTrack(nh_kalman_, detection.first)));
-    ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
-    if (last_detection_time_.find(detection.first)->second != detection_time) {
-      if (!new_detection_coming) {
-        new_detection_coming = true;
-        track_pub_->msg_.tracks.clear();
-      }
-      last_detection_time_[detection.first] = detection_time;
+  ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
+  if (last_detection_time_ != detection_time) {
+    last_detection_time_ = detection_time;
+    track_pub_->msg_.tracks.clear();
+    for (const auto &detection:now_detection) {
+      if (moving_average_filters_track_.find(detection.first) == moving_average_filters_track_.end())
+        moving_average_filters_track_.insert(std::make_pair(detection.first,
+                                                            new moving_average_filter::MovingAverageFilterTrack(
+                                                                nh_moving_average_filter_,
+                                                                detection.first,
+                                                                robot_state_handle_)));
       config_ = *config_rt_buffer_.readFromRT();
       geometry_msgs::TransformStamped map2camera, map2detection;
       tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
@@ -265,17 +296,18 @@ void Controller::updateTf() {
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.first);
 
-        kalman_filters_track_.find(detection.first)->second->input(map2detection);
-        tf_broadcaster_.sendTransform(kalman_filters_track_.find(detection.first)->second->getTransform());
-        target_vel_[detection.first] = kalman_filters_track_.find(detection.first)->second->getTwist();
+        moving_average_filters_track_.find(detection.first)->second->input(map2detection);
+        detection_pos_[detection.first] =
+            moving_average_filters_track_.find(detection.first)->second->getTransform().transform.translation;
+        detection_vel_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getVel();
+        center_pos_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getCenter();
+        gyro_vel_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getGyroVel();
+
+        tf_broadcaster_.sendTransform(moving_average_filters_track_.find(detection.first)->second->getTransform());
         updateTrack(detection.first);
       }
       catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
     }
-
-    if (now_detection.empty())
-      target_vel_.clear();
-    kalman_filters_track_.find(detection.first)->second->perdict();
   }
 
   ros::Time camera_time = camera_rt_buffer_.readFromRT()->header.stamp;
