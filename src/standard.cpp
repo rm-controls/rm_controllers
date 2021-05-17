@@ -152,10 +152,10 @@ void Controller::track(const ros::Time &time) {
       }
       target_pos[0].x = center_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
       target_pos[0].y = center_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
-      target_pos[0].z = center_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z;
+      target_pos[0].z = center_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z - 0.05;
       target_pos[1].x = center_pos_yaw.x - yaw2pitch.transform.translation.x;
       target_pos[1].y = yaw2detection.transform.translation.y - yaw2pitch.transform.translation.y;
-      target_pos[1].z = center_pos_yaw.z - yaw2pitch.transform.translation.z;
+      target_pos[1].z = center_pos_yaw.z - yaw2pitch.transform.translation.z - 0.05;
 
       target_vel[1].y = gyro_vel_.find(target_id)->second;
       gyro_angle_init[0] = 0;
@@ -323,7 +323,7 @@ void Controller::updateTf() {
 void Controller::updateTrack(int id) {
   geometry_msgs::TransformStamped camera2detection, map2detection;
   try {
-    camera2detection = robot_state_handle_.lookupTransform("camera_link",
+    camera2detection = robot_state_handle_.lookupTransform("camera_optical_frame",
                                                            "detection" + std::to_string(id),
                                                            ros::Time(0));
     map2detection = robot_state_handle_.lookupTransform("map",
