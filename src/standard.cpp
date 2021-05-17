@@ -211,9 +211,11 @@ void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
 }
 
 void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
-  geometry_msgs::TransformStamped base2des;
+  geometry_msgs::TransformStamped base2des, map2base, last_map2base;
   try {
     base2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
+    map2base = robot_state_handle_.lookupTransform("map", "base_link", time);
+    last_map2base = robot_state_handle_.lookupTransform("map", "base_link", time - period);
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
@@ -221,8 +223,9 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
   }
   double roll_des, pitch_des, yaw_des;  // desired position
   quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
-
-  ctrl_yaw_.setCommand(yaw_des, 0);
+  double yaw_vel =
+      (yawFromQuat(map2base.transform.rotation) - yawFromQuat(last_map2base.transform.rotation)) / period.toSec();
+  ctrl_yaw_.setCommand(yaw_des, -yaw_vel);
   ctrl_pitch_.setCommand(pitch_des, 0);
 
   ctrl_yaw_.update(time, period);
