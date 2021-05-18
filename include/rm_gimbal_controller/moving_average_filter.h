@@ -51,7 +51,7 @@ class MovingAverageFilterTrack {
   bool is_gyro_{};
   int switch_count_{};
   int pos_data_num_{}, vel_data_num_{}, center_data_num_{}, gyro_data_num_{};
-  double delta_;
+  double delta_{};
   double last_gyro_vel_{};
   double output_gyro_vel_{};
 
