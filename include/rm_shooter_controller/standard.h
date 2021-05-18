@@ -20,7 +20,7 @@ class StandardController : public ShooterBase {
   void moveJointFriction(const ros::Time &time, const ros::Duration &period);
   void moveJoint(const ros::Time &time, const ros::Duration &period) override;
   effort_controllers::JointVelocityController ctrl_friction_l_, ctrl_friction_r_;
-  effort_controllers::JointPositionController ctrl_trigger_;
+  effort_controllers::JointPositionController ctrl_trigger_, ctrl_magazine_;
 };
 
 } // namespace rm_shooter_controllers

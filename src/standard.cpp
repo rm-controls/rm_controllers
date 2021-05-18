@@ -16,10 +16,12 @@ bool StandardController::init(hardware_interface::RobotHW *robot_hw,
   ros::NodeHandle nh_friction_l = ros::NodeHandle(controller_nh, "friction_left");
   ros::NodeHandle nh_friction_r = ros::NodeHandle(controller_nh, "friction_right");
   ros::NodeHandle nh_trigger = ros::NodeHandle(controller_nh, "trigger");
+  ros::NodeHandle nh_magazine = ros::NodeHandle(controller_nh, "magazine");
 
   if (!ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) ||
       !ctrl_friction_r_.init(effort_joint_interface_, nh_friction_r) ||
-      !ctrl_trigger_.init(effort_joint_interface_, nh_trigger))
+      !ctrl_trigger_.init(effort_joint_interface_, nh_trigger) ||
+      !ctrl_magazine_.init(effort_joint_interface_, nh_magazine))
     return false;
   joint_friction_handle_.push_back(ctrl_friction_l_.joint_);
   joint_friction_handle_.push_back(ctrl_friction_r_.joint_);
