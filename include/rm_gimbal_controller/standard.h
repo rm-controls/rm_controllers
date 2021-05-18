@@ -60,7 +60,6 @@ class Controller :
 
   hardware_interface::EffortJointInterface *effort_joint_interface_{};
   hardware_interface::RobotStateHandle robot_state_handle_;
-
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
   bullet_solver::Bullet3DSolver *bullet_solver_{};
@@ -78,11 +77,12 @@ class Controller :
   realtime_tools::RealtimeBuffer<sensor_msgs::CameraInfo> camera_rt_buffer_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
 
-  geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
+  geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_, last_map2base_;
   rm_msgs::GimbalCmd cmd_;
 
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
   double publish_rate_{};
+  double yaw_vel_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_{};
   bool last_solve_success_{};
