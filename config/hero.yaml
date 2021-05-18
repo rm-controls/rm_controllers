@@ -30,22 +30,9 @@ controllers:
       dt: 0.001
       timeout: 0.001
       publish_rate_model: 50
-    kalman:
-      moving_average_data_num: 30
-      kalman_debug: true
-      q_x_pos: 1.
-      q_y_pos: 1.
-      q_z_pos: 1.
-      q_yaw_pos: 1.
-      q_x_vel: 1.
-      q_y_vel: 1.
-      q_z_vel: 1.
-      q_yaw_vel: 1.
-      r_x_pos: 100.
-      r_y_pos: 10.
-      r_z_pos: 100.
-      r_yaw_pos: 1.
-      r_x_vel: 100.
-      r_y_vel: 100.
-      r_z_vel: 100.
-      r_yaw_vel: 500.
+    moving_average_filter:
+      is_debug: true
+      pos_data_num: 20
+      vel_data_num: 30
+      center_data_num: 100
+      gyro_data_num: 100
