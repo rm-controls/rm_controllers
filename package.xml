@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>rm_orientation_controllers</name>
+  <version>0.0.0</version>
+  <description>The rm_orientation_controllers package</description>
+
+  <maintainer email="1656257449@qq.com">bruce</maintainer>
+
+  <license>BSD</license>
+
+  <author>Bruce Lan</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>controller_interface</depend>
+  <depend>realtime_tools</depend>
+  <depend>roscpp</depend>
+
+  <build_depend>hardware_interface</build_depend>
+  <build_depend>pluginlib</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+
+  <build_export_depend>hardware_interface</build_export_depend>
+  <build_export_depend>sensor_msgs</build_export_depend>
+
+  <exec_depend>controller_manager</exec_depend>
+
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+
+  </export>
+</package>

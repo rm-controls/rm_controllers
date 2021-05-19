@@ -1,0 +1,9 @@
+<library path="lib/librm_rotation_controller">
+    <class name="rm_rotation_controller" type="rm_rotation_controller"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+            The Controller is RoboMaster robot Rotation controller. It expects a ImuSensorInterface type of hardware
+            interface.
+        </description>
+    </class>
+</library>
