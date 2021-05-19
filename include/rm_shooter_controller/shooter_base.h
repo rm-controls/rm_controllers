@@ -67,6 +67,7 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   void passive();
   void ready(const ros::Duration &period);
   void block(const ros::Time &time, const ros::Duration &period);
+  void calibrate();
   void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
   void reconfigCB(rm_shooter_controllers::ShooterBaseConfig &config, uint32_t /*level*/);
 
@@ -77,7 +78,7 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   double enter_push_qd_coef_{}, push_angle_error_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
-  bool change_from_passive_ = false;
+  bool calibrate_trigger_pos_ = false;
   bool is_out_from_block_ = false;
 
   Block *block_{};

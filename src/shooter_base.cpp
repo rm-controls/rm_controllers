@@ -60,8 +60,8 @@ void ShooterBase::update(const ros::Time &time, const ros::Duration &period) {
   block_->block_config_ = *block_->block_config_rt_buffer_.readFromRT();
 
   if (state_ != cmd_.mode && state_ != BLOCK) {
-    if (state_ == PASSIVE)
-      change_from_passive_ = true;
+    if (state_ == PASSIVE || state_ == STOP)
+      calibrate_trigger_pos_ = true;
     state_ = State(cmd_.mode);
     state_changed_ = true;
   }
@@ -111,10 +111,7 @@ void ShooterBase::ready(const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter READY");
 
-    if (change_from_passive_) {
-      trigger_q_des_ = joint_trigger_handle_[0].getPosition();
-      change_from_passive_ = false;
-    }
+    calibrate();
   }
 }
 
@@ -123,10 +120,7 @@ void ShooterBase::push(const ros::Time &time, const ros::Duration &period) {
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PUSH");
 
-    if (change_from_passive_) {
-      trigger_q_des_ = joint_trigger_handle_[0].getPosition();
-      change_from_passive_ = false;
-    }
+    calibrate();
   }
 
   if (block_->isBlock(time, &joint_trigger_handle_[0])) {
@@ -151,6 +145,17 @@ void ShooterBase::block(const ros::Time &time, const ros::Duration &period) {
     block_->is_start_block_time_ = false;
     is_out_from_block_ = true;
     ROS_INFO("[Shooter] Exit BLOCK");
+  }
+}
+
+void ShooterBase::calibrate() {
+  if (calibrate_trigger_pos_) {
+    double normalize_trigger_pos = fmod(joint_trigger_handle_[0].getPosition(), 6.28);
+    double calibrate_angle = fmod(normalize_trigger_pos, config_.push_angle);
+    if (calibrate_angle >= 0)
+      calibrate_angle = calibrate_angle - config_.push_angle;
+    trigger_q_des_ = joint_trigger_handle_[0].getPosition() - calibrate_angle;
+    calibrate_trigger_pos_ = false;
   }
 }
 

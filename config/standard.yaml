@@ -22,7 +22,7 @@ controllers:
       pid: { p: 2.4, i: 0.0, d: 0.1, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
 
     enter_push_qd_coef: 0.95
-    push_angle: 0.8
+    push_angle: 0.785
     push_angle_error: 0.04
     block_effort: 0.9
     block_duration: 0.05
