@@ -64,11 +64,12 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
 }
 
 void Controller::update(const ros::Time &time, const ros::Duration &period) {
-  cmd_ = *cmd_rt_buffer_.readFromRT();
+  cmd_gimbal_ = *cmd_rt_buffer_.readFromRT();
   updateTf();
+  updateChassisVel();
 
-  if (state_ != cmd_.mode) {
-    state_ = StandardState(cmd_.mode);
+  if (state_ != cmd_gimbal_.mode) {
+    state_ = StandardState(cmd_gimbal_.mode);
     state_changed_ = true;
   }
 
@@ -115,11 +116,11 @@ void Controller::track(const ros::Time &time) {
     ROS_INFO("[Gimbal] Enter TRACK");
   }
   bool solve_success = false;
-  double roll, pitch, yaw;
   Vec2<double> angle_init_solve{}, angle_init_compute{};
   geometry_msgs::TransformStamped yaw2detection, yaw2pitch;
 
   if (last_solve_success_) {
+    double roll, pitch, yaw;
     quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
     angle_init_solve[0] = yaw;
     angle_init_solve[1] = -pitch;
@@ -175,29 +176,39 @@ void Controller::track(const ros::Time &time) {
 
     solve_success = bullet_solver_->solve(
         angle_init_solve,
-        target_pos_solve.x, target_pos_solve.y, target_pos_solve.z,
-        target_vel_solve.x, target_vel_solve.y, 0,
-        cmd_.bullet_speed);
+        target_pos_solve.x,
+        target_pos_solve.y,
+        target_pos_solve.z,
+        target_vel_solve.x - chassis_vel_.linear.x,
+        target_vel_solve.y - chassis_vel_.linear.y,
+        0,
+        cmd_gimbal_.bullet_speed);
 
     if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
       if (error_pub_->trylock()) {
         double error, error_delta;
         error = bullet_solver_->gimbalError(
             angle_init_compute,
-            target_pos_compute.x, target_pos_compute.y, target_pos_compute.z,
-            target_vel_compute.x, target_vel_compute.y, 0,
-            cmd_.bullet_speed);
+            target_pos_compute.x,
+            target_pos_compute.y,
+            target_pos_compute.z,
+            target_vel_compute.x - chassis_vel_.linear.x,
+            target_vel_compute.y - chassis_vel_.linear.y,
+            0,
+            cmd_gimbal_.bullet_speed);
         error_delta = bullet_solver_->gimbalError(
             angle_init_compute,
             target_pos_compute.x,
             target_pos_compute.y + moving_average_filters_track_.find(target_id)->second->getDelta(),
             target_pos_compute.z,
-            target_vel_compute.x, target_vel_compute.y, 0,
-            cmd_.bullet_speed);
+            target_vel_compute.x - chassis_vel_.linear.x,
+            target_vel_compute.y - chassis_vel_.linear.y,
+            0,
+            cmd_gimbal_.bullet_speed);
         error = error < error_delta ? error : error_delta;
 
         error_pub_->msg_.stamp = time;
-        error_pub_->msg_.error = solve_success ? error : 10;
+        error_pub_->msg_.error = solve_success ? error : 1.0;
         error_pub_->unlockAndPublish();
       }
       last_publish_time_ = time;
@@ -218,10 +229,9 @@ void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
 }
 
 void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
-  geometry_msgs::TransformStamped base2des, map2base;
+  geometry_msgs::TransformStamped base2des;
   try {
     base2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
-    map2base = robot_state_handle_.lookupTransform("map", "base_link", ros::Time(0));
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
@@ -229,12 +239,8 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
   }
   double roll_des, pitch_des, yaw_des;  // desired position
   quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
-  double tf_period = map2base.header.stamp.toSec() - last_map2base_.header.stamp.toSec();
-  if (tf_period > 0.0 && tf_period < 1.0)
-    yaw_vel_ = (yawFromQuat(map2base.transform.rotation) - yawFromQuat(last_map2base_.transform.rotation)) / tf_period;
-  last_map2base_ = map2base;
 
-  ctrl_yaw_.setCommand(yaw_des, -yaw_vel_);
+  ctrl_yaw_.setCommand(yaw_des, -chassis_vel_.angular.z);
   ctrl_pitch_.setCommand(pitch_des, 0);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
@@ -243,13 +249,14 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
 void Controller::updateTf() {
   try {
     map2pitch_ = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
+    map2base_ = robot_state_handle_.lookupTransform("map", "base_link", ros::Time(0));
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
   std::map<int, geometry_msgs::Pose> now_detection;
   double now_distance, last_distance;
 
-  //Select the only target pose
+  // Select the only target pose
   for (const auto &detection:detection_rt_buffer_.readFromRT()->detections) {
     if (now_detection.find(detection.id) == now_detection.end())
       now_detection.insert(std::make_pair(detection.id, detection.pose));
@@ -271,7 +278,7 @@ void Controller::updateTf() {
   }
   last_detection_ = now_detection;
 
-  //Filtering the targets with different id
+  // Filtering the targets with different id
   ros::Time detection_time = detection_rt_buffer_.readFromRT()->header.stamp;
   if (last_detection_time_ != detection_time) {
     last_detection_time_ = detection_time;
@@ -352,6 +359,17 @@ void Controller::updateTrack(int id) {
   track_data.camera2detection.orientation = camera2detection.transform.rotation;
 
   track_pub_->msg_.tracks.push_back(track_data);
+}
+
+void Controller::updateChassisVel() {
+  double tf_period = map2base_.header.stamp.toSec() - last_map2base_.header.stamp.toSec();
+  if (tf_period > 0.0 && tf_period < 1.0) {
+    chassis_vel_.linear.x = (map2base_.transform.translation.x - last_map2base_.transform.translation.x) / tf_period;
+    chassis_vel_.linear.y = (map2base_.transform.translation.y - last_map2base_.transform.translation.y) / tf_period;
+    chassis_vel_.angular.z =
+        (yawFromQuat(map2base_.transform.rotation) - yawFromQuat(last_map2base_.transform.rotation)) / tf_period;
+  }
+  last_map2base_ = map2base_;
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr &msg) {

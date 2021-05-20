@@ -51,6 +51,7 @@ class Controller :
   void cameraCB(const sensor_msgs::CameraInfoConstPtr &msg);
   void updateTf();
   void updateTrack(int id);
+  void updateChassisVel();
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
 
   ros::Time last_publish_time_{};
@@ -77,12 +78,14 @@ class Controller :
   realtime_tools::RealtimeBuffer<sensor_msgs::CameraInfo> camera_rt_buffer_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
 
-  geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_, last_map2base_;
-  rm_msgs::GimbalCmd cmd_;
+  geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
+  geometry_msgs::TransformStamped map2base_, last_map2base_;
+  geometry_msgs::Twist chassis_vel_;
+
+  rm_msgs::GimbalCmd cmd_gimbal_;
 
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
   double publish_rate_{};
-  double yaw_vel_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_{};
   bool last_solve_success_{};

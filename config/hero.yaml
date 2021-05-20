@@ -7,7 +7,7 @@ controllers:
     publish_rate: 50
   gimbal_controller:
     type: rm_gimbal_controllers/Controller
-    time_compensation: 0.008
+    time_compensation: 0.03
     publish_rate: 100
     yaw:
       joint: "yaw_joint"
