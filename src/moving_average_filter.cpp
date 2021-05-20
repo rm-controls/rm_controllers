@@ -160,9 +160,10 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
 
   // filter gyro vel
   double detection_gyro_vel{};
-  if (delta < 0.1) {
+  if (delta < 0.1 && is_gyro_) {
     detection_gyro_vel = delta / (yaw2detection.header.stamp.toSec() - last_yaw2detection_.header.stamp.toSec());
-    ma_filter_gyro_vel_->input(detection_gyro_vel);
+    if (std::abs(detection_gyro_vel - output_gyro_vel_) < 3.0)
+      ma_filter_gyro_vel_->input(detection_gyro_vel);
   }
   output_gyro_vel_ = ma_filter_gyro_vel_->output();
 
