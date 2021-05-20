@@ -38,6 +38,7 @@ bool ShooterBase::init(hardware_interface::RobotHW *robot_hw,
 
   enter_push_qd_coef_ = getParam(controller_nh, "enter_push_qd_coef", 0.);
   push_angle_error_ = getParam(controller_nh, "push_angle_error", 0.);
+  magazine_move_angle_ = getParam(controller_nh, "magazine_move_angle", 0.);
 
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
 
@@ -66,6 +67,11 @@ void ShooterBase::update(const ros::Time &time, const ros::Duration &period) {
     state_changed_ = true;
   }
 
+  if (magazine_state_ != cmd_.magazine) {
+    magazine_state_ = cmd_.magazine;
+    magazine_state_change_ = true;
+  }
+
   if (cmd_.speed == cmd_.SPEED_10M_PER_SECOND)
     friction_qd_des_ = config_.qd_10;
   else if (cmd_.speed == cmd_.SPEED_15M_PER_SECOND)
@@ -92,6 +98,18 @@ void ShooterBase::update(const ros::Time &time, const ros::Duration &period) {
       block(time, period);
     moveJoint(time, period);
   }
+
+  if (magazine_state_change_) {
+    magazine_state_change_ = false;
+    if (magazine_state_) {
+      magazine_q_des_ = magazine_move_angle_;
+      ROS_INFO("[Magazine] Enter OPEN");
+    } else {
+      magazine_q_des_ = 0.0;
+      ROS_INFO("[Magazine] Enter CLOSE");
+    }
+  }
+  moveMagazine(time, period);
 }
 
 void ShooterBase::passive() {

@@ -26,6 +26,11 @@ enum State {
   BLOCK = 4
 };
 
+//enum MagazineState {
+//  OPEN = 1,
+//  CLOSE = 2
+//};
+
 struct Config {
   double push_angle;
   double qd_10, qd_15, qd_16, qd_18, qd_30;
@@ -62,6 +67,7 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   virtual void update(const ros::Time &time, const ros::Duration &period) override;
  protected:
   virtual void moveJoint(const ros::Time &time, const ros::Duration &period) = 0;
+  virtual void moveMagazine(const ros::Time &time, const ros::Duration &period) = 0;
   virtual void stop(const ros::Time &time, const ros::Duration &period) {};
   virtual void push(const ros::Time &time, const ros::Duration &period);
   void passive();
@@ -75,9 +81,11 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   std::vector<hardware_interface::JointHandle> joint_friction_handle_{}, joint_trigger_handle_{};
 
   double friction_qd_des_{}, trigger_q_des_{}, last_trigger_q_des_{};
+  double magazine_move_angle_{}, magazine_q_des_{};
   double enter_push_qd_coef_{}, push_angle_error_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
+  bool magazine_state_change_ = false;
   bool calibrate_trigger_pos_ = false;
   bool is_out_from_block_ = false;
 
@@ -85,6 +93,7 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   ros::Time last_shoot_time_;
 
   State state_ = PASSIVE;
+  bool magazine_state_ = false;
   Config config_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer;
   realtime_tools::RealtimeBuffer<rm_msgs::ShootCmd> cmd_rt_buffer_;

@@ -55,7 +55,7 @@ void StandardController::stop(const ros::Time &time, const ros::Duration &period
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter STOP");
   }
-  friction_qd_des_ = 0;
+  friction_qd_des_ = 0.0;
   moveJointFriction(time, period);
   ctrl_trigger_.joint_.setCommand(0);
 }
@@ -72,8 +72,12 @@ void StandardController::moveJoint(const ros::Time &time, const ros::Duration &p
   moveJointFriction(time, period);
 
   ctrl_trigger_.setCommand(trigger_q_des_);
-
   ctrl_trigger_.update(time, period);
+}
+
+void StandardController::moveMagazine(const ros::Time &time, const ros::Duration &period) {
+  ctrl_magazine_.setCommand(magazine_q_des_);
+  ctrl_magazine_.update(time, period);
 }
 
 } // namespace rm_shooter_controllers
