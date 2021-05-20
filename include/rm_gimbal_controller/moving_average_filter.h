@@ -2,8 +2,8 @@
 // Created by chenzheng on 2021/5/8.
 //
 
-#ifndef SRC_RM_COMMON_INCLUDE_KALMAN_FILTER_H
-#define SRC_RM_COMMON_INCLUDE_KALMAN_FILTER_H
+#ifndef RM_GIMBAL_CONTROLLERS_MOVING_AVERAGE_FILTER_H
+#define RM_GIMBAL_CONTROLLERS_MOVING_AVERAGE_FILTER_H
 
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_buffer.h>
@@ -52,8 +52,8 @@ class MovingAverageFilterTrack {
   int switch_count_{};
   int pos_data_num_{}, vel_data_num_{}, center_data_num_{}, gyro_data_num_{};
   double delta_{};
-  double last_gyro_vel_{};
   double output_gyro_vel_{};
+  double center_offset_z_{};
 
   geometry_msgs::TransformStamped last_map2detection_{};
   geometry_msgs::TransformStamped output_map2detection_{};

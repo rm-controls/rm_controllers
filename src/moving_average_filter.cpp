@@ -7,18 +7,20 @@
 #include <tf2/transform_datatypes.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-#include <utility>
-
 namespace moving_average_filter {
 MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle &nh,
                                                    int id,
                                                    hardware_interface::RobotStateHandle robot_state_handle) {
   robot_state_handle_ = std::move(robot_state_handle);
-  is_debug_ = getParam(nh, "is_debug", false);
-  pos_data_num_ = getParam(nh, "pos_data_num", 10);
-  vel_data_num_ = getParam(nh, "vel_data_num", 20);
-  center_data_num_ = getParam(nh, "center_data_num", 100);
-  gyro_data_num_ = getParam(nh, "gyro_data_num", 100);
+  if (!nh.getParam("is_debug", is_debug_) ||
+      !nh.getParam("pos_data_num", pos_data_num_) ||
+      !nh.getParam("vel_data_num", vel_data_num_) ||
+      !nh.getParam("center_data_num", center_data_num_) ||
+      !nh.getParam("gyro_data_num", gyro_data_num_) ||
+      !nh.getParam("center_offset_z", center_offset_z_)) {
+    ROS_ERROR("Some gimbal params doesn't given (namespace: %s)", nh.getNamespace().c_str());
+    return;
+  }
 
   ma_filter_pos_x_ = new MovingAverageFilter<double>(pos_data_num_);
   ma_filter_pos_y_ = new MovingAverageFilter<double>(pos_data_num_);
@@ -156,7 +158,7 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   ma_filter_center_z_->input(pos_z);
   output_center_.x = ma_filter_center_x_->output();
   output_center_.y = ma_filter_center_y_->output();
-  output_center_.z = ma_filter_center_z_->output();
+  output_center_.z = ma_filter_center_z_->output() - center_offset_z_;
 
   // filter gyro vel
   double detection_gyro_vel{};
@@ -173,14 +175,12 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   if (is_debug_) {
     rm_msgs::MovingAverageData moving_average_data{};
     moving_average_data.header.stamp = now_map2detection.header.stamp;
-
     moving_average_data.real_pos_x = pos_x;
     moving_average_data.real_pos_y = pos_y;
     moving_average_data.real_pos_z = pos_z;
     moving_average_data.real_vel_x = vel_x;
     moving_average_data.real_vel_y = vel_y;
     moving_average_data.real_vel_z = vel_z;
-
     moving_average_data.filtered_pos_x = output_map2detection_.transform.translation.x;
     moving_average_data.filtered_pos_y = output_map2detection_.transform.translation.y;
     moving_average_data.filtered_pos_z = output_map2detection_.transform.translation.z;

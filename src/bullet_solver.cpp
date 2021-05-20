@@ -134,7 +134,6 @@ void Bullet3DSolver::modelRviz(double x_offset, double y_offset, double z_offset
   marker.type = visualization_msgs::Marker::POINTS;
   marker.scale.x = 0.02;
   marker.scale.y = 0.02;
-  marker.scale.z = 0.02;
   marker.color.r = 0.0;
   marker.color.g = 1.0;
   marker.color.b = 0.0;
@@ -147,7 +146,10 @@ void Bullet3DSolver::modelRviz(double x_offset, double y_offset, double z_offset
     marker.points.push_back(point);
   }
   marker.header.stamp = ros::Time::now();
-  this->path_pub_.publish(marker);
+  if (this->path_pub_->trylock()) {
+    this->path_pub_->msg_ = marker;
+    this->path_pub_->unlockAndPublish();
+  }
 }
 
 Vec2<double> Bullet3DSolver::getResult(const ros::Time &time, const geometry_msgs::TransformStamped &map2pitch) {

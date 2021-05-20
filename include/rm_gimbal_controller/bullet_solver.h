@@ -24,7 +24,7 @@ struct Config {
 class BulletSolver {
  public:
   explicit BulletSolver(ros::NodeHandle &controller_nh) {
-    controller_nh.param("publish_rate_model", publish_rate_, 50.0);
+    publish_rate_ = getParam(controller_nh, "publish_rate", 50);
 
     // init config
     config_ = {.resistance_coff_qd_10 = getParam(controller_nh, "resistance_coff_qd_10", 0.),
@@ -44,7 +44,9 @@ class BulletSolver {
         cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
     d_srv_->setCallback(cb);
 
-    path_pub_ = controller_nh.advertise<visualization_msgs::Marker>("bullet_model", 10);
+    path_pub_.reset(new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh,
+                                                                                      "bullet_model",
+                                                                                      10));
   };
   virtual ~BulletSolver() = default;
   virtual void setTarget(const DVec<double> &pos, const DVec<double> &vel) = 0;
@@ -90,7 +92,7 @@ class BulletSolver {
 
  protected:
   double bullet_speed_{};
-  ros::Publisher path_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_pub_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig> *d_srv_{};
   double publish_rate_{};
   ros::Time last_publish_time_;

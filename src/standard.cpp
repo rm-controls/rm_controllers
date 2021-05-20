@@ -23,10 +23,14 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
-  upper_yaw_ = getParam(nh_yaw, "upper", 1e9);
-  lower_yaw_ = getParam(nh_yaw, "lower", -1e9);
-  upper_pitch_ = getParam(nh_pitch, "upper", 1e9);
-  lower_pitch_ = getParam(nh_pitch, "lower", -1e9);
+  if (!nh_yaw.getParam("upper", upper_yaw_) ||
+      !nh_yaw.getParam("lower", lower_yaw_) ||
+      !nh_pitch.getParam("upper", upper_pitch_) ||
+      !nh_pitch.getParam("lower", lower_pitch_) ||
+      !controller_nh.getParam("publish_rate", publish_rate_)) {
+    ROS_ERROR("Some gimbal params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
 
   if (!ctrl_yaw_.init(effort_joint_interface_, nh_yaw) ||
       !ctrl_pitch_.init(effort_joint_interface_, nh_pitch))
@@ -35,7 +39,6 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   map2gimbal_des_.header.frame_id = "map";
   map2gimbal_des_.child_frame_id = "gimbal_des";
   map2gimbal_des_.transform.rotation.w = 1.;
-  controller_nh.param("publish_rate_error", publish_rate_, 100.0);
 
   cmd_gimbal_sub_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &Controller::commandCB, this);
   data_detection_sub_ =
@@ -113,23 +116,24 @@ void Controller::track(const ros::Time &time) {
   }
   bool solve_success = false;
   double roll, pitch, yaw;
-  Vec2<double> angle_init{};
-  Vec2<double> gyro_angle_init{};
+  Vec2<double> angle_init_solve{}, angle_init_compute{};
   geometry_msgs::TransformStamped yaw2detection, yaw2pitch;
 
   if (last_solve_success_) {
     quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
-    angle_init[0] = yaw;
-    angle_init[1] = -pitch;
-    gyro_angle_init = angle_init;
+    angle_init_solve[0] = yaw;
+    angle_init_solve[1] = -pitch;
+    angle_init_compute = angle_init_solve;
   }
 
   int target_id = cmd_rt_buffer_.readFromRT()->target_id;
   try {
-    yaw2detection = robot_state_handle_.lookupTransform(
-        "yaw", "detection" + std::to_string(target_id),
-        ros::Time(0));
-    yaw2pitch = robot_state_handle_.lookupTransform("yaw", "pitch", detection_rt_buffer_.readFromRT()->header.stamp);
+    yaw2detection = robot_state_handle_.lookupTransform("yaw",
+                                                        "detection" + std::to_string(target_id),
+                                                        ros::Time(0));
+    yaw2pitch = robot_state_handle_.lookupTransform("yaw",
+                                                    "pitch",
+                                                    detection_rt_buffer_.readFromRT()->header.stamp);
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
@@ -137,8 +141,8 @@ void Controller::track(const ros::Time &time) {
   }
 
   if (moving_average_filters_track_.find(target_id) != moving_average_filters_track_.end()) {
-    geometry_msgs::Vector3 target_pos[2]{};
-    geometry_msgs::Vector3 target_vel[2]{};
+    geometry_msgs::Vector3 target_pos_solve{}, target_pos_compute{};
+    geometry_msgs::Vector3 target_vel_solve{}, target_vel_compute{};
     geometry_msgs::Point center_pos_yaw;
 
     if (moving_average_filters_track_.find(target_id)->second->isGyro()) {
@@ -150,43 +154,46 @@ void Controller::track(const ros::Time &time) {
         ROS_WARN("%s", ex.what());
         return;
       }
-      target_pos[0].x = center_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
-      target_pos[0].y = center_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
-      target_pos[0].z = center_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z - 0.05;
-      target_pos[1].x = center_pos_yaw.x - yaw2pitch.transform.translation.x;
-      target_pos[1].y = yaw2detection.transform.translation.y - yaw2pitch.transform.translation.y;
-      target_pos[1].z = center_pos_yaw.z - yaw2pitch.transform.translation.z - 0.05;
+      target_pos_solve.x = center_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
+      target_pos_solve.y = center_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
+      target_pos_solve.z = center_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z;
 
-      target_vel[1].y = gyro_vel_.find(target_id)->second;
-      gyro_angle_init[0] = 0;
+      target_pos_compute.x = center_pos_yaw.x - yaw2pitch.transform.translation.x;
+      target_pos_compute.y = yaw2detection.transform.translation.y - yaw2pitch.transform.translation.y;
+      target_pos_compute.z = center_pos_yaw.z - yaw2pitch.transform.translation.z;
+      target_vel_compute.y = gyro_vel_.find(target_id)->second;
+      angle_init_compute[0] = 0;
     } else {
-      target_pos[0].x = detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
-      target_pos[0].y = detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
-      target_pos[0].z = detection_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z;
-      target_pos[1] = target_pos[0];
+      target_pos_solve.x = detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
+      target_pos_solve.y = detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
+      target_pos_solve.z = detection_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z;
+      target_vel_solve = detection_vel_.find(target_id)->second;
 
-      target_vel[0] = detection_vel_.find(target_id)->second;
-      target_vel[1] = target_vel[0];
+      target_pos_compute = target_pos_solve;
+      target_vel_compute = target_vel_solve;
     }
 
     solve_success = bullet_solver_->solve(
-        angle_init,
-        target_pos[0].x, target_pos[0].y, target_pos[0].z,
-        target_vel[0].x, target_vel[0].y, 0,
+        angle_init_solve,
+        target_pos_solve.x, target_pos_solve.y, target_pos_solve.z,
+        target_vel_solve.x, target_vel_solve.y, 0,
         cmd_.bullet_speed);
 
     if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
       if (error_pub_->trylock()) {
         double error, error_delta;
         error = bullet_solver_->gimbalError(
-            gyro_angle_init,
-            target_pos[1].x, target_pos[1].y, target_pos[1].z,
-            0., target_vel[1].y, 0,
+            angle_init_compute,
+            target_pos_compute.x, target_pos_compute.y, target_pos_compute.z,
+            target_vel_compute.x, target_vel_compute.y, 0,
             cmd_.bullet_speed);
         error_delta = bullet_solver_->gimbalError(
-            gyro_angle_init, target_pos[1].x,
-            target_pos[1].y + moving_average_filters_track_.find(target_id)->second->getDelta(),
-            target_pos[1].z, 0., target_vel[1].y, 0, cmd_.bullet_speed);
+            angle_init_compute,
+            target_pos_compute.x,
+            target_pos_compute.y + moving_average_filters_track_.find(target_id)->second->getDelta(),
+            target_pos_compute.z,
+            target_vel_compute.x, target_vel_compute.y, 0,
+            cmd_.bullet_speed);
         error = error < error_delta ? error : error_delta;
 
         error_pub_->msg_.stamp = time;
@@ -199,7 +206,7 @@ void Controller::track(const ros::Time &time) {
   if (solve_success)
     setDes(time, bullet_solver_->getResult(time, map2pitch_)[0], bullet_solver_->getResult(time, map2pitch_)[1]);
   else
-    setDes(time, angle_init[0], -angle_init[1]);
+    setDes(time, angle_init_solve[0], -angle_init_solve[1]);
   last_solve_success_ = solve_success;
 }
 
