@@ -13,7 +13,7 @@ controllers:
       joint: "yaw_joint"
       upper: 1e9
       lower: -1e9
-      pid: { p: 8, i: 50, d: 0.5, i_clamp_max: 0.3, i_clamp_min: -0.3, antiwindup: true, publish_state: true }
+      pid: { p: 8, i: 10, d: 0.4, i_clamp_max: 0.3, i_clamp_min: -0.3, antiwindup: true, publish_state: true }
     pitch:
       joint: "pitch_joint"
       upper: 0.31
@@ -26,13 +26,13 @@ controllers:
       resistance_coff_qd_18: 0.55
       resistance_coff_qd_30: 3.0
       g: 9.81
-      delay: 0.0
+      delay: 0.1
       dt: 0.001
       timeout: 0.001
       publish_rate_model: 50
     moving_average_filter:
       is_debug: true
-      pos_data_num: 20
+      pos_data_num: 30
       vel_data_num: 30
       center_data_num: 100
       gyro_data_num: 100
