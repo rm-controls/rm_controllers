@@ -64,6 +64,7 @@ class ChassisBase : public controller_interface::MultiInterfaceController
   bool state_changed_ = true;
   State state_ = PASSIVE;
   RampFilter<double> *ramp_x{}, *ramp_y{}, *ramp_w{};
+  std::string follow_source_frame_{};
 
   ros::Time last_publish_time_;
   geometry_msgs::TransformStamped odom2base_{};
