@@ -1,5 +1,9 @@
 controllers:
+  robot_state_controller:
+    type: robot_state_controller/RobotStateController
+    publish_rate: 50
   orientation_controller:
-    frame_fixed: ""
-    frame_source: ""
-    frame_target: ""
+    #where is the imu
+    frame_fixed: "pitch"
+    frame_source: "odom"
+    frame_target: "map"
