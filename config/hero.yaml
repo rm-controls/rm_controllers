@@ -21,6 +21,7 @@ controllers:
       joint: "magazine_joint"
       pid: { p: 0.5, i: 0.0, d: 0.01, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
 
+    have_magazine: false
     enter_push_qd_coef: 0.95
     push_angle: 1.047
     push_angle_error: 0.1
