@@ -88,6 +88,7 @@ class ShooterBase : public controller_interface::MultiInterfaceController<hardwa
   bool magazine_state_change_ = false;
   bool calibrate_trigger_pos_ = false;
   bool is_out_from_block_ = false;
+  bool have_magazine_ = false;
 
   Block *block_{};
   ros::Time last_shoot_time_;
