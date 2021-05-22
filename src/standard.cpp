@@ -315,13 +315,7 @@ void Controller::updateTf() {
                                                          detection_time - ros::Duration(config_.time_compensation));
         tf2::fromMsg(map2camera.transform, map2camera_tf);
         map2detection_tf = map2camera_tf * camera2detection_tf;
-        map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
-        map2detection.transform.translation.y = map2detection_tf.getOrigin().y();
-        map2detection.transform.translation.z = map2detection_tf.getOrigin().z();
-        map2detection.transform.rotation.x = map2detection_tf.getRotation().x();
-        map2detection.transform.rotation.y = map2detection_tf.getRotation().y();
-        map2detection.transform.rotation.z = map2detection_tf.getRotation().z();
-        map2detection.transform.rotation.w = map2detection_tf.getRotation().w();
+        map2detection.transform = tf2::toMsg(map2detection_tf);
         map2detection.header.stamp = detection_time;
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.first);
