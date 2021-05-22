@@ -35,27 +35,11 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
 }
 
 void Controller::update(const ros::Time &time, const ros::Duration &period) {
-
-  data_.orientation.x = imu_sensor_.getOrientation()[0];
-  data_.orientation.y = imu_sensor_.getOrientation()[1];
-  data_.orientation.z = imu_sensor_.getOrientation()[2];
-  data_.orientation.w = imu_sensor_.getOrientation()[3];
-  data_.angular_velocity.x = imu_sensor_.getAngularVelocity()[0];
-  data_.angular_velocity.y = imu_sensor_.getAngularVelocity()[1];
-  data_.angular_velocity.z = imu_sensor_.getAngularVelocity()[2];
-  data_.linear_acceleration.x = imu_sensor_.getLinearAcceleration()[0];
-  data_.linear_acceleration.y = imu_sensor_.getLinearAcceleration()[1];
-  data_.linear_acceleration.z = imu_sensor_.getLinearAcceleration()[2];
-  fixTf(time);
-}
-
-void Controller::fixTf(const ros::Time &time) {
-  tf2::Transform source2odom, odom2fixed, fixed2target;
-  tf2::Quaternion odom2fixed_quat;
-  geometry_msgs::TransformStamped tf_msg;
   source2target_msg_.header.stamp = time;
-  source2target_msg_.header.stamp.nsec += 1;
+  source2target_msg_.header.stamp.nsec += 1;  // Avoid redundant timestamp
+  tf2::Transform source2odom, odom2fixed, fixed2target;
   try {
+    geometry_msgs::TransformStamped tf_msg;
     tf_msg = robot_state_.lookupTransform(frame_source_, "odom", ros::Time(0));
     tf2::fromMsg(tf_msg.transform, source2odom);
     tf_msg = robot_state_.lookupTransform("odom", frame_fixed_, ros::Time(0));
@@ -67,8 +51,11 @@ void Controller::fixTf(const ros::Time &time) {
     ROS_WARN("%s", ex.what());
     return;
   }
-  tf2::fromMsg(data_.orientation, odom2fixed_quat);//convert imu data to tf2 type
+  tf2::Quaternion odom2fixed_quat;
+  odom2fixed_quat.setValue(imu_sensor_.getOrientation()[0], imu_sensor_.getOrientation()[1],
+                           imu_sensor_.getOrientation()[2], imu_sensor_.getOrientation()[3]);
   odom2fixed.setRotation(odom2fixed_quat);
+
   source2target_msg_.transform = tf2::toMsg(source2odom * odom2fixed * fixed2target);
   if ((time.toSec() - last_br_.toSec()) > 0.01) {
     tf_broadcaster_.sendTransform(source2target_msg_);
@@ -76,6 +63,7 @@ void Controller::fixTf(const ros::Time &time) {
   } else
     robot_state_.setTransform(source2target_msg_, "rm_base");
 }
+
 }
 
 PLUGINLIB_EXPORT_CLASS(rm_orientation_controller::Controller, controller_interface::ControllerBase)

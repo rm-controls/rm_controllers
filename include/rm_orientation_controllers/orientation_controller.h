@@ -24,8 +24,6 @@ class Controller :
   void update(const ros::Time &time, const ros::Duration &period) override;
 
  private:
-  void fixTf(const ros::Time &time);
-
   double publish_rate_{};
 
   hardware_interface::ImuSensorHandle imu_sensor_;
@@ -34,9 +32,7 @@ class Controller :
   rm_common::TfRtBroadcaster tf_broadcaster_{};
   geometry_msgs::TransformStamped source2target_msg_;
 
-  ros::Time last_imu_data_, last_br_;
-
-  sensor_msgs::Imu data_;
+  ros::Time last_br_;
   std::string frame_fixed_;
   std::string frame_source_;
   std::string frame_target_;
