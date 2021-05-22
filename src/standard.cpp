@@ -222,8 +222,17 @@ void Controller::track(const ros::Time &time) {
 }
 
 void Controller::direct(const ros::Time &time) {
-  double yaw = std::atan2(cmd_gimbal_.aim_point.point.y, cmd_gimbal_.aim_point.point.x);
-  double pitch = std::atan2(cmd_gimbal_.aim_point.point.z, cmd_gimbal_.aim_point.point.x);
+  geometry_msgs::Point aim_point_map{};
+  double yaw{}, pitch{};
+  try {
+    tf2::doTransform(cmd_gimbal_.aim_point.point, aim_point_map,
+                     robot_state_handle_.lookupTransform("map",
+                                                         cmd_gimbal_.aim_point.header.frame_id,
+                                                         cmd_gimbal_.aim_point.header.stamp));
+    yaw = std::atan2(aim_point_map.y, aim_point_map.x);
+    pitch = std::atan2(aim_point_map.z, aim_point_map.x);
+  }
+  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
   setDes(time, yaw, pitch);
 }
 
@@ -306,13 +315,7 @@ void Controller::updateTf() {
                                                          detection_time - ros::Duration(config_.time_compensation));
         tf2::fromMsg(map2camera.transform, map2camera_tf);
         map2detection_tf = map2camera_tf * camera2detection_tf;
-        map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
-        map2detection.transform.translation.y = map2detection_tf.getOrigin().y();
-        map2detection.transform.translation.z = map2detection_tf.getOrigin().z();
-        map2detection.transform.rotation.x = map2detection_tf.getRotation().x();
-        map2detection.transform.rotation.y = map2detection_tf.getRotation().y();
-        map2detection.transform.rotation.z = map2detection_tf.getRotation().z();
-        map2detection.transform.rotation.w = map2detection_tf.getRotation().w();
+        map2detection.transform = tf2::toMsg(map2detection_tf);
         map2detection.header.stamp = detection_time;
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.first);
