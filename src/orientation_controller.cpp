@@ -30,13 +30,12 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   tf_broadcaster_.init(root_nh);
   source2target_msg_.header.frame_id = frame_source_;
   source2target_msg_.child_frame_id = frame_target_;
+  source2target_msg_.transform.rotation.w = 1.0;
   return true;
 }
 
 void Controller::update(const ros::Time &time, const ros::Duration &period) {
-  if (time == last_imu_data_)
-    return;
-  last_imu_data_ = time;
+
   data_.orientation.x = imu_sensor_.getOrientation()[0];
   data_.orientation.y = imu_sensor_.getOrientation()[1];
   data_.orientation.z = imu_sensor_.getOrientation()[2];
@@ -54,18 +53,20 @@ void Controller::fixTf(const ros::Time &time) {
   tf2::Transform source2odom, odom2fixed, fixed2target;
   tf2::Quaternion odom2fixed_quat;
   geometry_msgs::TransformStamped tf_msg;
+  source2target_msg_.header.stamp = time;
+  source2target_msg_.header.stamp.nsec += 1;
   try {
-    tf_msg = robot_state_.lookupTransform(frame_source_, "odom", data_.header.stamp);
+    tf_msg = robot_state_.lookupTransform(frame_source_, "odom", ros::Time(0));
     tf2::fromMsg(tf_msg.transform, source2odom);
-    tf_msg = robot_state_.lookupTransform("odom", frame_fixed_, data_.header.stamp);
+    tf_msg = robot_state_.lookupTransform("odom", frame_fixed_, ros::Time(0));
     tf2::fromMsg(tf_msg.transform, odom2fixed);
-    tf_msg = robot_state_.lookupTransform(frame_fixed_, frame_target_, data_.header.stamp);
+    tf_msg = robot_state_.lookupTransform(frame_fixed_, frame_target_, ros::Time(0));
     tf2::fromMsg(tf_msg.transform, fixed2target);
   } catch (tf2::TransformException &ex) {
+    robot_state_.setTransform(source2target_msg_, "rm_base");
     ROS_WARN("%s", ex.what());
     return;
   }
-  source2target_msg_.header.stamp = data_.header.stamp;
   tf2::fromMsg(data_.orientation, odom2fixed_quat);//convert imu data to tf2 type
   odom2fixed.setRotation(odom2fixed_quat);
   source2target_msg_.transform = tf2::toMsg(source2odom * odom2fixed * fixed2target);

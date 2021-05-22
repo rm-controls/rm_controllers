@@ -27,7 +27,6 @@ class Controller :
   void fixTf(const ros::Time &time);
 
   double publish_rate_{};
-  ros::Time last_publish_time_;
 
   hardware_interface::ImuSensorHandle imu_sensor_;
   hardware_interface::RobotStateHandle robot_state_;
