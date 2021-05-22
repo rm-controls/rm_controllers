@@ -8,16 +8,15 @@
     <rosparam file="$(find rm_chassis_controllers)/config/$(arg robot_type).yaml" command="load"/>
     <rosparam if="$(arg ekf)" param="controllers/chassis_controller/enable_odom_tf">false</rosparam>
 
-    <rosparam file="$(find rm_orientation_controller)/config/$(arg robot_type).yaml" command="load"/>
 
     <!-- load the controllers -->
     <node name="controller_spawner" pkg="controller_manager" type="spawner"
           respawn="false" output="screen"
           args="
           controllers/robot_state_controller
+          controllers/imu_sensor_controller
           controllers/joint_state_controller
           controllers/chassis_controller
-          controllers/rm_orientation_controller
   "/>
 
     <node if="$(arg ekf)" pkg="robot_localization" type="ekf_localization_node" name="ekf_localization"
