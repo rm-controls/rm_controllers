@@ -336,27 +336,26 @@ void Controller::updateTf() {
 }
 
 void Controller::updateTrack(int id) {
-  geometry_msgs::TransformStamped camera2detection, map2detection;
+  geometry_msgs::TransformStamped camera2detection;
   try {
     camera2detection = robot_state_handle_.lookupTransform("camera_optical_frame",
                                                            "detection" + std::to_string(id),
                                                            ros::Time(0));
-    map2detection = robot_state_handle_.lookupTransform("map",
-                                                        "detection" + std::to_string(id),
-                                                        ros::Time(0));
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
   rm_msgs::TrackData track_data;
   track_data.id = id;
-  track_data.map2detection.position.x = map2detection.transform.translation.x;
-  track_data.map2detection.position.y = map2detection.transform.translation.y;
-  track_data.map2detection.position.z = map2detection.transform.translation.z;
-  track_data.map2detection.orientation = map2detection.transform.rotation;
+  track_data.map2detection.position.x = detection_pos_.find(id)->second.x;
+  track_data.map2detection.position.y = detection_pos_.find(id)->second.y;
+  track_data.map2detection.position.z = detection_pos_.find(id)->second.z;
+  track_data.map2detection.orientation =
+      moving_average_filters_track_.find(id)->second->getTransform().transform.rotation;
   track_data.camera2detection.position.x = camera2detection.transform.translation.x;
   track_data.camera2detection.position.y = camera2detection.transform.translation.y;
   track_data.camera2detection.position.z = camera2detection.transform.translation.z;
   track_data.camera2detection.orientation = camera2detection.transform.rotation;
+  track_data.detection_vel = detection_vel_.find(id)->second;
 
   track_pub_->msg_.tracks.push_back(track_data);
 }
