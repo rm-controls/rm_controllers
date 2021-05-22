@@ -203,19 +203,15 @@ void ChassisBase::updateOdom(const ros::Time &time, const ros::Duration &period)
   geometry_msgs::Twist vel_base = forwardKinematics(); // on base_link frame
   if (enable_odom_tf_) {
     geometry_msgs::Vector3 linear_vel_odom, angular_vel_odom;
-    try {
-      const geometry_msgs::TransformStamped
-          odom2base = robot_state_handle_.lookupTransform("odom", "base_link", ros::Time(0));
-      tf2::doTransform(vel_base.linear, linear_vel_odom, odom2base);
-      tf2::doTransform(vel_base.angular, angular_vel_odom, odom2base);
-    }
+    try { odom2base_ = robot_state_handle_.lookupTransform("odom", "base_link", ros::Time(0)); }
     catch (tf2::TransformException &ex) {
       tf_broadcaster_.sendTransform(odom2base_);  //TODO: For some reason, the sendTransform in init sometime not work?
       ROS_WARN("%s", ex.what());
       return;
     }
-    odom2base_.header.stamp = time;
     // integral vel to pos and angle
+    tf2::doTransform(vel_base.linear, linear_vel_odom, odom2base_);
+    tf2::doTransform(vel_base.angular, angular_vel_odom, odom2base_);
     odom2base_.transform.translation.x += linear_vel_odom.x * period.toSec();
     odom2base_.transform.translation.y += linear_vel_odom.y * period.toSec();
     odom2base_.transform.translation.z += linear_vel_odom.z * period.toSec();
@@ -230,6 +226,7 @@ void ChassisBase::updateOdom(const ros::Time &time, const ros::Duration &period)
       odom2base_quat = trans_quat * odom2base_quat;
       odom2base_quat.normalize();
       odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
+      odom2base_.header.stamp = time;
     }
   }
 
