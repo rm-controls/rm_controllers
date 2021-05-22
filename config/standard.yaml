@@ -16,10 +16,10 @@ controllers:
       pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
     trigger:
       joint: "trigger_joint"
-      pid: { p: 18.4, i: 0.0, d: 0.6, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+      pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
     magazine:
       joint: "magazine_joint"
-      pid: { p: 0.5, i: 0.0, d: 0.01, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+      pid: { p: 30.0, i: 0.0, d: 1.2, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
 
     enter_push_qd_coef: 0.95
     push_angle: 0.785
@@ -29,7 +29,7 @@ controllers:
     block_speed: 0.5
     anti_block_angle: 0.15
     anti_block_error: 0.1
-    magazine_move_angle: -3.14
+    magazine_move_angle: -1.5
     qd_15: 474.0
     qd_18: 520.0
     qd_30: 714.0
