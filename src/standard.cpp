@@ -346,6 +346,7 @@ void Controller::updateTrack(int id) {
 
   rm_msgs::TrackData track_data;
   track_data.id = id;
+  track_data.stamp = moving_average_filters_track_.find(id)->second->getTransform().header.stamp;
   track_data.map2detection.position.x = detection_pos_.find(id)->second.x;
   track_data.map2detection.position.y = detection_pos_.find(id)->second.y;
   track_data.map2detection.position.z = detection_pos_.find(id)->second.z;
