@@ -9,6 +9,7 @@
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/imu_sensor_interface.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <realtime_tools/realtime_publisher.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <sensor_msgs/Imu.h>
 
@@ -23,23 +24,25 @@ class Controller :
   void update(const ros::Time &time, const ros::Duration &period) override;
 
  private:
-  void fixtf();
+  void fixTf(const ros::Time &time);
+
+  double publish_rate_{};
+  ros::Time last_publish_time_;
 
   hardware_interface::ImuSensorHandle imu_sensor_;
   hardware_interface::RobotStateHandle robot_state_;
 
-  rm_common::TfRtBroadcaster tf_rt_broadcaster_{};
+  rm_common::TfRtBroadcaster tf_broadcaster_{};
   geometry_msgs::TransformStamped source2target_msg_;
-  tf2_ros::TransformBroadcaster *br_;
 
-  ros::Time last_run_, last_br_;
+  ros::Time last_imu_data_, last_br_;
 
   sensor_msgs::Imu data_;
-  tf2_ros::Buffer *tf_;
-
   std::string frame_fixed_;
   std::string frame_source_;
   std::string frame_target_;
+
+  std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::Imu> > imu_pub_;
 };
 };
 

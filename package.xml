@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>rm_orientation_controllers</name>
+  <name>rm_orientation_controller</name>
   <version>0.1.0</version>
   <description>RoboMaster standard robot orientation controller</description>
   <maintainer email="liaoqiayuan@gmail.com">Qiayuan Liao</maintainer>
@@ -27,4 +27,7 @@
   <depend>tf2_geometry_msgs</depend>
   <depend>angles</depend>
 
+  <export>
+    <controller_interface plugin="${prefix}/rm_orientation_controller_plugin.xml"/>
+  </export>
 </package>

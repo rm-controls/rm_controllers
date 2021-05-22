@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(rm_orientation_controllers)
+project(rm_orientation_controller)
 
 ## Use C++14
 set(CMAKE_CXX_STANDARD 14)
@@ -99,7 +99,7 @@ install(
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 install(
-    FILES rm_orientation_controllers_plugins.xml
+    FILES rm_orientation_controller_plugin.xml
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 

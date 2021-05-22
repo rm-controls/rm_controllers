@@ -2,8 +2,11 @@ controllers:
   robot_state_controller:
     type: robot_state_controller/RobotStateController
     publish_rate: 50
-  orientation_controller:
+  rm_orientation_controller:
     #where is the imu
-    frame_fixed: "pitch"
+    imu_name: base_imu
+    type: rm_orientation_controller/Controller
+    frame_fixed: "base_link"
     frame_source: "odom"
-    frame_target: "map"
+    frame_target: "base_link"
+    publish_rate: 100
