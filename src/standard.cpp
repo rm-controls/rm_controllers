@@ -80,6 +80,8 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
       rate(time, period);
     else if (state_ == TRACK)
       track(time);
+    else if (state_ == DIRECT)
+      direct(time);
     moveJoint(time, period);
   }
 }
@@ -104,9 +106,7 @@ void Controller::rate(const ros::Time &time, const ros::Duration &period) {
   } else {
     double roll{}, pitch{}, yaw{};
     quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
-    setDes(time,
-           yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_yaw,
-           pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
+    setDes(time, yaw + period.toSec() * cmd_gimbal_.rate_yaw, pitch + period.toSec() * cmd_gimbal_.rate_pitch);
   }
 }
 
@@ -127,7 +127,7 @@ void Controller::track(const ros::Time &time) {
     angle_init_compute = angle_init_solve;
   }
 
-  int target_id = cmd_rt_buffer_.readFromRT()->target_id;
+  int target_id = cmd_gimbal_.target_id;
   try {
     yaw2detection = robot_state_handle_.lookupTransform("yaw",
                                                         "detection" + std::to_string(target_id),
@@ -219,6 +219,12 @@ void Controller::track(const ros::Time &time) {
   else
     setDes(time, angle_init_solve[0], -angle_init_solve[1]);
   last_solve_success_ = solve_success;
+}
+
+void Controller::direct(const ros::Time &time) {
+  double yaw = std::atan2(cmd_gimbal_.aim_point.point.y, cmd_gimbal_.aim_point.point.x);
+  double pitch = std::atan2(cmd_gimbal_.aim_point.point.z, cmd_gimbal_.aim_point.point.x);
+  setDes(time, yaw, pitch);
 }
 
 void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
