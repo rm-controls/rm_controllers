@@ -229,8 +229,11 @@ void Controller::direct(const ros::Time &time) {
                      robot_state_handle_.lookupTransform("map",
                                                          cmd_gimbal_.aim_point.header.frame_id,
                                                          cmd_gimbal_.aim_point.header.stamp));
-    yaw = std::atan2(aim_point_map.y, aim_point_map.x);
-    pitch = std::atan2(aim_point_map.z, aim_point_map.x);
+    yaw = std::atan2(aim_point_map.y - map2pitch_.transform.translation.y,
+                     aim_point_map.x - map2pitch_.transform.translation.x);
+    pitch = -std::atan2(aim_point_map.z - map2pitch_.transform.translation.z,
+                        std::sqrt(std::pow(aim_point_map.x - map2pitch_.transform.translation.x, 2)
+                                      + std::pow(aim_point_map.y - map2pitch_.transform.translation.y, 2)));
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
   setDes(time, yaw, pitch);
