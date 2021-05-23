@@ -47,7 +47,7 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
     tf_msg = robot_state_.lookupTransform(frame_fixed_, frame_target_, ros::Time(0));
     tf2::fromMsg(tf_msg.transform, fixed2target);
   } catch (tf2::TransformException &ex) {
-    robot_state_.setTransform(source2target_msg_, "rm_orientation");
+    robot_state_.setTransform(source2target_msg_, "rm_orientation_controller");
     ROS_WARN("%s", ex.what());
     return;
   }
