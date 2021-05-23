@@ -356,15 +356,9 @@ void Controller::updateTrack(int id) {
   rm_msgs::TrackData track_data;
   track_data.id = id;
   track_data.stamp = moving_average_filters_track_.find(id)->second->getTransform().header.stamp;
-  track_data.map2detection.position.x = detection_pos_.find(id)->second.x;
-  track_data.map2detection.position.y = detection_pos_.find(id)->second.y;
-  track_data.map2detection.position.z = detection_pos_.find(id)->second.z;
-  track_data.map2detection.orientation =
-      moving_average_filters_track_.find(id)->second->getTransform().transform.rotation;
-  track_data.camera2detection.position.x = camera2detection.transform.translation.x;
-  track_data.camera2detection.position.y = camera2detection.transform.translation.y;
-  track_data.camera2detection.position.z = camera2detection.transform.translation.z;
-  track_data.camera2detection.orientation = camera2detection.transform.rotation;
+  track_data.camera2detection.x = camera2detection.transform.translation.x;
+  track_data.camera2detection.y = camera2detection.transform.translation.y;
+  track_data.camera2detection.z = camera2detection.transform.translation.z;
   track_data.detection_vel = detection_vel_.find(id)->second;
 
   track_pub_->msg_.tracks.push_back(track_data);
