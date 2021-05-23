@@ -80,8 +80,7 @@ void JointCalibrationController::update(const ros::Time &time, const ros::Durati
       break;
     }
   }
-  if (state_ != CALIBRATED)
-    velocity_ctrl_.update(time, period);
+  velocity_ctrl_.update(time, period);
 }
 
 bool JointCalibrationController::isCalibrated(control_msgs::QueryCalibrationState::Request &req,
