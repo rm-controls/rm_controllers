@@ -359,6 +359,7 @@ void Controller::updateTrack(int id) {
   rm_msgs::TrackData track_data;
   track_data.id = id;
   track_data.stamp = moving_average_filters_track_.find(id)->second->getTransform().header.stamp;
+  track_data.is_gyro = moving_average_filters_track_.find(id)->second->isGyro();
   track_data.camera2detection.x = camera2detection.transform.translation.x;
   track_data.camera2detection.y = camera2detection.transform.translation.y;
   track_data.camera2detection.z = camera2detection.transform.translation.z;
