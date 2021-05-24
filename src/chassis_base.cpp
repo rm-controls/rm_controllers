@@ -209,6 +209,7 @@ void ChassisBase::updateOdom(const ros::Time &time, const ros::Duration &period)
       ROS_WARN("%s", ex.what());
       return;
     }
+    odom2base_.header.stamp = time;
     // integral vel to pos and angle
     tf2::doTransform(vel_base.linear, linear_vel_odom, odom2base_);
     tf2::doTransform(vel_base.angular, angular_vel_odom, odom2base_);
@@ -226,7 +227,6 @@ void ChassisBase::updateOdom(const ros::Time &time, const ros::Duration &period)
       odom2base_quat = trans_quat * odom2base_quat;
       odom2base_quat.normalize();
       odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
-      odom2base_.header.stamp = time;
     }
   }
 
