@@ -44,9 +44,12 @@ class BulletSolver {
         cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
     d_srv_->setCallback(cb);
 
-    path_pub_.reset(new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh,
-                                                                                      "bullet_model",
-                                                                                      10));
+    path_desire_pub_.reset(new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh,
+                                                                                             "model_desire",
+                                                                                             10));
+    path_current_pub_.reset(new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh,
+                                                                                              "model_current",
+                                                                                              10));
   };
   virtual ~BulletSolver() = default;
   virtual void setTarget(const DVec<double> &pos, const DVec<double> &vel) = 0;
@@ -87,12 +90,13 @@ class BulletSolver {
                              double target_position_x, double target_position_y, double target_position_z,
                              double target_speed_x, double target_speed_y, double target_speed_z,
                              double bullet_speed) = 0;
-  virtual void modelRviz(double x_offset, double y_offset, double z_offset) = 0;
+  virtual void modelPub(double x_offset, double y_offset, double z_offset) = 0;
   void setResistanceCoefficient(double bullet_speed, Config config);
 
  protected:
   double bullet_speed_{};
-  std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_current_pub_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig> *d_srv_{};
   double publish_rate_{};
   ros::Time last_publish_time_;
@@ -122,19 +126,22 @@ class Bullet3DSolver : public BulletSolver {
                      double target_position_x, double target_position_y, double target_position_z,
                      double target_speed_x, double target_speed_y, double target_speed_z,
                      double bullet_speed) override;
-  void modelRviz(double x_offset, double y_offset, double z_offset) override;
+  void modelPub(double x_offset, double y_offset, double z_offset) override;
   Vec2<double> getResult(const ros::Time &time, const geometry_msgs::TransformStamped &map2pitch);
-  std::vector<Vec3<double>> getPointData3D();
+  std::vector<Vec3<double>> getPointData3D(double yaw, double pitch);
  protected:
   virtual double computeError(double yaw, double pitch, double *error_polar) = 0;
   double target_x_{}, target_y_{}, target_z_{},
       target_dx_{}, target_dy_{}, target_dz_{};
   double fly_time_{};
   double pitch_solved_, yaw_solved_;
+  Vec2<double> angle_init_{};
   bool solve_success_ = true;
+  int point_num_{};
   Vec3<double> pos_{};
   Vec3<double> vel_{};
-  std::vector<Vec3<double>> model_data_;
+  std::vector<Vec3<double>> model_data_solve_;
+  std::vector<Vec3<double>> model_data_current_;
 };
 
 class Iter3DSolver : public Bullet3DSolver {

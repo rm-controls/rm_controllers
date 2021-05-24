@@ -26,6 +26,7 @@ void BulletSolver::setResistanceCoefficient(double bullet_speed, Config config) 
 bool Bullet3DSolver::solve(const DVec<double> &angle_init,
                            double target_position_x, double target_position_y, double target_position_z,
                            double target_speed_x, double target_speed_y, double target_speed_z, double bullet_speed) {
+  angle_init_ = angle_init;
   config_ = *config_rt_buffer_.readFromRT();
   setResistanceCoefficient(bullet_speed, config_);
   pos_[0] = target_position_x;
@@ -41,7 +42,7 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init,
   double error_theta_z_init[2]{}, error_theta_z_point[2]{};
   double yaw_point = std::atan2(target_y_, target_x_);
   double pitch_point = std::atan2(target_z_, std::sqrt(std::pow(target_x_, 2) + std::pow(target_y_, 2)));
-  double error_init = computeError(angle_init[0], angle_init[1], error_theta_z_init);
+  double error_init = computeError(angle_init_[0], angle_init_[1], error_theta_z_init);
   double error_point = computeError(yaw_point, pitch_point, error_theta_z_point);
 
   //compare pitch and yaw angle which direct pointing to target and angle provide by user
@@ -49,8 +50,8 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init,
     yaw_solved_ = yaw_point;
     pitch_solved_ = pitch_point;
   } else {
-    yaw_solved_ = angle_init[0];
-    pitch_solved_ = angle_init[1];
+    yaw_solved_ = angle_init_[0];
+    pitch_solved_ = angle_init_[1];
   }
 
   double error_theta_z[2]{};
@@ -66,8 +67,8 @@ bool Bullet3DSolver::solve(const DVec<double> &angle_init,
 
     if (count >= 20 || std::isnan(error)) {
       if (solve_success_) {
-        angle_result_[0] = angle_init[0];
-        angle_result_[1] = -angle_init[1];
+        angle_result_[0] = angle_init_[0];
+        angle_result_[1] = -angle_init_[1];
         solve_success_ = false;
       }
       return false;
@@ -102,60 +103,85 @@ double Bullet3DSolver::gimbalError(const DVec<double> &angle, double target_posi
   return error;
 }
 
-std::vector<Vec3<double>> Bullet3DSolver::getPointData3D() {
+std::vector<Vec3<double>> Bullet3DSolver::getPointData3D(double yaw, double pitch) {
   double target_x = this->target_x_;
   double target_y = this->target_y_;
   double target_rho = std::sqrt(std::pow(target_x, 2) + std::pow(target_y, 2));
-  double target_v_rho = std::cos(yaw_solved_) * this->target_dx_ + std::sin(yaw_solved_) * this->target_dy_;
-  double bullet_v_rho = this->bullet_speed_ * std::cos(pitch_solved_) - target_v_rho;
-  double bullet_v_z = this->bullet_speed_ * std::sin(pitch_solved_) - this->target_dz_;
+  double target_v_rho = std::cos(yaw) * this->target_dx_ + std::sin(yaw) * this->target_dy_;
+  double bullet_v_rho = this->bullet_speed_ * std::cos(pitch) - target_v_rho;
+  double bullet_v_z = this->bullet_speed_ * std::sin(pitch) - this->target_dz_;
   Vec3<double> point_data{};
   std::vector<Vec3<double>> model_data{};
-  for (int i = 0; i < 20; i++) {
-    double rt_bullet_rho = target_rho * i / 19;
+  point_num_ = int(target_rho * 20);
+  for (int i = 0; i <= point_num_; i++) {
+    double rt_bullet_rho = target_rho * i / point_num_;
     double fly_time = (-std::log(1 - rt_bullet_rho * resistance_coff_ / bullet_v_rho)) / resistance_coff_;
     double rt_bullet_z =
         (bullet_v_z + (config_.g / resistance_coff_)) * (1 - std::exp(-resistance_coff_ * fly_time))
             / resistance_coff_ - config_.g * fly_time / resistance_coff_;
-    point_data[0] = rt_bullet_rho * std::cos(yaw_solved_);
-    point_data[1] = rt_bullet_rho * std::sin(yaw_solved_);
+    point_data[0] = rt_bullet_rho * std::cos(yaw);
+    point_data[1] = rt_bullet_rho * std::sin(yaw);
     point_data[2] = rt_bullet_z;
     model_data.push_back(point_data);
   }
   return model_data;
 }
 
-void Bullet3DSolver::modelRviz(double x_offset, double y_offset, double z_offset) {
+void Bullet3DSolver::modelPub(double x_offset, double y_offset, double z_offset) {
   geometry_msgs::Point point;
-  visualization_msgs::Marker marker;
-  marker.header.frame_id = "map";
-  marker.ns = "model";
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.type = visualization_msgs::Marker::POINTS;
-  marker.scale.x = 0.02;
-  marker.scale.y = 0.02;
-  marker.color.r = 0.0;
-  marker.color.g = 1.0;
-  marker.color.b = 0.0;
-  marker.color.a = 1.0;
 
-  for (int i = 0; i < 20; i++) {
-    point.x = model_data_[i][0] + x_offset;
-    point.y = model_data_[i][1] + y_offset;
-    point.z = model_data_[i][2] + z_offset;
-    marker.points.push_back(point);
+  visualization_msgs::Marker marker_desire;
+  marker_desire.header.frame_id = "map";
+  marker_desire.header.stamp = ros::Time::now();
+  marker_desire.ns = "model";
+  marker_desire.action = visualization_msgs::Marker::ADD;
+  marker_desire.type = visualization_msgs::Marker::POINTS;
+  marker_desire.scale.x = 0.02;
+  marker_desire.scale.y = 0.02;
+  marker_desire.color.r = 1.0;
+  marker_desire.color.g = 0.0;
+  marker_desire.color.b = 0.0;
+  marker_desire.color.a = 1.0;
+  for (int i = 0; i < point_num_; i++) {
+    point.x = model_data_solve_[i][0] + x_offset;
+    point.y = model_data_solve_[i][1] + y_offset;
+    point.z = model_data_solve_[i][2] + z_offset;
+    marker_desire.points.push_back(point);
   }
-  marker.header.stamp = ros::Time::now();
-  if (this->path_pub_->trylock()) {
-    this->path_pub_->msg_ = marker;
-    this->path_pub_->unlockAndPublish();
+  if (this->path_desire_pub_->trylock()) {
+    this->path_desire_pub_->msg_ = marker_desire;
+    this->path_desire_pub_->unlockAndPublish();
+  }
+
+  visualization_msgs::Marker marker_current;
+  marker_current.header.frame_id = "map";
+  marker_current.header.stamp = ros::Time::now();
+  marker_current.ns = "model";
+  marker_current.action = visualization_msgs::Marker::ADD;
+  marker_current.type = visualization_msgs::Marker::POINTS;
+  marker_current.scale.x = 0.02;
+  marker_current.scale.y = 0.02;
+  marker_current.color.r = 0.0;
+  marker_current.color.g = 1.0;
+  marker_current.color.b = 0.0;
+  marker_current.color.a = 1.0;
+  for (int i = 0; i < point_num_; i++) {
+    point.x = model_data_current_[i][0] + x_offset;
+    point.y = model_data_current_[i][1] + y_offset;
+    point.z = model_data_current_[i][2] + z_offset;
+    marker_current.points.push_back(point);
+  }
+  if (this->path_current_pub_->trylock()) {
+    this->path_current_pub_->msg_ = marker_current;
+    this->path_current_pub_->unlockAndPublish();
   }
 }
 
 Vec2<double> Bullet3DSolver::getResult(const ros::Time &time, const geometry_msgs::TransformStamped &map2pitch) {
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
-    model_data_ = getPointData3D();
-    modelRviz(map2pitch.transform.translation.x, map2pitch.transform.translation.y, map2pitch.transform.translation.z);
+    model_data_solve_ = getPointData3D(yaw_solved_, pitch_solved_);
+    model_data_current_ = getPointData3D(angle_init_[0], angle_init_[1]);
+    modelPub(map2pitch.transform.translation.x, map2pitch.transform.translation.y, map2pitch.transform.translation.z);
     last_publish_time_ = time;
   }
 
