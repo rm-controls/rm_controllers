@@ -80,6 +80,8 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
       rate(time, period);
     else if (state_ == TRACK)
       track(time);
+    else if (state_ == DIRECT)
+      direct(time);
     moveJoint(time, period);
   }
 }
@@ -104,9 +106,7 @@ void Controller::rate(const ros::Time &time, const ros::Duration &period) {
   } else {
     double roll{}, pitch{}, yaw{};
     quatToRPY(map2gimbal_des_.transform.rotation, roll, pitch, yaw);
-    setDes(time,
-           yaw + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_yaw,
-           pitch + period.toSec() * cmd_rt_buffer_.readFromRT()->rate_pitch);
+    setDes(time, yaw + period.toSec() * cmd_gimbal_.rate_yaw, pitch + period.toSec() * cmd_gimbal_.rate_pitch);
   }
 }
 
@@ -127,7 +127,7 @@ void Controller::track(const ros::Time &time) {
     angle_init_compute = angle_init_solve;
   }
 
-  int target_id = cmd_rt_buffer_.readFromRT()->target_id;
+  int target_id = cmd_gimbal_.target_id;
   try {
     yaw2detection = robot_state_handle_.lookupTransform("yaw",
                                                         "detection" + std::to_string(target_id),
@@ -221,6 +221,24 @@ void Controller::track(const ros::Time &time) {
   last_solve_success_ = solve_success;
 }
 
+void Controller::direct(const ros::Time &time) {
+  geometry_msgs::Point aim_point_map{};
+  double yaw{}, pitch{};
+  try {
+    tf2::doTransform(cmd_gimbal_.aim_point.point, aim_point_map,
+                     robot_state_handle_.lookupTransform("map",
+                                                         cmd_gimbal_.aim_point.header.frame_id,
+                                                         cmd_gimbal_.aim_point.header.stamp));
+    yaw = std::atan2(aim_point_map.y - map2pitch_.transform.translation.y,
+                     aim_point_map.x - map2pitch_.transform.translation.x);
+    pitch = -std::atan2(aim_point_map.z - map2pitch_.transform.translation.z,
+                        std::sqrt(std::pow(aim_point_map.x - map2pitch_.transform.translation.x, 2)
+                                      + std::pow(aim_point_map.y - map2pitch_.transform.translation.y, 2)));
+  }
+  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+  setDes(time, yaw, pitch);
+}
+
 void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
   if (pitch <= upper_pitch_ && pitch >= lower_pitch_ && yaw <= upper_yaw_ && yaw >= lower_yaw_)
     map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
@@ -300,13 +318,7 @@ void Controller::updateTf() {
                                                          detection_time - ros::Duration(config_.time_compensation));
         tf2::fromMsg(map2camera.transform, map2camera_tf);
         map2detection_tf = map2camera_tf * camera2detection_tf;
-        map2detection.transform.translation.x = map2detection_tf.getOrigin().x();
-        map2detection.transform.translation.y = map2detection_tf.getOrigin().y();
-        map2detection.transform.translation.z = map2detection_tf.getOrigin().z();
-        map2detection.transform.rotation.x = map2detection_tf.getRotation().x();
-        map2detection.transform.rotation.y = map2detection_tf.getRotation().y();
-        map2detection.transform.rotation.z = map2detection_tf.getRotation().z();
-        map2detection.transform.rotation.w = map2detection_tf.getRotation().w();
+        map2detection.transform = tf2::toMsg(map2detection_tf);
         map2detection.header.stamp = detection_time;
         map2detection.header.frame_id = "map";
         map2detection.child_frame_id = "detection" + std::to_string(detection.first);
@@ -347,15 +359,10 @@ void Controller::updateTrack(int id) {
   rm_msgs::TrackData track_data;
   track_data.id = id;
   track_data.stamp = moving_average_filters_track_.find(id)->second->getTransform().header.stamp;
-  track_data.map2detection.position.x = detection_pos_.find(id)->second.x;
-  track_data.map2detection.position.y = detection_pos_.find(id)->second.y;
-  track_data.map2detection.position.z = detection_pos_.find(id)->second.z;
-  track_data.map2detection.orientation =
-      moving_average_filters_track_.find(id)->second->getTransform().transform.rotation;
-  track_data.camera2detection.position.x = camera2detection.transform.translation.x;
-  track_data.camera2detection.position.y = camera2detection.transform.translation.y;
-  track_data.camera2detection.position.z = camera2detection.transform.translation.z;
-  track_data.camera2detection.orientation = camera2detection.transform.rotation;
+  track_data.is_gyro = moving_average_filters_track_.find(id)->second->isGyro();
+  track_data.camera2detection.x = camera2detection.transform.translation.x;
+  track_data.camera2detection.y = camera2detection.transform.translation.y;
+  track_data.camera2detection.z = camera2detection.transform.translation.z;
   track_data.detection_vel = detection_vel_.find(id)->second;
 
   track_pub_->msg_.tracks.push_back(track_data);

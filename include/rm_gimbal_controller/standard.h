@@ -26,6 +26,7 @@ enum StandardState {
   PASSIVE,
   RATE,
   TRACK,
+  DIRECT
 };
 
 struct Config {
@@ -45,6 +46,7 @@ class Controller :
   void passive();
   void rate(const ros::Time &time, const ros::Duration &period);
   void track(const ros::Time &time);
+  void direct(const ros::Time &time);
   void moveJoint(const ros::Time &time, const ros::Duration &period);
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
