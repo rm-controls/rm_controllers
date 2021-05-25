@@ -67,7 +67,7 @@ class Controller :
 
   bullet_solver::Bullet3DSolver *bullet_solver_{};
 
-  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError> > error_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_detection_sub_;
@@ -88,7 +88,7 @@ class Controller :
 
   double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
   double publish_rate_{};
-  bool dynamic_reconfig_initialized_ = false;
+  bool dynamic_reconfig_initialized_{};
   bool state_changed_{};
   bool last_solve_success_{};
 
@@ -96,7 +96,7 @@ class Controller :
   StandardState state_ = PASSIVE;
 
   std::map<int, moving_average_filter::MovingAverageFilterTrack *> moving_average_filters_track_;
-  std::map<int, geometry_msgs::Pose> last_detection_;
+  std::map<int, geometry_msgs::Pose> last_detection_{};
   std::map<int, geometry_msgs::Vector3> detection_vel_{};
   std::map<int, geometry_msgs::Point> detection_pos_{};
   std::map<int, geometry_msgs::Point> detection_pos_observation_{};
