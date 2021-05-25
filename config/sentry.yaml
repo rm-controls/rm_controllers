@@ -6,7 +6,7 @@ controllers:
     type: joint_state_controller/JointStateController
     publish_rate: 50
   shooter_controller:
-    type: rm_shooter_controllers/StandardController
+    type: rm_shooter_controllers/Controller
     publish_rate: 50
     friction_left:
       joint: "left_friction_wheel_joint"
@@ -18,7 +18,6 @@ controllers:
       joint: "trigger_joint"
       pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
 
-    have_magazine: false
     enter_push_qd_coef: 0.95
     push_angle: 0.8
     push_angle_error: 0.04
