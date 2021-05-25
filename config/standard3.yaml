@@ -19,7 +19,7 @@ controllers:
       pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
     cover:
       joint: "cover_joint"
-      pid: { p: 0.01, i: 0.0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+      pid: { p: 30.0, i: 0.0, d: 1.2, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
 
     enter_push_qd_coef: 0.95
     push_angle: 0.785
