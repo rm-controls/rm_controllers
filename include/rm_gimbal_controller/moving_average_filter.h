@@ -25,7 +25,10 @@ class MovingAverageFilterTrack {
   void input(const geometry_msgs::TransformStamped &map2detection);
   geometry_msgs::TransformStamped getTransform() const { return output_map2detection_; }
   geometry_msgs::Vector3 getVel() const { return output_vel_; }
+  geometry_msgs::Point getPos() const { return output_pos_; }
+  geometry_msgs::Point getPosObservation() const { return output_pos_observation_; }
   geometry_msgs::Point getCenter() const { return output_center_; }
+  geometry_msgs::Point getCenterObservation() const { return output_center_observation_; }
   double getGyroVel() const { return output_gyro_vel_; }
   bool isGyro() const { return is_gyro_; }
   double getDelta() const { return delta_; }
@@ -57,10 +60,13 @@ class MovingAverageFilterTrack {
 
   geometry_msgs::TransformStamped last_map2detection_{};
   geometry_msgs::TransformStamped output_map2detection_{};
-  geometry_msgs::TransformStamped last_yaw2detection_;
+  geometry_msgs::TransformStamped last_observation2detection_;
   geometry_msgs::Vector3 output_vel_{};
+  geometry_msgs::Point output_pos_{};
+  geometry_msgs::Point output_pos_observation_{};
   geometry_msgs::Point output_center_{};
-  geometry_msgs::Vector3 last_output_pos_{};
+  geometry_msgs::Point output_center_observation_{};
+  geometry_msgs::Point last_output_pos_{};
 };
 }
 

@@ -117,7 +117,6 @@ void Controller::track(const ros::Time &time) {
   }
   bool solve_success = false;
   Vec2<double> angle_init_solve{}, angle_init_compute{};
-  geometry_msgs::TransformStamped yaw2detection, yaw2pitch;
 
   if (last_solve_success_) {
     double roll, pitch, yaw;
@@ -128,40 +127,18 @@ void Controller::track(const ros::Time &time) {
   }
 
   int target_id = cmd_gimbal_.target_id;
-  try {
-    yaw2detection = robot_state_handle_.lookupTransform("yaw",
-                                                        "detection" + std::to_string(target_id),
-                                                        ros::Time(0));
-    yaw2pitch = robot_state_handle_.lookupTransform("yaw",
-                                                    "pitch",
-                                                    detection_rt_buffer_.readFromRT()->header.stamp);
-  }
-  catch (tf2::TransformException &ex) {
-    ROS_WARN("%s", ex.what());
-    return;
-  }
-
   if (moving_average_filters_track_.find(target_id) != moving_average_filters_track_.end()) {
-    geometry_msgs::Vector3 target_pos_solve{}, target_pos_compute{};
+    geometry_msgs::Point target_pos_solve{}, target_pos_compute{};
     geometry_msgs::Vector3 target_vel_solve{}, target_vel_compute{};
-    geometry_msgs::Point center_pos_yaw;
 
     if (moving_average_filters_track_.find(target_id)->second->isGyro()) {
-      try {
-        tf2::doTransform(center_pos_.find(target_id)->second, center_pos_yaw, robot_state_handle_.lookupTransform(
-            "yaw", "map", detection_rt_buffer_.readFromRT()->header.stamp));
-      }
-      catch (tf2::TransformException &ex) {
-        ROS_WARN("%s", ex.what());
-        return;
-      }
       target_pos_solve.x = center_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
       target_pos_solve.y = center_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
       target_pos_solve.z = center_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z;
 
-      target_pos_compute.x = center_pos_yaw.x - yaw2pitch.transform.translation.x;
-      target_pos_compute.y = yaw2detection.transform.translation.y - yaw2pitch.transform.translation.y;
-      target_pos_compute.z = center_pos_yaw.z - yaw2pitch.transform.translation.z;
+      target_pos_compute.x = center_pos_observation_.find(target_id)->second.x;
+      target_pos_compute.y = detection_pos_observation_.find(target_id)->second.y;
+      target_pos_compute.z = center_pos_observation_.find(target_id)->second.z;
       target_vel_compute.y = gyro_vel_.find(target_id)->second;
       angle_init_compute[0] = 0;
     } else {
@@ -324,10 +301,13 @@ void Controller::updateTf() {
         map2detection.child_frame_id = "detection" + std::to_string(detection.first);
 
         moving_average_filters_track_.find(detection.first)->second->input(map2detection);
-        detection_pos_[detection.first] =
-            moving_average_filters_track_.find(detection.first)->second->getTransform().transform.translation;
+        detection_pos_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getPos();
         detection_vel_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getVel();
         center_pos_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getCenter();
+        detection_pos_observation_[detection.first] =
+            moving_average_filters_track_.find(detection.first)->second->getPosObservation();
+        center_pos_observation_[detection.first] =
+            moving_average_filters_track_.find(detection.first)->second->getCenterObservation();
         gyro_vel_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getGyroVel();
 
         tf_broadcaster_.sendTransform(moving_average_filters_track_.find(detection.first)->second->getTransform());
@@ -350,9 +330,8 @@ void Controller::updateTf() {
 void Controller::updateTrack(int id) {
   geometry_msgs::TransformStamped camera2detection;
   try {
-    camera2detection = robot_state_handle_.lookupTransform("camera_optical_frame",
-                                                           "detection" + std::to_string(id),
-                                                           ros::Time(0));
+    tf2::doTransform(moving_average_filters_track_.find(id)->second->getTransform(), camera2detection,
+                     robot_state_handle_.lookupTransform("camera_optical_frame", "map", ros::Time(0)));
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 

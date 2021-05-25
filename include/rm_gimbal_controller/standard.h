@@ -97,9 +97,11 @@ class Controller :
 
   std::map<int, moving_average_filter::MovingAverageFilterTrack *> moving_average_filters_track_;
   std::map<int, geometry_msgs::Pose> last_detection_;
-  std::map<int, geometry_msgs::Vector3> detection_pos_{};
   std::map<int, geometry_msgs::Vector3> detection_vel_{};
+  std::map<int, geometry_msgs::Point> detection_pos_{};
+  std::map<int, geometry_msgs::Point> detection_pos_observation_{};
   std::map<int, geometry_msgs::Point> center_pos_{};
+  std::map<int, geometry_msgs::Point> center_pos_observation_{};
   std::map<int, double> gyro_vel_{};
 };
 }

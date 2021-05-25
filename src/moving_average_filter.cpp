@@ -41,31 +41,32 @@ MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle &nh,
 
 void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2detection) {
   // Initialize the first time it enters the filter
-  geometry_msgs::TransformStamped yaw2detection;
+  geometry_msgs::TransformStamped observation2map, observation2detection;
   try {
-    geometry_msgs::TransformStamped map2yaw = robot_state_handle_.lookupTransform("map",
-                                                                                  "yaw",
-                                                                                  ros::Time(0));
-    tf2::Transform map2yaw_tf, map2detection_tf, yaw2detection_tf;
-    tf2::fromMsg(map2yaw.transform, map2yaw_tf);
-    tf2::fromMsg(map2detection.transform, map2detection_tf);
-    yaw2detection_tf = map2yaw_tf.inverse() * map2detection_tf;
-    yaw2detection.transform.translation.x = yaw2detection_tf.getOrigin().x();
-    yaw2detection.transform.translation.y = yaw2detection_tf.getOrigin().y();
-    yaw2detection.transform.translation.z = yaw2detection_tf.getOrigin().z();
-    yaw2detection.transform.rotation.w = 1;
-    yaw2detection.header.stamp = map2detection.header.stamp;
+    geometry_msgs::TransformStamped pitch2map = robot_state_handle_.lookupTransform("pitch",
+                                                                                    "map",
+                                                                                    ros::Time(0));
+    tf2::Quaternion quaternion;
+    double map2pitch_yaw = yawFromQuat(pitch2map.transform.rotation);
+    quaternion.setRPY(0, 0, map2pitch_yaw);
+    observation2map.transform.translation = pitch2map.transform.translation;
+    observation2map.transform.rotation = tf2::toMsg(quaternion);
+    observation2map.header.frame_id = "observation";
+    observation2map.header.stamp = map2detection.header.stamp;
+    tf2::doTransform(map2detection, observation2detection, observation2map);
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
     return;
   }
+  output_map2detection_ = map2detection;
   double dt = std::abs(map2detection.header.stamp.toSec() - last_map2detection_.header.stamp.toSec());
   if (dt > 0.5) {
-    last_yaw2detection_ = yaw2detection;
+    last_observation2detection_ = observation2detection;
     last_map2detection_ = map2detection;
-    output_map2detection_ = map2detection;
-    last_output_pos_ = map2detection.transform.translation;
+    last_output_pos_.x = map2detection.transform.translation.x;
+    last_output_pos_.y = map2detection.transform.translation.y;
+    last_output_pos_.z = map2detection.transform.translation.z;
     for (int i = 0; i < pos_data_num_; ++i) {
       ma_filter_pos_x_->input(map2detection.transform.translation.x);
       ma_filter_pos_y_->input(map2detection.transform.translation.y);
@@ -94,7 +95,7 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
     now_map2detection.transform = last_map2detection_.transform;
 
   // If true, the target armor is switching
-  double delta = yaw2detection.transform.translation.y - last_yaw2detection_.transform.translation.y;
+  double delta = observation2detection.transform.translation.y - last_observation2detection_.transform.translation.y;
   if (std::abs(delta) > 0.1) {
     delta_ = delta;
     for (int i = 0; i < pos_data_num_; ++i) {
@@ -121,69 +122,71 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
     switch_count_ = 0;
   }
 
-  double pos_x = now_map2detection.transform.translation.x;
-  double pos_y = now_map2detection.transform.translation.y;
-  double pos_z = now_map2detection.transform.translation.z;
-
   // filter pos
-  ma_filter_pos_x_->input(pos_x);
-  ma_filter_pos_y_->input(pos_y);
-  ma_filter_pos_z_->input(pos_z);
-  output_map2detection_ = now_map2detection;
-  output_map2detection_.transform.translation.x = ma_filter_pos_x_->output();
-  output_map2detection_.transform.translation.y = ma_filter_pos_y_->output();
-  output_map2detection_.transform.translation.z = ma_filter_pos_z_->output();
+  ma_filter_pos_x_->input(now_map2detection.transform.translation.x);
+  ma_filter_pos_y_->input(now_map2detection.transform.translation.y);
+  ma_filter_pos_z_->input(now_map2detection.transform.translation.z);
+  output_pos_.x = ma_filter_pos_x_->output();
+  output_pos_.y = ma_filter_pos_y_->output();
+  output_pos_.z = ma_filter_pos_z_->output();
+  try { tf2::doTransform(output_pos_, output_pos_observation_, observation2map); }
+  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
   // filter vel
-  double vel_x =
-      std::abs((output_map2detection_.transform.translation.x - last_output_pos_.x) / dt - output_vel_.x) < 5.0 ?
-      (output_map2detection_.transform.translation.x - last_output_pos_.x) / dt : output_vel_.x;
-  double vel_y =
-      std::abs((output_map2detection_.transform.translation.y - last_output_pos_.y) / dt - output_vel_.y) < 5.0 ?
-      (output_map2detection_.transform.translation.y - last_output_pos_.y) / dt : output_vel_.y;
-  double vel_z =
-      std::abs((output_map2detection_.transform.translation.z - last_output_pos_.z) / dt - output_vel_.z) < 5.0 ?
-      (output_map2detection_.transform.translation.z - last_output_pos_.z) / dt : output_vel_.z;
+  double vel_x = std::abs((output_pos_.x - last_output_pos_.x) / dt - output_vel_.x) < 5.0 ?
+                 (output_pos_.x - last_output_pos_.x) / dt : output_vel_.x;
+  double vel_y = std::abs((output_pos_.y - last_output_pos_.y) / dt - output_vel_.y) < 5.0 ?
+                 (output_pos_.y - last_output_pos_.y) / dt : output_vel_.y;
+  double vel_z = std::abs((output_pos_.z - last_output_pos_.z) / dt - output_vel_.z) < 5.0 ?
+                 (output_pos_.z - last_output_pos_.z) / dt : output_vel_.z;
   ma_filter_vel_x_->input(vel_x);
   ma_filter_vel_y_->input(vel_y);
   ma_filter_vel_z_->input(vel_z);
   output_vel_.x = ma_filter_vel_x_->output();
   output_vel_.y = ma_filter_vel_y_->output();
   output_vel_.z = ma_filter_vel_z_->output();
-  last_output_pos_ = output_map2detection_.transform.translation;
 
   // filter center
-  ma_filter_center_x_->input(pos_x);
-  ma_filter_center_y_->input(pos_y);
-  ma_filter_center_z_->input(pos_z);
+  ma_filter_center_x_->input(now_map2detection.transform.translation.x);
+  ma_filter_center_y_->input(now_map2detection.transform.translation.y);
+  ma_filter_center_z_->input(now_map2detection.transform.translation.z);
   output_center_.x = ma_filter_center_x_->output();
   output_center_.y = ma_filter_center_y_->output();
   output_center_.z = ma_filter_center_z_->output() - center_offset_z_;
+  try { tf2::doTransform(output_center_, output_center_observation_, observation2map); }
+  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 
   // filter gyro vel
   double detection_gyro_vel{};
   if (delta < 0.1 && is_gyro_) {
-    detection_gyro_vel = delta / (yaw2detection.header.stamp.toSec() - last_yaw2detection_.header.stamp.toSec());
+    detection_gyro_vel =
+        delta / (observation2detection.header.stamp.toSec() - last_observation2detection_.header.stamp.toSec());
     if (std::abs(detection_gyro_vel - output_gyro_vel_) < 3.0)
       ma_filter_gyro_vel_->input(detection_gyro_vel);
   }
   output_gyro_vel_ = ma_filter_gyro_vel_->output();
 
+  // Update map2detection
+  output_map2detection_.transform.translation.x = output_pos_.x;
+  output_map2detection_.transform.translation.y = output_pos_.y;
+  output_map2detection_.transform.translation.z = output_pos_.z;
+
+  last_output_pos_ = output_pos_;
   last_map2detection_ = now_map2detection;
-  last_yaw2detection_ = yaw2detection;
+  last_observation2detection_ = observation2detection;
 
   if (is_debug_) {
     rm_msgs::MovingAverageData moving_average_data{};
     moving_average_data.header.stamp = now_map2detection.header.stamp;
-    moving_average_data.real_pos_x = pos_x;
-    moving_average_data.real_pos_y = pos_y;
-    moving_average_data.real_pos_z = pos_z;
+    moving_average_data.real_pos_x = now_map2detection.transform.translation.x;
+    moving_average_data.real_pos_y = now_map2detection.transform.translation.y;
+    moving_average_data.real_pos_z = now_map2detection.transform.translation.z;
     moving_average_data.real_vel_x = vel_x;
     moving_average_data.real_vel_y = vel_y;
     moving_average_data.real_vel_z = vel_z;
-    moving_average_data.filtered_pos_x = output_map2detection_.transform.translation.x;
-    moving_average_data.filtered_pos_y = output_map2detection_.transform.translation.y;
-    moving_average_data.filtered_pos_z = output_map2detection_.transform.translation.z;
+    moving_average_data.filtered_pos_x = output_pos_.x;
+    moving_average_data.filtered_pos_y = output_pos_.y;
+    moving_average_data.filtered_pos_z = output_pos_.z;
     moving_average_data.filtered_vel_x = output_vel_.x;
     moving_average_data.filtered_vel_y = output_vel_.y;
     moving_average_data.filtered_vel_z = output_vel_.z;
