@@ -1,15 +1,39 @@
 <launch>
     <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, hero, engineer]"/>
     <arg name="load_controller" default="true"/>
+    <arg name="base_link_tf" default="true"/>
+    <arg name="ekf" default="false"/>
+    <arg name="odom_tf" default="true"/>
+    <arg name="yaw_tf" default="false"/>
+    <arg name="mecanum_chassis" default="true"/>
 
+    <rosparam file="$(find rm_chassis_controllers)/config/$(arg robot_type).yaml" command="load"/>
     <rosparam file="$(find rm_orientation_controller)/config/$(arg robot_type).yaml" command="load"/>
+    <rosparam file="$(find rm_gimbal_controllers)/config/$(arg robot_type).yaml" command="load"/>
+    <rosparam if="$(arg ekf)" param="controllers/chassis_controller/enable_odom_tf">false</rosparam>
+
 
     <!-- load the controllers -->
-    <node if="$(arg load_controller)" name="controller_spawner" pkg="controller_manager" type="spawner"
+    <node name="controller_spawner" pkg="controller_manager" type="spawner"
           respawn="false" output="screen"
           args="
           controllers/robot_state_controller
-          controllers/rm_orientation_controller
-    "/>
+          controllers/imu_sensor_controller
+          controllers/joint_state_controller
+          controllers/chassis_controller
+          controllers/gimbal_controller
+          controllers/orientation_controller
+  "/>
+
+    <node if="$(arg ekf)" pkg="robot_localization" type="ekf_localization_node" name="ekf_localization"
+          clear_params="true">
+        <rosparam command="load" file="$(find rm_chassis_controllers)/config/localization.yaml"/>
+    </node>
+    <node if="$(arg odom_tf)" pkg="tf" type="static_transform_publisher" name="odom_tf_publisher"
+          args="0 0 0 0 0 0 1 map odom 100"/>
+
+    <!--  for test !!! -->
+    <node if="$(arg yaw_tf)" pkg="tf" type="static_transform_publisher" name="yaw_tf_publisher"
+          args="0 0 0 0.866 0 0 0.5 map yaw 100"/>
 
 </launch>

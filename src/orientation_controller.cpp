@@ -12,13 +12,8 @@ namespace rm_orientation_controller {
 bool Controller::init(hardware_interface::RobotHW *robot_hw,
                       ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) {
   std::string imu_name;
-  if (controller_nh.getParam("imu_name", imu_name)) {
-
-  }
-  imu_sensor_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(imu_name);
-  robot_state_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
-
-  if (!controller_nh.getParam("frame_fixed", frame_fixed_) ||
+  if (!controller_nh.getParam("imu_name", imu_name) ||
+      !controller_nh.getParam("frame_fixed", frame_fixed_) ||
       !controller_nh.getParam("frame_source", frame_source_) ||
       !controller_nh.getParam("frame_target", frame_target_) ||
       !controller_nh.getParam("publish_rate", publish_rate_)
@@ -26,6 +21,10 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
     ROS_ERROR("Some imu frame name params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+  imu_sensor_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(imu_name);
+  robot_state_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
+
+
   imu_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::Imu>(root_nh, "imu_data", 100));
   tf_broadcaster_.init(root_nh);
   source2target_msg_.header.frame_id = frame_source_;
