@@ -90,6 +90,7 @@ class Controller : public controller_interface::MultiInterfaceController<hardwar
   bool dynamic_reconfig_initialized_{};
   bool state_changed_{};
   bool last_solve_success_{};
+  double roll_real_{}, pitch_real_{}, yaw_real_{};
 
   Config config_{};
   StandardState state_ = PASSIVE;

@@ -30,7 +30,7 @@ class BulletSolver {
                         double yaw_real, double pitch_real, double bullet_speed);
   double getResistanceCoefficient(double bullet_speed) const;
   double getYaw() const { return output_yaw_; }
-  double getPitch() const { return output_pitch_; }
+  double getPitch() const { return -output_pitch_; }
   void bulletModelPub(const geometry_msgs::TransformStamped &map2pitch, const ros::Time &time);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig &config, uint32_t);
   ~BulletSolver() = default;

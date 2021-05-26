@@ -117,9 +117,8 @@ void Controller::track(const ros::Time &time) {
   }
   bool solve_success = false;
   double yaw_compute{}, pitch_compute{};
-  double roll_real{}, pitch_real{}, yaw_real{};
   if (last_solve_success_)
-    quatToRPY(map2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
+    quatToRPY(map2pitch_.transform.rotation, roll_real_, pitch_real_, yaw_real_);
 
   int target_id = cmd_gimbal_.target_id;
   if (moving_average_filters_track_.find(target_id) != moving_average_filters_track_.end()) {
@@ -135,7 +134,7 @@ void Controller::track(const ros::Time &time) {
       target_pos_compute.y = detection_pos_observation_.find(target_id)->second.y;
       target_pos_compute.z = center_pos_observation_.find(target_id)->second.z;
       target_vel_compute.y = gyro_vel_.find(target_id)->second;
-      pitch_compute = pitch_real;
+      pitch_compute = pitch_real_;
     } else {
       target_pos_solve.x = detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
       target_pos_solve.y = detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
@@ -145,6 +144,8 @@ void Controller::track(const ros::Time &time) {
 
       target_pos_compute = target_pos_solve;
       target_vel_compute = target_vel_solve;
+      yaw_compute = yaw_real_;
+      pitch_compute = pitch_real_;
     }
 
     solve_success = bullet_solver_->solve(target_pos_solve, target_vel_solve, cmd_gimbal_.bullet_speed);
@@ -170,7 +171,7 @@ void Controller::track(const ros::Time &time) {
   if (solve_success)
     setDes(time, bullet_solver_->getYaw(), bullet_solver_->getPitch());
   else
-    setDes(time, yaw_real, pitch_real);
+    setDes(time, yaw_real_, pitch_real_);
   last_solve_success_ = solve_success;
 }
 

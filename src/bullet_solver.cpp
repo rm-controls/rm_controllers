@@ -47,7 +47,7 @@ BulletSolver::BulletSolver(ros::NodeHandle &controller_nh) {
                                                                                            "model_desire",
                                                                                            10));
   path_real_pub_.reset(new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh,
-                                                                                         "model_current",
+                                                                                         "model_real",
                                                                                          10));
 }
 
@@ -82,7 +82,7 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
     output_pitch_ = std::atan2(temp_z, std::sqrt(std::pow(target_pos_.x, 2) + std::pow(target_pos_.y, 2)));
     target_rho = std::sqrt(std::pow(target_pos_.x, 2) + std::pow(target_pos_.y, 2));
     double fly_time =
-        (-std::log(1 - target_rho * resistance_coff_ / bullet_speed_ * std::cos(output_pitch_))) / resistance_coff_;
+        (-std::log(1 - target_rho * resistance_coff_ / (bullet_speed_ * std::cos(output_pitch_)))) / resistance_coff_;
     double real_z = (bullet_speed_ * std::sin(output_pitch_) + (config_.g / resistance_coff_))
         * (1 - std::exp(-resistance_coff_ * fly_time)) / resistance_coff_ - config_.g * fly_time / resistance_coff_;
 
@@ -104,6 +104,8 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
 }
 
 void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped &map2pitch, const ros::Time &time) {
+  marker_desire_.points.clear();
+  marker_real_.points.clear();
   double roll{}, pitch{}, yaw{};
   quatToRPY(map2pitch.transform.rotation, roll, pitch, yaw);
   geometry_msgs::Point point_desire{}, point_real{};
@@ -111,8 +113,8 @@ void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped &map2pit
   int point_num = int(target_rho * 20);
   for (int i = 0; i <= point_num; i++) {
     double rt_bullet_rho = target_rho * i / point_num;
-    double fly_time =
-        (-std::log(1 - rt_bullet_rho * resistance_coff_ / bullet_speed_ * std::cos(output_pitch_))) / resistance_coff_;
+    double fly_time = (-std::log(1 - rt_bullet_rho * resistance_coff_ / (bullet_speed_ * std::cos(output_pitch_))))
+        / resistance_coff_;
     double rt_bullet_z = (bullet_speed_ * std::sin(output_pitch_) + (config_.g / resistance_coff_))
         * (1 - std::exp(-resistance_coff_ * fly_time)) / resistance_coff_ - config_.g * fly_time / resistance_coff_;
     point_desire.x = rt_bullet_rho * std::cos(output_yaw_) + map2pitch.transform.translation.x;
@@ -123,7 +125,7 @@ void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped &map2pit
   for (int i = 0; i <= point_num; i++) {
     double rt_bullet_rho = target_rho * i / point_num;
     double fly_time =
-        (-std::log(1 - rt_bullet_rho * resistance_coff_ / bullet_speed_ * std::cos(-pitch))) / resistance_coff_;
+        (-std::log(1 - rt_bullet_rho * resistance_coff_ / (bullet_speed_ * std::cos(-pitch)))) / resistance_coff_;
     double rt_bullet_z = (bullet_speed_ * std::sin(-pitch) + (config_.g / resistance_coff_))
         * (1 - std::exp(-resistance_coff_ * fly_time)) / resistance_coff_ - config_.g * fly_time / resistance_coff_;
     point_real.x = rt_bullet_rho * std::cos(yaw) + map2pitch.transform.translation.x;
@@ -148,7 +150,7 @@ double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vec
   config_ = *config_rt_buffer_.readFromRT();
   double resistance_coff = getResistanceCoefficient(bullet_speed);
   double fly_time = (-std::log(1 - std::sqrt(std::pow(pos.x, 2) + std::pow(pos.y, 2))
-      * resistance_coff / bullet_speed * std::cos(pitch_real))) / resistance_coff;
+      * resistance_coff / (bullet_speed * std::cos(pitch_real)))) / resistance_coff;
   double last_fly_time{}, target_rho{};
   int count{};
   geometry_msgs::Point target_pos{};
@@ -158,7 +160,7 @@ double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vec
     target_pos.y = pos.y + vel.y * (config_.delay + fly_time);
     target_pos.z = pos.z + vel.z * (config_.delay + fly_time);
     target_rho = std::sqrt(std::pow(target_pos.x, 2) + std::pow(target_pos.y, 2));
-    fly_time = (-std::log(1 - target_rho * resistance_coff / bullet_speed * std::cos(pitch_real))) / resistance_coff;
+    fly_time = (-std::log(1 - target_rho * resistance_coff / (bullet_speed * std::cos(pitch_real)))) / resistance_coff;
     count++;
     if (count >= 20 || std::isnan(fly_time))
       return 999;
