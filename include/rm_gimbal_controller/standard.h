@@ -33,9 +33,8 @@ struct Config {
   double time_compensation;
 };
 
-class Controller :
-    public controller_interface::MultiInterfaceController<
-        hardware_interface::EffortJointInterface, hardware_interface::RobotStateInterface> {
+class Controller : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
+                                                                         hardware_interface::RobotStateInterface> {
  public:
   Controller() = default;
   bool init(hardware_interface::RobotHW *robot_hw,
@@ -65,7 +64,7 @@ class Controller :
   hardware_interface::RobotStateHandle robot_state_handle_;
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
-  bullet_solver::Bullet3DSolver *bullet_solver_{};
+  bullet_solver::BulletSolver *bullet_solver_{};
 
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;

@@ -23,147 +23,33 @@ struct Config {
 
 class BulletSolver {
  public:
-  explicit BulletSolver(ros::NodeHandle &controller_nh) {
-    publish_rate_ = getParam(controller_nh, "publish_rate", 50);
+  explicit BulletSolver(ros::NodeHandle &controller_nh);
 
-    // init config
-    config_ = {.resistance_coff_qd_10 = getParam(controller_nh, "resistance_coff_qd_10", 0.),
-        .resistance_coff_qd_15 = getParam(controller_nh, "resistance_coff_qd_15", 0.),
-        .resistance_coff_qd_16 = getParam(controller_nh, "resistance_coff_qd_16", 0.),
-        .resistance_coff_qd_18 = getParam(controller_nh, "resistance_coff_qd_18", 0.),
-        .resistance_coff_qd_30 = getParam(controller_nh, "resistance_coff_qd_30", 0.),
-        .g = getParam(controller_nh, "g", 0.),
-        .delay = getParam(controller_nh, "delay", 0.),
-        .dt = getParam(controller_nh, "dt", 0.),
-        .timeout = getParam(controller_nh, "timeout", 0.)};
-    config_rt_buffer_.initRT(config_);
+  bool solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed);
+  double getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vector3 vel,
+                        double yaw_real, double pitch_real, double bullet_speed);
+  double getResistanceCoefficient(double bullet_speed) const;
+  double getYaw() const { return output_yaw_; }
+  double getPitch() const { return output_pitch_; }
+  void bulletModelPub(const geometry_msgs::TransformStamped &map2pitch, const ros::Time &time);
+  void reconfigCB(rm_gimbal_controllers::BulletSolverConfig &config, uint32_t);
+  ~BulletSolver() = default;
 
-    d_srv_ =
-        new dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>(controller_nh);
-    dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>::CallbackType
-        cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
-    d_srv_->setCallback(cb);
-
-    path_desire_pub_.reset(new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh,
-                                                                                             "model_desire",
-                                                                                             10));
-    path_current_pub_.reset(new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh,
-                                                                                              "model_current",
-                                                                                              10));
-  };
-  virtual ~BulletSolver() = default;
-  virtual void setTarget(const DVec<double> &pos, const DVec<double> &vel) = 0;
-  virtual void setBulletSpeed(double speed) { bullet_speed_ = speed; };
-  void reconfigCB(rm_gimbal_controllers::BulletSolverConfig &config, uint32_t) {
-    ROS_INFO("[Bullet Solver] Dynamic params change");
-    if (!dynamic_reconfig_initialized_) {
-      Config init_config = *config_rt_buffer_.readFromNonRT(); // config init use yaml
-      config.resistance_coff_qd_10 = init_config.resistance_coff_qd_10;
-      config.resistance_coff_qd_15 = init_config.resistance_coff_qd_15;
-      config.resistance_coff_qd_16 = init_config.resistance_coff_qd_16;
-      config.resistance_coff_qd_18 = init_config.resistance_coff_qd_18;
-      config.resistance_coff_qd_30 = init_config.resistance_coff_qd_30;
-      config.g = init_config.g;
-      config.delay = init_config.delay;
-      config.dt = init_config.dt;
-      config.timeout = init_config.timeout;
-      dynamic_reconfig_initialized_ = true;
-    }
-    Config config_non_rt{
-        .resistance_coff_qd_10=config.resistance_coff_qd_10,
-        .resistance_coff_qd_15=config.resistance_coff_qd_15,
-        .resistance_coff_qd_16=config.resistance_coff_qd_16,
-        .resistance_coff_qd_18=config.resistance_coff_qd_18,
-        .resistance_coff_qd_30=config.resistance_coff_qd_30,
-        .g = config.g,
-        .delay = config.delay,
-        .dt=config.dt,
-        .timeout  =config.timeout
-    };
-    config_rt_buffer_.writeFromNonRT(config_non_rt);
-  };
-  virtual bool solve(const DVec<double> &angle_init,
-                     double target_position_x, double target_position_y, double target_position_z,
-                     double target_speed_x, double target_speed_y, double target_speed_z,
-                     double bullet_speed) = 0;
-  virtual double gimbalError(const DVec<double> &angle,
-                             double target_position_x, double target_position_y, double target_position_z,
-                             double target_speed_x, double target_speed_y, double target_speed_z,
-                             double bullet_speed) = 0;
-  virtual void modelPub(double x_offset, double y_offset, double z_offset) = 0;
-  void setResistanceCoefficient(double bullet_speed, Config config);
-
- protected:
-  double bullet_speed_{};
-  std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_current_pub_;
-  dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig> *d_srv_{};
-  double publish_rate_{};
+ private:
   ros::Time last_publish_time_;
-  bool dynamic_reconfig_initialized_ = false;
+  std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
+  dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig> *d_srv_{};
   Config config_{};
-  double resistance_coff_{};
-  Vec2<double> angle_result_{};
-};
+  bool dynamic_reconfig_initialized_{};
+  double publish_rate_{};
+  double output_yaw_{}, output_pitch_{};
+  double bullet_speed_{}, resistance_coff_{};
 
-class Bullet3DSolver : public BulletSolver {
- public:
-  using BulletSolver::BulletSolver;
-  void setTarget(const DVec<double> &pos, const DVec<double> &vel) override {
-    target_x_ = pos[0] + vel[0] * (config_.delay + this->fly_time_);
-    target_y_ = pos[1] + vel[1] * (config_.delay + this->fly_time_);
-    target_z_ = pos[2] + vel[2] * (config_.delay + this->fly_time_);
-    target_dx_ = vel[0];
-    target_dy_ = vel[1];
-    target_dz_ = vel[2];
-  };
-  bool solve(const DVec<double> &angle_init,
-             double target_position_x, double target_position_y, double target_position_z,
-             double target_speed_x, double target_speed_y, double target_speed_z,
-             double bullet_speed) override;
-  double gimbalError(const DVec<double> &angle,
-                     double target_position_x, double target_position_y, double target_position_z,
-                     double target_speed_x, double target_speed_y, double target_speed_z,
-                     double bullet_speed) override;
-  void modelPub(double x_offset, double y_offset, double z_offset) override;
-  Vec2<double> getResult(const ros::Time &time, const geometry_msgs::TransformStamped &map2pitch);
-  std::vector<Vec3<double>> getPointData3D(double yaw, double pitch);
- protected:
-  virtual double computeError(double yaw, double pitch, double *error_polar) = 0;
-  double target_x_{}, target_y_{}, target_z_{},
-      target_dx_{}, target_dy_{}, target_dz_{};
-  double fly_time_{};
-  double pitch_solved_, yaw_solved_;
-  Vec2<double> angle_init_{};
-  bool solve_success_ = true;
-  int point_num_{};
-  Vec3<double> pos_{};
-  Vec3<double> vel_{};
-  std::vector<Vec3<double>> model_data_solve_;
-  std::vector<Vec3<double>> model_data_current_;
-};
-
-class Iter3DSolver : public Bullet3DSolver {
- public:
-  using Bullet3DSolver::Bullet3DSolver;
-  using Bullet3DSolver::solve;
-  using Bullet3DSolver::gimbalError;
-  using Bullet3DSolver::getPointData3D;
-  using Bullet3DSolver::getResult;
- private:
-  double computeError(double yaw, double pitch, double *error_polar) override;
-};
-
-class Approx3DSolver : public Bullet3DSolver {
- public:
-  using Bullet3DSolver::Bullet3DSolver;
-  using Bullet3DSolver::solve;
-  using Bullet3DSolver::gimbalError;
-  using Bullet3DSolver::getPointData3D;
-  using Bullet3DSolver::getResult;
- private:
-  double computeError(double yaw, double pitch, double *error_polar) override;
+  geometry_msgs::Point target_pos_{};
+  visualization_msgs::Marker marker_desire_;
+  visualization_msgs::Marker marker_real_;
 };
 }
 #endif //SRC_RM_COMMON_INCLUDE_BULLET_SOLVER_H_

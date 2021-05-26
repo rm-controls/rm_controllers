@@ -5,251 +5,199 @@
 #include "rm_gimbal_controller/bullet_solver.h"
 #include <cmath>
 #include <tf/transform_datatypes.h>
+#include <rm_common/ori_tool.h>
 
 namespace bullet_solver {
-///////////////////////////BulletSolver/////////////////////////////
-void BulletSolver::setResistanceCoefficient(double bullet_speed, Config config) {
-  //bullet_speed have 5 value:10,15,16,18,30
-  if (bullet_speed < 12.5)
-    resistance_coff_ = config.resistance_coff_qd_10;
-  else if (bullet_speed < 15.5)
-    resistance_coff_ = config.resistance_coff_qd_15;
-  else if (bullet_speed < 17)
-    resistance_coff_ = config.resistance_coff_qd_16;
-  else if (bullet_speed < 24)
-    resistance_coff_ = config.resistance_coff_qd_18;
-  else
-    resistance_coff_ = config.resistance_coff_qd_30;
+BulletSolver::BulletSolver(ros::NodeHandle &controller_nh) {
+  publish_rate_ = getParam(controller_nh, "publish_rate", 50);
+
+  config_ = {.resistance_coff_qd_10 = getParam(controller_nh, "resistance_coff_qd_10", 0.),
+      .resistance_coff_qd_15 = getParam(controller_nh, "resistance_coff_qd_15", 0.),
+      .resistance_coff_qd_16 = getParam(controller_nh, "resistance_coff_qd_16", 0.),
+      .resistance_coff_qd_18 = getParam(controller_nh, "resistance_coff_qd_18", 0.),
+      .resistance_coff_qd_30 = getParam(controller_nh, "resistance_coff_qd_30", 0.),
+      .g = getParam(controller_nh, "g", 0.),
+      .delay = getParam(controller_nh, "delay", 0.),
+      .dt = getParam(controller_nh, "dt", 0.),
+      .timeout = getParam(controller_nh, "timeout", 0.)};
+  config_rt_buffer_.initRT(config_);
+
+  marker_desire_.header.frame_id = "map";
+  marker_desire_.ns = "model";
+  marker_desire_.action = visualization_msgs::Marker::ADD;
+  marker_desire_.type = visualization_msgs::Marker::POINTS;
+  marker_desire_.scale.x = 0.02;
+  marker_desire_.scale.y = 0.02;
+  marker_desire_.color.r = 1.0;
+  marker_desire_.color.g = 0.0;
+  marker_desire_.color.b = 0.0;
+  marker_desire_.color.a = 1.0;
+
+  marker_real_ = marker_desire_;
+  marker_real_.color.r = 0.0;
+  marker_real_.color.g = 1.0;
+
+  d_srv_ =
+      new dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>(controller_nh);
+  dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>::CallbackType
+      cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
+  d_srv_->setCallback(cb);
+
+  path_desire_pub_.reset(new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh,
+                                                                                           "model_desire",
+                                                                                           10));
+  path_real_pub_.reset(new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh,
+                                                                                         "model_current",
+                                                                                         10));
 }
 
-///////////////////////////Bullet3DSolver/////////////////////////////
-bool Bullet3DSolver::solve(const DVec<double> &angle_init,
-                           double target_position_x, double target_position_y, double target_position_z,
-                           double target_speed_x, double target_speed_y, double target_speed_z, double bullet_speed) {
-  angle_init_ = angle_init;
+double BulletSolver::getResistanceCoefficient(double bullet_speed) const {
+  //bullet_speed have 5 value:10,15,16,18,30
+  double resistance_coff;
+  if (bullet_speed < 12.5)
+    resistance_coff = config_.resistance_coff_qd_10;
+  else if (bullet_speed < 15.5)
+    resistance_coff = config_.resistance_coff_qd_15;
+  else if (bullet_speed < 17)
+    resistance_coff = config_.resistance_coff_qd_16;
+  else if (bullet_speed < 24)
+    resistance_coff = config_.resistance_coff_qd_18;
+  else
+    resistance_coff = config_.resistance_coff_qd_30;
+  return resistance_coff;
+}
+
+bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed) {
   config_ = *config_rt_buffer_.readFromRT();
-  setResistanceCoefficient(bullet_speed, config_);
-  pos_[0] = target_position_x;
-  pos_[1] = target_position_y;
-  pos_[2] = target_position_z;
-  vel_[0] = target_speed_x;
-  vel_[1] = target_speed_y;
-  vel_[2] = target_speed_z;
+  target_pos_ = pos;
+  bullet_speed_ = bullet_speed;
+  resistance_coff_ = getResistanceCoefficient(bullet_speed_) != 0 ? getResistanceCoefficient(bullet_speed_) : 0.001;
 
-  this->setBulletSpeed(bullet_speed);
-  setTarget(pos_, vel_);
-
-  double error_theta_z_init[2]{}, error_theta_z_point[2]{};
-  double yaw_point = std::atan2(target_y_, target_x_);
-  double pitch_point = std::atan2(target_z_, std::sqrt(std::pow(target_x_, 2) + std::pow(target_y_, 2)));
-  double error_init = computeError(angle_init_[0], angle_init_[1], error_theta_z_init);
-  double error_point = computeError(yaw_point, pitch_point, error_theta_z_point);
-
-  //compare pitch and yaw angle which direct pointing to target and angle provide by user
-  if (error_init > error_point) {
-    yaw_solved_ = yaw_point;
-    pitch_solved_ = pitch_point;
-  } else {
-    yaw_solved_ = angle_init_[0];
-    pitch_solved_ = angle_init_[1];
-  }
-
-  double error_theta_z[2]{};
-  double temp_z = target_x_ / cos(yaw_solved_) * tan(pitch_solved_);
-
-  int count = 0;
-  double error = 999999;
+  int count{};
+  double temp_z = pos.z;
+  double target_rho;
+  double error = 999;
   while (error >= 0.001) {
-    error = computeError(yaw_solved_, pitch_solved_, error_theta_z);
-    yaw_solved_ = yaw_solved_ + error_theta_z[0];
-    temp_z = temp_z + error_theta_z[1];
-    pitch_solved_ = std::atan2(temp_z, std::sqrt(std::pow(target_x_, 2) + std::pow(target_y_, 2)));
+    output_yaw_ = std::atan2(target_pos_.y, target_pos_.x);
+    output_pitch_ = std::atan2(temp_z, std::sqrt(std::pow(target_pos_.x, 2) + std::pow(target_pos_.y, 2)));
+    target_rho = std::sqrt(std::pow(target_pos_.x, 2) + std::pow(target_pos_.y, 2));
+    double fly_time =
+        (-std::log(1 - target_rho * resistance_coff_ / bullet_speed_ * std::cos(output_pitch_))) / resistance_coff_;
+    double real_z = (bullet_speed_ * std::sin(output_pitch_) + (config_.g / resistance_coff_))
+        * (1 - std::exp(-resistance_coff_ * fly_time)) / resistance_coff_ - config_.g * fly_time / resistance_coff_;
 
-    if (count >= 20 || std::isnan(error)) {
-      if (solve_success_) {
-        angle_result_[0] = angle_init_[0];
-        angle_result_[1] = -angle_init_[1];
-        solve_success_ = false;
-      }
-      return false;
-    }
+    target_pos_.x = pos.x + vel.x * (config_.delay + fly_time);
+    target_pos_.y = pos.y + vel.y * (config_.delay + fly_time);
+    target_pos_.z = pos.z + vel.z * (config_.delay + fly_time);
+
+    double target_yaw = std::atan2(target_pos_.y, target_pos_.x);
+    double error_theta = target_yaw - output_yaw_;
+    double error_z = target_pos_.z - real_z;
+    temp_z += error_z;
+    error = std::sqrt(std::pow(error_theta * target_rho, 2) + std::pow(error_z, 2));
     count++;
-  }
-  solve_success_ = true;
-  angle_result_[0] = yaw_solved_;
-  angle_result_[1] = -pitch_solved_;
 
+    if (count >= 20 || std::isnan(error))
+      return false;
+  }
   return true;
 }
 
-double Bullet3DSolver::gimbalError(const DVec<double> &angle, double target_position_x,
-                                   double target_position_y, double target_position_z,
-                                   double target_speed_x, double target_speed_y,
-                                   double target_speed_z, double bullet_speed) {
+void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped &map2pitch, const ros::Time &time) {
+  double roll{}, pitch{}, yaw{};
+  quatToRPY(map2pitch.transform.rotation, roll, pitch, yaw);
+  geometry_msgs::Point point_desire{}, point_real{};
+  double target_rho = std::sqrt(std::pow(target_pos_.x, 2) + std::pow(target_pos_.y, 2));
+  int point_num = int(target_rho * 20);
+  for (int i = 0; i <= point_num; i++) {
+    double rt_bullet_rho = target_rho * i / point_num;
+    double fly_time =
+        (-std::log(1 - rt_bullet_rho * resistance_coff_ / bullet_speed_ * std::cos(output_pitch_))) / resistance_coff_;
+    double rt_bullet_z = (bullet_speed_ * std::sin(output_pitch_) + (config_.g / resistance_coff_))
+        * (1 - std::exp(-resistance_coff_ * fly_time)) / resistance_coff_ - config_.g * fly_time / resistance_coff_;
+    point_desire.x = rt_bullet_rho * std::cos(output_yaw_) + map2pitch.transform.translation.x;
+    point_desire.y = rt_bullet_rho * std::sin(output_yaw_) + map2pitch.transform.translation.y;
+    point_desire.z = rt_bullet_z + map2pitch.transform.translation.z;
+    marker_desire_.points.push_back(point_desire);
+  }
+  for (int i = 0; i <= point_num; i++) {
+    double rt_bullet_rho = target_rho * i / point_num;
+    double fly_time =
+        (-std::log(1 - rt_bullet_rho * resistance_coff_ / bullet_speed_ * std::cos(-pitch))) / resistance_coff_;
+    double rt_bullet_z = (bullet_speed_ * std::sin(-pitch) + (config_.g / resistance_coff_))
+        * (1 - std::exp(-resistance_coff_ * fly_time)) / resistance_coff_ - config_.g * fly_time / resistance_coff_;
+    point_real.x = rt_bullet_rho * std::cos(yaw) + map2pitch.transform.translation.x;
+    point_real.y = rt_bullet_rho * std::sin(yaw) + map2pitch.transform.translation.y;
+    point_real.z = rt_bullet_z + map2pitch.transform.translation.z;
+    marker_real_.points.push_back(point_real);
+  }
+  marker_desire_.header.stamp = time;
+  if (path_desire_pub_->trylock()) {
+    path_desire_pub_->msg_ = marker_desire_;
+    path_desire_pub_->unlockAndPublish();
+  }
+  marker_real_.header.stamp = time;
+  if (path_real_pub_->trylock()) {
+    path_real_pub_->msg_ = marker_real_;
+    path_real_pub_->unlockAndPublish();
+  }
+}
+
+double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vector3 vel,
+                                    double yaw_real, double pitch_real, double bullet_speed) {
   config_ = *config_rt_buffer_.readFromRT();
-  setResistanceCoefficient(bullet_speed, config_);
-  pos_[0] = target_position_x;
-  pos_[1] = target_position_y;
-  pos_[2] = target_position_z;
-  vel_[0] = target_speed_x;
-  vel_[1] = target_speed_y;
-  vel_[2] = target_speed_z;
-
-  this->setBulletSpeed(bullet_speed);
-  setTarget(pos_, vel_);
-  double error_polar[2]{};
-  double error = computeError(angle[0], angle[1], error_polar);
-
+  double resistance_coff = getResistanceCoefficient(bullet_speed);
+  double fly_time = (-std::log(1 - std::sqrt(std::pow(pos.x, 2) + std::pow(pos.y, 2))
+      * resistance_coff / bullet_speed * std::cos(pitch_real))) / resistance_coff;
+  double last_fly_time{}, target_rho{};
+  int count{};
+  geometry_msgs::Point target_pos{};
+  while (std::abs(fly_time - last_fly_time) > 0.01) {
+    last_fly_time = fly_time;
+    target_pos.x = pos.x + vel.x * (config_.delay + fly_time);
+    target_pos.y = pos.y + vel.y * (config_.delay + fly_time);
+    target_pos.z = pos.z + vel.z * (config_.delay + fly_time);
+    target_rho = std::sqrt(std::pow(target_pos.x, 2) + std::pow(target_pos.y, 2));
+    fly_time = (-std::log(1 - target_rho * resistance_coff / bullet_speed * std::cos(pitch_real))) / resistance_coff;
+    count++;
+    if (count >= 20 || std::isnan(fly_time))
+      return 999;
+  }
+  double real_z = (bullet_speed * std::sin(pitch_real) + (config_.g / resistance_coff))
+      * (1 - std::exp(-resistance_coff * fly_time)) / resistance_coff - config_.g * fly_time / resistance_coff;
+  double target_yaw = std::atan2(target_pos.y, target_pos.x);
+  double error = std::sqrt(std::pow(target_rho * (std::cos(target_yaw) - std::cos(yaw_real)), 2)
+                               + std::pow(target_rho * (std::sin(target_yaw) - std::sin(yaw_real)), 2)
+                               + std::pow(target_pos.z - real_z, 2));
   return error;
 }
 
-std::vector<Vec3<double>> Bullet3DSolver::getPointData3D(double yaw, double pitch) {
-  double target_x = this->target_x_;
-  double target_y = this->target_y_;
-  double target_rho = std::sqrt(std::pow(target_x, 2) + std::pow(target_y, 2));
-  double target_v_rho = std::cos(yaw) * this->target_dx_ + std::sin(yaw) * this->target_dy_;
-  double bullet_v_rho = this->bullet_speed_ * std::cos(pitch) - target_v_rho;
-  double bullet_v_z = this->bullet_speed_ * std::sin(pitch) - this->target_dz_;
-  Vec3<double> point_data{};
-  std::vector<Vec3<double>> model_data{};
-  point_num_ = int(target_rho * 20);
-  for (int i = 0; i <= point_num_; i++) {
-    double rt_bullet_rho = target_rho * i / point_num_;
-    double fly_time = (-std::log(1 - rt_bullet_rho * resistance_coff_ / bullet_v_rho)) / resistance_coff_;
-    double rt_bullet_z =
-        (bullet_v_z + (config_.g / resistance_coff_)) * (1 - std::exp(-resistance_coff_ * fly_time))
-            / resistance_coff_ - config_.g * fly_time / resistance_coff_;
-    point_data[0] = rt_bullet_rho * std::cos(yaw);
-    point_data[1] = rt_bullet_rho * std::sin(yaw);
-    point_data[2] = rt_bullet_z;
-    model_data.push_back(point_data);
+void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig &config, uint32_t) {
+  ROS_INFO("[Bullet Solver] Dynamic params change");
+  if (!dynamic_reconfig_initialized_) {
+    Config init_config = *config_rt_buffer_.readFromNonRT(); // config init use yaml
+    config.resistance_coff_qd_10 = init_config.resistance_coff_qd_10;
+    config.resistance_coff_qd_15 = init_config.resistance_coff_qd_15;
+    config.resistance_coff_qd_16 = init_config.resistance_coff_qd_16;
+    config.resistance_coff_qd_18 = init_config.resistance_coff_qd_18;
+    config.resistance_coff_qd_30 = init_config.resistance_coff_qd_30;
+    config.g = init_config.g;
+    config.delay = init_config.delay;
+    config.dt = init_config.dt;
+    config.timeout = init_config.timeout;
+    dynamic_reconfig_initialized_ = true;
   }
-  return model_data;
-}
-
-void Bullet3DSolver::modelPub(double x_offset, double y_offset, double z_offset) {
-  geometry_msgs::Point point;
-
-  visualization_msgs::Marker marker_desire;
-  marker_desire.header.frame_id = "map";
-  marker_desire.header.stamp = ros::Time::now();
-  marker_desire.ns = "model";
-  marker_desire.action = visualization_msgs::Marker::ADD;
-  marker_desire.type = visualization_msgs::Marker::POINTS;
-  marker_desire.scale.x = 0.02;
-  marker_desire.scale.y = 0.02;
-  marker_desire.color.r = 1.0;
-  marker_desire.color.g = 0.0;
-  marker_desire.color.b = 0.0;
-  marker_desire.color.a = 1.0;
-  for (int i = 0; i < point_num_; i++) {
-    point.x = model_data_solve_[i][0] + x_offset;
-    point.y = model_data_solve_[i][1] + y_offset;
-    point.z = model_data_solve_[i][2] + z_offset;
-    marker_desire.points.push_back(point);
-  }
-  if (this->path_desire_pub_->trylock()) {
-    this->path_desire_pub_->msg_ = marker_desire;
-    this->path_desire_pub_->unlockAndPublish();
-  }
-
-  visualization_msgs::Marker marker_current;
-  marker_current.header.frame_id = "map";
-  marker_current.header.stamp = ros::Time::now();
-  marker_current.ns = "model";
-  marker_current.action = visualization_msgs::Marker::ADD;
-  marker_current.type = visualization_msgs::Marker::POINTS;
-  marker_current.scale.x = 0.02;
-  marker_current.scale.y = 0.02;
-  marker_current.color.r = 0.0;
-  marker_current.color.g = 1.0;
-  marker_current.color.b = 0.0;
-  marker_current.color.a = 1.0;
-  for (int i = 0; i < point_num_; i++) {
-    point.x = model_data_current_[i][0] + x_offset;
-    point.y = model_data_current_[i][1] + y_offset;
-    point.z = model_data_current_[i][2] + z_offset;
-    marker_current.points.push_back(point);
-  }
-  if (this->path_current_pub_->trylock()) {
-    this->path_current_pub_->msg_ = marker_current;
-    this->path_current_pub_->unlockAndPublish();
-  }
-}
-
-Vec2<double> Bullet3DSolver::getResult(const ros::Time &time, const geometry_msgs::TransformStamped &map2pitch) {
-  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
-    model_data_solve_ = getPointData3D(yaw_solved_, pitch_solved_);
-    model_data_current_ = getPointData3D(angle_init_[0], angle_init_[1]);
-    modelPub(map2pitch.transform.translation.x, map2pitch.transform.translation.y, map2pitch.transform.translation.z);
-    last_publish_time_ = time;
-  }
-
-  return angle_result_;
-}
-
-///////////////////////////Iter3DSolver/////////////////////////////
-double Iter3DSolver::computeError(double yaw, double pitch, double *error) {
-  double rt_target_x = this->target_x_;
-  double rt_target_y = this->target_y_;
-  double rt_target_rho =
-      std::sqrt(std::pow(rt_target_x, 2) + std::pow(rt_target_y, 2));
-  double rt_bullet_rho{}, rt_bullet_z{};
-
-  double bullet_v_rho = this->bullet_speed_ * std::cos(pitch);
-  double bullet_v_z = this->bullet_speed_ * std::sin(pitch);
-
-  this->fly_time_ = 0;
-  while (rt_bullet_rho <= rt_target_rho) {
-    this->fly_time_ += config_.dt;
-
-    rt_bullet_rho = (1 / resistance_coff_) * bullet_v_rho
-        * (1 - std::exp(-this->fly_time_ * resistance_coff_));
-
-    rt_target_x += this->target_dx_ * config_.dt;
-    rt_target_y += this->target_dy_ * config_.dt;
-    rt_target_rho =
-        std::sqrt(std::pow(rt_target_x, 2) + std::pow(rt_target_y, 2));
-
-    //avoid keep looping cause by null solution
-    if (this->fly_time_ > config_.timeout)
-      return 999999.;
-  }
-
-  double rt_target_theta = std::atan2(rt_target_y, rt_target_x);
-  double rt_target_z = this->target_z_ + this->target_dz_ * this->fly_time_;
-  double rt_bullet_theta = yaw;
-  rt_bullet_z = (1 / resistance_coff_)
-      * (bullet_v_z + config_.g / resistance_coff_)
-      * (1 - std::exp(-this->fly_time_ * resistance_coff_))
-      - this->fly_time_ * config_.g / resistance_coff_;
-  error[0] = rt_target_theta - rt_bullet_theta;
-  error[1] = rt_target_z - rt_bullet_z;
-
-  return std::sqrt(std::pow(error[0] * rt_bullet_rho, 2) + std::pow(error[1], 2));
-}
-
-double Approx3DSolver::computeError(double yaw, double pitch, double *error) {
-  double rt_target_x = this->target_x_;
-  double rt_target_y = this->target_y_;
-  double rt_target_rho = std::sqrt(std::pow(rt_target_x, 2) + std::pow(rt_target_y, 2));
-  double bullet_v_rho = this->bullet_speed_ * std::cos(pitch);
-  double bullet_v_z = this->bullet_speed_ * std::sin(pitch);
-
-  this->fly_time_ = (-std::log(1 - rt_target_rho * resistance_coff_ / bullet_v_rho)) / resistance_coff_;
-
-  if (std::isnan(this->fly_time_)) {
-    this->fly_time_ = 0.0;
-    return 999999.;
-  }
-
-  double rt_bullet_z =
-      (bullet_v_z + (config_.g / resistance_coff_)) * (1 - std::exp(-resistance_coff_ * this->fly_time_))
-          / resistance_coff_ - config_.g * this->fly_time_ / resistance_coff_;
-  double rt_target_theta = std::atan2(this->target_y_, this->target_x_);
-  error[0] = rt_target_theta - yaw;
-  error[1] = this->target_z_ - rt_bullet_z;
-
-  return std::sqrt(std::pow(error[0] * rt_target_rho, 2) + std::pow(error[1], 2));
+  Config config_non_rt{
+      .resistance_coff_qd_10=config.resistance_coff_qd_10,
+      .resistance_coff_qd_15=config.resistance_coff_qd_15,
+      .resistance_coff_qd_16=config.resistance_coff_qd_16,
+      .resistance_coff_qd_18=config.resistance_coff_qd_18,
+      .resistance_coff_qd_30=config.resistance_coff_qd_30,
+      .g = config.g,
+      .delay = config.delay,
+      .dt=config.dt,
+      .timeout  =config.timeout
+  };
+  config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 }

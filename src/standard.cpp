@@ -58,7 +58,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
       cb = [this](auto &&PH1, auto &&PH2) { reconfigCB(PH1, PH2); };
   d_srv_->setCallback(cb);
 
-  bullet_solver_ = new bullet_solver::Approx3DSolver(nh_bullet_solver);
+  bullet_solver_ = new bullet_solver::BulletSolver(nh_bullet_solver);
 
   return true;
 }
@@ -116,15 +116,10 @@ void Controller::track(const ros::Time &time) {
     ROS_INFO("[Gimbal] Enter TRACK");
   }
   bool solve_success = false;
-  Vec2<double> angle_init_solve{}, angle_init_compute{};
-
-  if (last_solve_success_) {
-    double roll, pitch, yaw;
-    quatToRPY(map2pitch_.transform.rotation, roll, pitch, yaw);
-    angle_init_solve[0] = yaw;
-    angle_init_solve[1] = -pitch;
-    angle_init_compute = angle_init_solve;
-  }
+  double yaw_compute{}, pitch_compute{};
+  double roll_real{}, pitch_real{}, yaw_real{};
+  if (last_solve_success_)
+    quatToRPY(map2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
 
   int target_id = cmd_gimbal_.target_id;
   if (moving_average_filters_track_.find(target_id) != moving_average_filters_track_.end()) {
@@ -140,61 +135,42 @@ void Controller::track(const ros::Time &time) {
       target_pos_compute.y = detection_pos_observation_.find(target_id)->second.y;
       target_pos_compute.z = center_pos_observation_.find(target_id)->second.z;
       target_vel_compute.y = gyro_vel_.find(target_id)->second;
-      angle_init_compute[0] = 0;
+      pitch_compute = pitch_real;
     } else {
       target_pos_solve.x = detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
       target_pos_solve.y = detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
       target_pos_solve.z = detection_pos_.find(target_id)->second.z - map2pitch_.transform.translation.z;
-      target_vel_solve = detection_vel_.find(target_id)->second;
+      target_vel_solve.x = detection_vel_.find(target_id)->second.x - chassis_vel_.linear.x;
+      target_vel_solve.y = detection_vel_.find(target_id)->second.y - chassis_vel_.linear.y;
 
       target_pos_compute = target_pos_solve;
       target_vel_compute = target_vel_solve;
     }
 
-    solve_success = bullet_solver_->solve(
-        angle_init_solve,
-        target_pos_solve.x,
-        target_pos_solve.y,
-        target_pos_solve.z,
-        target_vel_solve.x - chassis_vel_.linear.x,
-        target_vel_solve.y - chassis_vel_.linear.y,
-        0,
-        cmd_gimbal_.bullet_speed);
+    solve_success = bullet_solver_->solve(target_pos_solve, target_vel_solve, cmd_gimbal_.bullet_speed);
 
     if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time) {
       if (error_pub_->trylock()) {
         double error, error_delta;
-        error = bullet_solver_->gimbalError(
-            angle_init_compute,
-            target_pos_compute.x,
-            target_pos_compute.y,
-            target_pos_compute.z,
-            target_vel_compute.x - chassis_vel_.linear.x,
-            target_vel_compute.y - chassis_vel_.linear.y,
-            0,
-            cmd_gimbal_.bullet_speed);
-        error_delta = bullet_solver_->gimbalError(
-            angle_init_compute,
-            target_pos_compute.x,
-            target_pos_compute.y + moving_average_filters_track_.find(target_id)->second->getDelta(),
-            target_pos_compute.z,
-            target_vel_compute.x - chassis_vel_.linear.x,
-            target_vel_compute.y - chassis_vel_.linear.y,
-            0,
-            cmd_gimbal_.bullet_speed);
+        error = bullet_solver_->getGimbalError(
+            target_pos_compute, target_vel_compute, yaw_compute, pitch_compute, cmd_gimbal_.bullet_speed);
+        target_pos_compute.y += moving_average_filters_track_.find(target_id)->second->getDelta();
+        error_delta = bullet_solver_->getGimbalError(
+            target_pos_compute, target_vel_compute, yaw_compute, pitch_compute, cmd_gimbal_.bullet_speed);
         error = error < error_delta ? error : error_delta;
 
         error_pub_->msg_.stamp = time;
         error_pub_->msg_.error = solve_success ? error : 1.0;
         error_pub_->unlockAndPublish();
       }
+      bullet_solver_->bulletModelPub(map2pitch_, time);
       last_publish_time_ = time;
     }
   }
   if (solve_success)
-    setDes(time, bullet_solver_->getResult(time, map2pitch_)[0], bullet_solver_->getResult(time, map2pitch_)[1]);
+    setDes(time, bullet_solver_->getYaw(), bullet_solver_->getPitch());
   else
-    setDes(time, angle_init_solve[0], -angle_init_solve[1]);
+    setDes(time, yaw_real, pitch_real);
   last_solve_success_ = solve_success;
 }
 
