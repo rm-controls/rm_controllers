@@ -136,10 +136,13 @@ void ChassisBase::follow(const ros::Time &time, const ros::Duration &period) {
     recovery();
     pid_follow_.reset();
   }
-  tfVelToBase("yaw");
+
+  follow_source_frame_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_.follow_source_frame;
+
+  tfVelToBase(follow_source_frame_);
   try {
     double roll{}, pitch{}, yaw{};
-    quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", ros::Time(0)).transform.rotation,
+    quatToRPY(robot_state_handle_.lookupTransform("base_link", follow_source_frame_, ros::Time(0)).transform.rotation,
               roll, pitch, yaw);
     double follow_error = angles::shortest_angular_distance(yaw, 0);
     pid_follow_.computeCommand(-follow_error, period);
