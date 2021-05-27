@@ -69,7 +69,6 @@ class Controller
   void push(const ros::Time &time, const ros::Duration &period);
   void stop(const ros::Time &time, const ros::Duration &period);
   void block(const ros::Time &time, const ros::Duration &period);
-  void moveJointFriction(const ros::Time &time, const ros::Duration &period);
   void moveJoint(const ros::Time &time, const ros::Duration &period);
   void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
   void reconfigCB(rm_shooter_controllers::ShooterConfig &config, uint32_t /*level*/);

@@ -61,12 +61,10 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   ros::NodeHandle nh_trigger = ros::NodeHandle(controller_nh, "trigger");
   ros::NodeHandle nh_cover = ros::NodeHandle(controller_nh, "cover");
 
-  if (!ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) ||
+  return !(!ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) ||
       !ctrl_friction_r_.init(effort_joint_interface_, nh_friction_r) ||
       !ctrl_trigger_.init(effort_joint_interface_, nh_trigger) ||
-      !ctrl_cover_.init(effort_joint_interface_, nh_cover))
-    return false;
-  return true;
+      !ctrl_cover_.init(effort_joint_interface_, nh_cover));
 }
 
 void Controller::update(const ros::Time &time, const ros::Duration &period) {
@@ -75,7 +73,7 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
   block_->block_config_ = *block_->block_config_rt_buffer_.readFromRT();
 
   if (state_ != cmd_.mode && state_ != BLOCK) {
-    if (state_ == PASSIVE || state_ == STOP)
+    if (state_ == PASSIVE || state_ == STOP || state_ == PUSH)
       calibrate_trigger_pos_ = true;
     state_ = State(cmd_.mode);
     state_changed_ = true;
@@ -112,13 +110,13 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
 
   if (state_ == PASSIVE) {
     passive();
-  } else if (state_ == STOP)
-    stop(time, period);
-  else {
+  } else {
     if (state_ == READY)
       ready(period);
     else if (state_ == PUSH)
       push(time, period);
+    else if (state_ == STOP)
+      stop(time, period);
     else if (state_ == BLOCK)
       block(time, period);
     moveJoint(time, period);
@@ -129,8 +127,10 @@ void Controller::calibrate() {
   if (calibrate_trigger_pos_) {
     double normalize_trigger_pos = fmod(ctrl_trigger_.joint_.getPosition(), 6.28);
     double calibrate_angle = fmod(normalize_trigger_pos, config_.push_angle);
-    if (calibrate_angle > 0)
+    if (calibrate_angle > config_.push_angle / 2)
       calibrate_angle = calibrate_angle - config_.push_angle;
+    else if (calibrate_angle <= -config_.push_angle / 2)
+      calibrate_angle = calibrate_angle + config_.push_angle;
     trigger_q_des_ = ctrl_trigger_.joint_.getPosition() - calibrate_angle;
     calibrate_trigger_pos_ = false;
   }
@@ -196,10 +196,7 @@ void Controller::stop(const ros::Time &time, const ros::Duration &period) {
     ROS_INFO("[Shooter] Enter STOP");
   }
   friction_qd_des_ = 0.0;
-  moveJointFriction(time, period);
   ctrl_trigger_.joint_.setCommand(0);
-  ctrl_cover_.setCommand(cover_q_des_);
-  ctrl_cover_.update(time, period);
 }
 
 void Controller::block(const ros::Time &time, const ros::Duration &period) {
@@ -219,20 +216,17 @@ void Controller::block(const ros::Time &time, const ros::Duration &period) {
   }
 }
 
-void Controller::moveJointFriction(const ros::Time &time, const ros::Duration &period) {
+void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
+  if (state_ != STOP) {
+    ctrl_trigger_.setCommand(trigger_q_des_);
+    ctrl_trigger_.update(time, period);
+  }
   ctrl_friction_l_.setCommand(friction_qd_des_);
   ctrl_friction_r_.setCommand(-friction_qd_des_);
+  ctrl_cover_.setCommand(cover_q_des_);
 
   ctrl_friction_l_.update(time, period);
   ctrl_friction_r_.update(time, period);
-}
-
-void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
-  moveJointFriction(time, period);
-  ctrl_trigger_.setCommand(trigger_q_des_);
-  ctrl_cover_.setCommand(cover_q_des_);
-
-  ctrl_trigger_.update(time, period);
   ctrl_cover_.update(time, period);
 }
 
