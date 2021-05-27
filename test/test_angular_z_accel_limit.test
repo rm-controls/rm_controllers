@@ -2,7 +2,7 @@
     <!-- This test suit for standard and hero,not sentry-->
     <!-- Launch common-->
     <include file="$(find rm_chassis_controllers)/test/common.launch">
-        <arg name="type" value="standard"/>
+        <arg name="type" value="standard3"/>
     </include>
 
 

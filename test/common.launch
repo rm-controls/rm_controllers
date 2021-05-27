@@ -10,7 +10,7 @@
 
 
     <!-- Load common test stuff -->
-    <include file="$(find rm_chassis_controllers)/test/load_controllers.launch">
+    <include file="$(find rm_chassis_controllers)/test/load_controllers_test.launch">
         <arg name="robot_type" value="$(arg type)"/>
         <arg name="odom_tf" value="$(arg odom_tf)"/>
         <arg name="load_wrong_yaml" value="$(arg load_wrong_yaml)"/>

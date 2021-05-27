@@ -7,9 +7,9 @@
     </include>
 
     <!-- Controller test -->
-    <test test-name="timeout_test"
+    <test test-name="timeout_sentry_test"
           pkg="rm_chassis_controllers"
-          type="timeout_test"
+          type="timeout_sentry_test"
           time-limit="40.0">
     </test>
 </launch>

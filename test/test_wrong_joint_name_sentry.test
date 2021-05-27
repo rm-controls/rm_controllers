@@ -7,9 +7,9 @@
     </include>
 
     <!-- Controller test -->
-    <test test-name="wrong_joint_name_test"
+    <test test-name="wrong_joint_name_sentry_test"
           pkg="rm_chassis_controllers"
-          type="wrong_joint_name_test"
+          type="wrong_joint_name_sentry_test"
           time-limit="40.0">
     </test>
 </launch>

@@ -1,7 +1,7 @@
 <launch>
     <!-- This test suit for standard,hero,sentry-->
     <include file="$(find rm_chassis_controllers)/test/common.launch">
-        <arg name="type" value="standard"/>
+        <arg name="type" value="standard3"/>
     </include>
 
     <!-- Controller test -->

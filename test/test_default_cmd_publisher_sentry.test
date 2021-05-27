@@ -7,9 +7,9 @@
     </include>
 
     <!-- Controller test -->
-    <test test-name="default_cmd_publisher_test"
+    <test test-name="default_cmd_publisher_sentry_test"
           pkg="rm_chassis_controllers"
-          type="default_cmd_publisher_test"
+          type="default_cmd_publisher_sentry_test"
           time-limit="40.0">
     </test>
 

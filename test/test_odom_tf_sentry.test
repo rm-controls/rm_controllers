@@ -8,9 +8,9 @@
     </include>
 
     <!-- Controller test -->
-    <test test-name="odom_tf_test"
+    <test test-name="odom_tf_sentry_test"
           pkg="rm_chassis_controllers"
-          type="odom_tf_test"
+          type="odom_tf_sentry_test"
           time-limit="40.0">
     </test>
 </launch>
