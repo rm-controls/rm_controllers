@@ -7,7 +7,7 @@
     <node name="controller_spawner" pkg="controller_manager" type="spawner"
           respawn="false" output="screen"
           args="
-          controllers/trigger_calibration_controller
+          controllers/mast_calibration_controller
 "/>
 
 </launch>

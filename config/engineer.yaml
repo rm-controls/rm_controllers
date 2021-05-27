@@ -1,0 +1,8 @@
+controllers:
+  mast_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: mast_joint
+    actuator: mast_joint_motor
+    search_velocity: 0.5
+    threshold: 1e-3
+    pid: { p: 1.0, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
