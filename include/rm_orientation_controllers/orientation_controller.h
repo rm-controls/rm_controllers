@@ -36,6 +36,7 @@ class Controller :
   std::string frame_fixed_;
   std::string frame_source_;
   std::string frame_target_;
+  double last_orientation_x, last_orientation_y;
 
   std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::Imu> > imu_pub_;
 };

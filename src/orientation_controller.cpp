@@ -30,10 +30,17 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   source2target_msg_.header.frame_id = frame_source_;
   source2target_msg_.child_frame_id = frame_target_;
   source2target_msg_.transform.rotation.w = 1.0;
+  last_orientation_x = 0.0;
+  last_orientation_y = 0.0;
   return true;
 }
 
 void Controller::update(const ros::Time &time, const ros::Duration &period) {
+  if(imu_sensor_.getOrientation()[0] == last_orientation_x && imu_sensor_.getOrientation()[1] == last_orientation_y ){
+    return;
+  }
+  last_orientation_x = imu_sensor_.getOrientation()[0];
+  last_orientation_y = imu_sensor_.getOrientation()[1];
   source2target_msg_.header.stamp = time;
   source2target_msg_.header.stamp.nsec += 1;  // Avoid redundant timestamp
   tf2::Transform source2odom, odom2fixed, fixed2target;
