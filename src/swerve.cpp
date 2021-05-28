@@ -49,9 +49,9 @@ bool SwerveController::init(hardware_interface::RobotHW *robot_hw,
 // Ref: https://dominik.win/blog/programming-swerve-drive/
 
 void SwerveController::moveJoint(const ros::Time &time, const ros::Duration &period) {
-  Vec2<double> vel_center(vel_tfed_.vector.x, vel_tfed_.vector.y);
+  Vec2<double> vel_center(ramp_x->output(), ramp_y->output());
   for (auto &module:modules_) {
-    Vec2<double> vel = vel_center + vel_tfed_.vector.z * Vec2<double>(-module.position_.y(), module.position_.x());
+    Vec2<double> vel = vel_center + ramp_w->output() * Vec2<double>(-module.position_.y(), module.position_.x());
     double vel_angle = std::atan2(vel.y(), vel.x()) + module.pivot_offset_;
     // Direction flipping and Stray module mitigation
     double a = angles::shortest_angular_distance(module.ctrl_pivot_->joint_.getPosition(), vel_angle);
@@ -66,9 +66,9 @@ void SwerveController::moveJoint(const ros::Time &time, const ros::Duration &per
 
 geometry_msgs::Twist SwerveController::forwardKinematics() {
   geometry_msgs::Twist vel;
-  vel.linear.x = vel_tfed_.vector.x;
-  vel.linear.y = vel_tfed_.vector.y;
-  vel.angular.z = vel_tfed_.vector.z;
+  vel.linear.x = vel_tfed_.x;
+  vel.linear.y = vel_tfed_.y;
+  vel.angular.z = vel_tfed_.z;
   return vel;
 }
 

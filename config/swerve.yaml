@@ -18,19 +18,19 @@ controllers:
 
     modules:
       left_front:
-        position: [ 0.190, 0.179 ]
+        position: [ 0.175, 0.175 ]
         pivot:
           joint: left_front_pivot_joint
           <<: &pivot_setting
             offset: 0.
-            pid: { p: 15, i: 0, d: 0.07, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+            pid: { p: 5, i: 0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
         wheel:
           joint: left_front_wheel_joint
           <<: &wheel_setting
             radius: 0.055
-            pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+            pid: { p: 0.4, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
       right_front:
-        position: [ 0.190, -0.179 ]
+        position: [ 0.175, -0.175 ]
         pivot:
           joint: right_front_pivot_joint
           <<: *pivot_setting
@@ -38,7 +38,7 @@ controllers:
           joint: right_front_wheel_joint
           <<: *wheel_setting
       left_back:
-        position: [ -0.190, 0.179 ]
+        position: [ -0.175, 0.175 ]
         pivot:
           joint: left_back_pivot_joint
           <<: *pivot_setting
@@ -46,7 +46,7 @@ controllers:
           joint: left_back_wheel_joint
           <<: *wheel_setting
       right_back:
-        position: [ -0.190, -0.179 ]
+        position: [ -0.175, -0.175 ]
         pivot:
           joint: right_back_pivot_joint
           <<: *pivot_setting
