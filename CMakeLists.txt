@@ -85,6 +85,7 @@ add_library(${PROJECT_NAME}
         src/mecanum.cpp
         src/sentry.cpp
         src/balance.cpp
+        src/swerve.cpp
         )
 
 ## Specify libraries to link executable targets against

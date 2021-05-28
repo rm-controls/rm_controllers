@@ -12,14 +12,14 @@ namespace rm_chassis_controllers {
 bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
                        ros::NodeHandle &root_nh,
                        ros::NodeHandle &controller_nh) {
-  if (!controller_nh.getParam("wheel_radius", wheel_radius_) ||
-      !controller_nh.getParam("publish_rate", publish_rate_) ||
+  if (!controller_nh.getParam("publish_rate", publish_rate_) ||
       !controller_nh.getParam("power/coeff", power_coeff_) ||
       !controller_nh.getParam("power/min_vel", power_min_vel_) ||
       !controller_nh.getParam("timeout", timeout_)) {
     ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.02);
   wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
   wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
@@ -76,16 +76,14 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
 
 void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
   rm_msgs::ChassisCmd cmd_chassis_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_;
+  geometry_msgs::Twist cmd_vel = cmd_rt_buffer_.readFromRT()->cmd_vel_;
 
   if ((time - cmd_rt_buffer_.readFromRT()->stamp_).toSec() > timeout_) {
-    vel_cmd_.vector.x = 0.;
-    vel_cmd_.vector.y = 0.;
-    vel_cmd_.vector.z = 0.;
+    vel_cmd_.x = 0.;
+    vel_cmd_.y = 0.;
   } else {
-    geometry_msgs::Twist vel_cmd = cmd_rt_buffer_.readFromRT()->cmd_vel_;
-    vel_cmd_.vector.x = vel_cmd.linear.x;
-    vel_cmd_.vector.y = vel_cmd.linear.y;
-    vel_cmd_.vector.z = vel_cmd.angular.z;
+    vel_cmd_.x = cmd_vel.linear.x;
+    vel_cmd_.y = cmd_vel.linear.y;
   }
 
   if (state_ != cmd_chassis_.mode) {
@@ -110,9 +108,9 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
     ramp_x->setAcc(cmd_chassis_.accel.linear.x);
     ramp_y->setAcc(cmd_chassis_.accel.linear.y);
     ramp_w->setAcc(cmd_chassis_.accel.angular.z);
-    ramp_x->input(vel_tfed_.vector.x);
-    ramp_y->input(vel_tfed_.vector.y);
-    ramp_w->input(vel_tfed_.vector.z);
+    ramp_x->input(vel_tfed_.x);
+    ramp_y->input(vel_tfed_.y);
+    ramp_w->input(cmd_vel.angular.z);
     moveJoint(time, period);
     powerLimit();
   }
@@ -149,7 +147,7 @@ void ChassisBase::follow(const ros::Time &time, const ros::Duration &period) {
               roll, pitch, yaw);
     double follow_error = angles::shortest_angular_distance(yaw, 0);
     pid_follow_.computeCommand(-follow_error, period);
-    vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
+    vel_tfed_.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }
@@ -180,7 +178,7 @@ void ChassisBase::twist(const ros::Time &time, const ros::Duration &period) {
         angles::shortest_angular_distance(yaw, twist_angular_ * sin(2 * M_PI * time.toSec()) + off_set);
 
     pid_follow_.computeCommand(-follow_error, period);  //The actual output is opposite to the calculated value
-    vel_tfed_.vector.z = pid_follow_.getCurrentCmd();
+    vel_tfed_.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 }
