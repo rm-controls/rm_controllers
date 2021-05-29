@@ -1,8 +1,39 @@
 controllers:
-  mast_calibration_controller:
+#  mast_calibration_controller:
+#    type: rm_calibration_controllers/JointCalibrationController
+#    joint: mast_joint
+#    actuator: mast_joint_motor
+#    search_velocity: 0.5
+#    threshold: 1e-3
+#    pid: { p: 1.0, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
+
+  joint5_calibration_controller:
     type: rm_calibration_controllers/JointCalibrationController
-    joint: mast_joint
-    actuator: mast_joint_motor
-    search_velocity: 0.5
+    joint: joint5
+    actuator: joint5_motor
+    search_velocity: 0.7
     threshold: 1e-3
-    pid: { p: 1.0, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
+    pid: { p: 2, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
+
+  joint4_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: joint4
+    actuator: joint4_motor
+    search_velocity: -0.7
+    threshold: 1e-3
+    pid: { p: 3, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
+
+  joint3_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: joint3
+    actuator: joint3_motor
+    search_velocity: -1.5
+    threshold: 0.05
+    pid: { p: 5, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
+  joint2_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: joint2
+    actuator: joint2_left_motor
+    search_velocity: -1.5
+    threshold: 0.1
+    pid: { p: 5, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
