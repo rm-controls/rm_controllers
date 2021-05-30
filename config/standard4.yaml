@@ -23,7 +23,7 @@ controllers:
           joint: left_front_pivot_joint
           <<: &pivot_setting
             offset: 0.
-            pid: { p: 5, i: 0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
+            pid: { p: 2, i: 0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true, publish_state: true }
         wheel:
           joint: left_front_wheel_joint
           <<: &wheel_setting
