@@ -5,9 +5,9 @@
     </include>
 
     <!-- Controller test -->
-    <test test-name="linear_y_accel_limit_test"
+    <test test-name="linear_x_accel_limit_mecanum_test"
           pkg="rm_chassis_controllers"
-          type="linear_y_accel_limit_test"
+          type="linear_x_accel_limit_mecanum_test"
           time-limit="40.0">
     </test>
 

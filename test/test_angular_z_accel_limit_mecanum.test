@@ -7,9 +7,9 @@
 
 
     <!-- Controller test -->
-    <test test-name="angular_z_accel_limit_test"
+    <test test-name="angular_z_accel_limit_mecanum_test"
           pkg="rm_chassis_controllers"
-          type="angular_z_accel_limit_test"
+          type="angular_z_accel_limit_mecanum_test"
           time-limit="40.0">
     </test>
 

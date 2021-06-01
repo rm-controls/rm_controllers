@@ -5,9 +5,9 @@
 
 
   <!-- Controller test -->
-  <test test-name="standard_chassis_test"
+  <test test-name="mecanum_chassis_test"
         pkg="rm_chassis_controllers"
-        type="standard_chassis_test"
+        type="mecanum_chassis_test"
         time-limit="40.0">
   </test>
 </launch>

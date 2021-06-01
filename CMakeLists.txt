@@ -128,55 +128,55 @@ install(
 
 if (${CATKIN_ENABLE_TESTING})
     ## Add gtest based cpp test target and link libraries
-    add_rostest_gtest(standard_chassis_test
-            test/test_standard_chassis.test
+    add_rostest_gtest(mecanum_chassis_test
+            test/test_mecanum_chassis.test
             test/test_standard_chassis.cpp)
-    target_link_libraries(standard_chassis_test ${catkin_LIBRARIES})
+    target_link_libraries(mecanum_chassis_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(gyro_test
-            test/test_gyro.test
+    add_rostest_gtest(mecanum_gyro_test
+            test/test_mecanum_gyro.test
             test/test_gyro.cpp)
-    target_link_libraries(gyro_test ${catkin_LIBRARIES})
+    target_link_libraries(mecanum_gyro_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(default_cmd_publisher_test
-            test/test_default_cmd_publisher.test
+    add_rostest_gtest(default_cmd_publisher_mecanum_test
+            test/test_default_cmd_publisher_mecanum.test
             test/test_default_cmd_publisher.cpp)
-    target_link_libraries(default_cmd_publisher_test ${catkin_LIBRARIES})
+    target_link_libraries(default_cmd_publisher_mecanum_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(wrong_joint_name_test
-            test/test_wrong_joint_name.test
+    add_rostest_gtest(wrong_joint_name_mecanum_test
+            test/test_wrong_joint_name_mecanum.test
             test/test_wrong_joint_name.cpp)
-    target_link_libraries(wrong_joint_name_test ${catkin_LIBRARIES})
+    target_link_libraries(wrong_joint_name_mecanum_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(default_odom_frame_test
-            test/test_default_odom_frame.test
+    add_rostest_gtest(default_odom_frame_mecanum_test
+            test/test_default_odom_frame_mecanum.test
             test/test_default_odom_frame.cpp)
-    target_link_libraries(default_odom_frame_test ${catkin_LIBRARIES})
+    target_link_libraries(default_odom_frame_mecanum_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(odom_tf_test
-            test/test_odom_tf.test
+    add_rostest_gtest(odom_tf_mecanum_test
+            test/test_odom_tf_mecanum.test
             test/test_odom_tf.cpp)
-    target_link_libraries(odom_tf_test ${catkin_LIBRARIES})
+    target_link_libraries(odom_tf_mecanum_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(timeout_test
-            test/test_timeout.test
+    add_rostest_gtest(timeout_mecanum_test
+            test/test_timeout_mecanum.test
             test/test_timeout.cpp)
-    target_link_libraries(timeout_test ${catkin_LIBRARIES})
+    target_link_libraries(timeout_mecanum_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(linear_x_accel_limit_test
-            test/test_linear_x_accel_limit.test
+    add_rostest_gtest(linear_x_accel_limit_mecanum_test
+            test/test_linear_x_accel_limit_mecanum.test
             test/test_linear_x_accel_limit.cpp)
-    target_link_libraries(linear_x_accel_limit_test ${catkin_LIBRARIES})
+    target_link_libraries(linear_x_accel_limit_mecanum_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(linear_y_accel_limit_test
-            test/test_linear_y_accel_limit.test
+    add_rostest_gtest(linear_y_accel_limit_mecanum_test
+            test/test_linear_y_accel_limit_mecanum.test
             test/test_linear_y_accel_limit.cpp)
-    target_link_libraries(linear_y_accel_limit_test ${catkin_LIBRARIES})
+    target_link_libraries(linear_y_accel_limit_mecanum_test ${catkin_LIBRARIES})
 
-    add_rostest_gtest(angular_z_accel_limit_test
-            test/test_angular_z_accel_limit.test
+    add_rostest_gtest(angular_z_accel_limit_mecanum_test
+            test/test_angular_z_accel_limit_mecanum.test
             test/test_angular_z_accel_limit.cpp)
-    target_link_libraries(angular_z_accel_limit_test ${catkin_LIBRARIES})
+    target_link_libraries(angular_z_accel_limit_mecanum_test ${catkin_LIBRARIES})
 
 
     add_rostest_gtest(swerve_chassis_test

@@ -1,14 +1,13 @@
 <launch>
-    <!-- Launch common-->
     <include file="$(find rm_chassis_controllers)/test/common.launch">
         <arg name="type" value="standard3"/>
+        <arg name="load_wrong_yaml" value="true"/>
     </include>
 
     <!-- Controller test -->
-    <test test-name="linear_x_accel_limit_test"
+    <test test-name="wrong_joint_name_mecanum_test"
           pkg="rm_chassis_controllers"
-          type="linear_x_accel_limit_test"
+          type="wrong_joint_name_mecanum_test"
           time-limit="40.0">
     </test>
-
 </launch>
