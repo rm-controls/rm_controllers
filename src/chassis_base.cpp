@@ -75,19 +75,21 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
 }
 
 void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
-  rm_msgs::ChassisCmd cmd_chassis_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_;
+  rm_msgs::ChassisCmd cmd_chassis = cmd_rt_buffer_.readFromRT()->cmd_chassis_;
   geometry_msgs::Twist cmd_vel = cmd_rt_buffer_.readFromRT()->cmd_vel_;
 
   if ((time - cmd_rt_buffer_.readFromRT()->stamp_).toSec() > timeout_) {
     vel_cmd_.x = 0.;
     vel_cmd_.y = 0.;
+    vel_cmd_.z = 0.;
   } else {
     vel_cmd_.x = cmd_vel.linear.x;
     vel_cmd_.y = cmd_vel.linear.y;
+    vel_cmd_.z = cmd_vel.angular.z;
   }
 
-  if (state_ != cmd_chassis_.mode) {
-    state_ = State(cmd_chassis_.mode);
+  if (state_ != cmd_chassis.mode) {
+    state_ = State(cmd_chassis.mode);
     state_changed_ = true;
   }
 
@@ -105,12 +107,12 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
     else if (state_ == TWIST)
       twist(time, period);
 
-    ramp_x->setAcc(cmd_chassis_.accel.linear.x);
-    ramp_y->setAcc(cmd_chassis_.accel.linear.y);
-    ramp_w->setAcc(cmd_chassis_.accel.angular.z);
+    ramp_x->setAcc(cmd_chassis.accel.linear.x);
+    ramp_y->setAcc(cmd_chassis.accel.linear.y);
+    ramp_w->setAcc(cmd_chassis.accel.angular.z);
     ramp_x->input(vel_tfed_.x);
     ramp_y->input(vel_tfed_.y);
-    ramp_w->input(cmd_vel.angular.z);
+    ramp_w->input(vel_tfed_.z);
     moveJoint(time, period);
     powerLimit();
   }
