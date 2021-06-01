@@ -194,7 +194,10 @@ void Controller::direct(const ros::Time &time) {
 }
 
 void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
-  if (pitch <= upper_pitch_ && pitch >= lower_pitch_ && yaw <= upper_yaw_ && yaw >= lower_yaw_)
+  double roll_base{}, pitch_base{}, yaw_base{};
+  quatToRPY(map2base_.transform.rotation, roll_base, pitch_base, yaw_base);
+  if ((pitch - pitch_base) <= upper_pitch_ && (pitch - pitch_base) >= lower_pitch_ &&
+      (yaw - yaw_base) <= upper_yaw_ && (yaw - yaw_base) >= lower_yaw_)
     map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
   map2gimbal_des_.header.stamp = time;
   robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
