@@ -65,11 +65,25 @@ void SwerveController::moveJoint(const ros::Time &time, const ros::Duration &per
 }
 
 geometry_msgs::Twist SwerveController::forwardKinematics() {
-  geometry_msgs::Twist vel;
-  vel.linear.x = vel_tfed_.x;
-  vel.linear.y = vel_tfed_.y;
-  vel.angular.z = vel_tfed_.z;
-  return vel;
+  geometry_msgs::Twist vel_data{};
+  geometry_msgs::Twist vel_modules{};
+  for (auto &module:modules_) {
+    geometry_msgs::Twist vel;
+    vel.linear.x = module.ctrl_wheel_->joint_.getVelocity() * module.wheel_radius_
+        * std::cos(module.ctrl_pivot_->joint_.getPosition());
+    vel.linear.y = module.ctrl_wheel_->joint_.getVelocity() * module.wheel_radius_
+        * std::sin(module.ctrl_pivot_->joint_.getPosition());
+    vel.angular.z = module.ctrl_wheel_->joint_.getVelocity() * module.wheel_radius_
+        * std::cos(module.ctrl_pivot_->joint_.getPosition() - std::atan2(module.position_.x(), -module.position_.y()));
+    vel_modules.linear.x += vel.linear.x;
+    vel_modules.linear.y += vel.linear.y;
+    vel_modules.angular.z += vel.angular.z;
+  }
+  vel_data.linear.x = vel_modules.linear.x / modules_.size();
+  vel_data.linear.y = vel_modules.linear.y / modules_.size();
+  vel_data.angular.z = vel_modules.angular.z / modules_.size()
+      / std::sqrt(std::pow(modules_.begin()->position_.x(), 2) + std::pow(modules_.begin()->position_.y(), 2));
+  return vel_data;
 }
 
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::SwerveController, controller_interface::ControllerBase)
