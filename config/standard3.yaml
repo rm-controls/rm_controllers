@@ -30,8 +30,8 @@ controllers:
     wheel_base: 0.395
     wheel_track: 0.400
     power:
-      coeff: 0.77
-      min_vel: 6.3
+      coeff: 0.510
+      min_vel: 7.2
     twist_angular: 0.5233
     timeout: 0.1
     pid_follow: { p: 5, i: 0, d: 0.8, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
