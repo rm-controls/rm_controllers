@@ -1,14 +1,13 @@
 <launch>
-    <!-- Launch common-->
     <include file="$(find rm_chassis_controllers)/test/common.launch">
-        <arg name="type" value="standard3"/>
+        <arg name="type" value="standard4"/>
+        <arg name="disable_timeout" value="false"/>
     </include>
 
     <!-- Controller test -->
-    <test test-name="linear_x_accel_limit_test"
+    <test test-name="timeout_swerve_test"
           pkg="rm_chassis_controllers"
-          type="linear_x_accel_limit_test"
+          type="timeout_swerve_test"
           time-limit="40.0">
     </test>
-
 </launch>

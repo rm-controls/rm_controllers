@@ -1,14 +1,13 @@
 <launch>
-    <!-- This test suit for standard,hero,sentry-->
     <include file="$(find rm_chassis_controllers)/test/common.launch">
         <arg name="type" value="standard3"/>
-        <arg name="odom_tf" value="false"/>
+        <arg name="disable_timeout" value="false"/>
     </include>
 
     <!-- Controller test -->
-    <test test-name="default_odom_frame_test"
+    <test test-name="timeout_mecanum_test"
           pkg="rm_chassis_controllers"
-          type="default_odom_frame_test"
+          type="timeout_mecanum_test"
           time-limit="40.0">
     </test>
 </launch>

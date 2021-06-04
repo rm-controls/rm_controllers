@@ -57,7 +57,7 @@ TEST_F(StandardChassisTest, testAngularZDirectionAccelerationLimits) {
   new_base_link_pose = getPose();    //  from Gazebo
   new_base_link_twist = getTwist(); //  from Gazebo
 
-  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 1.0);
+  EXPECT_LT(fabs(new_odom.twist.twist.linear.x - old_odom.twist.twist.linear.x), 1.1);
   EXPECT_LT(fabs(new_odom.twist.twist.angular.z - old_odom.twist.twist.angular.z), VELOCITY_TOLERANCE);
   EXPECT_LT(fabs(new_odom.pose.pose.position.y - old_odom.pose.pose.position.y), POSITION_TOLERANCE);
 

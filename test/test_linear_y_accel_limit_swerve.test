@@ -1,14 +1,14 @@
 <launch>
-    <!-- This test suit for standard,hero,not sentry-->
+    <!-- Launch common-->
     <include file="$(find rm_chassis_controllers)/test/common.launch">
-        <arg name="type" value="standard3"/>
-        <arg name="yaw_tf" value="true"/>
+        <arg name="type" value="standard4"/>
     </include>
 
     <!-- Controller test -->
-    <test test-name="gyro_test"
+    <test test-name="linear_y_accel_limit_swerve_test"
           pkg="rm_chassis_controllers"
-          type="gyro_test"
+          type="linear_y_accel_limit_swerve_test"
           time-limit="40.0">
     </test>
+
 </launch>

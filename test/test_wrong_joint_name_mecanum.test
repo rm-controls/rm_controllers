@@ -1,14 +1,13 @@
 <launch>
-    <!-- This test suit for standard,hero,sentry-->
     <include file="$(find rm_chassis_controllers)/test/common.launch">
         <arg name="type" value="standard3"/>
+        <arg name="load_wrong_yaml" value="true"/>
     </include>
 
     <!-- Controller test -->
-    <test test-name="default_cmd_publisher_test"
+    <test test-name="wrong_joint_name_mecanum_test"
           pkg="rm_chassis_controllers"
-          type="default_cmd_publisher_test"
+          type="wrong_joint_name_mecanum_test"
           time-limit="40.0">
     </test>
-
 </launch>

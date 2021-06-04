@@ -1,5 +1,5 @@
 <launch>
-    <arg name="type" default="standard"/>
+    <arg name="type" default="standard3"/>
     <arg name="disable_timeout" default="true"/>
     <arg name="disable_odom_tf" default="false"/>
     <arg name="load_wrong_yaml" default="false"/>
