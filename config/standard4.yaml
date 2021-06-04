@@ -24,7 +24,7 @@ controllers:
           joint: left_front_pivot_joint
           <<: &pivot_setting
             offset: 0.
-            pid: { p: 5, i: 50, d: 0.1, i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
+            pid: { p: 5, i: 50, d: 0, i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
         wheel:
           joint: left_front_wheel_joint
           <<: &wheel_setting
