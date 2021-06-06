@@ -31,6 +31,6 @@ controllers:
     anti_block_error: 0.1
     cover_move_angle: -1.5
     qd_15: 474.0
-    qd_18: 520.0
+    qd_18: 510.0
     qd_30: 714.0
 
