@@ -16,7 +16,7 @@ controllers:
       pid: { p: 0.002, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
     trigger:
       joint: "trigger_joint"
-      pid: { p: 60.0, i: 0.0, d: 1.8, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+      pid: { p: 90.0, i: 0.0, d: 2.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
     cover:
       joint: "cover_joint"
       pid: { p: 0.5, i: 0.0, d: 0.01, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
@@ -31,5 +31,5 @@ controllers:
     anti_block_error: 0.1
     cover_move_angle: -1.0
     qd_10: 390.0
-    qd_16: 600.0
+    qd_16: 580.0
 
