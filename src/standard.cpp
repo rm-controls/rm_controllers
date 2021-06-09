@@ -134,7 +134,7 @@ void Controller::track(const ros::Time &time) {
       target_pos_compute.y = detection_pos_observation_.find(target_id)->second.y;
       target_pos_compute.z = center_pos_observation_.find(target_id)->second.z;
       target_vel_compute.y = gyro_vel_.find(target_id)->second;
-      pitch_compute = pitch_real_;
+      pitch_compute = -pitch_real_;
     } else {
       target_pos_solve.x = detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
       target_pos_solve.y = detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
@@ -145,7 +145,7 @@ void Controller::track(const ros::Time &time) {
       target_pos_compute = target_pos_solve;
       target_vel_compute = target_vel_solve;
       yaw_compute = yaw_real_;
-      pitch_compute = pitch_real_;
+      pitch_compute = -pitch_real_;
     }
 
     solve_success = bullet_solver_->solve(target_pos_solve, target_vel_solve, cmd_gimbal_.bullet_speed);
