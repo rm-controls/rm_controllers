@@ -13,7 +13,7 @@ controllers:
       joint: "yaw_joint"
       upper: 1e9
       lower: -1e9
-      pid: { p: 10, i: 0, d: 0.2, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
+      pid: { p: 15, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
     pitch:
       joint: "pitch_joint"
       upper: 0.885
