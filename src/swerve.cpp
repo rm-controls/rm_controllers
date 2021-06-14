@@ -27,7 +27,7 @@ bool SwerveController::init(hardware_interface::RobotHW *robot_hw,
     ROS_ASSERT(module.second["wheel"].getType() == XmlRpc::XmlRpcValue::TypeStruct);
     ROS_ASSERT(module.second["wheel"].hasMember("radius"));
 
-    Module m{.position_= Vec2<double>(module.second["position"][0], module.second["position"][1]),
+    Module m{.position_= Vec2<double>((double) module.second["position"][0], (double) module.second["position"][1]),
         .pivot_offset_ = module.second["pivot"]["offset"],
         .wheel_radius_ = module.second["wheel"]["radius"],
         .ctrl_pivot_ = new effort_controllers::JointPositionController(),
