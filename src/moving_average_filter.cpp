@@ -43,15 +43,19 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   // Initialize the first time it enters the filter
   geometry_msgs::TransformStamped observation2map, observation2detection;
   try {
-    geometry_msgs::TransformStamped pitch2map = robot_state_handle_.lookupTransform("pitch",
-                                                                                    "map",
+    geometry_msgs::TransformStamped map2pitch = robot_state_handle_.lookupTransform("map",
+                                                                                    "pitch",
                                                                                     ros::Time(0));
     tf2::Quaternion quaternion;
-    double map2pitch_yaw = yawFromQuat(pitch2map.transform.rotation);
+    geometry_msgs::Transform map2observation;
+    double map2pitch_yaw = yawFromQuat(map2pitch.transform.rotation);
     quaternion.setRPY(0, 0, map2pitch_yaw);
-    observation2map.transform.translation = pitch2map.transform.translation;
-    observation2map.transform.rotation = tf2::toMsg(quaternion);
-    observation2map.header.frame_id = "observation";
+    map2observation.translation = map2pitch.transform.translation;
+    map2observation.rotation = tf2::toMsg(quaternion);
+
+    tf2::Transform map2observation_tf;
+    tf2::fromMsg(map2observation, map2observation_tf);
+    observation2map.transform = tf2::toMsg(map2observation_tf.inverse());
     observation2map.header.stamp = map2detection.header.stamp;
     tf2::doTransform(map2detection, observation2detection, observation2map);
   }
