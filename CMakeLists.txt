@@ -47,7 +47,7 @@ catkin_package(
         realtime_tools
         effort_controllers
         control_msgs
-        DEPENDS
+        LIBRARIES ${PROJECT_NAME}
 )
 
 ###########
