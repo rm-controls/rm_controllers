@@ -60,7 +60,7 @@ catkin_package(
         control_toolbox
         effort_controllers
         dynamic_reconfigure
-        DEPENDS
+        LIBRARIES ${PROJECT_NAME}
 )
 
 ###########
