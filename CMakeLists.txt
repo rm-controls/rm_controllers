@@ -50,7 +50,7 @@ catkin_package(
         tf2_ros
         kdl_parser
         realtime_tools
-        DEPENDS
+        LIBRARIES ${PROJECT_NAME}
 )
 
 ###########
