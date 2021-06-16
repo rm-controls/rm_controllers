@@ -11,49 +11,48 @@ add_definitions(-Wall -Werror)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED
-    COMPONENTS
-    roscpp
-    roslint
+        COMPONENTS
+        roscpp
+        roslint
 
-    sensor_msgs
-    rm_msgs
-    rm_common
+        sensor_msgs
+        rm_msgs
+        rm_common
 
-    pluginlib
-    hardware_interface
-    controller_interface
-    forward_command_controller
-    realtime_tools
-    tf2
-    tf2_geometry_msgs
-    angles
-    )
+        pluginlib
+        hardware_interface
+        controller_interface
+        forward_command_controller
+        realtime_tools
+        tf2
+        tf2_geometry_msgs
+        angles
+        )
 
 ## Find system libraries
 find_package(Eigen3 REQUIRED)
 find_package(Boost REQUIRED)
 
 catkin_package(
-    INCLUDE_DIRS
-    include
-    LIBRARIES
-    CATKIN_DEPENDS
-    roscpp
-    roslint
+        INCLUDE_DIRS
+        include
+        LIBRARIES
+        CATKIN_DEPENDS
+        roscpp
+        roslint
 
-    sensor_msgs
-    rm_msgs
-    rm_common
+        sensor_msgs
+        rm_msgs
+        rm_common
 
-    pluginlib
-    hardware_interface
-    controller_interface
-    forward_command_controller
-    tf2
-    tf2_geometry_msgs
-    angles
-    DEPENDS
-
+        pluginlib
+        hardware_interface
+        controller_interface
+        forward_command_controller
+        tf2
+        tf2_geometry_msgs
+        angles
+        LIBRARIES ${PROJECT_NAME}
 )
 
 
