@@ -65,7 +65,7 @@ catkin_package(
         tf2
         tf2_geometry_msgs
         angles
-        DEPENDS
+        LIBRARIES ${PROJECT_NAME}
 )
 
 ###########
