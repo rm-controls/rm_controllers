@@ -69,7 +69,7 @@ catkin_package(
         visualization_msgs
         dynamic_reconfigure
         angles
-        DEPENDS
+        LIBRARIES ${PROJECT_NAME}
 )
 
 ###########
