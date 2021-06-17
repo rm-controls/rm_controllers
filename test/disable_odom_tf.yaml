@@ -1,3 +1,0 @@
-controllers:
-  chassis_controller:
-    enable_odom_tf: false

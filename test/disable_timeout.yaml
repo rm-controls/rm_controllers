@@ -1,3 +1,0 @@
-controllers:
-  chassis_controller:
-    timeout: 9999999.
