@@ -49,7 +49,6 @@ catkin_package(
         CATKIN_DEPENDS
         roscpp
         roslint
-        rostest
 
         rm_msgs
         rm_common
