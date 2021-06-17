@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
     <name>rm_chassis_controllers</name>
-    <version>1.0.7</version>
+    <version>1.0.8</version>
     <description>RoboMaster standard robot Chassis controller</description>
     <maintainer email="liaoqiayuan@gmail.com">Qiayuan Liao</maintainer>
     <license>BSD</license>
@@ -14,7 +14,6 @@
     <!-- depend: build, export, and execution dependency -->
     <depend>roscpp</depend>
     <depend>roslint</depend>
-    <depend>rostest</depend>
 
     <depend>rm_msgs</depend>
     <depend>rm_common</depend>
