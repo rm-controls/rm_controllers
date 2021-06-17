@@ -14,7 +14,6 @@ find_package(catkin REQUIRED
         COMPONENTS
         roscpp
         roslint
-        rostest
 
         rm_msgs
         rm_common
