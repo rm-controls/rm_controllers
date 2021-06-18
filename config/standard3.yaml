@@ -5,11 +5,11 @@ controllers:
     actuator: "trigger_joint_motor"
     search_velocity: 3.1415
     threshold: 1e-2
-    pid: { p: 1.0, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
+    pid: { p: 0.6, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
   cover_calibration_controller:
     type: rm_calibration_controllers/JointCalibrationController
     joint: "cover_joint"
     actuator: "cover_joint_motor"
     search_velocity: 6.28
     threshold: 1e-2
-    pid: { p: 0.8, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
+    pid: { p: 0.6, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
