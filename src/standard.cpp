@@ -40,7 +40,6 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
 
   enter_push_qd_coef_ = getParam(controller_nh, "enter_push_qd_coef", 0.);
   push_angle_error_ = getParam(controller_nh, "push_angle_error", 0.);
-  cover_move_angle_ = getParam(controller_nh, "cover_move_angle", 0.);
 
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
 
@@ -59,12 +58,10 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   ros::NodeHandle nh_friction_l = ros::NodeHandle(controller_nh, "friction_left");
   ros::NodeHandle nh_friction_r = ros::NodeHandle(controller_nh, "friction_right");
   ros::NodeHandle nh_trigger = ros::NodeHandle(controller_nh, "trigger");
-  ros::NodeHandle nh_cover = ros::NodeHandle(controller_nh, "cover");
 
   return !(!ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) ||
       !ctrl_friction_r_.init(effort_joint_interface_, nh_friction_r) ||
-      !ctrl_trigger_.init(effort_joint_interface_, nh_trigger) ||
-      !ctrl_cover_.init(effort_joint_interface_, nh_cover));
+      !ctrl_trigger_.init(effort_joint_interface_, nh_trigger));
 }
 
 void Controller::update(const ros::Time &time, const ros::Duration &period) {
@@ -79,11 +76,6 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
     state_changed_ = true;
   }
 
-  if (cover_state_ != cmd_.cover) {
-    cover_state_ = cmd_.cover;
-    cover_state_change_ = true;
-  }
-
   if (cmd_.speed == cmd_.SPEED_10M_PER_SECOND)
     friction_qd_des_ = config_.qd_10;
   else if (cmd_.speed == cmd_.SPEED_15M_PER_SECOND)
@@ -96,17 +88,6 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
     friction_qd_des_ = config_.qd_30;
   else
     friction_qd_des_ = 0.;
-
-  if (cover_state_change_) {
-    cover_state_change_ = false;
-    if (cover_state_) {
-      cover_q_des_ = cover_move_angle_;
-      ROS_INFO("[Cover] Enter OPEN");
-    } else {
-      cover_q_des_ = 0.0;
-      ROS_INFO("[Cover] Enter CLOSE");
-    }
-  }
 
   if (state_ == PASSIVE) {
     passive();
@@ -144,7 +125,6 @@ void Controller::passive() {
     ctrl_friction_l_.joint_.setCommand(0);
     ctrl_friction_r_.joint_.setCommand(0);
     ctrl_trigger_.joint_.setCommand(0);
-    ctrl_cover_.joint_.setCommand(0);
   }
 }
 
@@ -223,11 +203,8 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
   }
   ctrl_friction_l_.setCommand(friction_qd_des_);
   ctrl_friction_r_.setCommand(-friction_qd_des_);
-  ctrl_cover_.setCommand(cover_q_des_);
-
   ctrl_friction_l_.update(time, period);
   ctrl_friction_r_.update(time, period);
-  ctrl_cover_.update(time, period);
 }
 
 void Controller::commandCB(const rm_msgs::ShootCmdConstPtr &msg) {

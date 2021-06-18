@@ -75,16 +75,13 @@ class Controller
 
   hardware_interface::EffortJointInterface *effort_joint_interface_{};
   effort_controllers::JointVelocityController ctrl_friction_l_, ctrl_friction_r_;
-  effort_controllers::JointPositionController ctrl_trigger_, ctrl_cover_;
+  effort_controllers::JointPositionController ctrl_trigger_;
   double friction_qd_des_{}, trigger_q_des_{}, last_trigger_q_des_{};
-  double cover_move_angle_{}, cover_q_des_{};
   double enter_push_qd_coef_{}, push_angle_error_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
-  bool cover_state_change_ = false;
   bool calibrate_trigger_pos_ = false;
   bool is_out_from_block_ = false;
-  bool cover_state_ = false;
 
   Block *block_{};
   ros::Time last_shoot_time_;
