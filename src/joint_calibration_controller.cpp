@@ -59,7 +59,7 @@ void JointCalibrationController::update(const ros::Time &time, const ros::Durati
   switch (state_) {
     case INITIALIZED: {
       velocity_ctrl_.setCommand(vel_search_);
-      countdown_ = 200;
+      countdown_ = 100;
       state_ = MOVING;
       break;
     }
@@ -67,7 +67,7 @@ void JointCalibrationController::update(const ros::Time &time, const ros::Durati
       if (std::abs(velocity_ctrl_.joint_.getVelocity()) < threshold_)
         countdown_--;
       else
-        countdown_ = 200;
+        countdown_ = 100;
       if (countdown_ < 0) {
         velocity_ctrl_.setCommand(0);
         actuator_.setOffset(-actuator_.getPosition());
