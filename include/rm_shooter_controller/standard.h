@@ -16,9 +16,10 @@
 #include <rm_shooter_controllers/ShooterConfig.h>
 #include <rm_msgs/ShootCmd.h>
 
-namespace rm_shooter_controllers {
+#include <utility>
 
-enum State {
+namespace rm_shooter_controllers {
+enum {
   PASSIVE = 0,
   READY = 1,
   PUSH = 2,
@@ -27,30 +28,8 @@ enum State {
 };
 
 struct Config {
-  double push_angle;
+  double block_effort, block_speed, block_duration, anti_block_angle, anti_block_threshold;
   double qd_10, qd_15, qd_16, qd_18, qd_30;
-};
-
-struct BlockConfig {
-  double block_effort, block_duration, block_speed, anti_block_angle, anti_block_error;
-};
-
-class Block {
- public:
-  explicit Block(ros::NodeHandle &controller_nh) {
-    block_config_ = {.block_effort = getParam(controller_nh, "block_effort", 0.),
-        .block_duration = getParam(controller_nh, "block_duration", 0.),
-        .block_speed = getParam(controller_nh, "block_speed", 0.),
-        .anti_block_angle = getParam(controller_nh, "anti_block_angle", 0.),
-        .anti_block_error = getParam(controller_nh, "anti_block_error", 0.),};
-    block_config_rt_buffer_.initRT(block_config_);
-  };
-  bool isBlock(const ros::Time &time, const hardware_interface::JointHandle *joint_handle);
-
-  BlockConfig block_config_{};
-  realtime_tools::RealtimeBuffer<BlockConfig> block_config_rt_buffer_{};
-  bool is_start_block_time_ = false;
-  ros::Time block_time_;
 };
 
 class Controller
@@ -62,30 +41,30 @@ class Controller
             ros::NodeHandle &root_nh, ros::NodeHandle
             &controller_nh) override;
   void update(const ros::Time &time, const ros::Duration &period) override;
+  void starting(const ros::Time & /*time*/) override;
+
  private:
-  void calibrate();
   void passive();
   void ready(const ros::Duration &period);
   void push(const ros::Time &time, const ros::Duration &period);
   void stop(const ros::Time &time, const ros::Duration &period);
   void block(const ros::Time &time, const ros::Duration &period);
-  void moveJoint(const ros::Time &time, const ros::Duration &period);
-  void commandCB(const rm_msgs::ShootCmdConstPtr &msg);
+  void setSpeed(const rm_msgs::ShootCmd &cmd);
+  void normalize();
+  void commandCB(const rm_msgs::ShootCmdConstPtr &msg) { cmd_rt_buffer_.writeFromNonRT(*msg); }
   void reconfigCB(rm_shooter_controllers::ShooterConfig &config, uint32_t /*level*/);
 
   hardware_interface::EffortJointInterface *effort_joint_interface_{};
   effort_controllers::JointVelocityController ctrl_friction_l_, ctrl_friction_r_;
   effort_controllers::JointPositionController ctrl_trigger_;
-  double friction_qd_des_{}, trigger_q_des_{}, last_trigger_q_des_{};
-  double enter_push_qd_coef_{}, push_angle_error_{};
+  int push_per_rotation_{};
+  double push_qd_threshold_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
-  bool calibrate_trigger_pos_ = false;
-  bool is_out_from_block_ = false;
+  bool maybe_block_ = false;
 
-  Block *block_{};
-  ros::Time last_shoot_time_;
-  State state_ = PASSIVE;
+  ros::Time last_shoot_time_, block_time_;
+  int state_ = PASSIVE;
   Config config_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer;
   realtime_tools::RealtimeBuffer<rm_msgs::ShootCmd> cmd_rt_buffer_;
