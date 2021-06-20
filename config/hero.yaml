@@ -17,19 +17,13 @@ controllers:
     trigger:
       joint: "trigger_joint"
       pid: { p: 80.0, i: 0.0, d: 2.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
-    cover:
-      joint: "cover_joint"
-      pid: { p: 0.5, i: 0.0, d: 0.01, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
-
-    enter_push_qd_coef: 0.95
-    push_angle: 1.047
-    push_angle_error: 0.1
+    push_per_rotation: 5
+    push_qd_threshold: 0.95
     block_effort: 4.8
-    block_duration: 1.2
     block_speed: 1.0
+    block_duration: 0.1
     anti_block_angle: 1.0
-    anti_block_error: 0.1
-    cover_move_angle: -1.0
+    anti_block_threshold: 0.1
     qd_10: 390.0
     qd_16: 580.0
 
