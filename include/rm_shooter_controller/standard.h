@@ -45,9 +45,9 @@ class Controller
 
  private:
   void passive();
+  void stop(const ros::Time &time, const ros::Duration &period);
   void ready(const ros::Duration &period);
   void push(const ros::Time &time, const ros::Duration &period);
-  void stop(const ros::Time &time, const ros::Duration &period);
   void block(const ros::Time &time, const ros::Duration &period);
   void setSpeed(const rm_msgs::ShootCmd &cmd);
   void normalize();

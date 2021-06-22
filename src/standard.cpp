@@ -60,13 +60,13 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
   if (state_ != STOP)
     setSpeed(cmd_);
   switch (state_) {
-    case READY:ready(period);
+    case READY: ready(period);
       break;
     case PUSH: push(time, period);
       break;
-    case STOP:stop(time, period);
+    case STOP: stop(time, period);
       break;
-    case BLOCK:block(time, period);
+    case BLOCK: block(time, period);
       break;
   }
   ctrl_friction_l_.update(time, period);
@@ -74,9 +74,15 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
   ctrl_trigger_.update(time, period);
 }
 
-void Controller::normalize() {
-  double push_angle = 2. * M_PI / static_cast<double>(push_per_rotation_);
-  ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01) / push_angle));
+void Controller::stop(const ros::Time &time, const ros::Duration &period) {
+  if (state_changed_) { //on enter
+    state_changed_ = false;
+    ROS_INFO("[Shooter] Enter STOP");
+
+    ctrl_friction_l_.setCommand(0.);
+    ctrl_friction_r_.setCommand(0.);
+    ctrl_trigger_.setCommand(ctrl_trigger_.joint_.getPosition());
+  }
 }
 
 void Controller::passive() {
@@ -101,8 +107,6 @@ void Controller::push(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PUSH");
-
-    normalize();
   }
   if (ctrl_friction_l_.joint_.getVelocity() >= push_qd_threshold_ * ctrl_friction_l_.command_
       && ctrl_friction_l_.joint_.getVelocity() > M_PI &&
@@ -140,21 +144,11 @@ void Controller::block(const ros::Time &time, const ros::Duration &period) {
   }
   if (std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.joint_.getPosition())
       < config_.anti_block_threshold) {
+    normalize();
+
     state_ = PUSH;
     state_changed_ = true;
-
     ROS_INFO("[Shooter] Exit BLOCK");
-  }
-}
-
-void Controller::stop(const ros::Time &time, const ros::Duration &period) {
-  if (state_changed_) { //on enter
-    state_changed_ = false;
-    ROS_INFO("[Shooter] Enter STOP");
-
-    ctrl_friction_l_.setCommand(0.);
-    ctrl_friction_r_.setCommand(0.);
-    normalize();
   }
 }
 
@@ -174,6 +168,11 @@ void Controller::setSpeed(const rm_msgs::ShootCmd &cmd) {
     qd_des = 0.;
   ctrl_friction_l_.setCommand(qd_des);
   ctrl_friction_r_.setCommand(-qd_des);
+}
+
+void Controller::normalize() {
+  double push_angle = 2. * M_PI / static_cast<double>(push_per_rotation_);
+  ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01) / push_angle));
 }
 
 void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig &config, uint32_t /*level*/) {
