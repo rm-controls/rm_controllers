@@ -27,7 +27,7 @@ controllers:
     type: rm_calibration_controllers/JointCalibrationController
     joint: joint3
     actuator: joint3_motor
-    search_velocity: -3.0
+    search_velocity: -4.0
     threshold: 0.1
     pid: { p: 5, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
   joint2_calibration_controller:
@@ -44,3 +44,10 @@ controllers:
     search_velocity: -0.7
     threshold: 1e-3
     pid: { p: 10, i: 0, d: 0, i_clamp_max: 0.5, i_clamp_min: 0, antiwindup: true }
+  hand_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: right_finger_joint
+    actuator: right_finger_motor
+    search_velocity: 0.5
+    threshold: 1e-3
+    pid: { p: 20000, i: 0, d: 0, i_clamp_max: 0.5, i_clamp_min: 0, antiwindup: true }
