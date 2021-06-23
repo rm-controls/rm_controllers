@@ -85,15 +85,6 @@ void Controller::stop(const ros::Time &time, const ros::Duration &period) {
   }
 }
 
-void Controller::passive() {
-  if (state_changed_) { //on enter
-    state_changed_ = false;
-    ROS_INFO("[Shooter] Enter PASSIVE");
-
-  }
-  // Not work!!!
-}
-
 void Controller::ready(const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;

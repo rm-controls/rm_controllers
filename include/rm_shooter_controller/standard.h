@@ -19,13 +19,6 @@
 #include <utility>
 
 namespace rm_shooter_controllers {
-enum {
-  PASSIVE = 0,
-  READY = 1,
-  PUSH = 2,
-  STOP = 3,
-  BLOCK = 4
-};
 
 struct Config {
   double block_effort, block_speed, block_duration, anti_block_angle, anti_block_threshold;
@@ -44,7 +37,6 @@ class Controller
   void starting(const ros::Time & /*time*/) override;
 
  private:
-  void passive();
   void stop(const ros::Time &time, const ros::Duration &period);
   void ready(const ros::Duration &period);
   void push(const ros::Time &time, const ros::Duration &period);
@@ -64,7 +56,8 @@ class Controller
   bool maybe_block_ = false;
 
   ros::Time last_shoot_time_, block_time_;
-  int state_ = PASSIVE;
+  enum { STOP, READY, PUSH, BLOCK };
+  int state_ = STOP;
   Config config_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer;
   realtime_tools::RealtimeBuffer<rm_msgs::ShootCmd> cmd_rt_buffer_;
