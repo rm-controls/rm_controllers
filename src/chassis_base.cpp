@@ -89,43 +89,31 @@ void ChassisBase::update(const ros::Time &time, const ros::Duration &period) {
   }
 
   if (state_ != cmd_chassis.mode) {
-    state_ = State(cmd_chassis.mode);
+    state_ = cmd_chassis.mode;
     state_changed_ = true;
   }
 
   updateOdom(time, period);
 
-  if (state_ == PASSIVE)
-    passive();
-  else {
-    if (state_ == RAW)
-      raw();
-    else if (state_ == GYRO)
-      gyro();
-    else if (state_ == FOLLOW)
-      follow(time, period);
-    else if (state_ == TWIST)
-      twist(time, period);
-
-    ramp_x->setAcc(cmd_chassis.accel.linear.x);
-    ramp_y->setAcc(cmd_chassis.accel.linear.y);
-    ramp_w->setAcc(cmd_chassis.accel.angular.z);
-    ramp_x->input(vel_tfed_.x);
-    ramp_y->input(vel_tfed_.y);
-    ramp_w->input(vel_tfed_.z);
-    moveJoint(time, period);
-    powerLimit();
+  switch (state_) {
+    case RAW: raw();
+      break;
+    case FOLLOW: follow(time, period);
+      break;
+    case GYRO: gyro();
+      break;
+    case TWIST: twist(time, period);
+      break;
   }
-}
 
-void ChassisBase::passive() {
-  if (state_changed_) {
-    state_changed_ = false;
-    ROS_INFO("[Chassis] Enter PASSIVE");
-
-    for (auto joint:joint_handles_)
-      joint.setCommand(0);
-  }
+  ramp_x->setAcc(cmd_chassis.accel.linear.x);
+  ramp_y->setAcc(cmd_chassis.accel.linear.y);
+  ramp_w->setAcc(cmd_chassis.accel.angular.z);
+  ramp_x->input(vel_tfed_.x);
+  ramp_y->input(vel_tfed_.y);
+  ramp_w->input(vel_tfed_.z);
+  moveJoint(time, period);
+  powerLimit();
 }
 
 void ChassisBase::follow(const ros::Time &time, const ros::Duration &period) {

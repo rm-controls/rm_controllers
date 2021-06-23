@@ -17,13 +17,6 @@
 #include <nav_msgs/Odometry.h>
 
 namespace rm_chassis_controllers {
-enum State {
-  PASSIVE,
-  RAW,
-  FOLLOW,
-  TWIST,
-  GYRO,
-};
 
 struct Command {
   geometry_msgs::Twist cmd_vel_;
@@ -39,7 +32,6 @@ class ChassisBase : public controller_interface::MultiInterfaceController
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
   void update(const ros::Time &time, const ros::Duration &period) override;
  protected:
-  void passive();
   void raw();
   void follow(const ros::Time &time, const ros::Duration &period);
   void twist(const ros::Time &time, const ros::Duration &period);
@@ -62,7 +54,8 @@ class ChassisBase : public controller_interface::MultiInterfaceController
       power_coeff_{}, power_min_vel_{}, timeout_{};
   bool enable_odom_tf_ = false;
   bool state_changed_ = true;
-  State state_ = PASSIVE;
+  enum { RAW, FOLLOW, GYRO, TWIST };
+  int state_ = GYRO;
   RampFilter<double> *ramp_x{}, *ramp_y{}, *ramp_w{};
   std::string follow_source_frame_{};
 
