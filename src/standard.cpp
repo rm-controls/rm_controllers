@@ -59,6 +59,11 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   return true;
 }
 
+void Controller::starting(const ros::Time &) {
+  state_ = RATE;
+  state_changed_ = true;
+};
+
 void Controller::update(const ros::Time &time, const ros::Duration &period) {
   cmd_gimbal_ = *cmd_rt_buffer_.readFromRT();
   updateTf();
@@ -83,7 +88,7 @@ void Controller::rate(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
-    map2gimbal_des_.transform = map2pitch_.transform;
+    map2gimbal_des_.transform.rotation = map2pitch_.transform.rotation;
     map2gimbal_des_.header.stamp = time;
     robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
   } else {
@@ -101,8 +106,7 @@ void Controller::track(const ros::Time &time) {
   bool solve_success = false;
   double yaw_compute{}, pitch_compute;
   double roll_real, pitch_real, yaw_real;
-  if (last_solve_success_)
-    quatToRPY(map2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
+  quatToRPY(map2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
 
   int target_id = cmd_gimbal_.target_id;
   if (moving_average_filters_track_.find(target_id) != moving_average_filters_track_.end()) {
@@ -154,12 +158,13 @@ void Controller::track(const ros::Time &time) {
   }
   if (solve_success)
     setDes(time, bullet_solver_->getYaw(), bullet_solver_->getPitch());
-  else
-    setDes(time, yaw_real, pitch_real);
-  last_solve_success_ = solve_success;
 }
 
 void Controller::direct(const ros::Time &time) {
+  if (state_changed_) { //on enter
+    state_changed_ = false;
+    ROS_INFO("[Gimbal] Enter DIRECT");
+  }
   geometry_msgs::Point aim_point_map{};
   double yaw{}, pitch{};
   try {
@@ -348,7 +353,7 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_
   }
   Config config_non_rt{.time_compensation = config.time_compensation};
   config_rt_buffer_.writeFromNonRT(config_non_rt);
-};
+}
 
 } // namespace rm_gimbal_controllers
 

@@ -33,6 +33,7 @@ class Controller : public controller_interface::MultiInterfaceController<hardwar
   Controller() = default;
   bool init(hardware_interface::RobotHW *robot_hw,
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
+  void starting(const ros::Time &time) override;
   void update(const ros::Time &time, const ros::Duration &period) override;
   void setDes(const ros::Time &time, double yaw_des, double pitch_des);
  private:
@@ -81,7 +82,6 @@ class Controller : public controller_interface::MultiInterfaceController<hardwar
   double publish_rate_{};
   bool dynamic_reconfig_initialized_{};
   bool state_changed_{};
-  bool last_solve_success_{};
 
   Config config_{};
   enum { RATE, TRACK, DIRECT };
