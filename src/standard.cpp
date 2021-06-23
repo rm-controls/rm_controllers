@@ -112,7 +112,7 @@ void Controller::track(const ros::Time &time) {
     ROS_INFO("[Gimbal] Enter TRACK");
   }
   bool solve_success = false;
-  double yaw_compute, pitch_compute;
+  double yaw_compute{}, pitch_compute;
   double roll_real, pitch_real, yaw_real;
   if (last_solve_success_)
     quatToRPY(map2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
