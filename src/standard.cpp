@@ -65,31 +65,18 @@ void Controller::update(const ros::Time &time, const ros::Duration &period) {
   updateChassisVel();
 
   if (state_ != cmd_gimbal_.mode) {
-    state_ = StandardState(cmd_gimbal_.mode);
+    state_ = cmd_gimbal_.mode;
     state_changed_ = true;
   }
-
-  if (state_ == PASSIVE)
-    passive();
-  else {
-    if (state_ == RATE)
-      rate(time, period);
-    else if (state_ == TRACK)
-      track(time);
-    else if (state_ == DIRECT)
-      direct(time);
-    moveJoint(time, period);
+  switch (state_) {
+    case RATE: rate(time, period);
+      break;
+    case TRACK: track(time);
+      break;
+    case DIRECT: direct(time);
+      break;
   }
-}
-
-void Controller::passive() {
-  if (state_changed_) { //on enter
-    state_changed_ = false;
-    ROS_INFO("[Gimbal] Enter PASSIVE");
-  }
-
-  ctrl_yaw_.joint_.setCommand(0);
-  ctrl_pitch_.joint_.setCommand(0);
+  moveJoint(time, period);
 }
 
 void Controller::rate(const ros::Time &time, const ros::Duration &period) {

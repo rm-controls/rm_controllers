@@ -22,12 +22,6 @@
 #include <sensor_msgs/CameraInfo.h>
 
 namespace rm_gimbal_controllers {
-enum StandardState {
-  PASSIVE,
-  RATE,
-  TRACK,
-  DIRECT
-};
 
 struct Config {
   double time_compensation;
@@ -42,7 +36,6 @@ class Controller : public controller_interface::MultiInterfaceController<hardwar
   void update(const ros::Time &time, const ros::Duration &period) override;
   void setDes(const ros::Time &time, double yaw_des, double pitch_des);
  private:
-  void passive();
   void rate(const ros::Time &time, const ros::Duration &period);
   void track(const ros::Time &time);
   void direct(const ros::Time &time);
@@ -91,7 +84,8 @@ class Controller : public controller_interface::MultiInterfaceController<hardwar
   bool last_solve_success_{};
 
   Config config_{};
-  StandardState state_ = PASSIVE;
+  enum { RATE, TRACK, DIRECT };
+  int state_ = RATE;
 
   std::map<int, moving_average_filter::MovingAverageFilterTrack *> moving_average_filters_track_;
   std::map<int, geometry_msgs::Pose> last_detection_{};
