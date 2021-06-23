@@ -23,11 +23,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
-  if (!nh_yaw.getParam("upper", upper_yaw_) ||
-      !nh_yaw.getParam("lower", lower_yaw_) ||
-      !nh_pitch.getParam("upper", upper_pitch_) ||
-      !nh_pitch.getParam("lower", lower_pitch_) ||
-      !controller_nh.getParam("publish_rate", publish_rate_)) {
+  if (!controller_nh.getParam("publish_rate", publish_rate_)) {
     ROS_ERROR("Some gimbal params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
@@ -116,9 +112,10 @@ void Controller::track(const ros::Time &time) {
     ROS_INFO("[Gimbal] Enter TRACK");
   }
   bool solve_success = false;
-  double yaw_compute{}, pitch_compute{};
+  double yaw_compute, pitch_compute;
+  double roll_real, pitch_real, yaw_real;
   if (last_solve_success_)
-    quatToRPY(map2pitch_.transform.rotation, roll_real_, pitch_real_, yaw_real_);
+    quatToRPY(map2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
 
   int target_id = cmd_gimbal_.target_id;
   if (moving_average_filters_track_.find(target_id) != moving_average_filters_track_.end()) {
@@ -134,7 +131,7 @@ void Controller::track(const ros::Time &time) {
       target_pos_compute.y = detection_pos_observation_.find(target_id)->second.y;
       target_pos_compute.z = center_pos_observation_.find(target_id)->second.z;
       target_vel_compute.y = gyro_vel_.find(target_id)->second;
-      pitch_compute = -pitch_real_;
+      pitch_compute = -pitch_real;
     } else {
       target_pos_solve.x = detection_pos_.find(target_id)->second.x - map2pitch_.transform.translation.x;
       target_pos_solve.y = detection_pos_.find(target_id)->second.y - map2pitch_.transform.translation.y;
@@ -144,8 +141,8 @@ void Controller::track(const ros::Time &time) {
 
       target_pos_compute = target_pos_solve;
       target_vel_compute = target_vel_solve;
-      yaw_compute = yaw_real_;
-      pitch_compute = -pitch_real_;
+      yaw_compute = yaw_real;
+      pitch_compute = -pitch_real;
     }
 
     solve_success = bullet_solver_->solve(target_pos_solve, target_vel_solve, cmd_gimbal_.bullet_speed);
@@ -171,7 +168,7 @@ void Controller::track(const ros::Time &time) {
   if (solve_success)
     setDes(time, bullet_solver_->getYaw(), bullet_solver_->getPitch());
   else
-    setDes(time, yaw_real_, pitch_real_);
+    setDes(time, yaw_real, pitch_real);
   last_solve_success_ = solve_success;
 }
 
@@ -193,12 +190,17 @@ void Controller::direct(const ros::Time &time) {
   setDes(time, yaw, pitch);
 }
 
-void Controller::setDes(const ros::Time &time, double yaw, double pitch) {
+void Controller::setDes(const ros::Time &time, double yaw_des, double pitch_des) {
   double roll_base{}, pitch_base{}, yaw_base{};
   quatToRPY(map2base_.transform.rotation, roll_base, pitch_base, yaw_base);
-  if ((pitch - pitch_base) <= upper_pitch_ && (pitch - pitch_base) >= lower_pitch_ &&
-      (yaw - yaw_base) <= upper_yaw_ && (yaw - yaw_base) >= lower_yaw_)
-    map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0, pitch, yaw);
+  double roll_now{}, pitch_now{}, yaw_now{};
+  quatToRPY(map2gimbal_des_.transform.rotation, roll_now, pitch_now, yaw_now);
+  map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw
+      (0,
+       (pitch_des - pitch_base) <= ctrl_pitch_.joint_urdf_->limits->upper
+           && (pitch_des - pitch_base) >= ctrl_pitch_.joint_urdf_->limits->lower ? pitch_des : pitch_now,
+       (yaw_des - yaw_base) <= ctrl_yaw_.joint_urdf_->limits->upper
+           && (yaw_des - yaw_base) >= ctrl_yaw_.joint_urdf_->limits->lower ? yaw_des : yaw_now);
   map2gimbal_des_.header.stamp = time;
   robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
 }
@@ -263,8 +265,7 @@ void Controller::updateTf() {
         moving_average_filters_track_.insert(std::make_pair(detection.first,
                                                             new moving_average_filter::MovingAverageFilterTrack(
                                                                 nh_moving_average_filter_,
-                                                                detection.first,
-                                                                robot_state_handle_)));
+                                                                detection.first, robot_state_handle_)));
       config_ = *config_rt_buffer_.readFromRT();
       geometry_msgs::TransformStamped map2camera, map2detection;
       tf2::Transform camera2detection_tf, map2camera_tf, map2detection_tf;
@@ -312,8 +313,7 @@ void Controller::updateTrack(int id) {
   try {
     tf2::doTransform(moving_average_filters_track_.find(id)->second->getTransform(), camera2detection,
                      robot_state_handle_.lookupTransform(detection_rt_buffer_.readFromRT()->header.frame_id,
-                                                         "map",
-                                                         ros::Time(0)));
+                                                         "map", ros::Time(0)));
   }
   catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
 

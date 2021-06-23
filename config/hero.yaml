@@ -11,13 +11,9 @@ controllers:
     publish_rate: 100
     yaw:
       joint: "yaw_joint"
-      upper: 1e9
-      lower: -1e9
       pid: { p: 8, i: 10, d: 0.4, i_clamp_max: 0.3, i_clamp_min: -0.3, antiwindup: true, publish_state: true }
     pitch:
       joint: "pitch_joint"
-      upper: 0.31
-      lower: -1.39
       pid: { p: 20, i: 200, d: 0.4, i_clamp_max: 0.8, i_clamp_min: -0.8, antiwindup: true, publish_state: true }
     bullet_solver:
       resistance_coff_qd_10: 0.1

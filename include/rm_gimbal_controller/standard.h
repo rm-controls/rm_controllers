@@ -40,7 +40,7 @@ class Controller : public controller_interface::MultiInterfaceController<hardwar
   bool init(hardware_interface::RobotHW *robot_hw,
             ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
   void update(const ros::Time &time, const ros::Duration &period) override;
-  void setDes(const ros::Time &time, double yaw, double pitch);
+  void setDes(const ros::Time &time, double yaw_des, double pitch_des);
  private:
   void passive();
   void rate(const ros::Time &time, const ros::Duration &period);
@@ -85,12 +85,10 @@ class Controller : public controller_interface::MultiInterfaceController<hardwar
 
   rm_msgs::GimbalCmd cmd_gimbal_;
 
-  double upper_yaw_{}, lower_yaw_{}, upper_pitch_{}, lower_pitch_{};
   double publish_rate_{};
   bool dynamic_reconfig_initialized_{};
   bool state_changed_{};
   bool last_solve_success_{};
-  double roll_real_{}, pitch_real_{}, yaw_real_{};
 
   Config config_{};
   StandardState state_ = PASSIVE;
