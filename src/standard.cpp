@@ -158,6 +158,10 @@ void Controller::track(const ros::Time &time) {
   }
   if (solve_success)
     setDes(time, bullet_solver_->getYaw(), bullet_solver_->getPitch());
+  else {
+    map2gimbal_des_.header.stamp = time;
+    robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
+  }
 }
 
 void Controller::direct(const ros::Time &time) {
