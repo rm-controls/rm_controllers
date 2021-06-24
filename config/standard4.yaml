@@ -11,7 +11,7 @@ controllers:
     publish_rate: 100
     yaw:
       joint: "yaw_joint"
-      pid: { p: 10, i: 50, d: 0.3, i_clamp_max: 0.3, i_clamp_min: -0.3, antiwindup: true, publish_state: true }
+      pid: { p: 10, i: 100, d: 0.4, i_clamp_max: 0.3, i_clamp_min: -0.3, antiwindup: true, publish_state: true }
     pitch:
       joint: "pitch_joint"
       pid: { p: 15, i: 50, d: 0.4, i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
