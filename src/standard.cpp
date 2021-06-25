@@ -35,6 +35,12 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   map2gimbal_des_.header.frame_id = "map";
   map2gimbal_des_.child_frame_id = "gimbal_des";
   map2gimbal_des_.transform.rotation.w = 1.;
+  map2pitch_.header.frame_id = "map";
+  map2pitch_.child_frame_id = "pitch";
+  map2pitch_.transform.rotation.w = 1.;
+  map2base_.header.frame_id = "map";
+  map2base_.child_frame_id = "base_link";
+  map2base_.transform.rotation.w = 1.;
 
   cmd_gimbal_sub_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &Controller::commandCB, this);
   data_detection_sub_ =
@@ -66,7 +72,8 @@ void Controller::starting(const ros::Time &) {
 
 void Controller::update(const ros::Time &time, const ros::Duration &period) {
   cmd_gimbal_ = *cmd_rt_buffer_.readFromRT();
-  updateTf();
+  if (!updateTf())
+    return;
   updateChassisVel();
 
   if (state_ != cmd_gimbal_.mode) {
@@ -219,12 +226,15 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
   ctrl_pitch_.update(time, period);
 }
 
-void Controller::updateTf() {
+bool Controller::updateTf() {
   try {
     map2pitch_ = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
     map2base_ = robot_state_handle_.lookupTransform("map", "base_link", ros::Time(0));
   }
-  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+  catch (tf2::TransformException &ex) {
+    ROS_WARN("%s", ex.what());
+    return false;
+  }
 
   std::map<int, geometry_msgs::Pose> now_detection;
   double now_distance, last_distance;
@@ -302,6 +312,8 @@ void Controller::updateTf() {
       track_pub_->unlockAndPublish();
     }
   }
+
+  return true;
 }
 
 void Controller::updateTrack(int id) {

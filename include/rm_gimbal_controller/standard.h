@@ -44,10 +44,10 @@ class Controller : public controller_interface::MultiInterfaceController<hardwar
   void commandCB(const rm_msgs::GimbalCmdConstPtr &msg);
   void detectionCB(const rm_msgs::TargetDetectionArrayConstPtr &msg);
   void cameraCB(const sensor_msgs::CameraInfoConstPtr &msg);
-  void updateTf();
   void updateTrack(int id);
   void updateChassisVel();
   void reconfigCB(rm_gimbal_controllers::GimbalConfig &config, uint32_t);
+  bool updateTf();
 
   ros::Time last_publish_time_{};
   ros::Time last_camera_time_{};
