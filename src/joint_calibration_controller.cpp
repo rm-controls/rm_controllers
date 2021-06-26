@@ -64,7 +64,7 @@ void JointCalibrationController::update(const ros::Time &time, const ros::Durati
       break;
     }
     case MOVING: {
-      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < threshold_)
+      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < threshold_ && !actuator_.getHalted_())
         countdown_--;
       else
         countdown_ = 100;
