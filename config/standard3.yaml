@@ -24,7 +24,7 @@ controllers:
     block_duration: 0.05
     anti_block_angle: 0.15
     anti_block_threshold: 0.1
-    qd_15: 455.0
-    qd_18: 490.0
-    qd_30: 714.0
+    qd_15: 440.0
+    qd_18: 485.0
+    qd_30: 715.0
 
