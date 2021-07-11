@@ -342,8 +342,9 @@ void Controller::updateChassisVel() {
   if (tf_period > 0.0 && tf_period < 1.0) {
     chassis_vel_.linear.x = (map2base_.transform.translation.x - last_map2base_.transform.translation.x) / tf_period;
     chassis_vel_.linear.y = (map2base_.transform.translation.y - last_map2base_.transform.translation.y) / tf_period;
-    chassis_vel_.angular.z =
-        (yawFromQuat(map2base_.transform.rotation) - yawFromQuat(last_map2base_.transform.rotation)) / tf_period;
+    if (std::abs(yawFromQuat(map2base_.transform.rotation) - yawFromQuat(last_map2base_.transform.rotation)) < 6.0)
+      chassis_vel_.angular.z =
+          (yawFromQuat(map2base_.transform.rotation) - yawFromQuat(last_map2base_.transform.rotation)) / tf_period;
   }
   last_map2base_ = map2base_;
 }
