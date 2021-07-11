@@ -9,6 +9,7 @@ controllers:
     type: rm_gimbal_controllers/Controller
     time_compensation: 0.004
     publish_rate: 100
+    chassis_angular_data_num: 20
     yaw:
       joint: "yaw_joint"
       pid: { p: 10, i: 0, d: 0.4, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }

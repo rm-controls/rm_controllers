@@ -59,6 +59,7 @@ class Controller : public controller_interface::MultiInterfaceController<hardwar
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
   bullet_solver::BulletSolver *bullet_solver_{};
+  MovingAverageFilter<double> *ma_filter_chassis_angular_{};
 
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>> track_pub_;

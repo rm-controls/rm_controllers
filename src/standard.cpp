@@ -23,7 +23,9 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
-  if (!controller_nh.getParam("publish_rate", publish_rate_)) {
+  int chassis_angular_data_num{};
+  if (!controller_nh.getParam("publish_rate", publish_rate_) ||
+      !controller_nh.getParam("chassis_angular_data_num", chassis_angular_data_num)) {
     ROS_ERROR("Some gimbal params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
@@ -61,6 +63,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   d_srv_->setCallback(cb);
 
   bullet_solver_ = new bullet_solver::BulletSolver(nh_bullet_solver);
+  ma_filter_chassis_angular_ = new MovingAverageFilter<double>(chassis_angular_data_num);
 
   return true;
 }
@@ -342,9 +345,11 @@ void Controller::updateChassisVel() {
   if (tf_period > 0.0 && tf_period < 1.0) {
     chassis_vel_.linear.x = (map2base_.transform.translation.x - last_map2base_.transform.translation.x) / tf_period;
     chassis_vel_.linear.y = (map2base_.transform.translation.y - last_map2base_.transform.translation.y) / tf_period;
-    if (std::abs(yawFromQuat(map2base_.transform.rotation) - yawFromQuat(last_map2base_.transform.rotation)) < 6.0)
-      chassis_vel_.angular.z =
-          (yawFromQuat(map2base_.transform.rotation) - yawFromQuat(last_map2base_.transform.rotation)) / tf_period;
+    if (std::abs(yawFromQuat(map2base_.transform.rotation) - yawFromQuat(last_map2base_.transform.rotation)) < 6.0) {
+      ma_filter_chassis_angular_->input(
+          (yawFromQuat(map2base_.transform.rotation) - yawFromQuat(last_map2base_.transform.rotation)) / tf_period);
+      chassis_vel_.angular.z = ma_filter_chassis_angular_->output();
+    }
   }
   last_map2base_ = map2base_;
 }
