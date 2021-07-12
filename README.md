@@ -5,6 +5,7 @@
 The Controller is RoboMaster robot shooter controller. It is used for reading joint sensor data and sending command to motors. Besides , It will calls control loop (update method) periodically at a set frequency .
 
 **Keywords:** shooter
+
 #### License
 
 The source code is released under a [BSD 3-Clause license]().
