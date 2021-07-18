@@ -19,18 +19,6 @@ bool JointCalibrationController::init(hardware_interface::RobotHW *robot_hw,
     return false;
   }
   actuator_ = robot_hw->get<hardware_interface::ActuatorExtraInterface>()->getHandle(actuator_name);
-  bool force_calibration = false;
-  controller_nh.getParam("force_calibration", force_calibration);
-  if (actuator_.getOffset() != 0) {
-    if (force_calibration) {
-      ROS_INFO("Joint %s will be recalibrated, but was already calibrated at offset %f",
-               velocity_ctrl_.getJointName().c_str(), actuator_.getOffset());
-    } else {
-      ROS_INFO("Joint %s is already calibrated at offset %f",
-               velocity_ctrl_.getJointName().c_str(), actuator_.getOffset());
-      state_ = CALIBRATED;
-    }
-  }
   if (!controller_nh.getParam("search_velocity", vel_search_)) {
     ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
@@ -50,8 +38,11 @@ bool JointCalibrationController::init(hardware_interface::RobotHW *robot_hw,
 }
 
 void JointCalibrationController::starting(const ros::Time &time) {
-  state_ = INITIALIZED;
   actuator_.setOffset(0.0);
+  state_ = INITIALIZED;
+  if (actuator_.getCalibrated())
+    ROS_INFO("Joint %s will be recalibrated, but was already calibrated at offset %f",
+             velocity_ctrl_.getJointName().c_str(), actuator_.getOffset());
 }
 
 void JointCalibrationController::update(const ros::Time &time, const ros::Duration &period) {
@@ -89,6 +80,7 @@ bool JointCalibrationController::isCalibrated(control_msgs::QueryCalibrationStat
   resp.is_calibrated = (state_ == CALIBRATED);
   return true;
 }
+
 }
 
 PLUGINLIB_EXPORT_CLASS(rm_calibration_controllers::JointCalibrationController, controller_interface::ControllerBase)
