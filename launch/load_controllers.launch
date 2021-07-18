@@ -3,12 +3,6 @@
 
     <rosparam file="$(find rm_calibration_controllers)/config/$(arg robot_type).yaml" command="load"/>
 
-    <!-- load the controllers -->
-    <!--    <node name="controller_spawner" pkg="controller_manager" type="spawner"
-              respawn="false" output="screen"
-              args="
-              controllers/mast_calibration_controller
-    "/>-->
     <node name="ros_control_controller_manager" pkg="controller_manager" type="controller_manager" respawn="false"
           output="screen" args="load controllers/mast_calibration_controller
           controllers/joint5_calibration_controller
@@ -16,6 +10,8 @@
           controllers/joint3_calibration_controller
           controllers/joint2_calibration_controller
           controllers/joint1_calibration_controller
+          controllers/hand_calibration_controller
+          controllers/card_calibration_controller
 "/>
 
 </launch>

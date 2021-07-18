@@ -3,7 +3,7 @@ controllers:
     type: rm_calibration_controllers/JointCalibrationController
     joint: mast_joint
     actuator: mast_joint_motor
-    search_velocity: -0.4
+    search_velocity: 0.2
     threshold: 1e-3
     pid: { p: 1000.0, i: 0.0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0.0, antiwindup: true }
 
@@ -13,7 +13,7 @@ controllers:
     actuator: joint5_motor
     search_velocity: 0.7
     threshold: 1e-3
-    pid: { p: 2, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
+    pid: { p: 10, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
 
   joint4_calibration_controller:
     type: rm_calibration_controllers/JointCalibrationController
@@ -30,6 +30,7 @@ controllers:
     search_velocity: -4.0
     threshold: 0.1
     pid: { p: 5, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
+
   joint2_calibration_controller:
     type: rm_calibration_controllers/JointCalibrationController
     joint: joint2
@@ -37,6 +38,7 @@ controllers:
     search_velocity: -3.0
     threshold: 0.15
     pid: { p: 8, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
+
   joint1_calibration_controller:
     type: rm_calibration_controllers/JointCalibrationController
     joint: joint1
@@ -44,10 +46,19 @@ controllers:
     search_velocity: -0.7
     threshold: 1e-3
     pid: { p: 10, i: 0, d: 0, i_clamp_max: 0.5, i_clamp_min: 0, antiwindup: true }
+
   hand_calibration_controller:
     type: rm_calibration_controllers/JointCalibrationController
     joint: right_finger_joint
     actuator: right_finger_motor
-    search_velocity: 0.5
+    search_velocity: 0.1
     threshold: 1e-3
-    pid: { p: 20000, i: 0, d: 0, i_clamp_max: 0.5, i_clamp_min: 0, antiwindup: true }
+    pid: { p: 10000, i: 0, d: 0, i_clamp_max: 0.5, i_clamp_min: 0, antiwindup: true }
+
+  card_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: card_joint
+    actuator: card_joint_motor
+    search_velocity: -0.2
+    threshold: 1e-3
+    pid: { p: 2000.0, i: 0.0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0.0, antiwindup: true }
