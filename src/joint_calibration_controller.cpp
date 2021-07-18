@@ -39,6 +39,7 @@ bool JointCalibrationController::init(hardware_interface::RobotHW *robot_hw,
 
 void JointCalibrationController::starting(const ros::Time &time) {
   actuator_.setOffset(0.0);
+  actuator_.setCalibrated(false);
   state_ = INITIALIZED;
   if (actuator_.getCalibrated())
     ROS_INFO("Joint %s will be recalibrated, but was already calibrated at offset %f",
@@ -62,6 +63,7 @@ void JointCalibrationController::update(const ros::Time &time, const ros::Durati
       if (countdown_ < 0) {
         velocity_ctrl_.setCommand(0);
         actuator_.setOffset(-actuator_.getPosition());
+        actuator_.setCalibrated(true);
         state_ = CALIBRATED;
       }
       break;
