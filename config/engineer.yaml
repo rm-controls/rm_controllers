@@ -43,7 +43,7 @@ controllers:
     type: rm_calibration_controllers/JointCalibrationController
     joint: joint1
     actuator: joint1_motor
-    search_velocity: -0.7
+    search_velocity: 0.7
     threshold: 1e-3
     pid: { p: 10, i: 0, d: 0, i_clamp_max: 0.5, i_clamp_min: 0, antiwindup: true }
 
