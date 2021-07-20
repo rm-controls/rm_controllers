@@ -1,15 +1,15 @@
-#rm_gimbal_controllers
+# rm_gimbal_controllers
 ***
-##Overview
+## Overview
 ***
 This is a package about the cloud platform control,including the bullet and moving controll.
-####Key worlds:
+#### Key worlds:
 gimbal,bullet,ROS
-###License
+### License
 The source code is released under a [ BSD 3-Clause license](http://192.168.0.100:7070/dynamicx/rm_gimbal_controllers/-/blob/master/LICENSE)
-####Author:QiayuanLiao
-####Affiliation:DynamicX
-####Maintainer: QiayuanLiao
+#### Author:QiayuanLiao
+#### Affiliation:DynamicX
+#### Maintainer: QiayuanLiao
 The PACKAGE NAME package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 14.04, 18.04 and
 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
@@ -39,9 +39,9 @@ The PACKAGE NAME package has been tested under [ROS](https://www.ros.org/) Indig
 
 [comment]: <> (        })
 
-##Installation
+## Installation
 ***
-####Installation from Packages
+#### Installation from Packages
         sudo apt-get install ros-noetic-...
 Or better, use `rosdep`:
 
@@ -76,7 +76,7 @@ Run the main node with
 	roslaunch ros_package_template ros_package_template.launch
 
 
-##Config
+## Config
 ***
 * engineer.yaml
 * hero.yaml
@@ -84,10 +84,10 @@ Run the main node with
 * standard3.yaml
 * standard4.yaml
 * standard5.yaml
-##Launch files
+## Launch files
 ***
 * load_controller.launch
-##Bugs & Feature Requests
+## Bugs & Feature Requests
 ***
 Please report bugs and request features using the [Issue Tracker
 ](https://github.com/gdut-dynamic-x/rm_template/issues).
