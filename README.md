@@ -1,23 +1,16 @@
-# Package Name
-
-## Overview
-
-This is a template: replace, remove, and add where required. Describe here what this package does and what it's meant
-for in a few sentences.
-
-**Keywords:** example, package, template
-
-Or, add some keywords to the Bitbucket or GitHub repository.
-
-### License
-
-The source code is released under a [BSD 3-Clause license](LICENSE).
-
-**Author: Péter Fankhauser<br />
-Affiliation: [ANYbotics](https://www.anybotics.com/)<br />
-Maintainer: Péter Fankhauser, pfankhauser@anybotics.com**
-
-The PACKAGE NAME package has been tested under [ROS] Indigo, Melodic and Noetic on respectively Ubuntu 14.04, 18.04 and
+#rm_chassis_controllers
+***
+##Overview
+***
+This is a package about the chassis controllers,including the the controllers of balance,chassis base and mecanum.
+####Key worlds:
+chassis,mecanum,ROS
+###License
+The source code is released under a [ BSD 3-Clause license](http://192.168.0.100:7070/dynamicx/rm_gimbal_controllers/-/blob/master/LICENSE)
+####Author:QiayuanLiao
+####Affiliation:DynamicX
+####Maintainer: QiayuanLiao
+The PACKAGE NAME package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 14.04, 18.04 and
 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
 [![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
@@ -46,30 +39,27 @@ The PACKAGE NAME package has been tested under [ROS] Indigo, Melodic and Noetic 
 
 [comment]: <> (        })
 
-## Installation
-
-### Installation from Packages
-
-To install all packages from the this repository as Debian packages use
-
-    sudo apt-get install ros-noetic-...
-
+##Installation
+***
+####Installation from Packages
+        sudo apt-get install ros-noetic-...
 Or better, use `rosdep`:
 
-	sudo rosdep install --from-paths src
-	
-To install eigen library use
-
-	sudo apt-get install libeigen3-dev
-
-### Building from Source
-
-#### Dependencies
-
-- [Robot Operating System (ROS)](http://wiki.ros.org) (middleware for robotics),
-- [Eigen] (linear algebra library)
-
-  sudo rosdep install --from-paths src
+        sudo rosdep install --from-paths src
+####Building from Source
+#####Dependencies
+* [Robot Operating System (ROS) ](http://wiki.ros.org/) (middleware for robotics),
+* [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) (linear algebra library)
+* pluginlib
+* hardware_interface
+* controller_interface
+* forward_command_controller
+* realtime_tools
+* control_toolbox
+* effort_controllers
+* tf2
+* tf2_geometry_msgs
+* angles
 
 #### Building
 
@@ -82,123 +72,27 @@ using
 	rosdep install --from-paths . --ignore-src
 	catkin_make
 
-### Running in Docker
 
-Docker is a great way to run an application with all dependencies and libraries bundles together. Make sure
-to [install Docker](https://docs.docker.com/get-docker/) first.
+##Usage
+***
+* Run the controller with mon launch:
 
-First, spin up a simple container:
-
-	docker run -ti --rm --name ros-container ros:noetic bash
-
-This downloads the `ros:noetic` image from the Docker Hub, indicates that it requires an interactive terminal (`-t, -i`)
-, gives it a name (`--name`), removes it after you exit the container (`--rm`) and runs a command (`bash`).
-
-Now, create a catkin workspace, clone the package, build it, done!
-
-	apt-get update && apt-get install -y git
-	mkdir -p /ws/src && cd /ws/src
-	git clone https://github.com/leggedrobotics/ros_best_practices.git
-	cd ..
-	rosdep install --from-path src
-	catkin_make
-	source devel/setup.bash
-	roslaunch ros_package_template ros_package_template.launch
-
-### Unit Tests
-
-Run the unit tests with
-
-	catkin_make run_tests_ros_package_template
-
-### Static code analysis
-
-Run the static code analysis with
-
-	catkin_make roslint_ros_package_template
-
-## Usage
-
-Describe the quickest way to run this software, for example:
-
-Run the main node with
-
-	roslaunch ros_package_template ros_package_template.launch
-
-## Config files
-
-Config file folder/set 1
-
-* **config_file_1.yaml** Shortly explain the content of this config file
-
-Config file folder/set 2
-
-* **...**
-
-## Launch files
-
-* **launch_file_1.launch:** shortly explain what is launched (e.g standard simulation, simulation with gdb,...)
-
-  Argument set 1
-
-    - **`argument_1`** Short description (e.g. as commented in launch file). Default: `default_value`.
-
-  Argument set 2
-
-    - **`...`**
-
-* **...**
-
-## Nodes
-
-### ros_package_template
-
-Reads temperature measurements and computed the average.
-
-#### Subscribed Topics
-
-* **`/temperature`** ([sensor_msgs/Temperature])
-
-  The temperature measurements from which the average is computed.
-
-#### Published Topics
-
-...
-
-#### Services
-
-* **`get_average`** ([std_srvs/Trigger])
-
-  Returns information about the current average. For example, you can trigger the computation from the console with
-
-  	rosservice call /ros_package_template/get_average
-
-#### Parameters
-
-* **`subscriber_topic`** (string, default: "/temperature")
-
-  The name of the input topic.
-
-* **`cache_size`** (int, default: 200, min: 0, max: 1000)
-
-  The size of the cache.
-
-### NODE_B_NAME
-
-...
-
-## Bugs & Feature Requests
-
-Please report bugs and request features using the [Issue Tracker](https://github.com/gdut-dynamic-x/rm_template/issues)
-.
-
-
-[ROS]: http://www.ros.org
-
-[rviz]: http://wiki.ros.org/rviz
-
-[Eigen]: http://eigen.tuxfamily.org
-
-[std_srvs/Trigger]: http://docs.ros.org/api/std_srvs/html/srv/Trigger.html
-
-[sensor_msgs/Temperature]: http://docs.ros.org/api/sensor_msgs/html/msg/Temperature.html
+        mon launch rm_chassis_controller load_controllers.launch
+##Config
+***
+* auto.yaml
+* balance.yaml
+* localization.yaml
+* engineer.yaml
+* hero.yaml
+* sentry.yaml
+* standard3.yaml
+* standard4.yaml
+* standard5.yaml
+##Launch files
+***
+* load_controller.launch
+##Bugs & Feature Requests
+***
+Please report bugs and request features using the [Issue Tracker
+](https://github.com/gdut-dynamic-x/rm_template/issues).
