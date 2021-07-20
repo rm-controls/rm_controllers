@@ -351,6 +351,16 @@ void Controller::updateChassisVel() {
       chassis_vel_.angular.z = ma_filter_chassis_angular_->output();
     }
   }
+  if (track_pub_->trylock()) {
+    track_pub_->msg_.tracks.clear();
+    track_pub_->msg_.header.stamp = ros::Time::now();
+    rm_msgs::TrackData track_data2;
+    track_data2.detection_vel.x = ((yawFromQuat(map2base_.transform.rotation) - yawFromQuat(last_map2base_.transform.rotation)) / tf_period);
+    track_data2.detection_vel.y = chassis_vel_.angular.z;
+  //  ROS_INFO("I heared:%f,%f",track_data2.detection_vel.x,track_data2.detection_vel.y);
+    track_pub_->msg_.tracks.push_back(track_data2);
+    track_pub_->unlockAndPublish();
+  }
   last_map2base_ = map2base_;
 }
 
