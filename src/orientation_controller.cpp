@@ -3,7 +3,6 @@
 //
 
 #include "rm_orientation_controllers/orientation_controller.h"
-
 #include <rm_common/ros_utilities.h>
 #include <rm_common/ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
