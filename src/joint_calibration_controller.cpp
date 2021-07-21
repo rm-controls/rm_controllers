@@ -74,6 +74,7 @@ void JointCalibrationController::update(const ros::Time &time, const ros::Durati
           actuator.setCalibrated(true);
         }
         state_ = CALIBRATED;
+        ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
       }
       break;
     }
