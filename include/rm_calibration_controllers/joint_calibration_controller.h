@@ -31,7 +31,7 @@ class JointCalibrationController : public controller_interface::MultiInterfaceCo
   enum { INITIALIZED, MOVING, CALIBRATED };
   int state_{}, countdown_{};
   double vel_search_{}, threshold_{};
-  hardware_interface::ActuatorExtraHandle actuator_;
+  std::vector<hardware_interface::ActuatorExtraHandle> actuators_;
   effort_controllers::JointVelocityController velocity_ctrl_;
 };
 
