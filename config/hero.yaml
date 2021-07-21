@@ -22,7 +22,8 @@ controllers:
     block_effort: 6.5
     block_speed: 1.0
     block_duration: 0.05
-    anti_block_angle: 0.2
+    block_overtime: 1.0
+    anti_block_angle: 0.3
     anti_block_threshold: 0.1
     qd_10: 390.0
     qd_16: 580.0

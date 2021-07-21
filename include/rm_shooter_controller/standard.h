@@ -21,7 +21,7 @@
 namespace rm_shooter_controllers {
 
 struct Config {
-  double block_effort, block_speed, block_duration, anti_block_angle, anti_block_threshold;
+  double block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold;
   double qd_10, qd_15, qd_16, qd_18, qd_30;
 };
 
@@ -55,7 +55,7 @@ class Controller
   bool state_changed_ = false;
   bool maybe_block_ = false;
 
-  ros::Time last_shoot_time_, block_time_;
+  ros::Time last_shoot_time_, block_time_, last_block_time_;
   enum { STOP, READY, PUSH, BLOCK };
   int state_ = STOP;
   Config config_{};

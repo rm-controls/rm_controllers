@@ -14,6 +14,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &ro
       .block_effort = getParam(controller_nh, "block_effort", 0.),
       .block_speed = getParam(controller_nh, "block_speed", 0.),
       .block_duration = getParam(controller_nh, "block_duration", 0.),
+      .block_overtime = getParam(controller_nh, "block_overtime", 0.),
       .anti_block_angle = getParam(controller_nh, "anti_block_angle", 0.),
       .anti_block_threshold = getParam(controller_nh, "anti_block_threshold", 0.),
       .qd_10 = getParam(controller_nh, "qd_10", 0.),
@@ -111,7 +112,7 @@ void Controller::push(const ros::Time &time, const ros::Duration &period) {
     ROS_DEBUG("[Shooter] Wait for friction wheel");
 
   // Check block
-  if (std::abs(ctrl_trigger_.joint_.getEffort()) > config_.block_effort &&
+  if (ctrl_trigger_.joint_.getEffort() < -config_.block_effort &&
       std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed) {
     if (!maybe_block_) {
       block_time_ = time;
@@ -130,11 +131,11 @@ void Controller::block(const ros::Time &time, const ros::Duration &period) {
   if (state_changed_) { //on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter BLOCK");
-
+    last_block_time_ = time;
     ctrl_trigger_.setCommand(ctrl_trigger_.joint_.getPosition() + config_.anti_block_angle);
   }
   if (std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.joint_.getPosition())
-      < config_.anti_block_threshold) {
+      < config_.anti_block_threshold || (time - last_block_time_).toSec() > config_.block_overtime) {
     normalize();
 
     state_ = PUSH;
@@ -173,6 +174,7 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig &config, uint3
     config.block_effort = init_config.block_effort;
     config.block_speed = init_config.block_speed;
     config.block_duration = init_config.block_duration;
+    config.block_overtime = init_config.block_overtime;
     config.anti_block_angle = init_config.anti_block_angle;
     config.anti_block_threshold = init_config.anti_block_threshold;
     config.qd_10 = init_config.qd_10;
@@ -186,6 +188,7 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig &config, uint3
       .block_effort = config.block_effort,
       .block_speed = config.block_speed,
       .block_duration = config.block_duration,
+      .block_overtime = config.block_overtime,
       .anti_block_angle = config.anti_block_angle,
       .anti_block_threshold =config.anti_block_threshold,
       .qd_10 = config.qd_10,
