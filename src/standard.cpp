@@ -22,6 +22,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &ro
       .qd_16 = getParam(controller_nh, "qd_16", 0.),
       .qd_18 = getParam(controller_nh, "qd_18", 0.),
       .qd_30 = getParam(controller_nh, "qd_30", 0.),
+      .lf_extra_rotat_speed =getParam(controller_nh, "lf_extra_rotat_speed", 0.)
   };
   config_rt_buffer.initRT(config_);
   push_per_rotation_ = getParam(controller_nh, "push_per_rotation", 0);
@@ -158,7 +159,7 @@ void Controller::setSpeed(const rm_msgs::ShootCmd &cmd) {
     qd_des = config_.qd_30;
   else
     qd_des = 0.;
-  ctrl_friction_l_.setCommand(qd_des);
+  ctrl_friction_l_.setCommand(qd_des + config_.lf_extra_rotat_speed);
   ctrl_friction_r_.setCommand(-qd_des);
 }
 
@@ -182,6 +183,7 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig &config, uint3
     config.qd_16 = init_config.qd_16;
     config.qd_18 = init_config.qd_18;
     config.qd_30 = init_config.qd_30;
+    config.lf_extra_rotat_speed = init_config.lf_extra_rotat_speed;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{
@@ -195,7 +197,8 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig &config, uint3
       .qd_15 = config.qd_15,
       .qd_16 = config.qd_16,
       .qd_18 = config.qd_18,
-      .qd_30 = config.qd_30
+      .qd_30 = config.qd_30,
+      .lf_extra_rotat_speed = config.lf_extra_rotat_speed
   };
   config_rt_buffer.writeFromNonRT(config_non_rt);
 }

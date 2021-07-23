@@ -22,7 +22,7 @@ namespace rm_shooter_controllers {
 
 struct Config {
   double block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold;
-  double qd_10, qd_15, qd_16, qd_18, qd_30;
+  double qd_10, qd_15, qd_16, qd_18, qd_30, lf_extra_rotat_speed;
 };
 
 class Controller
