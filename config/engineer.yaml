@@ -62,3 +62,11 @@ controllers:
     search_velocity: -0.2
     threshold: 1e-3
     pid: { p: 2000.0, i: 0.0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0.0, antiwindup: true }
+
+  stone_platform_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: stone_platform_joint
+    actuators: [ stone_platform_joint_motor ]
+    search_velocity: -0.2
+    threshold: 1e-3
+    pid: { p: 1000.0, i: 0.0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0.0, antiwindup: true }
