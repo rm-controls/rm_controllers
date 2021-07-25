@@ -11,8 +11,10 @@
           args="
           controllers/robot_state_controller
           controllers/joint_state_controller
-          controllers/shooter_controller
-          controllers/gimbal_controller
+          controllers/upper_gimbal_controller
+          controllers/lower_gimbal_controller
+          controllers/upper_shooter_controller
+          controllers/lower_shooter_controller
     "/>
 
     <node pkg="tf" type="static_transform_publisher" name=""

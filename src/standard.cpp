@@ -28,8 +28,8 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &ro
   push_per_rotation_ = getParam(controller_nh, "push_per_rotation", 0);
   push_qd_threshold_ = getParam(controller_nh, "push_qd_threshold", 0.);
 
-  cmd_subscriber_ = root_nh.subscribe<rm_msgs::ShootCmd>(
-      "cmd_shoot", 1, &Controller::commandCB, this);
+  cmd_subscriber_ = controller_nh.subscribe<rm_msgs::ShootCmd>(
+      "command", 1, &Controller::commandCB, this);
   // Init dynamic reconfigure
   d_srv_ = new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>::CallbackType cb =
