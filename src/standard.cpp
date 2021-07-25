@@ -25,7 +25,8 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
 
   int chassis_angular_data_num{};
   if (!controller_nh.getParam("publish_rate", publish_rate_) ||
-      !controller_nh.getParam("chassis_angular_data_num", chassis_angular_data_num)) {
+      !controller_nh.getParam("chassis_angular_data_num", chassis_angular_data_num)||
+      !controller_nh.getParam("gimbal_des_frame_id", gimbal_des_frame_id_)) {
     ROS_ERROR("Some gimbal params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
@@ -34,22 +35,25 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
       !ctrl_pitch_.init(effort_joint_interface_, nh_pitch))
     return false;
 
+  yaw_frame_id_ = getParam(nh_yaw,"frame_id",std::string("yaw"));
+  pitch_frame_id_ = getParam(nh_pitch,"frame_id",std::string("pitch"));
+  gimbal_des_frame_id_ =  getParam(controller_nh,"gimbal_des_frame_id",std::string("gimbal_des"));
   map2gimbal_des_.header.frame_id = "map";
-  map2gimbal_des_.child_frame_id = "gimbal_des";
+  map2gimbal_des_.child_frame_id = gimbal_des_frame_id_;
   map2gimbal_des_.transform.rotation.w = 1.;
   map2pitch_.header.frame_id = "map";
-  map2pitch_.child_frame_id = "pitch";
+  map2pitch_.child_frame_id = pitch_frame_id_;
   map2pitch_.transform.rotation.w = 1.;
   map2base_.header.frame_id = "map";
   map2base_.child_frame_id = "base_link";
   map2base_.transform.rotation.w = 1.;
 
-  cmd_gimbal_sub_ = root_nh.subscribe<rm_msgs::GimbalCmd>("cmd_gimbal", 1, &Controller::commandCB, this);
+  cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
   data_detection_sub_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
   camera_sub_ = root_nh.subscribe<sensor_msgs::CameraInfo>("galaxy_camera/camera_info", 1, &Controller::cameraCB, this);
-  error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(root_nh, "error_des", 100));
-  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(root_nh, "track", 100));
+  error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
+  track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(controller_nh, "track", 100));
   tf_broadcaster_.init(root_nh);
 
   // init config
@@ -214,7 +218,7 @@ void Controller::setDes(const ros::Time &time, double yaw_des, double pitch_des)
 void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
   geometry_msgs::TransformStamped base2des;
   try {
-    base2des = robot_state_handle_.lookupTransform("base_link", "gimbal_des", ros::Time(0));
+    base2des = robot_state_handle_.lookupTransform("base_link", gimbal_des_frame_id_, ros::Time(0));
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
@@ -231,7 +235,7 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
 
 bool Controller::updateTf() {
   try {
-    map2pitch_ = robot_state_handle_.lookupTransform("map", "pitch", ros::Time(0));
+    map2pitch_ = robot_state_handle_.lookupTransform("map", pitch_frame_id_, ros::Time(0));
     map2base_ = robot_state_handle_.lookupTransform("map", "base_link", ros::Time(0));
   }
   catch (tf2::TransformException &ex) {

@@ -5,23 +5,52 @@ controllers:
   joint_state_controller:
     type: joint_state_controller/JointStateController
     publish_rate: 50
-  gimbal_controller:
+  upper_gimbal_controller:
     type: rm_gimbal_controllers/Controller
     time_compensation: 0.004
     publish_rate: 100
     chassis_angular_data_num: 20
+    gimbal_des_frame_id: "upper_gimbal_des"
     yaw:
       joint: "upper_yaw_joint"
-      pid: { p: 10, i: 0, d: 0.4, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
-#    lower_yaw:
-#      joint: "lower_yaw_joint"
-#      pid: { p: 10, i: 0, d: 0.4, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
+      pid: { p: 1, i: 0, d: 0, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
+      frame_id: "upper_yaw"
     pitch:
       joint: "upper_pitch_joint"
-      pid: { p: 15, i: 50, d: 0.2, i_clamp_max: 0.6, i_clamp_min: -0.6, antiwindup: true, publish_state: true }
-#    lower_pitch:
-#      joint: "lower_pitch_joint"
-#      pid: { p: 15, i: 50, d: 0.2, i_clamp_max: 0.6, i_clamp_min: -0.6, antiwindup: true, publish_state: true }
+      pid: { p: 1, i: 0, d: 0, i_clamp_max: 0.6, i_clamp_min: -0.6, antiwindup: true, publish_state: true }
+      frame_id: "upper_pitch"
+    bullet_solver:
+      resistance_coff_qd_10: 0.45
+      resistance_coff_qd_15: 0.4
+      resistance_coff_qd_16: 0.7
+      resistance_coff_qd_18: 0.55
+      resistance_coff_qd_30: 3.0
+      g: 9.81
+      delay: 0.2
+      dt: 0.001
+      timeout: 0.001
+      publish_rate: 50
+    moving_average_filter:
+      is_debug: true
+      center_offset_z: 0.05
+      pos_data_num: 20
+      vel_data_num: 30
+      center_data_num: 100
+      gyro_data_num: 100
+  lower_gimbal_controller:
+    type: rm_gimbal_controllers/Controller
+    time_compensation: 0.004
+    publish_rate: 100
+    chassis_angular_data_num: 20
+    gimbal_des_frame_id: "lower_gimbal_des"
+    yaw:
+      joint: "lower_yaw_joint"
+      pid: { p: 1, i: 0, d: 0, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
+      frame_id: "lower_yaw"
+    pitch:
+      joint: "lower_pitch_joint"
+      pid: { p: 1, i: 0, d: 0, i_clamp_max: 0.6, i_clamp_min: -0.6, antiwindup: true, publish_state: true }
+      frame_id: "lower_pitch"
     bullet_solver:
       resistance_coff_qd_10: 0.45
       resistance_coff_qd_15: 0.4
