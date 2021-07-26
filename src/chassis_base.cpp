@@ -63,7 +63,7 @@ bool ChassisBase::init(hardware_interface::RobotHW *robot_hw,
   }
 
   cmd_chassis_sub_ =
-      root_nh.subscribe<rm_msgs::ChassisCmd>("cmd_chassis", 1, &ChassisBase::cmdChassisCallback, this);
+      controller_nh.subscribe<rm_msgs::ChassisCmd>("command", 1, &ChassisBase::cmdChassisCallback, this);
   cmd_vel_sub_ =
       root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisBase::cmdVelCallback, this);
 
