@@ -25,8 +25,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
 
   int chassis_angular_data_num{};
   if (!controller_nh.getParam("publish_rate", publish_rate_) ||
-      !controller_nh.getParam("chassis_angular_data_num", chassis_angular_data_num)||
-      !controller_nh.getParam("gimbal_des_frame_id", gimbal_des_frame_id_)) {
+      !controller_nh.getParam("chassis_angular_data_num", chassis_angular_data_num)) {
     ROS_ERROR("Some gimbal params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
