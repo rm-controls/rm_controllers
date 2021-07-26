@@ -25,7 +25,7 @@ controllers:
     block_overtime: 0.5
     anti_block_angle: 0.2
     anti_block_threshold: 0.1
-    qd_15: 445.0
-    qd_18: 490.0
-    qd_30: 725.0
+    qd_15: 420.0
+    qd_18: 480.0
+    qd_30: 740.0
 
