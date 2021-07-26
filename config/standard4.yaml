@@ -28,7 +28,7 @@ controllers:
         wheel:
           joint: left_front_wheel_joint
           <<: &wheel_setting
-            radius: 0.0502
+            radius: 0.0495
             pid: { p: 0.4, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
       right_front:
         position: [ 0.175, -0.175 ]

@@ -11,7 +11,8 @@ bool SentryController::init(hardware_interface::RobotHW *robot_hw,
                             ros::NodeHandle &root_nh,
                             ros::NodeHandle &controller_nh) {
   ChassisBase::init(robot_hw, root_nh, controller_nh);
-  if (!ctrl_wheel_.init(effort_joint_interface_, controller_nh))
+  ros::NodeHandle nh_wheel = ros::NodeHandle(controller_nh, "wheel");
+  if (!ctrl_wheel_.init(effort_joint_interface_, nh_wheel))
     return false;
   joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_wheel_.getJointName()));
   return true;
