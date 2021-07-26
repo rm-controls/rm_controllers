@@ -50,7 +50,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
   data_detection_sub_ =
       root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
-  camera_sub_ = root_nh.subscribe<sensor_msgs::CameraInfo>("galaxy_camera/camera_info", 1, &Controller::cameraCB, this);
+  camera_sub_ = root_nh.subscribe<sensor_msgs::CameraInfo>("camera/camera_info", 1, &Controller::cameraCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
   track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(controller_nh, "track", 100));
   tf_broadcaster_.init(root_nh);
