@@ -13,11 +13,11 @@ controllers:
     gimbal_des_frame_id: "upper_gimbal_des"
     yaw:
       joint: "upper_yaw_joint"
-      pid: { p: 1, i: 0, d: 0, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
+      pid: { p: 5.0, i: 0, d: 0.3, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
       frame_id: "upper_yaw"
     pitch:
       joint: "upper_pitch_joint"
-      pid: { p: 1, i: 0, d: 0, i_clamp_max: 0.6, i_clamp_min: -0.6, antiwindup: true, publish_state: true }
+      pid: { p: 8.0, i: 50, d: 0.3, i_clamp_max: 0.1, i_clamp_min: -0.1, antiwindup: true, publish_state: true }
       frame_id: "upper_pitch"
     bullet_solver:
       resistance_coff_qd_10: 0.45
@@ -45,11 +45,11 @@ controllers:
     gimbal_des_frame_id: "lower_gimbal_des"
     yaw:
       joint: "lower_yaw_joint"
-      pid: { p: 1, i: 0, d: 0, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
+      pid: { p: 10.0, i: 0, d: 0.5, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
       frame_id: "lower_yaw"
     pitch:
       joint: "lower_pitch_joint"
-      pid: { p: 1, i: 0, d: 0, i_clamp_max: 0.6, i_clamp_min: -0.6, antiwindup: true, publish_state: true }
+      pid: { p: 10.0, i: 100, d: 0.3, i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
       frame_id: "lower_pitch"
     bullet_solver:
       resistance_coff_qd_10: 0.45
