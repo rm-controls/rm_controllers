@@ -45,7 +45,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   map2pitch_.child_frame_id = pitch_frame_id_;
   map2pitch_.transform.rotation.w = 1.;
   map2base_.header.frame_id = "map";
-  map2base_.child_frame_id = "base_link";
+  map2base_.child_frame_id = base_frame_;
   map2base_.transform.rotation.w = 1.;
 
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
@@ -207,12 +207,14 @@ void Controller::setDes(const ros::Time &time, double yaw_des, double pitch_des)
   quatToRPY(map2base_.transform.rotation, roll_base, pitch_base, yaw_base);
   double roll_now{}, pitch_now{}, yaw_now{};
   quatToRPY(map2gimbal_des_.transform.rotation, roll_now, pitch_now, yaw_now);
+  double pitch_delta = angles::shortest_angular_distance(pitch_base, pitch_des);
+  double yaw_delta = angles::shortest_angular_distance(yaw_base, yaw_des);
   map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw
-      (0,
-       (pitch_des - pitch_base) <= ctrl_pitch_.joint_urdf_->limits->upper
-           && (pitch_des - pitch_base) >= ctrl_pitch_.joint_urdf_->limits->lower ? pitch_des : pitch_now,
-       (yaw_des - yaw_base) <= ctrl_yaw_.joint_urdf_->limits->upper
-           && (yaw_des - yaw_base) >= ctrl_yaw_.joint_urdf_->limits->lower ? yaw_des : yaw_now);
+      (0.,
+       pitch_delta <= ctrl_pitch_.joint_urdf_->limits->upper && pitch_delta >= ctrl_pitch_.joint_urdf_->limits->lower ?
+       pitch_des : pitch_now,
+       yaw_delta <= ctrl_yaw_.joint_urdf_->limits->upper && yaw_delta >= ctrl_yaw_.joint_urdf_->limits->lower ?
+       yaw_des : yaw_now);
   map2gimbal_des_.header.stamp = time;
   robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
 }
@@ -238,7 +240,7 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
 bool Controller::updateTf() {
   try {
     map2pitch_ = robot_state_handle_.lookupTransform("map", pitch_frame_id_, ros::Time(0));
-    map2base_ = robot_state_handle_.lookupTransform("map", "base_link", ros::Time(0));
+    map2base_ = robot_state_handle_.lookupTransform("map", base_frame_, ros::Time(0));
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
