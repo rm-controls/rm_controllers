@@ -83,7 +83,8 @@ class Controller : public controller_interface::MultiInterfaceController<hardwar
   double publish_rate_{};
   bool dynamic_reconfig_initialized_{};
   bool state_changed_{};
-  std::string yaw_frame_id_{}, pitch_frame_id_{}, gimbal_des_frame_id_{}, base_frame_{};
+  std::string yaw_frame_id_{}, pitch_frame_id_{}, gimbal_des_frame_id_{}, base_frame_{}, detection_topic_{},
+      camera_topic_{};
 
   Config config_{};
   enum { RATE, TRACK, DIRECT };

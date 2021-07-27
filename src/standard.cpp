@@ -49,9 +49,11 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   map2base_.transform.rotation.w = 1.;
 
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
+  detection_topic_ = getParam(controller_nh, "detection_topic", std::string("/detection"));
   data_detection_sub_ =
-      root_nh.subscribe<rm_msgs::TargetDetectionArray>("detection", 1, &Controller::detectionCB, this);
-  camera_sub_ = root_nh.subscribe<sensor_msgs::CameraInfo>("camera/camera_info", 1, &Controller::cameraCB, this);
+      root_nh.subscribe<rm_msgs::TargetDetectionArray>(detection_topic_, 1, &Controller::detectionCB, this);
+  camera_topic_ = getParam(controller_nh, "camera_topic", std::string("/camera/camera_info"));
+  camera_sub_ = root_nh.subscribe<sensor_msgs::CameraInfo>(camera_topic_, 1, &Controller::cameraCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
   track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(controller_nh, "track", 100));
   tf_broadcaster_.init(root_nh);

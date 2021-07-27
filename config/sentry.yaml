@@ -11,6 +11,8 @@ controllers:
     publish_rate: 100
     chassis_angular_data_num: 20
     gimbal_des_frame_id: "upper_gimbal_des"
+    detection_topic: "/upper_detection"
+    camera_topic: "/upper_camera/camera_info"
     yaw:
       joint: "upper_yaw_joint"
       pid: { p: 5.0, i: 0, d: 0.3, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
@@ -43,6 +45,8 @@ controllers:
     publish_rate: 100
     chassis_angular_data_num: 20
     gimbal_des_frame_id: "lower_gimbal_des"
+    detection_topic: "/lower_detection"
+    camera_topic: "/lower_camera/camera_info"
     yaw:
       joint: "lower_yaw_joint"
       pid: { p: 10.0, i: 0, d: 0.5, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
