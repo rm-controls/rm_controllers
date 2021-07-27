@@ -34,9 +34,10 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
       !ctrl_pitch_.init(effort_joint_interface_, nh_pitch))
     return false;
 
-  yaw_frame_id_ = getParam(nh_yaw,"frame_id",std::string("yaw"));
-  pitch_frame_id_ = getParam(nh_pitch,"frame_id",std::string("pitch"));
-  gimbal_des_frame_id_ =  getParam(controller_nh,"gimbal_des_frame_id",std::string("gimbal_des"));
+  base_frame_ = getParam(controller_nh, "base_frame", std::string("base_link"));
+  yaw_frame_id_ = getParam(nh_yaw, "frame_id", std::string("yaw"));
+  pitch_frame_id_ = getParam(nh_pitch, "frame_id", std::string("pitch"));
+  gimbal_des_frame_id_ = getParam(controller_nh, "gimbal_des_frame_id", std::string("gimbal_des"));
   map2gimbal_des_.header.frame_id = "map";
   map2gimbal_des_.child_frame_id = gimbal_des_frame_id_;
   map2gimbal_des_.transform.rotation.w = 1.;
@@ -215,16 +216,16 @@ void Controller::setDes(const ros::Time &time, double yaw_des, double pitch_des)
 }
 
 void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
-  geometry_msgs::TransformStamped base2des;
+  geometry_msgs::TransformStamped base_frame2des;
   try {
-    base2des = robot_state_handle_.lookupTransform("base_link", gimbal_des_frame_id_, ros::Time(0));
+    base_frame2des = robot_state_handle_.lookupTransform(base_frame_, gimbal_des_frame_id_, ros::Time(0));
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
     return;
   }
   double roll_des, pitch_des, yaw_des;  // desired position
-  quatToRPY(base2des.transform.rotation, roll_des, pitch_des, yaw_des);
+  quatToRPY(base_frame2des.transform.rotation, roll_des, pitch_des, yaw_des);
 
   ctrl_yaw_.setCommand(yaw_des, -chassis_vel_.angular.z);
   ctrl_pitch_.setCommand(pitch_des, 0);
