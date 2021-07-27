@@ -34,18 +34,15 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
       !ctrl_pitch_.init(effort_joint_interface_, nh_pitch))
     return false;
 
-  base_frame_ = getParam(controller_nh, "base_frame", std::string("base_link"));
-  yaw_frame_id_ = getParam(nh_yaw, "frame_id", std::string("yaw"));
-  pitch_frame_id_ = getParam(nh_pitch, "frame_id", std::string("pitch"));
-  gimbal_des_frame_id_ = getParam(controller_nh, "gimbal_des_frame_id", std::string("gimbal_des"));
+  gimbal_des_frame_id_ = ctrl_pitch_.joint_urdf_->child_link_name + "_des";
   map2gimbal_des_.header.frame_id = "map";
   map2gimbal_des_.child_frame_id = gimbal_des_frame_id_;
   map2gimbal_des_.transform.rotation.w = 1.;
   map2pitch_.header.frame_id = "map";
-  map2pitch_.child_frame_id = pitch_frame_id_;
+  map2pitch_.child_frame_id = ctrl_pitch_.joint_urdf_->child_link_name;
   map2pitch_.transform.rotation.w = 1.;
   map2base_.header.frame_id = "map";
-  map2base_.child_frame_id = base_frame_;
+  map2base_.child_frame_id = ctrl_yaw_.joint_urdf_->parent_link_name;
   map2base_.transform.rotation.w = 1.;
 
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
@@ -222,7 +219,8 @@ void Controller::setDes(const ros::Time &time, double yaw_des, double pitch_des)
 void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
   geometry_msgs::TransformStamped base_frame2des;
   try {
-    base_frame2des = robot_state_handle_.lookupTransform(base_frame_, gimbal_des_frame_id_, ros::Time(0));
+    base_frame2des = robot_state_handle_.lookupTransform(ctrl_yaw_.joint_urdf_->parent_link_name,
+                                                         gimbal_des_frame_id_, ros::Time(0));
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
@@ -239,8 +237,8 @@ void Controller::moveJoint(const ros::Time &time, const ros::Duration &period) {
 
 bool Controller::updateTf() {
   try {
-    map2pitch_ = robot_state_handle_.lookupTransform("map", pitch_frame_id_, ros::Time(0));
-    map2base_ = robot_state_handle_.lookupTransform("map", base_frame_, ros::Time(0));
+    map2pitch_ = robot_state_handle_.lookupTransform("map", ctrl_pitch_.joint_urdf_->child_link_name, ros::Time(0));
+    map2base_ = robot_state_handle_.lookupTransform("map", ctrl_yaw_.joint_urdf_->parent_link_name, ros::Time(0));
   }
   catch (tf2::TransformException &ex) {
     ROS_WARN("%s", ex.what());
