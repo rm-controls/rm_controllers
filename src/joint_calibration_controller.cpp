@@ -40,7 +40,6 @@ bool JointCalibrationController::init(hardware_interface::RobotHW *robot_hw,
 
 void JointCalibrationController::starting(const ros::Time &time) {
   for (auto &actuator:actuators_) {
-    actuator.setOffset(0.0);
     actuator.setCalibrated(false);
     state_ = INITIALIZED;
     if (actuator.getCalibrated())
@@ -63,14 +62,14 @@ void JointCalibrationController::update(const ros::Time &time, const ros::Durati
       for (const auto &actuator:actuators_) {
         halted |= actuator.getHalted();
       }
-      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < threshold_ && !halted) {
+      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < threshold_ && !halted)
         countdown_--;
-      } else
+      else
         countdown_ = 100;
       if (countdown_ < 0) {
         velocity_ctrl_.setCommand(0);
         for (auto &actuator:actuators_) {
-          actuator.setOffset(-actuator.getPosition());
+          actuator.setOffset(-actuator.getPosition() + actuator.getOffset());
           actuator.setCalibrated(true);
         }
         state_ = CALIBRATED;
