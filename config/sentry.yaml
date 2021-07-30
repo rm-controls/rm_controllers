@@ -45,7 +45,7 @@ controllers:
     camera_topic: "/lower_camera/camera_info"
     yaw:
       joint: "lower_yaw_joint"
-      pid: { p: 10.0, i: 0, d: 0.5, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
+      pid: { p: 5.0, i: 0, d: 0.3, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
     pitch:
       joint: "lower_pitch_joint"
       pid: { p: 10.0, i: 100, d: 0.3, i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
