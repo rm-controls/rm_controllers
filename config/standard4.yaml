@@ -9,4 +9,4 @@ controllers:
     frame_fixed: "base_imu"
     frame_source: "odom"
     frame_target: "base_link"
-    publish_rate: 100
+    publish_rate: 200
