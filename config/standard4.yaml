@@ -24,7 +24,7 @@ controllers:
       resistance_coff_qd_18: 0.55
       resistance_coff_qd_30: 3.0
       g: 9.81
-      delay: 0.2
+      delay: 0.1
       dt: 0.001
       timeout: 0.001
       publish_rate: 50
@@ -33,5 +33,5 @@ controllers:
       center_offset_z: 0.05
       pos_data_num: 20
       vel_data_num: 30
-      center_data_num: 100
+      center_data_num: 50
       gyro_data_num: 100
