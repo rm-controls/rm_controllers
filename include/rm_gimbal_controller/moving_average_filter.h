@@ -22,7 +22,7 @@ class MovingAverageFilterTrack {
   explicit MovingAverageFilterTrack(ros::NodeHandle &nh,
                                     int id,
                                     hardware_interface::RobotStateHandle robot_state_handle);
-  void input(const geometry_msgs::TransformStamped &map2detection);
+  void input(const geometry_msgs::TransformStamped &map2detection, const std::string pitch_frame);
   geometry_msgs::TransformStamped getTransform() const { return output_map2detection_; }
   geometry_msgs::Vector3 getVel() const { return output_vel_; }
   geometry_msgs::Point getPos() const { return output_pos_; }

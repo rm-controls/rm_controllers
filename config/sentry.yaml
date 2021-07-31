@@ -12,6 +12,7 @@ controllers:
     chassis_angular_data_num: 20
     detection_topic: "/upper_detection"
     camera_topic: "/upper_camera/camera_info"
+    detection_frame: "upper_detection"
     yaw:
       joint: "upper_yaw_joint"
       pid: { p: 5.0, i: 0, d: 0.3, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
@@ -43,6 +44,7 @@ controllers:
     chassis_angular_data_num: 20
     detection_topic: "/lower_detection"
     camera_topic: "/lower_camera/camera_info"
+    detection_frame: "lower_detection"
     yaw:
       joint: "lower_yaw_joint"
       pid: { p: 5.0, i: 0, d: 0.3, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }

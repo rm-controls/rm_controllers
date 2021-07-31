@@ -39,12 +39,13 @@ MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle &nh,
                                                                                           100));
 }
 
-void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2detection) {
+void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2detection,
+                                     const std::string pitch_frame) {
   // Initialize the first time it enters the filter
   geometry_msgs::TransformStamped observation2map, observation2detection;
   try {
     geometry_msgs::TransformStamped map2pitch = robot_state_handle_.lookupTransform("map",
-                                                                                    "pitch",
+                                                                                    pitch_frame,
                                                                                     ros::Time(0));
     tf2::Quaternion quaternion;
     geometry_msgs::Transform map2observation;

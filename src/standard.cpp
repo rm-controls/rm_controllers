@@ -24,6 +24,10 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
   int chassis_angular_data_num{};
+  std::string detection_topic{}, camera_topic{};
+  detection_topic = getParam(controller_nh, "detection_topic", std::string("/detection"));
+  camera_topic = getParam(controller_nh, "camera_topic", std::string("/camera/camera_info"));
+  detection_frame_ = getParam(controller_nh, "detection_frame", std::string("detection"));
   if (!controller_nh.getParam("publish_rate", publish_rate_) ||
       !controller_nh.getParam("chassis_angular_data_num", chassis_angular_data_num)) {
     ROS_ERROR("Some gimbal params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
@@ -46,11 +50,9 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
   map2base_.transform.rotation.w = 1.;
 
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
-  detection_topic_ = getParam(controller_nh, "detection_topic", std::string("/detection"));
   data_detection_sub_ =
-      root_nh.subscribe<rm_msgs::TargetDetectionArray>(detection_topic_, 1, &Controller::detectionCB, this);
-  camera_topic_ = getParam(controller_nh, "camera_topic", std::string("/camera/camera_info"));
-  camera_sub_ = root_nh.subscribe<sensor_msgs::CameraInfo>(camera_topic_, 1, &Controller::cameraCB, this);
+      root_nh.subscribe<rm_msgs::TargetDetectionArray>(detection_topic, 1, &Controller::detectionCB, this);
+  camera_sub_ = root_nh.subscribe<sensor_msgs::CameraInfo>(camera_topic, 1, &Controller::cameraCB, this);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
   track_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::TrackDataArray>(controller_nh, "track", 100));
   tf_broadcaster_.init(root_nh);
@@ -294,9 +296,10 @@ bool Controller::updateTf() {
         map2detection.transform = tf2::toMsg(map2detection_tf);
         map2detection.header.stamp = detection_time;
         map2detection.header.frame_id = "map";
-        map2detection.child_frame_id = "detection" + std::to_string(detection.first);
+        map2detection.child_frame_id = detection_frame_ + std::to_string(detection.first);
 
-        moving_average_filters_track_.find(detection.first)->second->input(map2detection);
+        moving_average_filters_track_.find(detection.first)->second->input(map2detection,
+                                                                           ctrl_pitch_.joint_urdf_->child_link_name);
         detection_pos_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getPos();
         detection_vel_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getVel();
         center_pos_[detection.first] = moving_average_filters_track_.find(detection.first)->second->getCenter();
