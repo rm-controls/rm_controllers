@@ -34,7 +34,7 @@ controllers:
   joint2_calibration_controller:
     type: rm_calibration_controllers/JointCalibrationController
     joint: joint2
-    actuators: [ joint2_left_motor,joint2_right_motor ]
+    actuators: [ joint2_left_motor ]
     search_velocity: -2.0
     threshold: 0.5
     pid: { p: 3, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
