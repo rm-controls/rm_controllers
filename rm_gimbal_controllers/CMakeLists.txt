@@ -88,6 +88,8 @@ add_library(${PROJECT_NAME} src/standard.cpp src/bullet_solver.cpp src/moving_av
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
+
 #############
 ## Install ##
 #############
