@@ -13,6 +13,7 @@
   <author email="liaoqiayuan@gmail.com">Qiayuan Liao</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>robot_state_controller</exec_depend>
 
   <export>
     <metapackage/>
