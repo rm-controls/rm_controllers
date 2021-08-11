@@ -1,0 +1,60 @@
+controllers:
+  robot_state_controller:
+    type: robot_state_controller/RobotStateController
+    publish_rate: 100
+  imu_sensor_controller:
+    type: imu_sensor_controller/ImuSensorController
+    publish_rate: 100
+
+  chassis_controller:
+    type: rm_chassis_controllers/SwerveController
+    publish_rate: 100
+    enable_odom_tf: true
+    power:
+      coeff: 0.50
+      min_vel: 5.0
+    timeout: 0.1
+    twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
+    pid_follow: { p: 5, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+
+    modules:
+      left_front:
+        position: [ 0.175, 0.175 ]
+        pivot:
+          joint: left_front_pivot_joint
+          <<: &pivot_setting
+            offset: 0.
+            pid: { p: 5, i: 50, d: 0, i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
+        wheel:
+          joint: left_front_wheel_joint
+          <<: &wheel_setting
+            radius: 0.049
+            pid: { p: 0.4, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+      right_front:
+        position: [ 0.175, -0.175 ]
+        pivot:
+          joint: right_front_pivot_joint
+          <<: *pivot_setting
+        wheel:
+          joint: right_front_wheel_joint
+          <<: *wheel_setting
+      left_back:
+        position: [ -0.175, 0.175 ]
+        pivot:
+          joint: left_back_pivot_joint
+          <<: *pivot_setting
+        wheel:
+          joint: left_back_wheel_joint
+          <<: *wheel_setting
+      right_back:
+        position: [ -0.175, -0.175 ]
+        pivot:
+          joint: right_back_pivot_joint
+          <<: *pivot_setting
+        wheel:
+          joint: right_back_wheel_joint
+          <<: *wheel_setting
+
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 100

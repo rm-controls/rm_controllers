@@ -1,0 +1,23 @@
+world_frame: odom
+odom_frame: odom
+base_link_frame: base_link
+frequency: 100
+
+odom0: /odom
+odom0_config: [ false, false, false,
+                false, false, false,
+                true, true, false,
+                false, false, true,
+                false, false, false ]
+odom0_differential: false
+odom0_queue_size: 100
+
+imu0: /base_imu
+imu0_config: [ false, false, false,
+               true, true, true,
+               false, false, false,
+               true, true, true,
+               true, true, false ]
+imu0_differential: true
+imu0_queue_size: 10
+imu0_remove_gravitational_acceleration: true
