@@ -1,0 +1,43 @@
+controllers:
+  upper_trigger_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: upper_trigger_joint
+    actuators: [ upper_trigger_joint_motor ]
+    search_velocity: 2.0
+    threshold: 0.1
+    pid: { p: 0.3, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
+  upper_yaw_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: upper_yaw_joint
+    actuators: [ upper_yaw_joint_motor ]
+    search_velocity: 2.0
+    threshold: 0.1
+    pid: { p: 0.3, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
+  upper_pitch_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: upper_pitch_joint
+    actuators: [ upper_pitch_joint_motor ]
+    search_velocity: 2.0
+    threshold: 0.1
+    pid: { p: 0.3, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
+  lower_trigger_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: lower_trigger_joint
+    actuators: [ lower_trigger_joint_motor ]
+    search_velocity: 2.0
+    threshold: 0.1
+    pid: { p: 0.3, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
+  lower_yaw_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: lower_yaw_joint
+    actuators: [ lower_yaw_joint_motor ]
+    search_velocity: 2.0
+    threshold: 0.1
+    pid: { p: 0.6, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
+  lower_pitch_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: lower_pitch_joint
+    actuators: [ lower_pitch_joint_motor ]
+    search_velocity: 2.0
+    threshold: 0.1
+    pid: { p: 0.2, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }

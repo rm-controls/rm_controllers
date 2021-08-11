@@ -1,0 +1,88 @@
+controllers:
+  mast_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: mast_joint
+    actuators: [ mast_joint_motor ]
+    search_velocity: 0.2
+    threshold: 0.01
+    pid: { p: 1000.0, i: 0.0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0.0, antiwindup: true }
+
+  joint5_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: joint5
+    actuators: [ joint5_motor ]
+    search_velocity: 3.14
+    threshold: 0.001
+    pid: { p: 5, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
+
+  joint4_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: joint4
+    actuators: [ joint4_motor ]
+    search_velocity: -3.14
+    threshold: 0.001
+    pid: { p: 3, i: 0.0, d: 0, i_clamp_max: 0.0, i_clamp_min: 0, antiwindup: true }
+
+  joint3_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: joint3
+    actuators: [ joint3_motor ]
+    search_velocity: -4.0
+    threshold: 0.1
+    pid: { p: 3, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
+
+  joint2_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: joint2
+    actuators: [ joint2_left_motor ]
+    search_velocity: -2.0
+    threshold: 0.5
+    pid: { p: 3, i: 0, d: 0, i_clamp_max: 0, i_clamp_min: 0, antiwindup: true }
+
+  joint1_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: joint1
+    actuators: [ joint1_motor ]
+    search_velocity: 1.0
+    threshold: 0.001
+    pid: { p: 10, i: 0, d: 0, i_clamp_max: 0.5, i_clamp_min: 0, antiwindup: true }
+
+  hand_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: right_finger_joint
+    actuators: [ right_finger_joint_motor ]
+    search_velocity: 0.1
+    threshold: 0.001
+    pid: { p: 10000, i: 0, d: 0, i_clamp_max: 0.5, i_clamp_min: 0, antiwindup: true }
+
+  card_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: card_joint
+    actuators: [ card_joint_motor ]
+    search_velocity: -0.2
+    threshold: 0.001
+    pid: { p: 2000.0, i: 0.0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0.0, antiwindup: true }
+
+  stone_platform_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: stone_platform_joint
+    actuators: [ stone_platform_joint_motor ]
+    search_velocity: -0.2
+    threshold: 0.001
+    pid: { p: 1000.0, i: 0.0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0.0, antiwindup: true }
+
+  yaw_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: yaw_joint
+    actuators: [ yaw_joint_motor ]
+    search_velocity: -6.28
+    threshold: 0.001
+    pid: { p: 0.12, i: 0.0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0.0, antiwindup: true }
+
+  pitch_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: pitch_joint
+    actuators: [ pitch_joint_motor ]
+    search_velocity: 6.28
+    threshold: 0.01
+    pid: { p: 0.05, i: 0.0, d: 0.0, i_clamp_max: 0, i_clamp_min: 0.0, antiwindup: true }

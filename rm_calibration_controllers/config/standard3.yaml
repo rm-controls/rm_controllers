@@ -1,0 +1,15 @@
+controllers:
+  trigger_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: trigger_joint
+    actuators: [ trigger_joint_motor ]
+    search_velocity: 3.1415
+    threshold: 0.2
+    pid: { p: 0.3, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
+  cover_calibration_controller:
+    type: rm_calibration_controllers/JointCalibrationController
+    joint: cover_joint
+    actuators: [ cover_joint_motor ]
+    search_velocity: 6.28
+    threshold: 1e-2
+    pid: { p: 0.6, i: 0, d: 0.0, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true }
