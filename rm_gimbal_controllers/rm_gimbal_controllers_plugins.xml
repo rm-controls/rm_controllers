@@ -1,0 +1,11 @@
+<library path="lib/librm_gimbal_controllers">
+
+  <class name="rm_gimbal_controllers/Controller" type="rm_gimbal_controllers::Controller"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+      The Controller is RoboMaster robot Gimbal controller. It expects a EffortJointInterface type of hardware
+      interface.
+    </description>
+  </class>
+
+</library>
