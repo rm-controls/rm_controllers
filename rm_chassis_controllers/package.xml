@@ -32,10 +32,6 @@
     <exec_depend>imu_sensor_controller</exec_depend>
     <exec_depend>robot_localization</exec_depend>
 
-    <test_depend>robot_state_controller</test_depend>
-    <test_depend>rm_description</test_depend>
-    <test_depend>rm_gazebo</test_depend>
-
     <export>
         <controller_interface plugin="${prefix}/rm_chassis_controllers_plugins.xml"/>
     </export>
