@@ -4,8 +4,8 @@ services:
 
 env:
   matrix:
-    - ROS_DISTRO="noetic" UPSTREAM_WORKSPACE='github:rm-controls/rm_control#master -rm_base -rm_description -rm_gazebo'
-    - ROS_DISTRO="melodic" UPSTREAM_WORKSPACE='github:rm-controls/rm_control#master -rm_base -rm_description -rm_gazebo'
+    - ROS_DISTRO="noetic" UPSTREAM_WORKSPACE='github:rm-controls/rm_control#master -rm_control/rm_base -rm_control/rm_description -rm_control/rm_gazebo'
+    - ROS_DISTRO="melodic" UPSTREAM_WORKSPACE='github:rm-controls/rm_control#master -rm_control/rm_base -rm_control/rm_description -rm_control/rm_gazebo'
 
 install:
   - git clone --quiet --depth=1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci -b master
