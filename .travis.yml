@@ -9,5 +9,17 @@ env:
 
 install:
   - git clone --quiet --depth=1 https://github.com/ros-industrial/industrial_ci.git .industrial_ci -b master
+
+before_script:
+  - "curl -H 'Cache-Control: no-cache' https://raw.githubusercontent.com/fossas/fossa-cli/master/install.sh | sudo bash"
+
 script:
   - .industrial_ci/travis.sh
+  - fossa init
+  - fossa analyze
+
+after_success:
+  - cd <SOURCE_DIR> && fossa test
+
+notifications:
+  webhooks: https://app.fossa.io/hooks/travisci
