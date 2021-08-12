@@ -15,9 +15,11 @@ find_package(catkin REQUIRED
         roscpp
         roslint
 
+        rm_msgs
         rm_common
         pluginlib
         hardware_interface
+        controller_interface
         realtime_tools
         effort_controllers
         control_msgs
@@ -40,6 +42,7 @@ catkin_package(
         roscpp
         roslint
 
+        rm_msgs
         rm_common
         pluginlib
         hardware_interface

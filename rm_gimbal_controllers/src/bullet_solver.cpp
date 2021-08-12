@@ -35,7 +35,7 @@
 // Created by qiayuan on 8/14/20.
 //
 
-#include "rm_gimbal_controller/bullet_solver.h"
+#include "rm_gimbal_controllers/bullet_solver.h"
 #include <cmath>
 #include <tf/transform_datatypes.h>
 #include <rm_common/ori_tool.h>

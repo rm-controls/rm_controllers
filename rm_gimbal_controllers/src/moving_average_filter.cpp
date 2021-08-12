@@ -35,7 +35,7 @@
 // Created by chenzheng on 2021/5/8.
 //
 
-#include "rm_gimbal_controller/moving_average_filter.h"
+#include "rm_gimbal_controllers/moving_average_filter.h"
 #include <rm_common/ori_tool.h>
 #include <tf2/transform_datatypes.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>

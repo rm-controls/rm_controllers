@@ -34,7 +34,7 @@
 //
 // Created by qiayuan on 1/16/21.
 //
-#include "rm_gimbal_controller/standard.h"
+#include "rm_gimbal_controllers/standard.h"
 
 #include <string>
 #include <angles/angles.h>
@@ -147,7 +147,7 @@ void Controller::rate(const ros::Time& time, const ros::Duration& period)
     ROS_INFO("[Gimbal] Enter RATE");
     map2gimbal_des_.transform.rotation = map2pitch_.transform.rotation;
     map2gimbal_des_.header.stamp = time;
-    robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
+    robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controllers");
   }
   else
   {
@@ -228,7 +228,7 @@ void Controller::track(const ros::Time& time)
   else
   {
     map2gimbal_des_.header.stamp = time;
-    robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
+    robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controllers");
   }
 }
 
@@ -275,7 +275,7 @@ void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des)
       yaw_delta <= ctrl_yaw_.joint_urdf_->limits->upper && yaw_delta >= ctrl_yaw_.joint_urdf_->limits->lower ? yaw_des :
                                                                                                                yaw_now);
   map2gimbal_des_.header.stamp = time;
-  robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controller");
+  robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controllers");
 }
 
 void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)

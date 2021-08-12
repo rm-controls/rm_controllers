@@ -49,8 +49,8 @@
 #include <dynamic_reconfigure/server.h>
 #include <rm_msgs/TargetDetectionArray.h>
 #include <rm_gimbal_controllers/GimbalConfig.h>
-#include <rm_gimbal_controller/bullet_solver.h>
-#include <rm_gimbal_controller/moving_average_filter.h>
+#include <rm_gimbal_controllers/bullet_solver.h>
+#include <rm_gimbal_controllers/moving_average_filter.h>
 #include <visualization_msgs/Marker.h>
 #include <sensor_msgs/CameraInfo.h>
 
