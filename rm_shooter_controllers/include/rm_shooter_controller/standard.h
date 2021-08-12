@@ -30,7 +30,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
- 
+
 //
 // Created by huakang on 2021/1/18.
 //
@@ -51,35 +51,37 @@
 
 #include <utility>
 
-namespace rm_shooter_controllers {
-
-struct Config {
+namespace rm_shooter_controllers
+{
+struct Config
+{
   double block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold;
   double qd_10, qd_15, qd_16, qd_18, qd_30, lf_extra_rotat_speed;
 };
 
-class Controller
-    : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                            hardware_interface::RobotStateInterface> {
- public:
+class Controller : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
+                                                                         hardware_interface::RobotStateInterface>
+{
+public:
   Controller() = default;
-  bool init(hardware_interface::RobotHW *robot_hw,
-            ros::NodeHandle &root_nh, ros::NodeHandle
-            &controller_nh) override;
-  void update(const ros::Time &time, const ros::Duration &period) override;
-  void starting(const ros::Time & /*time*/) override;
+  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  void update(const ros::Time& time, const ros::Duration& period) override;
+  void starting(const ros::Time& /*time*/) override;
 
- private:
-  void stop(const ros::Time &time, const ros::Duration &period);
-  void ready(const ros::Duration &period);
-  void push(const ros::Time &time, const ros::Duration &period);
-  void block(const ros::Time &time, const ros::Duration &period);
-  void setSpeed(const rm_msgs::ShootCmd &cmd);
+private:
+  void stop(const ros::Time& time, const ros::Duration& period);
+  void ready(const ros::Duration& period);
+  void push(const ros::Time& time, const ros::Duration& period);
+  void block(const ros::Time& time, const ros::Duration& period);
+  void setSpeed(const rm_msgs::ShootCmd& cmd);
   void normalize();
-  void commandCB(const rm_msgs::ShootCmdConstPtr &msg) { cmd_rt_buffer_.writeFromNonRT(*msg); }
-  void reconfigCB(rm_shooter_controllers::ShooterConfig &config, uint32_t /*level*/);
+  void commandCB(const rm_msgs::ShootCmdConstPtr& msg)
+  {
+    cmd_rt_buffer_.writeFromNonRT(*msg);
+  }
+  void reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/);
 
-  hardware_interface::EffortJointInterface *effort_joint_interface_{};
+  hardware_interface::EffortJointInterface* effort_joint_interface_{};
   effort_controllers::JointVelocityController ctrl_friction_l_, ctrl_friction_r_;
   effort_controllers::JointPositionController ctrl_trigger_;
   int push_per_rotation_{};
@@ -89,15 +91,21 @@ class Controller
   bool maybe_block_ = false;
 
   ros::Time last_shoot_time_, block_time_, last_block_time_;
-  enum { STOP, READY, PUSH, BLOCK };
+  enum
+  {
+    STOP,
+    READY,
+    PUSH,
+    BLOCK
+  };
   int state_ = STOP;
   Config config_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer;
   realtime_tools::RealtimeBuffer<rm_msgs::ShootCmd> cmd_rt_buffer_;
   rm_msgs::ShootCmd cmd_;
   ros::Subscriber cmd_subscriber_;
-  dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig> *d_srv_{};
+  dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>* d_srv_{};
 };
 
-} // namespace rm_shooter_controllers
-#endif //SRC_RM_SHOOTER_CONTROLLERS_INCLUDE_RM_SHOOTER_CONTROLLER_STANDARD_H_
+}  // namespace rm_shooter_controllers
+#endif  // SRC_RM_SHOOTER_CONTROLLERS_INCLUDE_RM_SHOOTER_CONTROLLER_STANDARD_H_
