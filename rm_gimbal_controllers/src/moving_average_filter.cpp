@@ -30,7 +30,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
- 
+
 //
 // Created by chenzheng on 2021/5/8.
 //
@@ -40,17 +40,16 @@
 #include <tf2/transform_datatypes.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
-namespace moving_average_filter {
-MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle &nh,
-                                                   int id,
-                                                   hardware_interface::RobotStateHandle robot_state_handle) {
+namespace moving_average_filter
+{
+MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle& nh, int id,
+                                                   hardware_interface::RobotStateHandle robot_state_handle)
+{
   robot_state_handle_ = std::move(robot_state_handle);
-  if (!nh.getParam("is_debug", is_debug_) ||
-      !nh.getParam("pos_data_num", pos_data_num_) ||
-      !nh.getParam("vel_data_num", vel_data_num_) ||
-      !nh.getParam("center_data_num", center_data_num_) ||
-      !nh.getParam("gyro_data_num", gyro_data_num_) ||
-      !nh.getParam("center_offset_z", center_offset_z_)) {
+  if (!nh.getParam("is_debug", is_debug_) || !nh.getParam("pos_data_num", pos_data_num_) ||
+      !nh.getParam("vel_data_num", vel_data_num_) || !nh.getParam("center_data_num", center_data_num_) ||
+      !nh.getParam("gyro_data_num", gyro_data_num_) || !nh.getParam("center_offset_z", center_offset_z_))
+  {
     ROS_ERROR("Some gimbal params doesn't given (namespace: %s)", nh.getNamespace().c_str());
     return;
   }
@@ -67,19 +66,17 @@ MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle &nh,
   ma_filter_gyro_vel_ = new MovingAverageFilter<double>(gyro_data_num_);
 
   if (is_debug_)
-    realtime_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::MovingAverageData>(nh,
-                                                                                          "id" + std::to_string(id),
-                                                                                          100));
+    realtime_pub_.reset(
+        new realtime_tools::RealtimePublisher<rm_msgs::MovingAverageData>(nh, "id" + std::to_string(id), 100));
 }
 
-void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2detection,
-                                     const std::string pitch_frame) {
+void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped& map2detection, const std::string pitch_frame)
+{
   // Initialize the first time it enters the filter
   geometry_msgs::TransformStamped observation2map, observation2detection;
-  try {
-    geometry_msgs::TransformStamped map2pitch = robot_state_handle_.lookupTransform("map",
-                                                                                    pitch_frame,
-                                                                                    ros::Time(0));
+  try
+  {
+    geometry_msgs::TransformStamped map2pitch = robot_state_handle_.lookupTransform("map", pitch_frame, ros::Time(0));
     tf2::Quaternion quaternion;
     geometry_msgs::Transform map2observation;
     double map2pitch_yaw = yawFromQuat(map2pitch.transform.rotation);
@@ -93,19 +90,22 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
     observation2map.header.stamp = map2detection.header.stamp;
     tf2::doTransform(map2detection, observation2detection, observation2map);
   }
-  catch (tf2::TransformException &ex) {
+  catch (tf2::TransformException& ex)
+  {
     ROS_WARN("%s", ex.what());
     return;
   }
   output_map2detection_ = map2detection;
   double dt = std::abs(map2detection.header.stamp.toSec() - last_map2detection_.header.stamp.toSec());
-  if (dt > 0.5) {
+  if (dt > 0.5)
+  {
     last_observation2detection_ = observation2detection;
     last_map2detection_ = map2detection;
     last_output_pos_.x = map2detection.transform.translation.x;
     last_output_pos_.y = map2detection.transform.translation.y;
     last_output_pos_.z = map2detection.transform.translation.z;
-    for (int i = 0; i < pos_data_num_; ++i) {
+    for (int i = 0; i < pos_data_num_; ++i)
+    {
       ma_filter_pos_x_->input(map2detection.transform.translation.x);
       ma_filter_pos_y_->input(map2detection.transform.translation.y);
       ma_filter_pos_z_->input(map2detection.transform.translation.z);
@@ -113,7 +113,8 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
     ma_filter_vel_x_->clear();
     ma_filter_vel_y_->clear();
     ma_filter_vel_z_->clear();
-    for (int i = 0; i < center_data_num_; ++i) {
+    for (int i = 0; i < center_data_num_; ++i)
+    {
       ma_filter_center_x_->input(map2detection.transform.translation.x);
       ma_filter_center_y_->input(map2detection.transform.translation.y);
       ma_filter_center_z_->input(map2detection.transform.translation.z);
@@ -134,14 +135,17 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
 
   // If true, the target armor is switching
   double delta = observation2detection.transform.translation.y - last_observation2detection_.transform.translation.y;
-  if (std::abs(delta) > 0.1) {
+  if (std::abs(delta) > 0.1)
+  {
     delta_ = delta;
-    for (int i = 0; i < pos_data_num_; ++i) {
+    for (int i = 0; i < pos_data_num_; ++i)
+    {
       ma_filter_pos_x_->input(now_map2detection.transform.translation.x);
       ma_filter_pos_y_->input(now_map2detection.transform.translation.y);
       ma_filter_pos_z_->input(now_map2detection.transform.translation.z);
     }
-    for (int i = 0; i < vel_data_num_; ++i) {
+    for (int i = 0; i < vel_data_num_; ++i)
+    {
       ma_filter_vel_x_->input(output_vel_.x);
       ma_filter_vel_y_->input(output_vel_.y);
       ma_filter_vel_z_->input(output_vel_.z);
@@ -150,12 +154,14 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
     // If switch number bigger than 3, so it is in gyro
     if (switch_count_ <= 3)
       switch_count_++;
-    else {
+    else
+    {
       enter_gyro_time_ = now_map2detection.header.stamp;
       is_gyro_ = true;
     }
   }
-  if (std::abs(now_map2detection.header.stamp.toSec() - enter_gyro_time_.toSec()) >= 1.0 && is_gyro_) {
+  if (std::abs(now_map2detection.header.stamp.toSec() - enter_gyro_time_.toSec()) >= 1.0 && is_gyro_)
+  {
     is_gyro_ = false;
     switch_count_ = 0;
   }
@@ -167,16 +173,25 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   output_pos_.x = ma_filter_pos_x_->output();
   output_pos_.y = ma_filter_pos_y_->output();
   output_pos_.z = ma_filter_pos_z_->output();
-  try { tf2::doTransform(output_pos_, output_pos_observation_, observation2map); }
-  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+  try
+  {
+    tf2::doTransform(output_pos_, output_pos_observation_, observation2map);
+  }
+  catch (tf2::TransformException& ex)
+  {
+    ROS_WARN("%s", ex.what());
+  }
 
   // filter vel
   double vel_x = std::abs((output_pos_.x - last_output_pos_.x) / dt - output_vel_.x) < 5.0 ?
-                 (output_pos_.x - last_output_pos_.x) / dt : output_vel_.x;
+                     (output_pos_.x - last_output_pos_.x) / dt :
+                     output_vel_.x;
   double vel_y = std::abs((output_pos_.y - last_output_pos_.y) / dt - output_vel_.y) < 5.0 ?
-                 (output_pos_.y - last_output_pos_.y) / dt : output_vel_.y;
+                     (output_pos_.y - last_output_pos_.y) / dt :
+                     output_vel_.y;
   double vel_z = std::abs((output_pos_.z - last_output_pos_.z) / dt - output_vel_.z) < 5.0 ?
-                 (output_pos_.z - last_output_pos_.z) / dt : output_vel_.z;
+                     (output_pos_.z - last_output_pos_.z) / dt :
+                     output_vel_.z;
   ma_filter_vel_x_->input(vel_x);
   ma_filter_vel_y_->input(vel_y);
   ma_filter_vel_z_->input(vel_z);
@@ -191,12 +206,19 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   output_center_.x = ma_filter_center_x_->output();
   output_center_.y = ma_filter_center_y_->output();
   output_center_.z = ma_filter_center_z_->output() - center_offset_z_;
-  try { tf2::doTransform(output_center_, output_center_observation_, observation2map); }
-  catch (tf2::TransformException &ex) { ROS_WARN("%s", ex.what()); }
+  try
+  {
+    tf2::doTransform(output_center_, output_center_observation_, observation2map);
+  }
+  catch (tf2::TransformException& ex)
+  {
+    ROS_WARN("%s", ex.what());
+  }
 
   // filter gyro vel
   double detection_gyro_vel{};
-  if (delta < 0.1 && is_gyro_) {
+  if (delta < 0.1 && is_gyro_)
+  {
     detection_gyro_vel =
         delta / (observation2detection.header.stamp.toSec() - last_observation2detection_.header.stamp.toSec());
     if (std::abs(detection_gyro_vel - output_gyro_vel_) < 3.0)
@@ -213,7 +235,8 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
   last_map2detection_ = now_map2detection;
   last_observation2detection_ = observation2detection;
 
-  if (is_debug_) {
+  if (is_debug_)
+  {
     rm_msgs::MovingAverageData moving_average_data{};
     moving_average_data.header.stamp = now_map2detection.header.stamp;
     moving_average_data.real_pos_x = now_map2detection.transform.translation.x;
@@ -234,10 +257,11 @@ void MovingAverageFilterTrack::input(const geometry_msgs::TransformStamped &map2
     moving_average_data.real_gyro_vel = detection_gyro_vel;
     moving_average_data.filtered_gyro_vel = output_gyro_vel_;
 
-    if (realtime_pub_->trylock()) {
+    if (realtime_pub_->trylock())
+    {
       realtime_pub_->msg_ = moving_average_data;
       realtime_pub_->unlockAndPublish();
     }
   }
 }
-}
+}  // namespace moving_average_filter
