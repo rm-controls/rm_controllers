@@ -38,7 +38,7 @@
 #include <rm_common/ros_utilities.h>
 #include <string>
 #include <pluginlib/class_list_macros.hpp>
-#include "rm_shooter_controller/standard.h"
+#include "rm_shooter_controllers/standard.h"
 
 namespace rm_shooter_controllers
 {
