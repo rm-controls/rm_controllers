@@ -23,6 +23,7 @@ find_package(catkin REQUIRED
         tf2_kdl
         kdl_parser
         realtime_tools
+        pluginlib
         )
 
 ###################################
@@ -50,6 +51,7 @@ catkin_package(
         tf2_ros
         kdl_parser
         realtime_tools
+        pluginlib
         LIBRARIES ${PROJECT_NAME}
 )
 
