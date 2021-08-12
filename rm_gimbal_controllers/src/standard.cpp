@@ -106,7 +106,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   return true;
 }
 
-void Controller::starting(const ros::Time&)
+void Controller::starting(const ros::Time& /*unused*/)
 {
   state_ = RATE;
   state_changed_ = true;
@@ -462,7 +462,7 @@ void Controller::cameraCB(const sensor_msgs::CameraInfoConstPtr& msg)
   camera_rt_buffer_.writeFromNonRT(*msg);
 }
 
-void Controller::reconfigCB(rm_gimbal_controllers::GimbalConfig& config, uint32_t)
+void Controller::reconfigCB(rm_gimbal_controllers::GimbalConfig& config, uint32_t /*unused*/)
 {
   ROS_INFO("[Gimbal] Dynamic params change");
   if (!dynamic_reconfig_initialized_)
