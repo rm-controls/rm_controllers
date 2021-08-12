@@ -30,7 +30,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
- 
+
 //
 // Created by chenzheng on 2021/2/23.
 //
@@ -44,19 +44,20 @@
 #include <Eigen/Dense>
 #include <rm_common/lqr.h>
 
-namespace rm_chassis_controllers {
-
-class BalanceController : public ChassisBase {
- public:
+namespace rm_chassis_controllers
+{
+class BalanceController : public ChassisBase
+{
+public:
   BalanceController() = default;
-  bool init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
-  void update(const ros::Time &time, const ros::Duration &period) override;
+  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  void update(const ros::Time& time, const ros::Duration& period) override;
 
- private:
+private:
   void getK(XmlRpc::XmlRpcValue a, XmlRpc::XmlRpcValue b, XmlRpc::XmlRpcValue q, XmlRpc::XmlRpcValue r);
-  void moveJoint(const ros::Time &time, const ros::Duration &period) override;
+  void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   geometry_msgs::Twist forwardKinematics() override;
-  void dataImuCallback(const sensor_msgs::ImuConstPtr &data);
+  void dataImuCallback(const sensor_msgs::ImuConstPtr& data);
 
   hardware_interface::JointHandle joint_left_, joint_right_;
   ros::Subscriber data_imu_sub_;
@@ -77,6 +78,6 @@ class BalanceController : public ChassisBase {
   double com_pitch_offset_{};
 };
 
-}
+}  // namespace rm_chassis_controllers
 
-#endif // RM_CHASSIS_CONTROLLER_STANDARD_H
+#endif  // RM_CHASSIS_CONTROLLER_STANDARD_H

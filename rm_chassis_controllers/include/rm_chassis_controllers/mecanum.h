@@ -30,7 +30,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
- 
+
 //
 // Created by flying on 2021/1/18.
 //
@@ -40,20 +40,21 @@
 
 #include "rm_chassis_controllers/chassis_base.h"
 
-namespace rm_chassis_controllers {
-
-class MecanumController : public ChassisBase {
- public:
+namespace rm_chassis_controllers
+{
+class MecanumController : public ChassisBase
+{
+public:
   MecanumController() = default;
-  bool init(hardware_interface::RobotHW *robot_hw, ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
+  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
 
- private:
-  void moveJoint(const ros::Time &time, const ros::Duration &period) override;
+private:
+  void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   geometry_msgs::Twist forwardKinematics() override;
 
   effort_controllers::JointVelocityController ctrl_lf_, ctrl_rf_, ctrl_lb_, ctrl_rb_;
 };
 
-} // namespace rm_chassis_controllers
+}  // namespace rm_chassis_controllers
 
-#endif // RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
+#endif  // RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H

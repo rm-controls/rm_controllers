@@ -30,7 +30,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
- 
+
 //
 // Created by flying on 2021/1/18.
 //
@@ -39,19 +39,18 @@
 #include <string>
 #include <pluginlib/class_list_macros.hpp>
 
-namespace rm_chassis_controllers {
-bool MecanumController::init(hardware_interface::RobotHW *robot_hw,
-                             ros::NodeHandle &root_nh,
-                             ros::NodeHandle &controller_nh) {
+namespace rm_chassis_controllers
+{
+bool MecanumController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
+                             ros::NodeHandle& controller_nh)
+{
   ChassisBase::init(robot_hw, root_nh, controller_nh);
   ros::NodeHandle nh_lf = ros::NodeHandle(controller_nh, "left_front");
   ros::NodeHandle nh_rf = ros::NodeHandle(controller_nh, "right_front");
   ros::NodeHandle nh_lb = ros::NodeHandle(controller_nh, "left_back");
   ros::NodeHandle nh_rb = ros::NodeHandle(controller_nh, "right_back");
-  if (!ctrl_lf_.init(effort_joint_interface_, nh_lf) ||
-      !ctrl_rf_.init(effort_joint_interface_, nh_rf) ||
-      !ctrl_lb_.init(effort_joint_interface_, nh_lb) ||
-      !ctrl_rb_.init(effort_joint_interface_, nh_rb))
+  if (!ctrl_lf_.init(effort_joint_interface_, nh_lf) || !ctrl_rf_.init(effort_joint_interface_, nh_rf) ||
+      !ctrl_lb_.init(effort_joint_interface_, nh_lb) || !ctrl_rb_.init(effort_joint_interface_, nh_rb))
     return false;
   joint_handles_.push_back(ctrl_lf_.joint_);
   joint_handles_.push_back(ctrl_rf_.joint_);
@@ -60,7 +59,8 @@ bool MecanumController::init(hardware_interface::RobotHW *robot_hw,
   return true;
 }
 
-void MecanumController::moveJoint(const ros::Time &time, const ros::Duration &period) {
+void MecanumController::moveJoint(const ros::Time& time, const ros::Duration& period)
+{
   double a = (wheel_base_ + wheel_track_) / 2.0;
   ctrl_lf_.setCommand((ramp_x->output() - ramp_y->output() - ramp_w->output() * a) / wheel_radius_);
   ctrl_rf_.setCommand((ramp_x->output() + ramp_y->output() + ramp_w->output() * a) / wheel_radius_);
@@ -72,7 +72,8 @@ void MecanumController::moveJoint(const ros::Time &time, const ros::Duration &pe
   ctrl_rb_.update(time, period);
 }
 
-geometry_msgs::Twist MecanumController::forwardKinematics() {
+geometry_msgs::Twist MecanumController::forwardKinematics()
+{
   geometry_msgs::Twist vel_data;
   double k = wheel_radius_ / 4.0;
   double lf_velocity = ctrl_lf_.joint_.getVelocity();
@@ -85,6 +86,6 @@ geometry_msgs::Twist MecanumController::forwardKinematics() {
   return vel_data;
 }
 
-} // namespace rm_chassis_controllers
+}  // namespace rm_chassis_controllers
 
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::MecanumController, controller_interface::ControllerBase)
