@@ -30,7 +30,7 @@
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *******************************************************************************/
- 
+
 //
 // Created by qiayuan on 1/3/21.
 //
@@ -50,28 +50,34 @@
 #include <urdf/model.h>
 #include <kdl/tree.hpp>
 
-namespace robot_state_controller {
-class SegmentPair {
- public:
-  SegmentPair(const KDL::Segment &p_segment, std::string p_root, std::string p_tip) :
-      segment(p_segment), root(std::move(p_root)), tip(std::move(p_tip)) {}
+namespace robot_state_controller
+{
+class SegmentPair
+{
+public:
+  SegmentPair(const KDL::Segment& p_segment, std::string p_root, std::string p_tip)
+    : segment(p_segment), root(std::move(p_root)), tip(std::move(p_tip))
+  {
+  }
 
   KDL::Segment segment{};
   std::string root, tip;
 };
 
-class RobotStateController : public controller_interface::MultiInterfaceController<
-    hardware_interface::JointStateInterface, hardware_interface::RobotStateInterface> {
- public:
+class RobotStateController
+  : public controller_interface::MultiInterfaceController<hardware_interface::JointStateInterface,
+                                                          hardware_interface::RobotStateInterface>
+{
+public:
   RobotStateController() = default;
-  bool init(hardware_interface::RobotHW *robot_hw,
-            ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
-  void update(const ros::Time &time, const ros::Duration & /*period*/) override;
- private:
+  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  void update(const ros::Time& time, const ros::Duration& /*period*/) override;
+
+private:
   virtual void addChildren(KDL::SegmentMap::const_iterator segment);
 
   urdf::Model model_{};
-  std::map<std::string, urdf::JointMimicSharedPtr> *mimic_{};
+  std::map<std::string, urdf::JointMimicSharedPtr>* mimic_{};
   unsigned int num_hw_joints_{};
   bool use_tf_static_{};
   bool ignore_timestamp_{};
@@ -84,10 +90,10 @@ class RobotStateController : public controller_interface::MultiInterfaceControll
   rm_common::TfRtBroadcaster tf_broadcaster_;
   rm_common::StaticTfRtBroadcaster static_tf_broadcaster_;
 
-  tf2_ros::Buffer *tf_buffer_{};
-  tf2_ros::TransformListener *tf_listener_{};
+  tf2_ros::Buffer* tf_buffer_{};
+  tf2_ros::TransformListener* tf_listener_{};
 };
 
-}
+}  // namespace robot_state_controller
 
-#endif //ROBOT_STATE_CONTROLLER_ROBOT_STATE_CONTROLLER_H
+#endif  // ROBOT_STATE_CONTROLLER_ROBOT_STATE_CONTROLLER_H
