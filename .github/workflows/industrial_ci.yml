@@ -27,4 +27,4 @@ jobs:
       - uses: 'ros-industrial/industrial_ci@master'
         env:
           ${{ matrix.env }}
-          BRANCH_NAME
+          BRANCH_NAME: ${BRANCH_NAME}
