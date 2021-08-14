@@ -16,15 +16,16 @@ jobs:
       UPSTREAM_WORKSPACE: github:rm-controls/rm_control#${BRANCH_NAME} -rm_control/rm_control -rm_control/rm_base -rm_control/rm_description -rm_control/rm_gazebo
     runs-on: ubuntu-latest
     steps:
-      - uses: nelonoel/branch-name@v1.0.1
       - uses: actions/checkout@v2
       # This step will fetch/store the directory used by ccache before/after the ci run
       - uses: actions/cache@v2
         with:
           path: ${{ env.CCACHE_DIR }}
           key: ccache-${{ matrix.env.ROS_DISTRO }}-${{ matrix.env.ROS_REPO }}
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
       # Run industrial_ci
       - uses: 'ros-industrial/industrial_ci@master'
-        env:
-          ${{ matrix.env }}
-          BRANCH_NAME: ${BRANCH_NAME}
+        env: ${{ matrix.env }} ${{ steps.extract_branch.outputs.branch }}
