@@ -160,81 +160,81 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
 - It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_30 on behalf of the rate of fire(30 m/s)
 
-`robot_state_controller` (`type:` robot_state_controller/RobotStateController)
+`robot_state_controller` (`type: robot_state_controller/RobotStateController`)
 
 - Receive joint_ state_ controller publishes topic messages and publishes theTF results  
 
-`joint_state_controller` (`type:` joint_state_controller/JointStateController)
+`joint_state_controller` (`type: joint_state_controller/JointStateController`)
 
 - This controller is which ros_control provides us with a default controller for publishing / joint_ States topic data.
 
-`shooter_controller` (`type:` rm_shooter_controllers/Controller)
+`shooter_controller` (`type: rm_shooter_controllers/Controller`)
 
 - It is used to configure relevant parameters for the shooter controller
 
 - publish_rate: 50
 
-- friction_left(`joint:` left_friction_wheel_joint)
+- friction_left(`joint: left_friction_wheel_joint`)
 
   ```
   pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
   ```
 
-- friction_right(`joint:` right_friction_wheel_joint)
+- friction_right(`joint: right_friction_wheel_joint`)
 
   ```
   pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
   ```
 
-- trigger(`joint:` trigger_joint)
+- trigger(`joint: trigger_joint`)
 
   ```
   pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
   ```
 
-`upper_shooter_controller` (`type:` rm_shooter_controllers/Controller)
+`upper_shooter_controller` (`type: rm_shooter_controllers/Controller`)
 
 + This controller is only used for controlling the sentry robot's upper barrel and configure relevant parameters for the upper shooter controller
 
 + publish_rate: 50
 
-+ friction_left(`joint:` upper_left_friction_wheel_joint)
++ friction_left(`joint: upper_left_friction_wheel_joint`)
 
   ```
   pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
   ```
 
-+ friction_right(`joint:` upper_right_friction_wheel_joint)
++ friction_right(`joint: upper_right_friction_wheel_joint`)
 
   ```
   pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
   ```
 
-+ trigger(`joint:` upper_trigger_joint)
++ trigger(`joint: upper_trigger_joint`)
 
   ```
   pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
   ```
 
-`lower_shooter_controller` (`type:` rm_shooter_controllers/Controller)
+`lower_shooter_controller` (`type: rm_shooter_controllers/Controller`)
 
 + This controller is only used for controlling the sentry robot's lower barrel and configure relevant parameters for the lower shooter controller
 
 + publish_rate: 50
 
-+ friction_left(`joint:` lower_left_friction_wheel_joint)
++ friction_left(`joint: lower_left_friction_wheel_joint`)
 
   ```
   pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
   ```
 
-+ friction_right(`joint:` lower_right_friction_wheel_joint)
++ friction_right(`joint: lower_right_friction_wheel_joint`)
 
   ```
   pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
   ```
 
-+ trigger(`joint:` lower_trigger_joint)
++ trigger(`joint: lower_trigger_joint`)
 
   ```
   pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
