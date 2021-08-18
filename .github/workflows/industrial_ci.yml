@@ -13,7 +13,7 @@ jobs:
           - { ROS_DISTRO: melodic, ROS_REPO: main }
     env:
       CCACHE_DIR: /github/home/.ccache # Directory for ccache (and how we enable ccache in industrial_ci)
-      UPSTREAM_WORKSPACE: github:rm-controls/rm_control#${{ steps.extract_branch.outputs.branch }} -rm_control/rm_control -rm_control/rm_base -rm_control/rm_description -rm_control/rm_gazebo
+      UPSTREAM_WORKSPACE: github:rm-controls/rm_control#master -rm_control/rm_control -rm_control/rm_base -rm_control/rm_description -rm_control/rm_gazebo
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -22,10 +22,6 @@ jobs:
         with:
           path: ${{ env.CCACHE_DIR }}
           key: ccache-${{ matrix.env.ROS_DISTRO }}-${{ matrix.env.ROS_REPO }}
-      - name: Extract branch name
-        shell: bash
-        run: echo ::set-output name=branch::${GITHUB_REF#refs/*/}
-        id: extract_branch
       # Run industrial_ci
       - uses: 'ros-industrial/industrial_ci@master'
         env: ${{ matrix.env }}
