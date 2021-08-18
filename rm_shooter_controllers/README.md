@@ -37,7 +37,7 @@ sudo apt-get install ros-noetic-...
 or better use `rosdep`:
 
 ```
-sudo rosdep install --from-paths src 
+sudo rosdep install --from-paths src
 ```
 
 ### 2.2. Building from Source
