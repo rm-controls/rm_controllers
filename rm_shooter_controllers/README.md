@@ -100,79 +100,81 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
 #### 7.2. Subscribed Topics
 
-`command` ()
+* `command` ()
 
-- Velocity command.
+  Velocity command.
 
 #### 7.3. Published Topics
 
-`odom` ([nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html))
+* `odom` ([nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html))
 
-- Odometry computed from the hardware feedback.
+  Odometry computed from the hardware feedback.
 
-`/tf` ([tf/tfMessage](http://docs.ros.org/en/api/tf/html/msg/tfMessage.html))
+* `/tf` ([tf/tfMessage](http://docs.ros.org/en/api/tf/html/msg/tfMessage.html))
 
-- Transform from odom to base_footprint
+  Transform from odom to base_footprint.
 
-`publish_cmd` ([geometry_msgs/TwistStamped](http://docs.ros.org/en/api/geometry_msgs/html/msg/TwistStamped.html))
+* `publish_cmd` ([geometry_msgs/TwistStamped](http://docs.ros.org/en/api/geometry_msgs/html/msg/TwistStamped.html))
 
-- Available when "publish_cmd" parameter is set to True. It is the Twist after limiters have been applied on the controller input.
+  Available when "publish_cmd" parameter is set to True. It is the Twist after limiters have been applied on the controller input.
 
 #### 7.4. Parameters
 
-`block_effort` (`double`, default: 0)
+* `block_effort` (`double`, default: 0)
 
-+ Upper limit moment of blocked cartridge
+  Upper limit moment of blocked cartridge.
 
-`block_speed` (`double`, default: 0)
+* `block_speed` (`double`, default: 0)
 
-- Upper limit speed of blocked ammunition
+  Upper limit speed of blocked ammunition.
 
-`block_duration` (`double`, default: 0)
+* `block_duration` (`double`, default: 0)
 
-- The Jam duration of blocked ammunition
+  The jam duration of blocked ammunition.
 
-`block_overtime` (`double`, default: 0)
+* `block_overtime` (`double`, default: 0)
 
-- Time out of blocked ammunition
+  Time out of blocked ammunition.
 
-`anti_block_angle` (`double`, default: 0)
+* `anti_block_angle` (`double`, default: 0)
 
-- The anti angle of friction wheel
+  The anti angle of friction wheel.
 
-`anti_block_threshold` (`double`, default: 0)
+* `anti_block_threshold` (`double`, default: 0)
 
-- It used to judge if the ballistic blockage has been resolved
+  It used to judge if the ballistic blockage has been resolved.
 
-`qd_10` (`double`, default: 0)
+* `qd_10` (`double`, default: 0)
 
-- It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_10 on behalf of the rate of fire(10 m/s)
+  It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_10 on behalf of the rate of fire(10 m/s).
 
-`qd_15` (`double`, default: 0.5)
+* `qd_15` (`double`, default: 0.5)
 
-- It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_15 on behalf of the rate of fire(15 m/s)
+  It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_15 on behalf of the rate of fire(15 m/s).
 
-`qd_18` (`double`, default: 0)
+* `qd_18` (`double`, default: 0)
 
-- It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_18 on behalf of the rate of fire(18 m/s)
+  It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_18 on behalf of the rate of fire(18 m/s).
 
-`qd_30` (`double`, default: 0)
+* `qd_30` (`double`, default: 0)
 
-- It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_30 on behalf of the rate of fire(30 m/s)
+  It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_30 on behalf of the rate of fire(30 m/s).
 
-`robot_state_controller` (`type: robot_state_controller/RobotStateController`)
+* `robot_state_controller` (`type: robot_state_controller/RobotStateController`)
 
-- Receive joint_ state_ controller publishes topic messages and publishes theTF results.
+  Receive joint_ state_ controller publishes topic messages and publishes theTF results.
 
-`joint_state_controller` (`type: joint_state_controller/JointStateController`)
+* `joint_state_controller` (`type: joint_state_controller/JointStateController`)
 
-- This controller is which ros_control provides us with a default controller for publishing / joint_ States topic data.
+  This controller is which ros_control provides us with a default controller for publishing / joint_ States topic data.
 
-`shooter_controller` (`type: rm_shooter_controllers/Controller`)
+* `shooter_controller` (`type: rm_shooter_controllers/Controller`)
 
-- It is used to configure relevant parameters for the shooter controller.
+  It is used to configure relevant parameters for the shooter controller.
 
-- publish_rate: 50
+* publish_rate: (`int`, default: 50)
+
+  Command pulish rate.
 
 - friction_left(`joint: left_friction_wheel_joint`)
 
@@ -216,25 +218,25 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
   pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
   ```
 
-`lower_shooter_controller` (`type: rm_shooter_controllers/Controller`)
+* `lower_shooter_controller` (`type: rm_shooter_controllers/Controller`)
 
-+ This controller is only used for controlling the sentry robot's lower barrel and configure relevant parameters for the lower shooter controller
+ This controller is only used for controlling the sentry robot's lower barrel and configure relevant parameters for the lower shooter controller
 
-+ publish_rate: 50
+* publish_rate: 50
 
-+ friction_left(`joint: lower_left_friction_wheel_joint`)
-
-  ```
-  pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
-  ```
-
-+ friction_right(`joint: lower_right_friction_wheel_joint`)
+* friction_left(`joint: lower_left_friction_wheel_joint`)
 
   ```
   pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
   ```
 
-+ trigger(`joint: lower_trigger_joint`)
+* friction_right(`joint: lower_right_friction_wheel_joint`)
+
+  ```
+  pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
+  ```
+
+* trigger(`joint: lower_trigger_joint`)
 
   ```
   pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
