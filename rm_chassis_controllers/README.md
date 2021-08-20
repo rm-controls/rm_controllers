@@ -84,92 +84,114 @@ To build from source, clone the latest version from this repository into your ca
 The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/geometry_msgs/html/msg/Twist.html) topic in the namespace of the controller.
 ### 6.2 Subscribed Topics
 
-`base_imu`( [sensor_msgs/Imu](http://docs.ros.org/en/api/sensor_msgs/html/msg/Imu.html) )
-* Inertial Measurement Unit data.
+* `base_imu`( [sensor_msgs/Imu](http://docs.ros.org/en/api/sensor_msgs/html/msg/Imu.html) )
 
-`command`( )
-* Velocity command.
+  Inertial Measurement Unit data.
 
-`cmd_vel`( [geometry_msgs/Twist](http://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html) )
-* Velocity command.
+* `command`( )
+
+  Velocity command.
+
+* `cmd_vel`( [geometry_msgs/Twist](http://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html) )
+
+  Velocity command.
 
 ### 6.3 Published Topics
 
-`state_real`( )
+* `state_real`( )
 
-* Publish the real state.
+  Publish the real state.
 
-`odom`( [nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html) )
-*  Odometry computed from the hardware feedback.
+* `odom`( [nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html) )
+
+  Odometry computed from the hardware feedback.
+
 ### 6.4 Parameters
 
 #### 6.4.1 common
 
-`joint_left_name` (`string` | string [ ... ])
-* Left wheel joint name or list of joint names.
+* `joint_left_name` (`string` | string [ ... ])
 
-`joint_right_name` (`string` | string [ ... ])
-* Right wheel joint name or list of joint names.
+  Left wheel joint name or list of joint names.
 
-`wheel_radius` ( `double`, default: 0.02 )
-* Radius of the wheels. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
+* `joint_right_name` (`string` | string [ ... ])
 
-`wheel_track` ( `double`, default: 0.410 )
-* Distance between wheels. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
+  Right wheel joint name or list of joint names.
 
-`wheel_base` ( `double`, default: 0.320 )
-* Distance between the axes. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
+* `wheel_radius` ( `double`, default: 0.02 )
 
-`twist_angular` ( `double`, default: M_PI / 6 )
-* The velocity of angular.
+  Radius of the wheels. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
 
-`enable_odom_tf` ( `bool`, default: true )
-* Publish to TF directly or not.
+* `wheel_track` ( `double`, default: 0.410 )
 
-`twist_covariance_diagonal` ( double [ 6 ] )
+  Distance between wheels. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
 
-* Diagonal of the covariance matrix for odometry twist publishing.
+* `wheel_base` ( `double`, default: 0.320 )
 
-`publish_rate` ( `double`, default: 50 )
-* Frequency ( in Hz ) at which the odometry is published. Used for both tf and odom.
+  Distance between the axes. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
 
-`coeff` ( `double` )
-* The power limit coeff.
+* `twist_angular` ( `double`, default: M_PI / 6 )
 
-`min_vel` ( `double` )
-* Minimum angular velocity of single chassis wheel.
+  The velocity of angular in the twist mode.
 
-`timeout` ( `double` )
-* Allowed period ( in s ) allowed between two commands.
+* `enable_odom_tf` ( `bool`, default: true )
+
+  Publish to TF directly or not.
+
+* `twist_covariance_diagonal` ( double [ 6 ] )
+
+  Diagonal of the covariance matrix for odometry twist publishing.
+
+* `publish_rate` ( `double`, default: 50 )
+
+  Frequency ( in Hz ) at which the odometry is published. Used for both tf and odom.
+
+* `coeff` ( `double` )
+
+  The power limit coeff.
+
+* `min_vel` ( `double` )
+
+  Minimum angular velocity of single chassis wheel.
+
+* `timeout` ( `double` )
+
+  Allowed period ( in s ) allowed between two commands.
 
 #### 6.4.2 Balance
 
-`joint_right_name` ( `string` | string [ ... ] )
-* Left wheel joint name or list of joint names.
+* `joint_right_name` ( `string` | string [ ... ] )
 
-`joint_right_name` (`string` | string [ ... ])
-* Right wheel joint name or list of joint names.
+  Left wheel joint name or list of joint names.
 
-`com_pitch_offset` (`double`, default: 0 )
-* The reduction ratio of pitch.
+* `joint_right_name` (`string` | string [ ... ])
 
-`a` ( `double [ 16 ]` )
-* State space expression.
+  Right wheel joint name or list of joint names.
 
-`b` ( `double [ 8 ]` )
-* State space expression.
+* `com_pitch_offset` (`double`, default: 0 )
 
-`q` ( `double [ 16 ]` )
-* Weight matrix.
+  The reduction ratio of pitch.
 
-`r` ( `double [ 4 ]` )
-* Weight matrix.
+* `a` ( `double [ 16 ]` )
+
+  State space expression.
+
+* `b` ( `double [ 8 ]` )
+
+  State space expression.
+
+* `q` ( `double [ 16 ]` )
+
+  Weight matrix.
+
+* `r` ( `double [ 4 ]` )
+
+  Weight matrix.
 
 #### 6.4.3 Swerve
-`modules`
+* `modules`
 
-* Data about each component.
-
+  Data about each component.
 
 ## 7. Controller configuration examples
 
