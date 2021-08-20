@@ -109,7 +109,7 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 * Left wheel joint name or list of joint names.
 
 `joint_right_name` ( `string` | string [ ... ] ) 
-* Right wheel joint name or list of joint names.  
+* Right wheel joint name or list of joint names.
 
 `wheel_radius` ( `double`, default: 0.02 )
 * Radius of the wheels. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
@@ -118,7 +118,7 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 * Distance between wheels. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
 
 `wheel_base` ( `double`, default: 0.320 )
-* Distance between the axes. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.  
+* Distance between the axes. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
 
 `twist_angular` ( `double`, default: M_PI / 6 )
 * The velocity of angular.
@@ -148,7 +148,7 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 * Left wheel joint name or list of joint names.
 
 `joint_right_name` ( `string` | string [ ... ] )
-* Right wheel joint name or list of joint names.  
+* Right wheel joint name or list of joint names.
 
 `com_pitch_offset` ( `double`, default: 0 )
 * The reduction ratio of pitch.

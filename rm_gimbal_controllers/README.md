@@ -94,7 +94,7 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
 `camera_topic` ( )
 
-* Image or video command.  
+* Image or video command.
 ### 7.3. Published Topics
 `model_desire` ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
 * Display target route of the model.
@@ -104,7 +104,7 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 * Display real route of the model.
 
 `id`
-* Publish the name of id.   
+* Publish the name of id.
 
 `error_des`
 * Process error information.
@@ -122,67 +122,58 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 * The air resistance coeff when bullet speed is 16 m/s.
 
 `resistance_coff_qd_18` ( `double`, default: 0 )
-  * The air resistance coeff when bullet speed is 18 m/s.  
+* The air resistance coeff when bullet speed is 18 m/s.
 
 `resistance_coff_qd_30` ( `double`, default: 0 )
-
-  * The air resistance coeff when bullet speed is 30 m/s.  
+* The air resistance coeff when bullet speed is 30 m/s.
 
 `g` ( `double`, default: 0 )
-  * The value of acceleration of gravity.
+* The value of acceleration of gravity.
 
 `dt` ( `double`, default: 0 )
-  * The duration of sending data.
+* The duration of sending data.
 
 `delay` ( `double`, default: 0 )
-  * Bullet launch delay.  
+* Bullet launch delay.
 
 `timeout` ( `double`, default: 0 )
-
-  * Timeout time of bullet model solution.  
+* Timeout time of bullet model solution.  
 
 `detection_topic` ( `string` | string [ ... ] ) 
-
-  * The name of a topic about some form of detection.
+* The name of a topic about some form of detection.
 
 `camera_topic` ( `string` | string [ ... ] ) 
-
-  * The name of a topic about some form of camera info.
+* The name of a topic about some form of camera info.
 
 `detection_frame` ( `string` | string [ ... ] )
-
-  * The name of the frame of detection.
+* The name of the frame of detection.
 
 `publish_rate` ( `double`, default: 50 )
-
-  * Frequency ( in Hz ) at which the odometry is published. Used for both tf and odom. 
+* Frequency ( in Hz ) at which the odometry is published. Used for both tf and odom.
 
 `chassis_angular_data_num` ( `double` )
-
-  * Deflection angle of chassis.  
+* Deflection angle of chassis.
 
 `time_compensation` ( `double`, default: 0 )
-
-  * Time of image transmission delay.  
+* Time of image transmission delay.
 
 `is_debug` ( `bool`, default: true )
-
-  * The debug status.  
+* The debug status.
 
 `pos_data_num` ( `double` )
-  * The data of filter position.
+* The data of filter position.
 
 `vel_data_num` ( `double` )
-  * The data of filter velocity.  
+* The data of filter velocity.
 
 `center_data_num` ( `double` )
-  * The data of filter center.  
+* The data of filter center.
 
 `gyro_data_num` ( `double` )
-  * The data of filter gyro velocity.  
+* The data of filter gyro velocity.
 
 `center_offset_z` ( `double` )
-  * The filter center reduction ratio.
+* The filter center reduction ratio.
 
 
 ## 8. Controller configuration examples
