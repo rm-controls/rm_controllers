@@ -86,95 +86,118 @@ To build from source, clone the latest version from this repository into your ca
 ### 7.1. Description
 The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/geometry_msgs/html/msg/Twist.html) topic in the namespace of the controller.
 ### 7.2. Subscribed Topics
-`command` ( )
-* Velocity command.
+* `command` ()
 
-`detection_topic` ( )
-* Object command.
+  Velocity command.
 
-`camera_topic` ( )
+* `detection_topic` ()
 
-* Image or video command.
+  Object command.
+
+* `camera_topic` ()
+
+  Image or video command.
+
 ### 7.3. Published Topics
-`model_desire` ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
-* Display target route of the model.
+* `model_desire` ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
+  Display target route of the model.
 
-`model_real` ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
+* `model_real` ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
 
-* Display real route of the model.
+  Display real route of the model.
 
-`id`
-* Publish the name of id.
+* `id`
+  Publish the id of target.
 
-`error_des`
-* Process error information.
+* `error_des`
+  Process error information.
 
-`track`
-* Process the track array.
+* `track`
+  Process the track array.
 ### 7.4. Parameters
-`resistance_coff_qd_10` ( `double`, default: 0 )
-* The air resistance coeff when bullet speed is 10 m/s.
+* `resistance_coff_qd_10` ( `double`, default: 0 )
 
-`resistance_coff_qd_15` ( `double`, default: 0 )
-* The air resistance coeff when bullet speed is 15 m/s.
+  The air resistance coeff when bullet speed is 10 m/s.
 
-`resistance_coff_qd_16` ( `double`, default: 0 )
-* The air resistance coeff when bullet speed is 16 m/s.
+* `resistance_coff_qd_15` ( `double`, default: 0 )
 
-`resistance_coff_qd_18` ( `double`, default: 0 )
-* The air resistance coeff when bullet speed is 18 m/s.
+  The air resistance coeff when bullet speed is 15 m/s.
 
-`resistance_coff_qd_30` ( `double`, default: 0 )
-* The air resistance coeff when bullet speed is 30 m/s.
+* `resistance_coff_qd_16` ( `double`, default: 0 )
 
-`g` ( `double`, default: 0 )
-* The value of acceleration of gravity.
+  The air resistance coeff when bullet speed is 16 m/s.
 
-`dt` ( `double`, default: 0 )
-* The duration of sending data.
+* `resistance_coff_qd_18` ( `double`, default: 0 )
 
-`delay` ( `double`, default: 0 )
-* Bullet launch delay.
+  The air resistance coeff when bullet speed is 18 m/s.
 
-`timeout` ( `double`, default: 0 )
-* Timeout time of bullet model solution.
+* `resistance_coff_qd_30` ( `double`, default: 0 )
 
-`detection_topic` ( `string` | string [ ... ] )
-* The name of a topic about some form of detection.
+  The air resistance coeff when bullet speed is 30 m/s.
 
-`camera_topic` ( `string` | string [ ... ] )
-* The name of a topic about some form of camera info.
+* `g` ( `double`, default: 0 )
 
-`detection_frame` ( `string` | string [ ... ] )
-* The name of the frame of detection.
+  The value of acceleration of gravity.
 
-`publish_rate` ( `double`, default: 50 )
-* Frequency ( in Hz ) at which the odometry is published. Used for both tf and odom.
+* `dt` ( `double`, default: 0 )
 
-`chassis_angular_data_num` ( `double` )
-* Deflection angle of chassis.
+  The duration of sending data.
 
-`time_compensation` ( `double`, default: 0 )
-* Time of image transmission delay.
+* `delay` ( `double`, default: 0 )
 
-`is_debug` ( `bool`, default: true )
-* The debug status.
+  Bullet launch delay.
 
-`pos_data_num` ( `double` )
-* The data of filter position.
+* `timeout` ( `double`, default: 0 )
 
-`vel_data_num` ( `double` )
-* The data of filter velocity.
+  Timeout time of bullet model solution.
 
-`center_data_num` ( `double` )
-* The data of filter center.
+* `detection_topic` ( `string` | string [ ... ] )
 
-`gyro_data_num` ( `double` )
-* The data of filter gyro velocity.
+  The name of a topic about some form of detection.
 
-`center_offset_z` ( `double` )
-* The filter center reduction ratio.
+* `camera_topic` ( `string` | string [ ... ] )
 
+  The name of a topic about some form of camera info.
+
+* `detection_frame` ( `string` | string [ ... ] )
+
+  The name of the frame of detection.
+
+* `publish_rate` ( `double`, default: 50 )
+
+  Frequency ( in Hz ) at which the odometry is published. Used for both tf and odom.
+
+* `chassis_angular_data_num` ( `double` )
+
+  Deflection angle of chassis.
+
+* `time_compensation` ( `double`, default: 0 )
+
+  Time of image transmission delay.
+
+* `is_debug` ( `bool`, default: true )
+
+  The debug status.
+
+* `pos_data_num` ( `double` )
+
+  The data of filter position.
+
+* `vel_data_num` ( `double` )
+
+  The data of filter velocity.
+
+* `center_data_num` ( `double` )
+
+  The data of filter center.
+
+* `gyro_data_num` ( `double` )
+
+  The data of filter gyro velocity.
+
+* `center_offset_z` ( `double` )
+
+  The filter center reduction ratio.
 
 ## 8. Controller configuration examples
 
