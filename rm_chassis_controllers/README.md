@@ -39,7 +39,7 @@ Or better, use `rosdep`:
 * angles
 * roscpp
 * roslint
-* rm_msgs 
+* rm_msgs
 * rm_common
 * imu_sensor_controller
 * robot_localization
@@ -105,10 +105,10 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
 #### 6.4.1 common
 
-`joint_left_name` ( `string` | string [ ... ] )
+`joint_left_name` (`string` | string [ ... ])
 * Left wheel joint name or list of joint names.
 
-`joint_right_name` ( `string` | string [ ... ] ) 
+`joint_right_name` (`string` | string [ ... ])
 * Right wheel joint name or list of joint names.
 
 `wheel_radius` ( `double`, default: 0.02 )
@@ -144,13 +144,13 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
 #### 6.4.2 Balance
 
-`joint_left_name` ( `string` | string [ ... ] )
+`joint_right_name` ( `string` | string [ ... ] )
 * Left wheel joint name or list of joint names.
 
-`joint_right_name` ( `string` | string [ ... ] )
+`joint_right_name` (`string` | string [ ... ])
 * Right wheel joint name or list of joint names.
 
-`com_pitch_offset` ( `double`, default: 0 )
+`com_pitch_offset` (`double`, default: 0 )
 * The reduction ratio of pitch.
 
 `a` ( `double [ 16 ]` )

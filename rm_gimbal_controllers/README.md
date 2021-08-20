@@ -137,12 +137,12 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 * Bullet launch delay.
 
 `timeout` ( `double`, default: 0 )
-* Timeout time of bullet model solution.  
+* Timeout time of bullet model solution.
 
-`detection_topic` ( `string` | string [ ... ] ) 
+`detection_topic` ( `string` | string [ ... ] )
 * The name of a topic about some form of detection.
 
-`camera_topic` ( `string` | string [ ... ] ) 
+`camera_topic` ( `string` | string [ ... ] )
 * The name of a topic about some form of camera info.
 
 `detection_frame` ( `string` | string [ ... ] )
