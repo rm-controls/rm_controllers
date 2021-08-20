@@ -79,7 +79,7 @@ To build from source, clone the latest version from this repository into your ca
 
 ## 6. Launch files
 
-* ***load_controller.launch***: It loads tf and some controllers, robot_state_controller, joint_state_controller, lower_gimbal_controller, upper_gimbal_controller is included.
+* ***load_controllers.launch***: It loads tf and some controllers, robot_state_controller, joint_state_controller, lower_gimbal_controller, upper_gimbal_controller is included.
 
 ## 7. ROS API
 

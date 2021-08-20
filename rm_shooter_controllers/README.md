@@ -71,21 +71,21 @@ mon launch rm_shooter_controller load_controllers.launch
 
 ## 4. Cfg
 
-+ **shooter.cfg:** The following shooter.cfg is used for adding parameters to rqt plugin that you can dynamically adjust parameters in rqt ui interface
++ **shooter.cfg:** The following shooter.cfg is used for adding parameters to rqt plugin that allows users to dynamically adjust parameters through the rqt ui interface when the node is running, and observe the impact of specific parameters on the algorithm in the node in real time. The parameters including block_effort, block_duration, block_speed, block_overtime, anti_block_angle, anti_block_threshold, qd_10, qd_15, qd_16, qd_18, qd_30.
 
 ## 5. Config
 
 Config file config
 
-+ **hero.yaml:** it loads some controllers and the parameters used for hero robot into the parameter server
++ **hero.yaml:** The hero.yaml loads the robot_state_controller,joint_state_controller and shooter_controller,besides it also loads the parameters used for hero robot into the parameter server which including the following, the publishing rate of each controller, push_per_rotation,push_qd_threshold,block_effort,block_speed,block_duration,block_overtime,anti_block_angle,anti_block_threshold,qd_16,lf_extra_rotat_speed. The three components of pid also set for left_friction_wheel_joint and right_friction_wheel_joint and trigger_joint .
 
-+ **sentry.yaml:** it loads some controllers and the parameters used for sentry robot into the parameter server
++ **sentry.yaml:** The sentry.yaml loads four controllers involving robot_state_controller,joint_state_controller,upper_shooter_controller,lower_shooter_controller for sentry robot. The parameters loaded by this file involving the publishing rate of each controller, the components of pid that set for upper_left_friction_wheel_joint and upper_right_friction_wheel_joint and upper_trigger_joint, as same as the upper_shooter_controller,It also set the components of pid for the three joints of lower_shooer_zcontroller: lower_left_friction_wheel_joint and lower_right_friction_wheel_joint and lower_trigger_joint. In addition,the parameters loaded by this file also including push_per_rotation, push_qd_threshold, block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold, qd_16, lf_extra_rotat_speed
 
-+ **standard3.yaml:** it loads some controllers and the parameters used for standard3 robot into the parameter server
++ **standard3.yaml:** The standard3.yaml loads four controllers which including robot_state_controller, joint_state_controller, shooter_controller for No. 3 standard. The parameters that No. 3 standard needed to be loaded involving the publishing rate of each controller, the components of pid, and push_per_rotation, push_qd_threshold, block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold, qd_16, lf_extra_rotat_speed
 
-+ **standard4.yaml:** it loads some controllers and the parameters used for standard4 robot into the parameter server
++ **standard4.yaml:** The standard4.yaml loads four controllers which including robot_state_controller, joint_state_controller, shooter_controller for No. 4 standard. The parameters that No. 3 standard needed to be loaded involving the publishing rate of each controllers, the components of pid set for shooter_controller's three joints: left_friction_wheel_joint and right_friction_wheel_joint and trigger_joint, and push_per_rotation, push_qd_threshold, block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold, qd_16, lf_extra_rotat_speed
 
-+ **standard5.yaml:** it loads some controllers and the parameters used for standard5 robot into the parameter server
++ **standard5.yaml:** The standard5.yaml loads four controllers which including robot_state_controller, joint_state_controller, shooter_controller for No. 5 standard. The parameters that No. 3 standard needed to be loaded involving the publishing rate of each controllers, the components of pid set for shooter_controller's three joints: left_friction_wheel_joint and right_friction_wheel_joint and trigger_joint, and push_per_rotation, push_qd_threshold, block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold, qd_16, lf_extra_rotat_speed
 
 ## 6. Launch files
 
@@ -104,37 +104,23 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
   Velocity command.
 
-#### 7.3. Published Topics
-
-* `odom` ([nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html))
-
-  Odometry computed from the hardware feedback.
-
-* `/tf` ([tf/tfMessage](http://docs.ros.org/en/api/tf/html/msg/tfMessage.html))
-
-  Transform from odom to base_footprint.
-
-* `publish_cmd` ([geometry_msgs/TwistStamped](http://docs.ros.org/en/api/geometry_msgs/html/msg/TwistStamped.html))
-
-  Available when "publish_cmd" parameter is set to True. It is the Twist after limiters have been applied on the controller input.
-
-#### 7.4. Parameters
+#### 7.3. Parameters
 
 * `block_effort` (`double`, default: 0)
 
-  Upper limit moment of blocked cartridge.
+  Upper limit moment of trigger block effort, Its minimum value is 0.0 and its maximum value is  10
 
 * `block_speed` (`double`, default: 0)
 
-  Upper limit speed of blocked ammunition.
+  Lowest limit speed of  speed, If the speed is lower than this speed, it would be judged as blocked.
 
 * `block_duration` (`double`, default: 0)
 
-  The jam duration of blocked ammunition.
+  The jam duration of blocked ammunition.If the jam time is over this duration, it would be judged as blocked.
 
 * `block_overtime` (`double`, default: 0)
 
-  Time out of blocked ammunition.
+  Time out of trigger block.It is used to prevent persisting in blocked mode.
 
 * `anti_block_angle` (`double`, default: 0)
 
@@ -142,27 +128,27 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
 * `anti_block_threshold` (`double`, default: 0)
 
-  It used to judge if the ballistic blockage has been resolved.
+  It is used to judge if the ballistic blockage has been resolved,if the angle at which the trigger is reversed greater than this value,we can judge that the trigger block problem has been resolved.
 
 * `qd_10` (`double`, default: 0)
 
-  It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_10 on behalf of the rate of fire(10 m/s).
+  It can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_10 on behalf of the rate of fire(10 m/s).
 
 * `qd_15` (`double`, default: 0.5)
 
-  It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_15 on behalf of the rate of fire(15 m/s).
+  It is the speed of friction wheel. The qd_15 on behalf of the rate of shooting(15 m/s).
 
 * `qd_18` (`double`, default: 0)
 
-  It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_18 on behalf of the rate of fire(18 m/s).
+  It is the speed of friction wheel. The qd_18 on behalf of the rate of shooting(18 m/s).
 
 * `qd_30` (`double`, default: 0)
 
-  It means q dot which can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_30 on behalf of the rate of fire(30 m/s).
+  It is the speed of friction wheel. The qd_30 on behalf of the rate of shooting(30 m/s).
 
 * `robot_state_controller` (`type: robot_state_controller/RobotStateController`)
 
-  Receive joint_ state_ controller publishes topic messages and publishes theTF results.
+  It is used to receive joint_ state_ controller publishes topic messages and publishes the TF results.
 
 * `joint_state_controller` (`type: joint_state_controller/JointStateController`)
 
@@ -172,7 +158,7 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
   It is used to configure relevant parameters for the shooter controller.
 
-* publish_rate: (`int`, default: 50)
+* `publish_rate` (`int`, default: 50)
 
   Command pulish rate.
 
@@ -194,11 +180,11 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
   pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
   ```
 
-`upper_shooter_controller` (`type: rm_shooter_controllers/Controller`)
+* `upper_shooter_controller` (`type: rm_shooter_controllers/Controller`)
 
-+ This controller is only used for controlling the sentry robot's upper barrel and configure relevant parameters for the upper shooter controller
+  This controller is only used for controlling the sentry robot's upper barrel and configure relevant parameters for the upper shooter controller
 
-+ publish_rate: 50
+
 
 + friction_left(`joint: upper_left_friction_wheel_joint`)
 
@@ -220,9 +206,7 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
 * `lower_shooter_controller` (`type: rm_shooter_controllers/Controller`)
 
- This controller is only used for controlling the sentry robot's lower barrel and configure relevant parameters for the lower shooter controller
-
-* publish_rate: 50
+  This controller is only used for controlling the sentry robot's lower barrel and configure relevant parameters for the lower shooter controller.
 
 * friction_left(`joint: lower_left_friction_wheel_joint`)
 

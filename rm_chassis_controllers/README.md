@@ -77,7 +77,7 @@ To build from source, clone the latest version from this repository into your ca
 * ***standard5.yaml***: It loads some controllers and the parameters used for standard5 robot into the parameter server.
 ## 5. Launch files
 
-* load_controllers.launch: It loads tf, robot_localization and some controllers, robot_state_controller, joint_state_controller and chassis controller
+* ***load_controllers.launch***: It loads tf, robot_localization and some controllers, robot_state_controller, joint_state_controller and chassis controller
 ## 6. ROS API
 
 ### 6.1. Description
