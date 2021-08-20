@@ -162,7 +162,7 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
 `robot_state_controller` (`type: robot_state_controller/RobotStateController`)
 
-- Receive joint_ state_ controller publishes topic messages and publishes theTF results  
+- Receive joint_ state_ controller publishes topic messages and publishes theTF results.
 
 `joint_state_controller` (`type: joint_state_controller/JointStateController`)
 
@@ -170,7 +170,7 @@ The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/ge
 
 `shooter_controller` (`type: rm_shooter_controllers/Controller`)
 
-- It is used to configure relevant parameters for the shooter controller
+- It is used to configure relevant parameters for the shooter controller.
 
 - publish_rate: 50
 
