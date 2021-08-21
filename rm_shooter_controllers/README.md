@@ -1,8 +1,8 @@
 # rm_shooter_controller
 
-## 1.Overview
+## 1. Overview
 
-The Controller is RoboMaster robot shooter controller. It is used for reading joint sensor data and sending command to motors. Besides , It will calls control loop (update method) periodically at a set frequency .
+The controller is RoboMaster robot shooter controller. It is used for reading joint sensor data and sending command to motors. Besides , It will calls control loop (update method) periodically at a set frequency .
 
 **Keywords:** shooter
 
@@ -20,18 +20,18 @@ The rm_shooter_controller package has been tested under [ROS](http://www.ros.org
 
 ### 1.1. Hardware interface type
 
-The controller works with friction wheel joints through a **velocity** interface.
+The controller works with friction wheel joints through a **effort** interface.
 
 [![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
 
-## 2.Installation
+## 2. Installation
 
 ### 2.1. Installation from Packages
 
 To install all packages from the this repository as Debian packages use
 
 ```plaintext
-sudo apt-get install ros-noetic-...
+sudo apt-get install ros-noetic-rm-shooter-controllers
 ```
 
 or better use `rosdep`:
@@ -45,17 +45,20 @@ sudo rosdep install --from-paths src
 #### 2.2.1 Dependencies
 
 - [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
-- [rm_description](https://github.com/gdut-dynamic-x/rm_description)
+- rm_description
+- roscpp
+- roslint
+- rm_msgs
+- rm_common
+- pluginlib
+- controller_interface
+- hardware_interface
 - controller_interface
 - forward_command_controller
-- hardware_interface
-- pluginlib
-- sensor_msgs
-- rm_common
 - realtime_tools
-- tf2
-- tf2_geometry_msgs
-- angles
+- control_toolbox
+- effort_controllers
+- dynamic_reconfigure
 
 #### 2.2.2 Building
 
@@ -71,12 +74,11 @@ mon launch rm_shooter_controller load_controllers.launch
 
 ## 4. Cfg
 
-+ **shooter.cfg:** The following shooter.cfg is used for adding parameters to rqt plugin that allows users to dynamically adjust parameters through the rqt ui interface when the node is running, and observe the impact of specific parameters on the algorithm in the node in real time. The parameters including block_effort, block_duration, block_speed, block_overtime, anti_block_angle, anti_block_threshold, qd_10, qd_15, qd_16, qd_18, qd_30.
++ **shooter.cfg:** Add parameters related to friction wheel speed corresponding to each bullet speed and trigger block detection parameters
 
 ## 5. Launch files
 
-- **load_controller.launch:** you can launch robot_state_controller controllers/joint_state_controller controllers/upper_gimbal_controller
-  controllers/lower_gimbal_controller controllers/upper_shooter_controller controllers/lower_shooter_controller and load the paramters into parameter server by launch files.
+- **load_controller.launch:** Load the parameters in config files and load the shooter controller.
 
 ## 6. ROS API
 
