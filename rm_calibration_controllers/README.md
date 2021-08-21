@@ -58,13 +58,9 @@ To build from source, clone the latest version from this repository into your ca
 
 
 #### 3.2 Parameters
-* **`search_velocity`** (double)
+* **`search_velocity`**, **`threshold`** (double)
 
-  When the velocity of calibrating target is lower than search velocity, it can be considered as calibrating successful state.
-
-* **`threshold`** (double)
-
-  When the time of lasting calibrating successful state is more than threshold, it can be considered that target has been calibrated.
+  When the real time velocity of calibrating target is lower than search_velocity and last for more than threshold (seconds), it is considered the state: CALIBRATED. 
 
 
 ## 4. Bugs & Feature Requests
