@@ -10,9 +10,11 @@ The controller is RoboMaster robot shooter controller. It is used for reading jo
 
 The source code is released under a [BSD 3-Clause license]().
 
-**Author: Unknown  **
+**Author: DynamicX**
 
-**Affiliation: DynamicX Maintainer: none **
+**Affiliation: DynamicX**
+
+**Maintainer: DynamicX**
 
 The rm_shooter_controller package has been tested under [ROS](http://www.ros.org) Melodic and Noetic on respectively 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
