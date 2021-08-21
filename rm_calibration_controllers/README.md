@@ -18,11 +18,15 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 ## 2. Installation
 
 #### 2.1. Installation from Packages
+
+
+To install all packages from the this repository as Debian packages use
+
     sudo apt-get install ros-noetic-calibration-controllers
+    
 Or better, use `rosdep`:
 
-    sudo rosdep install --from-paths src
-
+	sudo rosdep install --from-paths src
 
 #### 2.2. Building from Source
 ##### 2.2.1. Dependencies
@@ -54,13 +58,13 @@ To build from source, clone the latest version from this repository into your ca
 #### 3.1 Service
 * **`is_calibrated_srv_`** ([control_msgs/QueryCalibrationState](http://docs.ros.org/en/api/control_msgs/html/srv/QueryCalibrationState.html))
 
- Returns information about whether target controller has been calibrated.
+	 Returns information about whether target controller has been calibrated.
 
 
 #### 3.2 Parameters
 * **`search_velocity`**, **`threshold`** (double)
 
-When the real time velocity of calibrating target is lower than search_velocity and last for more than threshold (seconds), it is considered the state: CALIBRATED. 
+	When the real time velocity of calibrating target is lower than search_velocity and last for more than threshold (seconds), it is considered the state: CALIBRATED.
 
 
 ## 4. Bugs & Feature Requests
