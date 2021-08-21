@@ -55,38 +55,26 @@ To build from source, clone the latest version from this repository into your ca
 
       mon launch rm_bringup engineer.launch
 
-## 4. Config
 
-* ***engineer.yaml***: Load parameters in the config, and load mast, card, stone_platform, yaw, pitch and joint_x calibration controller.
-* ***hero.yaml***: Load parameters in the config, and load trigger calibration controller.
-* ***sentry.yaml***: Load parameters in the config, and load trigger, pitch and yaw calibration controller.
-* ***standard3.yaml***: Load parameters in the config, and load trigger and cover calibration controller.
-* ***standard4.yaml***: Load parameters in the config, and load trigger and cover calibration controller.
-* ***standard5.yaml***: Load parameters in the config, and load trigger and cover calibration controller.
-
-## 5. ROS API
+## 4. ROS API
 
 
-### 5.1. Services
+### 4.1. Services
 * `is_calibrated_srv_` (struct)
 
   Used to judge whether the calibration process has been finished.
 
 
-### 5.2. Parameters
+### 4.2. Parameters
 * `search_velocity`(double)
 
-  When the velocity of calibrated target is lower than search velocity, it can be considered as calibrating successful.
+  When the velocity of calibrated target is lower than search velocity, it can be considered as calibrating successful state.
 
 * `threshold`(double)
 
-  When the calibrating successful time more than threshold, it can be considered that target has been calibrated.
-
-* `pid`(double)
-
-  The pid of calibrate controller.
+  When the time of lasting calibrating successful state is more than threshold, it can be considered that target has been calibrated.
 
 
-## 6. Bugs & Feature Requests
+## 5. Bugs & Feature Requests
 
 Please report bugs and request features using the [Issue Tracker](https://github.com/rm-controls/rm_controllers/issues).
