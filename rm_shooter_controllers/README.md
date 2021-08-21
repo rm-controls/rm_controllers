@@ -69,12 +69,11 @@ mon launch rm_shooter_controller load_controllers.launch
 
 ## 4. Cfg
 
-+ **shooter.cfg:** Add parameters related to friction wheel speed and rigger block corresponding to each shooting speed
++ **shooter.cfg:** Add parameters related to friction wheel speed and trigger block detection corresponding to each bullet speed
 
 ## 5. Launch files
 
-- **load_controller.launch:** you can launch robot_state_controller controllers/joint_state_controller controllers/upper_gimbal_controller
-  controllers/lower_gimbal_controller controllers/upper_shooter_controller controllers/lower_shooter_controller and load the parameters which included in config files into parameter server by launch files.
+- **load_controller.launch:** Load the parameters in config files and load the shooter controller.
 
 ## 6. ROS API
 
@@ -86,49 +85,49 @@ The controller main input is command topic in the namespace of the controller.
 
 `command`
 
-- Velocity command.
+- Commands of controller status, bullet speed, frequency of shooting, hatch cover status and time stamp
 
 #### 6.3. Parameters
 
-`block_effort` (`double`)
+`block_effort` (`double`, default: 0)
 
-+ Upper limit moment of trigger block effort, Its minimum value is 0.0 and its maximum value is  10.
++ Upper limit moment of trigger block effort, It‘s minimum value is 0.0 and its maximum value is  10.
 
-`block_speed` (`double`)
+`block_speed` (`double`, default: 0)
 
-- Lowest limit speed of  speed, If the speed is lower than this speed, it would be judged as blocked.
+- Lowest limit speed of speed, If the speed is lower than this speed, it would be judged as blocked.
 
-`block_duration` (`double`)
+`block_duration` (`double`, default: 0)
 
-- The jam duration of blocked ammunition.  If the jam time is over this duration, it would be judged as blocked.
+- The jam duration of blocked ammunition. If the jam time is over this duration, it would be judged as blocked.
 
-`block_overtime` (`double`)
+`block_overtime` (`double`, default: 0)
 
 - Time out of trigger block,It is used to prevent persisting in blocked mode.
 
-`anti_block_angle` (`double`)
+`anti_block_angle` (`double`, default: 0)
 
 - It means the anti angle of friction wheel.
 
-`anti_block_threshold` (`double`)
+`anti_block_threshold` (`double`, default: 0)
 
-- It is used to judge if the ballistic blockage has been resolved, if the angle at which the trigger is reversed greater than this value, we can judge that the trigger block problem has been resolved.
+- It is used to judge if the ballistic blockage has been resolved, if the angle at which the trigger is reversed greater than this value, we can judge that the trigger blocked problem has been resolved.
 
-`qd_10` (`double`)
+`qd_10` (`double`, default: 0)
 
-- It can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_10 on behalf of the rate of fire(10 m/s).
+- It can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_10 on behalf of the speed of fire(10 m/s).
 
-`qd_15` (`double`)
+`qd_15` (`double`, default: 0.5)
 
-+ It is the speed of friction wheel. The qd_15 on behalf of the rate of shooting(15 m/s)
++ It is the speed of friction wheel. The qd_15 on behalf of the speed of shooting(15 m/s)
 
-`qd_18` (`double`)
+`qd_18` (`double`, default: 0)
 
-+  It is the speed of friction wheel. The qd_18 on behalf of the rate of shooting(18 m/s)
++ It is the speed of friction wheel. The qd_18 on behalf of the speed of shooting(18 m/s)
 
-`qd_30` (`double`)
+`qd_30` (`double`, default: 0)
 
-+  It is the speed of friction wheel. The qd_30 on behalf of the rate of shooting(30 m/s)
++  It is the speed of friction wheel. The qd_30 on behalf of the speed of shooting(30 m/s)
 
 ### 7. Controller configuration examples
 
