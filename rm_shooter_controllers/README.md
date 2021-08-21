@@ -18,7 +18,7 @@ The rm_shooter_controller package has been tested under [ROS](http://www.ros.org
 
 ### 1.1. Hardware interface type
 
-The controller works with friction wheel joints through a **velocity** interface.
+The controller works with friction wheel joints through a **effort** interface.
 
 [![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
 
