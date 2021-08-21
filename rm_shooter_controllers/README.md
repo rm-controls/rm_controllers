@@ -85,7 +85,7 @@ The controller main input is command topic in the namespace of the controller.
 
 `command`(rm_msgs/ShootCmd)
 
-- Commands of controller status, bullet speed, frequency of shooting, hatch cover state and time stamp
+- Commands of controller state, bullet speed, frequency of shooting, hatch cover state and time stamp
 
 #### 6.3. Parameters
 
