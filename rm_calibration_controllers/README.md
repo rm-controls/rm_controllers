@@ -48,7 +48,7 @@ To build from source, clone the latest version from this repository into your ca
 ## 3. ROS API
 
 ### 3.1. Service
-* `is_calibrated_srv_`(bool)
+* `is_calibrated_srv_`([control_msgs/QueryCalibrationState](http://docs.ros.org/en/api/control_msgs/html/srv/QueryCalibrationState.html))
 
   Provide a service to begin calibrate. Other client can start calibration by calling this service.
 
