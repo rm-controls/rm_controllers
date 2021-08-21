@@ -19,6 +19,10 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 
 #### 2.1. Installation from Packages
     sudo apt-get install ros-noetic-calibration-controllers
+Or better, use `rosdep`:
+
+    sudo rosdep install --from-paths src
+
 
 #### 2.2. Building from Source
 ##### 2.2.1. Dependencies
@@ -56,7 +60,7 @@ To build from source, clone the latest version from this repository into your ca
 ### 3.2. Parameters
 * `search_velocity`(double)
 
-  When the velocity of calibrated target is lower than search velocity, it can be considered as calibrating successful state.
+  When the velocity of calibrating target is lower than search velocity, it can be considered as calibrating successful state.
 
 * `threshold`(double)
 
