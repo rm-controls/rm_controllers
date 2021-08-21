@@ -49,23 +49,15 @@ To build from source, clone the latest version from this repository into your ca
 	catkin_make
 
 
-## 3. Usage
+## 3. ROS API
 
-* Run the controller with mon launch:
-
-      mon launch rm_bringup engineer.launch
-
-
-## 4. ROS API
-
-
-### 4.1. Services
-* `is_calibrated_srv_` (struct)
+### 3.1. Services
+* `is_calibrated_srv_` (bool)
 
   Used to judge whether the calibration process has been finished.
 
 
-### 4.2. Parameters
+### 3.2. Parameters
 * `search_velocity`(double)
 
   When the velocity of calibrated target is lower than search velocity, it can be considered as calibrating successful state.
