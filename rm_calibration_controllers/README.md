@@ -57,25 +57,23 @@ To build from source, clone the latest version from this repository into your ca
 
 ## 4. Config
 
-* ***engineer.yaml***: Change the parameters of mast, hand, card, stone_platform, yaw, pitch and jointx calibration controller.
-* ***hero.yaml***: Change the parameters of trigger calibration controller.
-* ***sentry.yaml***: Change the parameters of trigger, pitch and yaw calibration controller.
-* ***standard3.yaml***: Change the parameters of trigger and cover calibration controller.
-* ***standard4.yaml***: Change the parameters of trigger and cover calibration controller
-* ***standard5.yaml***: Change the parameters of trigger and cover calibration controller
+* ***engineer.yaml***: Load parameters in the config, and load mast, card, stone_platform, yaw, pitch and joint_x calibration controller.
+* ***hero.yaml***: Load parameters in the config, and load trigger calibration controller.
+* ***sentry.yaml***: Load parameters in the config, and load trigger, pitch and yaw calibration controller.
+* ***standard3.yaml***: Load parameters in the config, and load trigger and cover calibration controller.
+* ***standard4.yaml***: Load parameters in the config, and load trigger and cover calibration controller.
+* ***standard5.yaml***: Load parameters in the config, and load trigger and cover calibration controller.
 
 ## 5. ROS API
 
-### 5.1. Description
 
-
-### 5.2. Services
+### 5.1. Services
 * `is_calibrated_srv_` ()
 
   Used to judge whether the calibration process has been finished.
 
 
-### 5.3. Parameters
+### 5.2. Parameters
 * `type`
 
   The type of target's calibration controller.
