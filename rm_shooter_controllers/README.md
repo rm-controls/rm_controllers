@@ -69,7 +69,7 @@ mon launch rm_shooter_controller load_controllers.launch
 
 ## 4. Cfg
 
-+ **shooter.cfg:** Add parameters related to friction wheel speed and trigger block detection corresponding to each bullet speed
++ **shooter.cfg:** Add parameters related to friction wheel speed corresponding to each bullet speed and trigger block detection parameters
 
 ## 5. Launch files
 
@@ -83,9 +83,9 @@ The controller main input is command topic in the namespace of the controller.
 
 #### 6.2. Subscribed Topics
 
-`command`
+`command`(rm_msgs/ShootCmd)
 
-- Commands of controller status, bullet speed, frequency of shooting, hatch cover status and time stamp
+- Commands of controller status, bullet speed, frequency of shooting, hatch cover state and time stamp
 
 #### 6.3. Parameters
 
