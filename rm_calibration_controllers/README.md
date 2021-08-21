@@ -68,33 +68,21 @@ To build from source, clone the latest version from this repository into your ca
 
 
 ### 5.1. Services
-* `is_calibrated_srv_` ()
+* `is_calibrated_srv_` (struct)
 
   Used to judge whether the calibration process has been finished.
 
 
 ### 5.2. Parameters
-* `type`
-
-  The type of target's calibration controller.
-
-* `joint`
-
-  The joint name of the target's calibration controller.
-
-* `actuators`
-
-  The actuators name of the target's calibration controller.
-
-* `search_velocity`
+* `search_velocity`(double)
 
   When the velocity of calibrated target is lower than search velocity, it can be considered as calibrating successful.
 
-* `threshold`
+* `threshold`(double)
 
   When the calibrating successful time more than threshold, it can be considered that target has been calibrated.
 
-* `pid`
+* `pid`(double)
 
   The pid of calibrate controller.
 
