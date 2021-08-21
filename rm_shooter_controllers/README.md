@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The controller is RoboMaster robot shooter controller. It is used for reading joint sensor data and sending command to motors. Besides , It will calls control loop (update method) periodically at a set frequency .
+The Controller is RoboMaster robot shooter controller, it accepts instructions from command topic and sets the order to the friction wheel motor
 
 **Keywords:** shooter
 
@@ -44,7 +44,7 @@ sudo rosdep install --from-paths src
 
 #### 2.2.1 Dependencies
 
-- [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics)
+- [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
 - rm_description
 - roscpp
 - roslint
@@ -84,31 +84,31 @@ mon launch rm_shooter_controller load_controllers.launch
 
 #### 6.1. Subscribed Topics
 
-+ `command`(rm_msgs/ShootCmd)
+* `command`(rm_msgs/ShootCmd)
 
-Commands of controller state, bullet speed, frequency of shooting, and time stamp
+  Commands of controller state, bullet speed, frequency of shooting, and time stamp.
 
 #### 6.2. Parameters
 
-+ `block_effort`, `block_speed`, `block_duration` (`double`, default: 0)
+* `block_effort`, `block_speed`, `block_duration` (`double`, default: 0)
 
-When the torque of the plucking motor is greater than block_effort (in N·m), and the angular velocity is less than block_speed (in rad/s), it will be regarded as jamming if it continues for block_duration (in s).
+  When the torque of the plucking motor is greater than block_effort (in N·m), and the angular velocity is less than block_speed (in rad/s), it will be regarded as jamming if it continues for block_duration (in s).
 
-+ `block_overtime` (`double`, default: 0)
+* `block_overtime` (`double`, default: 0)
 
-If the time to enter block state exceeds block_overtime (in s), it will be judged as timeout and exit block state.
+  If the time to enter block state exceeds block_overtime (in s), it will be judged as timeout and exit block state.
 
-+ `anti_block_angle` (`double`, default: 0)
+* `anti_block_angle` (`double`, default: 0)
 
-If enter block state, the friction wheel will reverse anti_block_angle (in rad/s) to try to get rid of the block state
+  If enter block state, the friction wheel will reverse anti_block_angle (in rad/s) to try to get rid of the structing.
 
-+ `anti_block_threshold` (`double`, default: 0)
+* `anti_block_threshold` (`double`, default: 0)
 
-If the anti angle of the friction wheel exceeds anti_block_threshold, it means that it is out of block state.
+  If the anti angle of the friction wheel exceeds anti_block_threshold, it means that trigger reverse success.
 
-+ `qd_10`, `qd_15`, `qd_18`, `qd_30`(`double`)
+* `qd_10`, `qd_15`, `qd_18`, `qd_30`(`double`)
 
-It means angular velocity of friction wheel, the number of it's name expresses different bullet speeds (in m/s)
+  It means friction wheel's angular velocity, the number of it's name expresses different bullet speeds (in m/s).
 
 ### 7. Controller configuration examples
 
