@@ -43,17 +43,19 @@ sudo rosdep install --from-paths src
 #### 2.2.1 Dependencies
 
 - [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
-- [rm_description](https://github.com/gdut-dynamic-x/rm_description)
-- controller_interface
-- forward_command_controller
-- hardware_interface
+- rm_description
+- roscpp 
+- roslint
+- rm_msgs
+- rm_common 
 - pluginlib
-- sensor_msgs
-- rm_common
-- realtime_tools
-- tf2
-- tf2_geometry_msgs
-- angles
+- hardware_interface 
+- controller_interface 
+- forward_command_controller 
+- realtime_tools 
+- control_toolbox 
+- effort_controllers 
+- dynamic_reconfigure
 
 #### 2.2.2 Building
 
@@ -77,57 +79,33 @@ mon launch rm_shooter_controller load_controllers.launch
 
 ## 6. ROS API
 
-### 6.1. Description
+#### 6.1. Subscribed Topics
 
-The controller main input is command topic in the namespace of the controller.
++ `command`(rm_msgs/ShootCmd)
 
-#### 6.2. Subscribed Topics
+Commands of controller state, bullet speed, frequency of shooting, and time stamp
 
-`command`(rm_msgs/ShootCmd)
+#### 6.2. Parameters
 
-- Commands of controller state, bullet speed, frequency of shooting, hatch cover state and time stamp
++ `block_effort`, `block_speed`, `block_duration` (`double`, default: 0)
 
-#### 6.3. Parameters
+When the torque of the plucking motor is greater than block_effort (in N·m), and the angular velocity is less than block_speed (in rad/s), it will be regarded as jamming if it continues for block_duration (in s).
 
-`block_effort` (`double`, default: 0)
++ `block_overtime` (`double`, default: 0)
 
-+ Upper limit moment of trigger block effort, It‘s minimum value is 0.0 and its maximum value is  10.
+If the time to enter block state exceeds block_overtime (in s), it will be judged as timeout and exit block state.
 
-`block_speed` (`double`, default: 0)
++ `anti_block_angle` (`double`, default: 0)
 
-- Lowest limit speed of speed, If the speed is lower than this speed, it would be judged as blocked.
+If enter block state, the friction wheel will reverse anti_block_angle (in rad/s) to try to get rid of the block state
 
-`block_duration` (`double`, default: 0)
++ `anti_block_threshold` (`double`, default: 0)
 
-- The jam duration of blocked ammunition. If the jam time is over this duration, it would be judged as blocked.
+If the anti angle of the friction wheel exceeds anti_block_threshold, it means that it is out of block state.
 
-`block_overtime` (`double`, default: 0)
++ `qd_10`, `qd_15`, `qd_18`, `qd_30`(`double`)
 
-- Time out of trigger block,It is used to prevent persisting in blocked mode.
-
-`anti_block_angle` (`double`, default: 0)
-
-- It means the anti angle of friction wheel.
-
-`anti_block_threshold` (`double`, default: 0)
-
-- It is used to judge if the ballistic blockage has been resolved, if the angle at which the trigger is reversed greater than this value, we can judge that the trigger blocked problem has been resolved.
-
-`qd_10` (`double`, default: 0)
-
-- It can be Interpreted as Joint angular velocity. It is the speed of friction wheel. The qd_10 on behalf of the speed of fire(10 m/s).
-
-`qd_15` (`double`, default: 0.5)
-
-+ It is the speed of friction wheel. The qd_15 on behalf of the speed of shooting(15 m/s)
-
-`qd_18` (`double`, default: 0)
-
-+ It is the speed of friction wheel. The qd_18 on behalf of the speed of shooting(18 m/s)
-
-`qd_30` (`double`, default: 0)
-
-+  It is the speed of friction wheel. The qd_30 on behalf of the speed of shooting(30 m/s)
+It means angular velocity of friction wheel, the number of it's name expresses different bullet speeds (in m/s)
 
 ### 7. Controller configuration examples
 
@@ -148,7 +126,7 @@ shooter_controller:
       pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
 ```
 
-#### 8.2. Complete description
+#### 7.2. Complete description
 
 ```
 shooter_controller:
@@ -175,6 +153,6 @@ shooter_controller:
     qd_30: 740.0
 ```
 
-## 9. Bugs & Feature Requests
+## 8. Bugs & Feature Requests
 
 Please report bugs and request features using the [Issue Tracker](https://github.com/gdut-dynamic-x/simple_chassis_controller/issues) .
