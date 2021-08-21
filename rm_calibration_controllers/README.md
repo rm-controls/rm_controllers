@@ -27,7 +27,6 @@ Or better, use `rosdep`:
 ##### 2.2.1. Dependencies
 * roscpp
 * roslint
-*
 * rm_msgs
 * rm_common
 * pluginlib
@@ -67,6 +66,6 @@ To build from source, clone the latest version from this repository into your ca
   When the time of lasting calibrating successful state is more than threshold, it can be considered that target has been calibrated.
 
 
-## 5. Bugs & Feature Requests
+## 4. Bugs & Feature Requests
 
 Please report bugs and request features using the [Issue Tracker](https://github.com/rm-controls/rm_controllers/issues).
