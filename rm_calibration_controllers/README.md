@@ -18,10 +18,7 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 ## 2. Installation
 
 #### 2.1. Installation from Packages
-    sudo apt-get install ros-noetic-...
-Or better, use `rosdep`:
-
-    sudo rosdep install --from-paths src
+    sudo apt-get install ros-noetic-calibration-controllers
 
 #### 2.2. Building from Source
 ##### 2.2.1. Dependencies
