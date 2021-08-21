@@ -44,19 +44,20 @@ sudo rosdep install --from-paths src
 
 #### 2.2.1 Dependencies
 
-- [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
+- [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics)
 - rm_description
-- roscpp 
+- roscpp
 - roslint
 - rm_msgs
-- rm_common 
+- rm_common
 - pluginlib
-- hardware_interface 
-- controller_interface 
-- forward_command_controller 
-- realtime_tools 
-- control_toolbox 
-- effort_controllers 
+- controller_interface
+- hardware_interface
+- controller_interface
+- forward_command_controller
+- realtime_tools
+- control_toolbox
+- effort_controllers
 - dynamic_reconfigure
 
 #### 2.2.2 Building
