@@ -51,18 +51,18 @@ To build from source, clone the latest version from this repository into your ca
 
 ## 3. ROS API
 
-#### 3.1 Service
-* `is_calibrated_srv_`([control_msgs/QueryCalibrationState](http://docs.ros.org/en/api/control_msgs/html/srv/QueryCalibrationState.html))
+#### 3.1 Services
+* **`is_calibrated_srv_`** ([control_msgs/QueryCalibrationState](http://docs.ros.org/en/api/control_msgs/html/srv/QueryCalibrationState.html))
 
-  Provide a service to begin calibrate. Other client can start calibration by calling this service.
+ Returns information about whether target controller has been calibrated.
 
 
 #### 3.2 Parameters
-* `search_velocity`(`double`)
+* **`search_velocity`** (double)
 
   When the velocity of calibrating target is lower than search velocity, it can be considered as calibrating successful state.
 
-* `threshold`(`double`)
+* **`threshold`** (double)
 
   When the time of lasting calibrating successful state is more than threshold, it can be considered that target has been calibrated.
 
