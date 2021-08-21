@@ -52,7 +52,7 @@ To build from source, clone the latest version from this repository into your ca
 ## 3. ROS API
 
 ### 3.1. Services
-* `is_calibrated_srv_` (bool)
+* `is_calibrated_srv_`(bool)
 
   Used to judge whether the calibration process has been finished.
 
