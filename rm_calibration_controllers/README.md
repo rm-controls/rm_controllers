@@ -51,7 +51,7 @@ To build from source, clone the latest version from this repository into your ca
 
 ## 3. ROS API
 
-#### 3.1 Services
+#### 3.1 Service
 * **`is_calibrated_srv_`** ([control_msgs/QueryCalibrationState](http://docs.ros.org/en/api/control_msgs/html/srv/QueryCalibrationState.html))
 
  Returns information about whether target controller has been calibrated.
