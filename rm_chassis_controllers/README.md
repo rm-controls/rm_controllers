@@ -2,7 +2,8 @@
 
 ## 1. Overview
 
-The Controller is RoboMaster robot chassis controller, balance, swerve and mecanum included.
+The Controller is RoboMaster robot chassis controller, balance, swerve and mecanum are included. It controls the speed,
+power and posture of the chassis.
 
 ***Keywords***: mecanum, swerve, balance, chassis.
 
@@ -18,15 +19,19 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 ## 2. Installation
 
 #### 2.1. Installation from Packages
+
     sudo apt-get install ros-noetic-...
+
 Or better, use `rosdep`:
 
     sudo rosdep install --from-paths src
 
 #### 2.2. Building from Source
+
 ##### 2.2.1. Dependencies
-* [Robot Operating System (ROS) ](http://wiki.ros.org/) ( middleware for robotics )
-* [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) ( linear algebra library )
+
+* [Robot Operating System (ROS) ](http://wiki.ros.org/) (middleware for robotics)
+* [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) (linear algebra library)
 * pluginlib
 * hardware_interface
 * controller_interface
@@ -66,136 +71,145 @@ To build from source, clone the latest version from this repository into your ca
       mon launch rm_chassis_controller load_controllers.launch
 ## 4. Config
 
-* ***auto.yaml***: It loads some controllers and the parameters used for auto into the parameter server.
-* ***balance.yaml***: It loads some controllers and the parameters used for balance into the parameter server.
-* ***localization.yaml***: It loads some controllers and the parameters used for localization into the parameter server.
-* ***engineer.yaml***: It loads some controllers and the parameters used for engineer robot into the parameter server.
-* ***hero.yaml***: It loads some controllers and the parameters used for hero robot into the parameter server.
-* ***sentry.yaml***: It loads some controllers and the parameters used for sentry robot into the parameter server.
-* ***standard3.yaml***: It loads some controllers and the parameters used for standard3 robot into the parameter server.
-* ***standard4.yaml***: It loads some controllers and the parameters used for standard4 robot into the parameter server.
-* ***standard5.yaml***: It loads some controllers and the parameters used for standard5 robot into the parameter server.
+* ***auto.yaml***: It loads params about distance, power and posture of the wheels.
+* ***balance.yaml***: It loads params about position, posture and weight.
+* ***localization.yaml***: It loads params about frame and inertial measurement unit.
+* ***engineer.yaml***: It loads params about the distance, power and posture of the wheels.
+* ***hero.yaml***: It loads params about the distance, power and posture of the wheels.
+* ***sentry.yaml***: It loads params about the distance, power and posture of the wheels.
+* ***standard3.yaml***: It loads params about the distance, power and posture of the wheels.
+* ***standard4.yaml***: It loads params about the distance, position and pivot of the steering wheels.
+* ***standard5.yaml***: It loads params about the distance, power and posture of the wheels.
 ## 5. Launch files
 
-* ***load_controllers.launch***: It loads tf, robot_localization and some controllers, robot_state_controller, joint_state_controller and chassis controller
+* ***load_controllers.launch***: It loads tf, robot_localization and some controllers, robot_state_controller,
+  joint_state_controller and chassis controller are included.
 ## 6. ROS API
 
-### 6.1. Description
-The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/geometry_msgs/html/msg/Twist.html) topic in the namespace of the controller.
-### 6.2 Subscribed Topics
+### 6.1 Subscribed Topics
 
-* `base_imu`( [sensor_msgs/Imu](http://docs.ros.org/en/api/sensor_msgs/html/msg/Imu.html) )
+* `/base_imu`([sensor_msgs/Imu](http://docs.ros.org/en/api/sensor_msgs/html/msg/Imu.html))
 
-  Inertial Measurement Unit data.
+  The inertial measurement unit data of base command.
 
-* `command`( )
+* `/command`(rm_msgs::ChassisCmd)
 
   Velocity command.
 
-* `cmd_vel`( [geometry_msgs/Twist](http://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html) )
+* `/cmd_vel`([geometry_msgs/Twist](http://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html))
 
   Velocity command.
 
-### 6.3 Published Topics
+### 6.2 Published Topics
 
-* `state_real`( )
+* `/state_real`(rm_msgs::BalanceState）
 
   Publish the real state.
 
-* `odom`( [nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html) )
+* `/odom`([nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html))
 
   Odometry computed from the hardware feedback.
 
-### 6.4 Parameters
+### 6.3 Parameters
 
-#### 6.4.1 common
+#### 6.3.1 common
 
-* `joint_left_name` (`string` | string [ ... ])
+* `wheel_radius`(double, default: 0.02)
 
-  Left wheel joint name or list of joint names.
+  Radius of the wheels.
 
-* `joint_right_name` (`string` | string [ ... ])
+* `wheel_track`(double, default: 0.410)
 
-  Right wheel joint name or list of joint names.
+  The distance between the center of the front (rear) two wheels.
 
-* `wheel_radius` ( `double`, default: 0.02 )
+* `wheel_base`(double, default: 0.320)
 
-  Radius of the wheels. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
+  The distance between the center of axle.
 
-* `wheel_track` ( `double`, default: 0.410 )
+* `twist_angular`(double, default: M_PI / 6)
 
-  Distance between wheels. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
+  Angle of distortion.
 
-* `wheel_base` ( `double`, default: 0.320 )
-
-  Distance between the axes. It is expected they all have the same size. The rm_chassis_controller will attempt to read the value from the URDF if this parameter is not specified.
-
-* `twist_angular` ( `double`, default: M_PI / 6 )
-
-  The velocity of angular in the twist mode.
-
-* `enable_odom_tf` ( `bool`, default: true )
+* `enable_odom_tf`(bool, default: true)
 
   Publish to TF directly or not.
 
-* `twist_covariance_diagonal` ( double [ 6 ] )
+* `twist_covariance_diagonal`(double[6])
 
-  Diagonal of the covariance matrix for odometry twist publishing.
+  The diagonal covariance matrix of twist.
 
-* `publish_rate` ( `double`, default: 50 )
+* `publish_rate`(double, default: 50)
 
-  Frequency ( in Hz ) at which the odometry is published. Used for both tf and odom.
+  Frequency (in Hz) at which the topic is published.
 
-* `coeff` ( `double` )
+* `coeff`(double)
 
-  The power limit coeff.
+  Power factor.
 
-* `min_vel` ( `double` )
+* `min_vel`(double)
 
-  Minimum angular velocity of single chassis wheel.
+  Minimum velocity at the power.
 
-* `timeout` ( `double` )
+* `timeout`(double)
 
-  Allowed period ( in s ) allowed between two commands.
+  Allowed period (in s) between two commands. If the time is exceed this period, it will turn off.
 
-#### 6.4.2 Balance
+#### 6.3.2 Balance
 
-* `joint_right_name` ( `string` | string [ ... ] )
+* `joint_left_name`(string, default: "joint_left")
 
   Left wheel joint name or list of joint names.
 
-* `joint_right_name` (`string` | string [ ... ])
+* `joint_right_name`(string, default: "joint_right")
 
   Right wheel joint name or list of joint names.
 
-* `com_pitch_offset` (`double`, default: 0 )
+
+* `com_pitch_offset`(double, default: 0)
 
   The reduction ratio of pitch.
 
-* `a` ( `double [ 16 ]` )
+* `a`(double[16])
 
   State space expression.
 
-* `b` ( `double [ 8 ]` )
+* `b`(double[8])
 
   State space expression.
 
-* `q` ( `double [ 16 ]` )
+* `q`(double[16])
 
   Weight matrix.
 
-* `r` ( `double [ 4 ]` )
+* `r`(double[4])
 
   Weight matrix.
 
-#### 6.4.3 Swerve
-* `modules`
+#### 6.3.3 Swerve
 
-  Data about each component.
+* `/modules/left_front/position`(double[2])
+
+  The position of left front wheel.
+* `/modules/left_front/pivot/offset`(double)
+
+  The reduction ratio of left front pivot.
+* `/modules/left_front/wheel/radius`(double)
+
+  The radius of left front wheel.
+* `/modules/right_front/position`(double[2])
+
+  The position of right front wheel.
+* `/modules/left_back/position`(double[2])
+
+  The position of left back wheel.
+* `/modules/right_back/position`(double[2])
+
+  The position of right back wheel.
 
 ## 7. Controller configuration examples
 
 ### 7.1. Minimal description
+
 ```
 chassis_controller:
 type: rm_chassis_controllers/MecanumController
