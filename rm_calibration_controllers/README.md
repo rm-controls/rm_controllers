@@ -30,7 +30,7 @@ Or better, use `rosdep`:
 * rm_msgs
 * rm_common
 * pluginlib
-*  hardware_interface
+* hardware_interface
 * controller_interface
 * realtime_tools
 * effort_controllers
