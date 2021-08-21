@@ -98,15 +98,15 @@ mon launch rm_shooter_controller load_controllers.launch
 
 * `anti_block_angle` (`double`, default: 0)
 
-  If enter block state, the friction wheel will reverse anti_block_angle (in rad/s) to try to get rid of the block state.
+  If enter block state, the friction wheel will reverse anti_block_angle (in rad/s) to try to get rid of the structing.
 
 * `anti_block_threshold` (`double`, default: 0)
 
-  If the anti angle of the friction wheel exceeds anti_block_threshold, it means that it is out of block state.
+  If the anti angle of the friction wheel exceeds anti_block_threshold, it means that trigger reverse success.
 
 * `qd_10`, `qd_15`, `qd_18`, `qd_30`(`double`)
 
-  It means Joint angular velocity, the number of it's name expresses different bullet speeds (in m/s).
+  It means friction wheel's angular velocity, the number of it's name expresses different bullet speeds (in m/s).
 ### 7. Controller configuration examples
 
 #### 7.1. Minimal description
