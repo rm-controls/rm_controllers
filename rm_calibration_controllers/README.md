@@ -67,7 +67,7 @@ To build from source, clone the latest version from this repository into your ca
 
 * **`threshold`** (double)
 
-	This is velocity threshold. When the real time velocity of target actuator lower than threshold, and last for a while, it can be considered the state: CALIBRATED
+	This is velocity threshold. When the real time velocity of target actuator lower than threshold, and last for a while, it can be considered the state: CALIBRATED.
 
 
 ## 4. Bugs & Feature Requests
