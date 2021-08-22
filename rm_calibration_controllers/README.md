@@ -61,9 +61,13 @@ To build from source, clone the latest version from this repository into your ca
 
 
 #### 3.2 Parameters
-* **`search_velocity`**, **`threshold`** (double)
+* **`search_velocity`** (double)
 
-	When the real time velocity of calibrating target is lower than search_velocity and last for more than threshold (seconds), it is considered the state: CALIBRATED.
+	The actuator velocity of calibrating.
+
+* **`threshold`** (double)
+
+	This is velocity threshold. When the real time velocity of target actuator lower than threshold, and last for a while, it can be considered the state: CALIBRATED
 
 
 ## 4. Bugs & Feature Requests
