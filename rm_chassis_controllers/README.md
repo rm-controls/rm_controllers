@@ -1,16 +1,16 @@
 # rm_chassis_controllers
 
 ## 1. Overview
+The Controller is RoboMaster robot chassis controller, balance, swerve and mecanum are included. It controls the speed, power and posture of the chassis.
 
-The Controller is RoboMaster robot chassis controller, balance, swerve and mecanum are included. It controls the speed,
-power and posture of the chassis.
+**Keywords:** mecanum, swerve, balance, chassis.
 
-***Keywords***: mecanum, swerve, balance, chassis.
-
-### License
-The source code is released under a [BSD 3-Clause license](http://192.168.0.100:7070/dynamicx/rm_gimbal_controllers/-/blob/master/LICENSE)
-#### Author: DynamicX
-#### Affiliation: DynamicX
+#### License
+The source code is released under a [BSD 3-Clause license]().
+ 
+## Author: DynamicX
+## Affiliation: DynamicX
+## Maintainer: DynamicX
 
 The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
@@ -18,20 +18,25 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 
 ## 2. Installation
 
-#### 2.1. Installation from Packages
+### 2.1. Installation from Packages
 
-    sudo apt-get install ros-noetic-...
+To install all packages from the this repository as Debian packages use
+
+    sudo apt-get install ros-noetic-rm-chassis-controllers
 
 Or better, use `rosdep`:
 
     sudo rosdep install --from-paths src
 
-#### 2.2. Building from Source
+### 2.2. Building from Source
 
-##### 2.2.1. Dependencies
+#### 2.2.1. Dependencies
 
-* [Robot Operating System (ROS) ](http://wiki.ros.org/) (middleware for robotics)
-* [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) (linear algebra library)
+* [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
+* roscpp
+* roslint
+* rm_msgs
+* rm_common
 * pluginlib
 * hardware_interface
 * controller_interface
@@ -42,77 +47,61 @@ Or better, use `rosdep`:
 * tf2
 * tf2_geometry_msgs
 * angles
-* roscpp
-* roslint
-* rm_msgs
-* rm_common
 * imu_sensor_controller
 * robot_localization
-* robot_state_controller
-* rm_description
-* rm_gazebo
 
 
 #### 2.2.2. Building
 
-To build from source, clone the latest version from this repository into your catkin workspace and compile the package using
-
-	cd catkin_workspace/src
-	git clone https://github.com/ethz-asl/ros_best_practices.git
-	cd ../
-	rosdep install --from-paths . --ignore-src
-	catkin_make
+* Build this package with catkin build. Clone the latest version from this repository into your catkin workspace.
+```
+catkin_workspace/src
+git clone https://github.com/rm-controls/rm_controllers.git
+rosdep install --from-paths . --ignore-src
+catkin build
+```
 
 
 ## 3. Usage
 
-* Run the controller with mon launch:
+Run the controller with mon launch:
 
-      mon launch rm_chassis_controller load_controllers.launch
-## 4. Config
+      mon launch rm_chassis_controllers load_controllers.launch
 
-* ***auto.yaml***: It loads params about distance, power and posture of the wheels.
-* ***balance.yaml***: It loads params about position, posture and weight.
-* ***localization.yaml***: It loads params about frame and inertial measurement unit.
-* ***engineer.yaml***: It loads params about the distance, power and posture of the wheels.
-* ***hero.yaml***: It loads params about the distance, power and posture of the wheels.
-* ***sentry.yaml***: It loads params about the distance, power and posture of the wheels.
-* ***standard3.yaml***: It loads params about the distance, power and posture of the wheels.
-* ***standard4.yaml***: It loads params about the distance, position and pivot of the steering wheels.
-* ***standard5.yaml***: It loads params about the distance, power and posture of the wheels.
-## 5. Launch files
+## 4. Launch files
 
-* ***load_controllers.launch***: It loads tf, robot_localization and some controllers, robot_state_controller,
+* **load_controllers.launch:** It loads tf, robot_localization and some controllers, robot_state_controller,
   joint_state_controller and chassis controller are included.
-## 6. ROS API
+  
+## 5. ROS API
 
-### 6.1 Subscribed Topics
+### 5.1 Subscribed Topics
 
-* `/base_imu`([sensor_msgs/Imu](http://docs.ros.org/en/api/sensor_msgs/html/msg/Imu.html))
+* `base_imu`([sensor_msgs/Imu](http://docs.ros.org/en/api/sensor_msgs/html/msg/Imu.html))
 
   The inertial measurement unit data of base command.
-
-* `/command`(rm_msgs::ChassisCmd)
-
-  Velocity command.
-
-* `/cmd_vel`([geometry_msgs/Twist](http://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html))
+   
+* `command`(rm_msgs::ChassisCmd)
 
   Velocity command.
 
-### 6.2 Published Topics
+* `cmd_vel`([geometry_msgs/Twist](http://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html))
 
-* `/state_real`(rm_msgs::BalanceState）
+  Velocity command.
+
+### 5.2 Published Topics
+
+* `state_real`(rm_msgs::BalanceState）
 
   Publish the real state.
 
-* `/odom`([nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html))
+* `odom`([nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html))
 
   Odometry computed from the hardware feedback.
 
-### 6.3 Parameters
+### 5.3 Parameters
 
-#### 6.3.1 common
+#### 5.3.1 common
 
 * `wheel_radius`(double, default: 0.02)
 
@@ -154,7 +143,7 @@ To build from source, clone the latest version from this repository into your ca
 
   Allowed period (in s) between two commands. If the time is exceed this period, it will turn off.
 
-#### 6.3.2 Balance
+#### 5.3.2 Balance
 
 * `joint_left_name`(string, default: "joint_left")
 
@@ -185,7 +174,7 @@ To build from source, clone the latest version from this repository into your ca
 
   Weight matrix.
 
-#### 6.3.3 Swerve
+#### 5.3.3 Swerve
 
 * `/modules/left_front/position`(double[2])
 
@@ -206,9 +195,9 @@ To build from source, clone the latest version from this repository into your ca
 
   The position of right back wheel.
 
-## 7. Controller configuration examples
+## 6. Controller configuration examples
 
-### 7.1. Minimal description
+### 6.1. Minimal description
 
 ```
 chassis_controller:
@@ -230,7 +219,7 @@ joint: "right_back_wheel_joint"
 pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
 twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
 ```
-### 7.2. Complete description
+### 6.2. Complete description
 ```
 chassis_controller:
     type: rm_chassis_controllers/MecanumController
@@ -260,6 +249,6 @@ chassis_controller:
     timeout: 0.1
     pid_follow: { p: 5, i: 0, d: 0.8, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
 ```
-## Bugs & Feature Requests
+## 7. Bugs & Feature Requests
 
-Please report bugs and request features using the [Issue Tracker](https://github.com/gdut-dynamic-x/rm_template/issues) .
+Please report bugs and request features using the [Issue Tracker](https://github.com/gdut-dynamic-x/simple_chassis_controller/issues) .
