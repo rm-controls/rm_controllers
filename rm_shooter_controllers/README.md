@@ -1,6 +1,6 @@
 # rm_shooter_controller
 
-## 1.Overview
+## Overview
 The rm_shooter_controller has four states: STOP, READY, PUSH, and BLOCK, it controls the left and right friction wheels and the trigger wheel through PID algorithm according to the command. It can set the bullet speed by setting the rotation speed of the friction wheel, and at the same time realizes the jam detection.
 
 **Keywords:** shooter
@@ -17,15 +17,16 @@ The source code is released under a [BSD 3-Clause license]().
 
 The rm_shooter_controller package has been tested under [ROS](http://www.ros.org) Melodic and Noetic on respectively 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
-### 1.1. Hardware interface type
+### Hardware interface type
 
-The controller works with friction wheel joints through a **effort** interface.
++ `JointStateInterface` Used to obtain the speed of friction wheel and trigger and the position of trigger .
++ `EffortJointInterface` Used to send torque commands for friction wheels and trigger .
 
 [![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
 
-## 2. Installation
+## Installation
 
-### 2.1. Installation from Packages
+### Installation from Packages
 
 To install all packages from the this repository as Debian packages use
 
@@ -37,9 +38,9 @@ or better use `rosdep`:
 sudo rosdep install --from-paths src
 ```
 
-### 2.2. Building from Source
+### Building from Source
 
-#### 2.2.1 Dependencies
+#### Dependencies
 
 - [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
 - rm_description
@@ -57,7 +58,7 @@ sudo rosdep install --from-paths src
 - effort_controllers
 - dynamic_reconfigure
 
-#### 2.2.2 Building
+#### Building
 
 + Build this package with catkin build. Clone the latest version from this repository into your catkin workspace.
 ```
@@ -67,7 +68,7 @@ rosdep install --from-paths . --ignore-src
 catkin build
 ```
 
-## 3. Usage
+## Usage
 
 Run the controller with mon launch:
 
@@ -75,23 +76,23 @@ Run the controller with mon launch:
 mon launch rm_shooter_controllers load_controllers.launch
 ```
 
-## 4. Cfg
+## Cfg
 
 + **shooter.cfg:** Add parameters related to friction wheel speed corresponding to each bullet speed and trigger block detection parameters
 
-## 5. Launch files
+## Launch files
 
 - **load_controller.launch:** Load the parameters in config files and load the shooter controller.
 
-## 6. ROS API
+## ROS API
 
-#### 6.1. Subscribed Topics
+#### Subscribed Topics
 
 * `command`(rm_msgs/ShootCmd)
 
   Commands of controller state, bullet speed, frequency of shooting .
 
-#### 6.2. Parameters
+#### Parameters
 
 * `block_effort`, `block_speed`, `block_duration` (`double`, default: 0)
 
@@ -114,9 +115,9 @@ mon launch rm_shooter_controllers load_controllers.launch
   It means friction wheel's angular velocity, the number of it's name expresses different bullet speeds (in m/s) .
 
 
-### 7. Controller configuration examples
+### Controller configuration examples
 
-#### 7.1. Minimal description
+#### Minimal description
 
 ```
 shooter_controller:
@@ -133,7 +134,7 @@ shooter_controller:
       pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
 ```
 
-#### 7.2. Complete description
+#### Complete description
 
 ```
 shooter_controller:
@@ -160,6 +161,6 @@ shooter_controller:
     qd_30: 740.0
 ```
 
-## 8. Bugs & Feature Requests
+## Bugs & Feature Requests
 
 Please report bugs and request features using the [Issue Tracker](https://github.com/gdut-dynamic-x/simple_chassis_controller/issues) .
