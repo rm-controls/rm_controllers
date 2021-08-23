@@ -29,13 +29,12 @@ The controller works with friction wheel joints through a **effort** interface.
 
 To install all packages from the this repository as Debian packages use
 
-```plaintext
-sudo apt-get install ros-noetic-shooter-controllers
-
+```
+sudo apt-get install ros-noetic-rm-shooter-controllers
 ```
 or better use `rosdep`:
 ```
-sudo rosdep install --from-paths src 
+sudo rosdep install --from-paths src
 ```
 
 ### 2.2. Building from Source
@@ -61,6 +60,12 @@ sudo rosdep install --from-paths src
 #### 2.2.2 Building
 
 + Build this package with catkin build. Clone the latest version from this repository into your catkin workspace.
+```
+catkin_workspace/src
+git clone https://github.com/rm-controls/rm_controllers.git
+rosdep install --from-paths . --ignore-src
+catkin build
+```
 
 ## 3. Usage
 
