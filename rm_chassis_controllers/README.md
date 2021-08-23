@@ -8,9 +8,9 @@ The Controller is RoboMaster robot chassis controller, balance, swerve and mecan
 #### License
 The source code is released under a [BSD 3-Clause license]().
  
-## Author: DynamicX
-## Affiliation: DynamicX
-## Maintainer: DynamicX
+**Author: DynamicX**
+**Affiliation: DynamicX**
+**Maintainer: DynamicX**
 
 The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
