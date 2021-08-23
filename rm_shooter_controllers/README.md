@@ -19,8 +19,8 @@ The rm_shooter_controller package has been tested under [ROS](http://www.ros.org
 
 ### Hardware interface type
 
-+ `JointStateInterface` Used to obtain the speed of friction wheel and trigger and the position of trigger .
-+ `EffortJointInterface` Used to send torque commands for friction wheels and trigger .
++ `JointStateInterface` Used to obtain the speed of friction wheel and trigger wheel and the position of trigger .
++ `EffortJointInterface` Used to send torque commands for friction wheels and trigger wheel .
 
 [![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
 
