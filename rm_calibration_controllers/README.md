@@ -2,7 +2,7 @@
 
 ## 1. Overview
 
-The Controller is RoboMaster robot calibration controller. It is used for calibrating position such as joint, sentry.
+Since the zero point of some actuators will change after power off, rm_calibration_controller will move at a certain speed after it is started until it reaches the mechanical limit, and the motor position will be reset to zero.
 
 ***Keywords***: calibration, ROS, position.
 
