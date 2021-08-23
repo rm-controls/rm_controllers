@@ -17,7 +17,7 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 
 ## 2. Installation
 
-#### 2.1. Installation from Packages
+### 2.1. Installation from Packages
 
 
 To install all packages from the this repository as Debian packages use
@@ -28,9 +28,9 @@ Or better, use `rosdep`:
 
 	sudo rosdep install --from-paths src
 
-#### 2.2. Building from Source
+### 2.2. Building from Source
 
-##### 2.2.1. Dependencies
+#### 2.2.1. Dependencies
 * roscpp
 * roslint
 * rm_msgs
