@@ -89,7 +89,7 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 * `command`(rm_msgs/ShootCmd)
 
-  Commands of controller state, bullet speed, frequency of shooting, and time stamp .
+  Commands of controller state, bullet speed, frequency of shooting .
 
 #### 6.2. Parameters
 
