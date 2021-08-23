@@ -1,7 +1,6 @@
 # rm_shooter_controller
 
-## 1. Overview
-
+## 1.Overview
 The rm_shooter_controller has four states: STOP, READY, PUSH, and BLOCK, it controls the left and right friction wheels and the trigger wheel through PID algorithm according to the command. It can set the bullet speed by setting the rotation speed of the friction wheel, and at the same time realizes the jam detection.
 
 **Keywords:** shooter
@@ -32,10 +31,9 @@ To install all packages from the this repository as Debian packages use
 
 ```plaintext
 sudo apt-get install ros-noetic-shooter-controllers
+
 ```
-
 or better use `rosdep`:
-
 ```
 sudo rosdep install --from-paths src 
 ```
