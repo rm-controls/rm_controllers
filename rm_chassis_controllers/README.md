@@ -9,10 +9,16 @@ The Controller is RoboMaster robot chassis controller, balance, swerve and mecan
 The source code is released under a [BSD 3-Clause license]().
  
 **Author: DynamicX**
+
 **Affiliation: DynamicX**
+
 **Maintainer: DynamicX**
 
 The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
+
+### 1.1. Hardware interface type
+
+The controller works with friction wheel joints through a **effort** interface.
 
 [![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
 
