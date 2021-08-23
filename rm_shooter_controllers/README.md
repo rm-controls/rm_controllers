@@ -69,7 +69,7 @@ sudo rosdep install --from-paths src
 Run the controller with mon launch:
 
 ```
-mon launch rm_shooter_controller load_controllers.launch
+mon launch rm_shooter_controllers load_controllers.launch
 ```
 
 ## 4. Cfg
@@ -100,7 +100,7 @@ mon launch rm_shooter_controller load_controllers.launch
 
 * `anti_block_angle` (`double`, default: 0)
 
-  If enter block state, the friction wheel will reverse anti_block_angle (in rad/s) to try to get rid of the structing .
+  If enter block state, the friction wheel will reverse anti_block_angle (in rad) to try to get rid of the structing .
 
 * `anti_block_threshold` (`double`, default: 0)
 
