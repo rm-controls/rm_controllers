@@ -2,14 +2,20 @@
 
 ## 1. Overview
 
-Since the zero point of some actuators will change after power off, rm_calibration_controller will move at a certain speed after it is started until it reaches the mechanical limit, and the motor position will be reset to zero.
+Since the zero point of some motors will change after power off, rm_calibration_controller will move at a certain speed after it is started until motors reach the mechanical limit, and motors position will be reset to zero. 
 
-***Keywords***: calibration, ROS, position.
+**Keywords:** calibration, ROS, position.
 
 ### License
+
 The source code is released under a [ BSD 3-Clause license](http://192.168.0.100:7070/dynamicx/rm_gimbal_controllers/-/blob/master/LICENSE).
+
 #### Author: DynamicX
 #### Affiliation: DynamicX
+
+**Author: DynamicX<br />
+Affiliation: [ANYbotics](https://www.anybotics.com/)<br />
+Maintainer: DynamicX**
 
 The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
@@ -64,11 +70,11 @@ To build from source, clone the latest version from this repository into your ca
 #### 3.2 Parameters
 * **`search_velocity`** (double)
 
-	The actuator velocity of calibrating.
+	The motor angular velocity of calibrating.
 
 * **`threshold`** (double)
 
-	This is velocity threshold. When the real time velocity of target actuator lower than threshold, and last for a while, it can be considered the state: CALIBRATED.
+	This is velocity threshold. When the real time velocity of target motor lower than threshold, and last for a while, it can be considered the state: CALIBRATED.
 
 
 ## 4. Bugs & Feature Requests
