@@ -1,29 +1,30 @@
 # rm_calibration_controllers
 
-## 1. Overview
+## Overview
 
-Since the zero point of some motors will change after power off, rm_calibration_controller will move at a certain speed after it is started until motors reach the mechanical limit, and motors position will be reset to zero. 
+Since the zero point of some motors will change after power off, rm_calibration_controller will move at a certain speed after it is started until motors reach the mechanical limit, and motors position will be reset to zero.
 
 **Keywords:** calibration, ROS, position.
 
 ### License
 
-The source code is released under a [ BSD 3-Clause license](http://192.168.0.100:7070/dynamicx/rm_gimbal_controllers/-/blob/master/LICENSE).
-
-#### Author: DynamicX
-#### Affiliation: DynamicX
+The source code is released under a [ BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/rm_calibration_controllers/LICENSE).
 
 **Author: DynamicX<br />
-Affiliation: [ANYbotics](https://www.anybotics.com/)<br />
+Affiliation: DynamicX<br />
 Maintainer: DynamicX**
 
 The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
-[![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
+### Hardware interface type
 
-## 2. Installation
++ `EffortJointInterface` Used to send effort command to target joint to make it reach the calibration speed.
++ `EffortJointInterface` Used to obtain the information of the target actuators offset, current position, the state of the whether it is stopped and the state of whether it is calibrated.
 
-### 2.1. Installation from Packages
+
+## Installation
+
+### Installation from Packages
 
 To install all packages from the this repository as Debian packages use
 
@@ -33,9 +34,9 @@ Or better, use `rosdep`:
 
 	sudo rosdep install --from-paths src
 
-### 2.2. Building from Source
+### Building from Source
 
-#### 2.2.1. Dependencies
+#### Dependencies
 * roscpp
 * roslint
 * rm_msgs
@@ -48,7 +49,7 @@ Or better, use `rosdep`:
 * control_msgs
 
 
-#### 2.2.2. Building
+#### Building
 
 To build from source, clone the latest version from this repository into your catkin workspace and compile the package using
 
@@ -59,15 +60,15 @@ To build from source, clone the latest version from this repository into your ca
 	catkin_make
 
 
-## 3. ROS API
+## ROS API
 
-#### 3.1 Service
+#### Service
 * **`is_calibrated_srv_`** ([control_msgs/QueryCalibrationState](http://docs.ros.org/en/api/control_msgs/html/srv/QueryCalibrationState.html))
 
 	 Returns information about whether target controller has been calibrated.
 
 
-#### 3.2 Parameters
+#### Parameters
 * **`search_velocity`** (double)
 
 	The motor angular velocity of calibrating.
@@ -77,6 +78,6 @@ To build from source, clone the latest version from this repository into your ca
 	This is velocity threshold. When the real time velocity of target motor lower than threshold, and last for a while, it can be considered the state: CALIBRATED.
 
 
-## 4. Bugs & Feature Requests
+## Bugs & Feature Requests
 
 Please report bugs and request features using the [Issue Tracker](https://github.com/rm-controls/rm_controllers/issues).
