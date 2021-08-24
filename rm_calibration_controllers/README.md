@@ -19,7 +19,6 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 
 ### 2.1. Installation from Packages
 
-
 To install all packages from the this repository as Debian packages use
 
     sudo apt-get install ros-noetic-calibration-controllers
