@@ -19,7 +19,7 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 ### Hardware interface type
 
 + `EffortJointInterface` Used to send effort command to target joint to make it reach the calibration speed.
-+ `EffortJointInterface` Used to obtain the information of the target actuators offset, current position, the state of the whether it is stopped and the state of whether it is calibrated.
++ `ActuatorExtraInterface` Used to obtain the information of the target actuators offset, current position, the state of the whether it is stopped and the state of whether it is calibrated.
 
 
 ## Installation
