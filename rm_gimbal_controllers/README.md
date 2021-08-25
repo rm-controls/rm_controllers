@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Controller is RoboMaster robot gimbal controller. It is used for ballistic solution and gimbal moving.
+The rm_gimbal_controllers has three states: RATE, TRACK, and DIRECT. It performs PID control on the two joints of yaw and pitch according to commands. It can also perform moving average filtering based on visual target data and calculate, predict and track targets based on the bullet launch model.
 
 ***Keywords***: gimbal, ballistic solution, ROS
 
