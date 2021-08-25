@@ -7,7 +7,7 @@ The rm_shooter_controller has four states: STOP, READY, PUSH, and BLOCK, it cont
 
 #### License
 
-The source code is released under a [BSD 3-Clause license]().
+The source code is released under a [BSD 3-Clause license](http://192.168.0.100:7070/dynamicx/rm_shooter_controllers/-/blob/master/LICENSE).
 
 **Author: DynamicX**
 
@@ -28,7 +28,7 @@ The rm_shooter_controller package has been tested under [ROS](http://www.ros.org
 
 ### Installation from Packages
 
-To install all packages from the this repository as Debian packages use
+To install all packages from this repository as Debian packages use
 
 ```
 sudo apt-get install ros-noetic-rm-shooter-controllers
@@ -108,7 +108,7 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 * `anti_block_threshold` (`double`, default: 0)
 
-  If the anti angle of the friction wheel exceeds anti_block_threshold, it means that trigger reverse success .
+  If the anti angle of the friction wheel exceeds anti_block_threshold (in rad), it means that trigger reverse success .
 
 * `qd_10`, `qd_15`, `qd_18`, `qd_30`(`double`)
 
