@@ -1,34 +1,43 @@
 # rm_gimbal_controllers
 
-## 1. Overview
+## Overview
 
 The Controller is RoboMaster robot gimbal controller. It is used for ballistic solution and gimbal moving.
 
 ***Keywords***: gimbal, ballistic solution, ROS
 
 ### License
-The source code is released under a [ BSD 3-Clause license](http://192.168.0.100:7070/dynamicx/rm_gimbal_controllers/-/blob/master/LICENSE).
-#### Author: DynamicX
-#### Affiliation: DynamicX
+The source code is released under a [ BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/LICENSE).
+
+**Author: DynamicX<br />
+Affiliation: DynamicX<br />
+Maintainer: DynamicX**
 
 The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
-### 1.1. Hardware interface type
-The controller works with pitch joints and yaw joints through a **velocity** interface.
 
-[![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
+### Hardware interface type
++ `JointStateInterface` Used to obtain the speed and position of gimbal joint.
++ `EffortJointInterface` Used to send effort command to gimbal joint .
++ `RoboStateInterface` Used to obtain the current and historical transform between gimbal and the world coordinate system and the transform between visual target and the world coordinate system.
 
-## 2. Installation
+## Installation
 
-#### 2.1. Installation from Packages
-    sudo apt-get install ros-noetic-...
+### Installation from Packages
+
+To install all packages from the this repository as Debian packages use
+
+    sudo apt-get install ros-noetic-gimbal-controllers
+
 Or better, use `rosdep`:
 
-    sudo rosdep install --from-paths src
+	sudo rosdep install --from-paths src
 
-#### 2.2. Building from Source
-##### 2.2.1. Dependencies
-* [Robot Operating System (ROS) ](http://wiki.ros.org/) ( middleware for robotics )
-* [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) ( linear algebra library )
+### Building from Source
+#### Dependencies
+* roscpp
+* roslint
+* rm_msgs
+* rm_common
 * pluginlib
 * hardware_interface
 * controller_interface
@@ -39,15 +48,10 @@ Or better, use `rosdep`:
 * tf2
 * tf2_geometry_msgs
 * angles
-* roscpp
-* roslint
-* rm_msgs
-* rm_common
 * visualization_msgs
 * dynamic_reconfigure
 
-
-#### 2.2.2. Building
+#### Building
 
 To build from source, clone the latest version from this repository into your catkin workspace and compile the package using
 
@@ -58,165 +62,117 @@ To build from source, clone the latest version from this repository into your ca
 	catkin_make
 
 
-## 3. Usage
+## Usage
 
 * Run the controller with mon launch:
 
       mon launch rm_gimbal_controller load_controllers.launch
 
-## 4. Cfg
-* ***BulletSolver.cfg***: It is used for adding parameters to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
-* ***Gimbal.cfg***: It is used for adding parameters to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
+## Cfg
+* **BulletSolver.cfg**: It is used for adding parameters to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
+* **Gimbal.cfg**: It is used for adding parameters to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
 
-## 5. Config
+## Launch files
 
-* ***engineer.yaml***: It loads some controllers and the parameters used for engineer robot into the parameter server.
-* ***hero.yaml***: It loads some controllers and the parameters used for hero robot into the parameter server.
-* ***sentry.yaml***: It loads some controllers and the parameters used for sentry robot into the parameter server.
-* ***standard3.yaml***: It loads some controllers and the parameters used for standard3 robot into the parameter server.
-* ***standard4.yaml***: It loads some controllers and the parameters used for standard4 robot into the parameter server.
-* ***standard5.yaml***: It loads some controllers and the parameters used for standard5 robot into the parameter server.
+* **load_controllers.launch**: Load the parameters in config files and load tf and robot_state_controller, joint_state_controller, gimbal_controller.
 
-## 6. Launch files
+## ROS API
 
-* ***load_controllers.launch***: It loads tf and some controllers, robot_state_controller, joint_state_controller, lower_gimbal_controller, upper_gimbal_controller is included.
+#### Subscribed Topics
+* **`command`** (rm_msgs/ChassisCmd)
 
-## 7. ROS API
+  Set gimbal mode, pitch and yaw axis rotation speed, tracking target, pointing target and coordinate system.
 
-### 7.1. Description
-The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/geometry_msgs/html/msg/Twist.html) topic in the namespace of the controller.
-### 7.2. Subscribed Topics
-* `command` ()
+* **`/detection`** (rm_msgs/TargetDetectionArray)
 
-  Velocity command.
+  Receive visual recognition data.
 
-* `detection_topic` ()
+* **`/<camera_name>/camera_info`** (CameraInfo)
 
-  Object command.
+  Make sure that the detection node receives a new frame of image and sends the prediction data to the detection node.
 
-* `camera_topic` ()
+#### Published Topics
+* **`error`** (rm_msgs/GimbalError)
+  The distance error calculated by the ballistic model to shoot at the current gimbal angle to the target.
 
-  Image or video command.
+* **`track`** (rm_msgs/TrackDataArray)
+  The predicted data used for detection node to decide the ROI.
 
-### 7.3. Published Topics
-* `model_desire` ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
-  Display target route of the model.
-
-* `model_real` ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
-
-  Display real route of the model.
-
-* `id`
-  Publish the id of target.
-
-* `error_des`
-  Process error information.
-
-* `track`
-  Process the track array.
-### 7.4. Parameters
-* `resistance_coff_qd_10` ( `double`, default: 0 )
-
-  The air resistance coeff when bullet speed is 10 m/s.
-
-* `resistance_coff_qd_15` ( `double`, default: 0 )
-
-  The air resistance coeff when bullet speed is 15 m/s.
-
-* `resistance_coff_qd_16` ( `double`, default: 0 )
-
-  The air resistance coeff when bullet speed is 16 m/s.
-
-* `resistance_coff_qd_18` ( `double`, default: 0 )
-
-  The air resistance coeff when bullet speed is 18 m/s.
-
-* `resistance_coff_qd_30` ( `double`, default: 0 )
-
-  The air resistance coeff when bullet speed is 30 m/s.
-
-* `g` ( `double`, default: 0 )
-
-  The value of acceleration of gravity.
-
-* `dt` ( `double`, default: 0 )
-
-  The duration of sending data.
-
-* `delay` ( `double`, default: 0 )
-
-  Bullet launch delay.
-
-* `timeout` ( `double`, default: 0 )
-
-  Timeout time of bullet model solution.
-
-* `detection_topic` ( `string` | string [ ... ] )
+#### Parameters
+* **`detection_topic`** ( `string` | string [ ... ] )
 
   The name of a topic about some form of detection.
 
-* `camera_topic` ( `string` | string [ ... ] )
+* **`camera_topic`** ( `string` | string [ ... ] )
 
   The name of a topic about some form of camera info.
 
-* `detection_frame` ( `string` | string [ ... ] )
+* **`detection_frame`** ( `string` | string [ ... ] )
 
   The name of the frame of detection.
 
-* `publish_rate` ( `double`, default: 50 )
+* **`publish_rate`** ( `double`, default: 50 )
 
   Frequency ( in Hz ) at which the odometry is published. Used for both tf and odom.
 
-* `chassis_angular_data_num` ( `double` )
+* **`chassis_angular_data_num`** ( `double` )
 
   Deflection angle of chassis.
 
-* `time_compensation` ( `double`, default: 0 )
+* **`time_compensation`** ( `double`, default: 0 )
 
   Time of image transmission delay.
 
-* `is_debug` ( `bool`, default: true )
+##### Bullet solver
+_Bullet solver is used to get the bullet point_
+* **`resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18, resistance_coff_qd_30`** ( `double` )
+
+  The air resistance coeff when bullet speed is 10 m/s, 15 m/s, 16 m/s, 18 m/s and 30 m/s.Used for ballistic model to calculate the bullet point.
+
+* **`g`** ( `double`, default: 0 )
+
+  The value of acceleration of gravity.
+
+* **`dt`** ( `double`, default: 0 )
+
+  The duration of sending data.
+
+* **`delay`** ( `double`, default: 0 )
+
+  Bullet launch delay.
+
+* **`timeout`** ( `double`, default: 0 )
+
+  Timeout time of bullet model solution.
+
+##### Moving average filter
+* **`is_debug`** ( `bool`, default: true )
 
   The debug status.
 
-* `pos_data_num` ( `double` )
+* **`pos_data_num`** ( `double` )
 
   The data of filter position.
 
-* `vel_data_num` ( `double` )
+* **`vel_data_num`** ( `double` )
 
   The data of filter velocity.
 
-* `center_data_num` ( `double` )
+* **`center_data_num`** ( `double` )
 
   The data of filter center.
 
-* `gyro_data_num` ( `double` )
+* **`gyro_data_num`** ( `double` )
 
   The data of filter gyro velocity.
 
-* `center_offset_z` ( `double` )
+* **`center_offset_z`** ( `double` )
 
   The filter center reduction ratio.
 
-## 8. Controller configuration examples
+## Controller configuration examples
 
-### 8.1. Minimal description
-```
-gimbal_controller:
-    type: rm_gimbal_controllers/Controller
-    time_compensation: 0.03
-    publish_rate: 100
-    chassis_angular_data_num: 20
-    camera_topic: "/galaxy_camera/camera_info"
-    yaw:
-      joint: "yaw_joint"
-      pid: { p: 8, i: 0, d: 0.4, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
-    pitch:
-      joint: "pitch_joint"
-      pid: { p: 10, i: 50, d: 0.3, i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
-```
-### 8.2. Complete description
+### Complete description
 ```
 gimbal_controller:
     type: rm_gimbal_controllers/Controller
@@ -251,6 +207,6 @@ gimbal_controller:
 ```
 
 
-## 9. Bugs & Feature Requests
+## Bugs & Feature Requests
 
-Please report bugs and request features using the [Issue Tracker](https://github.com/gdut-dynamic-x/rm_template/issues).
+Please report bugs and request features using the [Issue Tracker](https://github.com/rm-controls/rm_controllers/issues).
