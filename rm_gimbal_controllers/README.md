@@ -4,7 +4,7 @@
 
 The rm_gimbal_controllers has three states: RATE, TRACK, and DIRECT. It performs PID control on the two joints of yaw and pitch according to commands. It can also perform moving average filtering based on visual target data and calculate, predict and track targets based on the bullet launch model.
 
-***Keywords***: gimbal, ballistic solution, ROS
+***Keywords***: gimbal, ballistic solution, ROS, moving average filter
 
 ### License
 The source code is released under a [ BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/LICENSE).
@@ -172,7 +172,6 @@ _Bullet solver is used to get the bullet point_
 
 ## Controller configuration examples
 
-### Complete description
 ```
 gimbal_controller:
     type: rm_gimbal_controllers/Controller
