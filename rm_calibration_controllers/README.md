@@ -75,7 +75,7 @@ To build from source, clone the latest version from this repository into your ca
 
 * **`threshold`** (double)
 
-	This is velocity threshold. When the real time velocity of target motor lower than threshold, and last for a while, it can be considered the state: CALIBRATED.
+	This is angular velocity threshold. When the real time angular velocity of target motor lower than threshold, and last for a while, it can be considered the state: CALIBRATED.
 
 
 ## Bugs & Feature Requests
