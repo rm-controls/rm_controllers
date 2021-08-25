@@ -71,11 +71,11 @@ To build from source, clone the latest version from this repository into your ca
 #### Parameters
 * **`search_velocity`** (double)
 
-	The motor angular velocity of calibrating.
+	The joint angular velocity of calibrating.
 
 * **`threshold`** (double)
 
-	This is angular velocity threshold. When the real time angular velocity of target motor lower than threshold, and last for a while, it can be considered the state: CALIBRATED.
+	This is angular velocity `threshold`. When the real time angular velocity of target motor lower than threshold, and last for a while, it can switch CALIBRATED from MOVING.
 
 
 ## Bugs & Feature Requests
