@@ -65,7 +65,7 @@ To build from source, clone the latest version from this repository into your ca
 #### Service
 * **`is_calibrated_srv_`** ([control_msgs/QueryCalibrationState](http://docs.ros.org/en/api/control_msgs/html/srv/QueryCalibrationState.html))
 
-	 Returns information about whether target controller has been calibrated.
+	 When requesting to this server, it will return respond about whether target motors has been calibration.
 
 
 #### Parameters
