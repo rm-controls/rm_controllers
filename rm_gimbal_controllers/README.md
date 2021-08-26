@@ -4,9 +4,10 @@
 
 The rm_gimbal_controllers has three states: RATE, TRACK, and DIRECT. It performs PID control on the two joints of yaw and pitch according to commands. It can also perform moving average filtering based on visual target data and calculate, predict and track targets based on the bullet launch model.
 
-***Keywords***: gimbal, ballistic solution, ROS, moving average filter
+**Keywords**: gimbal, ballistic solution, ROS, moving average filter
 
 ### License
+
 The source code is released under a [ BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/LICENSE).
 
 **Author: DynamicX<br />
@@ -69,8 +70,8 @@ To build from source, clone the latest version from this repository into your ca
       mon launch rm_gimbal_controller load_controllers.launch
 
 ## Cfg
-* **BulletSolver.cfg**: It is used for adding parameters to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
-* **Gimbal.cfg**: It is used for adding parameters to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
+* **BulletSolver.cfg**: Add parameters related to ballisitc model to each bullet speed.
+* **Gimbal.cfg**: Add parameters related to image transimission delay.
 
 ## Launch files
 
@@ -101,11 +102,11 @@ To build from source, clone the latest version from this repository into your ca
 #### Parameters
 * **`detection_topic`** ( `string` | string [ ... ] )
 
-  The name of a topic about some form of detection.
+  The name of the topic where detection node gets predicted data.
 
 * **`camera_topic`** ( `string` | string [ ... ] )
 
-  The name of a topic about some form of camera info.
+  The name of the topic that return whether camera get a new frame.
 
 * **`detection_frame`** ( `string` | string [ ... ] )
 
@@ -117,58 +118,55 @@ To build from source, clone the latest version from this repository into your ca
 
 * **`chassis_angular_data_num`** ( `double` )
 
-  Deflection angle of chassis.
+  The number of angle data of chassis.Used for chassis angular average filter.
 
 * **`time_compensation`** ( `double`, default: 0 )
 
-  Time of image transmission delay.
+  Time(in s) of image transmission delay(in s).Used to compensate for the effects of images transimission delay
 
 ##### Bullet solver
 _Bullet solver is used to get the bullet point_
 * **`resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18, resistance_coff_qd_30`** ( `double` )
 
-  The air resistance coeff when bullet speed is 10 m/s, 15 m/s, 16 m/s, 18 m/s and 30 m/s.Used for ballistic model to calculate the bullet point.
+  The air resistance coeff used for bullet solver when bullet speed is 10 m/s, 15 m/s, 16 m/s, 18 m/s and 30 m/s.
 
 * **`g`** ( `double`, default: 0 )
 
-  The value of acceleration of gravity.
-
-* **`dt`** ( `double`, default: 0 )
-
-  The duration of sending data.
+  Its value equal air resistance divided by mass.
 
 * **`delay`** ( `double`, default: 0 )
 
-  Bullet launch delay.
+  Bullet launch delay time(in s) after shooter get the shooting command.Used to compensate for the effects of launch delay.
 
 * **`timeout`** ( `double`, default: 0 )
 
-  Timeout time of bullet model solution.
+  Timeout time((in s)) of ballistic model solution.Used to judge whether bullet solver can caculate the bullet point.
 
 ##### Moving average filter
+_Moving average filter is used for filter the target armor center when target is spin._
 * **`is_debug`** ( `bool`, default: true )
 
-  The debug status.
+  The debug status.When it is true, debug data will be pulished on the filter topic.
 
 * **`pos_data_num`** ( `double` )
 
-  The data of filter position.
+  The number of velocity data.
 
 * **`vel_data_num`** ( `double` )
 
-  The data of filter velocity.
+  The number of velocity data.
 
 * **`center_data_num`** ( `double` )
 
-  The data of filter center.
+  The number of armor center position data.
 
 * **`gyro_data_num`** ( `double` )
 
-  The data of filter gyro velocity.
+  The target rotation speed data.
 
 * **`center_offset_z`** ( `double` )
 
-  The filter center reduction ratio.
+  Offset on the z axis.Used to compensate for the error of filter result on z axis.
 
 ## Controller configuration examples
 
