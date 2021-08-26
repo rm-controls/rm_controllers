@@ -22,8 +22,6 @@ The rm_shooter_controller package has been tested under [ROS](http://www.ros.org
 + `JointStateInterface` Used to obtain the speed of friction wheel and trigger wheel and the position of trigger .
 + `EffortJointInterface` Used to send torque commands for friction wheels and trigger wheel .
 
-[![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
-
 ## Installation
 
 ### Installation from Packages
@@ -94,25 +92,54 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 #### Parameters
 
-* `block_effort`, `block_speed`, `block_duration` (`double`, default: 0)
+* **`block_effort`, `block_speed`, `block_duration`** (`double`, default: 0)
 
-  When the torque of the plucking motor is greater than block_effort (in N·m), and the angular velocity is less than block_speed (in rad/s), it will be regarded as jamming if it continues for block_duration (in s) .
+  When the torque of the plucking motor is greater than `block_effort` (in N·m), and the angular velocity is less than `block_speed` (in rad/s), it will be regarded as jamming if it continues for `block_duration` (in s) .
 
-* `block_overtime` (`double`, default: 0)
+* **`block_overtime`** (`double`, default: 0)
 
-  If the time to enter block state exceeds block_overtime (in s), it will be judged as timeout and exit block state .
+  If the time to enter block state exceeds `block_overtime` (in s), it will be judged as timeout and exit block state .
 
-* `anti_block_angle` (`double`, default: 0)
+* **`anti_block_angle`** (`double`, default: 0)
 
-  If enter block state, the friction wheel will reverse anti_block_angle (in rad) to try to get rid of the structing .
+  If enter block state, the friction wheel will reverse `anti_block_angle` (in rad) to try to get rid of the structing .
 
-* `anti_block_threshold` (`double`, default: 0)
+* **`anti_block_threshold`** (`double`, default: 0)
 
-  If the anti angle of the friction wheel exceeds anti_block_threshold (in rad), it means that trigger reverse success .
+  If the anti angle of the friction wheel exceeds `anti_block_threshold` (in rad), it means that trigger reverse success .
 
-* `qd_10`, `qd_15`, `qd_18`, `qd_30`(`double`)
+* **`qd_10`, `qd_15`, `qd_18`, `qd_30`** (`double`)
 
   It means friction wheel's angular velocity, the number of it's name expresses different bullet speeds (in m/s) .
+
+### Controller configuration examples
+
+#### Complete description
+
+```
+shooter_controller:
+    type: rm_shooter_controllers/Controller
+    publish_rate: 50
+    friction_left:
+      joint: "left_friction_wheel_joint"
+      pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
+    friction_right:
+      joint: "right_friction_wheel_joint"
+      pid: { p: 0.001, i: 0.01, d: 0.0, i_clamp_max: 0.01, i_clamp_min: -0.01, antiwindup: true, publish_state: true }
+    trigger:
+      joint: "trigger_joint"
+      pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+    push_per_rotation: 8
+    push_qd_threshold: 0.90
+    block_effort: 0.95
+    block_duration: 0.05
+    block_overtime: 0.5
+    anti_block_angle: 0.2
+    anti_block_threshold: 0.1
+    qd_15: 460.0
+    qd_18: 515.0
+    qd_30: 740.0
+```
 
 ## Bugs & Feature Requests
 
