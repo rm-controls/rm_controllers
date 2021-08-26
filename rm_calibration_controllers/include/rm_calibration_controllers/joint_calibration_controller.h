@@ -35,8 +35,8 @@
 // Created by qiayuan on 5/16/21.
 //
 
-#ifndef RM_CALIBRATION_CONTROLLERS_JOINT_CALIBRATION_CONTROLLER_H_
-#define RM_CALIBRATION_CONTROLLERS_JOINT_CALIBRATION_CONTROLLER_H_
+#pragma once
+
 #include <ros/ros.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <rm_common/hardware_interface/actuator_extra_interface.h>
@@ -76,4 +76,3 @@ private:
 };
 
 }  // namespace rm_calibration_controllers
-#endif  // RM_CALIBRATION_CONTROLLERS_JOINT_CALIBRATION_CONTROLLER_H_
