@@ -56,7 +56,7 @@ sudo rosdep install --from-paths src
 
 #### Building
 
-+ Build this package with catkin build. Clone the latest version from this repository into your catkin workspace.
+To build this package with catkin build. Clone the latest version from this repository into your catkin workspace.
 ```
 catkin_workspace/src
 git clone https://github.com/rm-controls/rm_controllers.git
@@ -84,7 +84,7 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 #### Subscribed Topics
 
-* `command`(rm_msgs/ShootCmd)
+* **`command`**(rm_msgs/ShootCmd)
 
   Commands of controller state, bullet speed, frequency of shooting .
 
