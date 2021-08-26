@@ -3,7 +3,7 @@
 ## Overview
 The rm_shooter_controller has four states: STOP, READY, PUSH, and BLOCK, it controls the left and right friction wheels and the trigger wheel through PID algorithm according to the command. It can set the bullet speed by setting the rotation speed of the friction wheel, and at the same time realizes the jam detection.
 
-**Keywords:** shooter
+**Keywords:** shooter, jam detection, ROS
 
 #### License
 
@@ -39,8 +39,6 @@ sudo rosdep install --from-paths src
 ### Building from Source
 
 #### Dependencies
-
-- [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
 - rm_description
 - roscpp
 - roslint
