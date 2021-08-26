@@ -35,8 +35,7 @@
 // Created by qiayuan on 8/14/20.
 //
 
-#ifndef SRC_RM_COMMON_INCLUDE_BULLET_SOLVER_H_
-#define SRC_RM_COMMON_INCLUDE_BULLET_SOLVER_H_
+#pragma once
 
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_buffer.h>
@@ -94,4 +93,3 @@ private:
   visualization_msgs::Marker marker_real_;
 };
 }  // namespace bullet_solver
-#endif  // SRC_RM_COMMON_INCLUDE_BULLET_SOLVER_H_

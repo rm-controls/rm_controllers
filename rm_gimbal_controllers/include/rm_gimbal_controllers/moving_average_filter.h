@@ -35,8 +35,7 @@
 // Created by chenzheng on 2021/5/8.
 //
 
-#ifndef RM_GIMBAL_CONTROLLERS_MOVING_AVERAGE_FILTER_H
-#define RM_GIMBAL_CONTROLLERS_MOVING_AVERAGE_FILTER_H
+#pragma once
 
 #include <realtime_tools/realtime_publisher.h>
 #include <realtime_tools/realtime_buffer.h>
@@ -130,5 +129,3 @@ private:
   geometry_msgs::Point last_output_pos_{};
 };
 }  // namespace moving_average_filter
-
-#endif

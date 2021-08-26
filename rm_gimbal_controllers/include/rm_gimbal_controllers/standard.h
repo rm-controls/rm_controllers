@@ -35,8 +35,7 @@
 // Created by qiayuan on 1/16/21.
 //
 
-#ifndef RM_GIMBAL_CONTROLLER_STANDARD_H
-#define RM_GIMBAL_CONTROLLER_STANDARD_H
+#pragma once
 
 #include <effort_controllers/joint_position_controller.h>
 #include <controller_interface/multi_interface_controller.h>
@@ -139,5 +138,3 @@ private:
   std::map<int, double> gyro_vel_{};
 };
 }  // namespace rm_gimbal_controllers
-
-#endif  // RM_GIMBAL_CONTROLLER_STANDARD_H
