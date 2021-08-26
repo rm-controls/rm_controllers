@@ -35,8 +35,7 @@
 // Created by qiayuan on 1/3/21.
 //
 
-#ifndef ROBOT_STATE_CONTROLLER_ROBOT_STATE_CONTROLLER_H
-#define ROBOT_STATE_CONTROLLER_ROBOT_STATE_CONTROLLER_H
+#pragma once
 
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/tf_rt_broadcaster.h>
@@ -95,5 +94,3 @@ private:
 };
 
 }  // namespace robot_state_controller
-
-#endif  // ROBOT_STATE_CONTROLLER_ROBOT_STATE_CONTROLLER_H
