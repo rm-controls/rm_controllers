@@ -7,7 +7,7 @@ The rm_shooter_controller has four states: STOP, READY, PUSH, and BLOCK, it cont
 
 #### License
 
-The source code is released under a [BSD 3-Clause license](http://192.168.0.100:7070/dynamicx/rm_shooter_controllers/-/blob/master/LICENSE).
+The source code is released under a [BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/LICENSE).
 
 **Author: DynamicX**
 
