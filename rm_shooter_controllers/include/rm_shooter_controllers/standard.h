@@ -35,8 +35,7 @@
 // Created by huakang on 2021/1/18.
 //
 
-#ifndef SRC_RM_SHOOTER_CONTROLLERS_INCLUDE_RM_SHOOTER_CONTROLLER_STANDARD_H_
-#define SRC_RM_SHOOTER_CONTROLLERS_INCLUDE_RM_SHOOTER_CONTROLLER_STANDARD_H_
+#pragma once
 
 #include <effort_controllers/joint_velocity_controller.h>
 #include <effort_controllers/joint_position_controller.h>
@@ -108,4 +107,3 @@ private:
 };
 
 }  // namespace rm_shooter_controllers
-#endif  // SRC_RM_SHOOTER_CONTROLLERS_INCLUDE_RM_SHOOTER_CONTROLLER_STANDARD_H_
