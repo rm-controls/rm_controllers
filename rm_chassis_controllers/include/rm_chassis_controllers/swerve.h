@@ -35,8 +35,7 @@
 // Created by qiayuan on 4/23/21.
 //
 
-#ifndef RM_CHASSIS_CONTROLLERS_SWERVE_H_
-#define RM_CHASSIS_CONTROLLERS_SWERVE_H_
+#pragma once
 
 #include "rm_chassis_controllers/chassis_base.h"
 
@@ -66,5 +65,3 @@ private:
 };
 
 }  // namespace rm_chassis_controllers
-
-#endif  // RM_CHASSIS_CONTROLLERS_INCLUDE_RM_CHASSIS_CONTROLLERS_SWERVE_H_
