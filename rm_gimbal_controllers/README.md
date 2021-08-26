@@ -166,7 +166,7 @@ _Moving average filter is used for filter the target armor center when target is
 
 * **`center_offset_z`** ( `double` )
 
-  Offset on the z axis.Used to compensate for the error of filter result on z axis.
+  Offset(in meter) on the z axis.Used to compensate for the error of filter result on z axis.
 
 ## Controller configuration examples
 
