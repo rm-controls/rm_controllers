@@ -41,7 +41,7 @@ base_link.
 To install all packages from the this repository as Debian packages use
 
 ```
-sudo apt-get install ros-noetic-rm-chassis-controllers 
+sudo apt-get install ros-noetic-rm-chassis-controllers
 ```
 
 Or better, use `rosdep`:
