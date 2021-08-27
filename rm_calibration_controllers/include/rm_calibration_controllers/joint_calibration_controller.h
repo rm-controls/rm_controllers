@@ -80,9 +80,7 @@ public:
    */
   void starting(const ros::Time& time) override;
 
-
 private:
-
   /** @brief Provide a service to know the state of target motors.
    *
    * When requesting to this server, it will return respond about whether target motors has been calibrated.
