@@ -31,7 +31,7 @@ To install all packages from the this repository as Debian packages use
 
 Or better, use `rosdep`:
 
-	sudo rosdep install --from-paths src
+    sudo rosdep install --from-paths src
 
 ### Building from Source
 #### Dependencies
@@ -100,27 +100,27 @@ Run the controller with mon launch:
   The predicted data used for detection node to decide the ROI.
 
 #### Parameters
-* **`detection_topic`** ( `string` | string [ ... ] )
+* **`detection_topic`** (string, default: "/detection")
 
   The name of the topic where detection node gets predicted data.
 
-* **`detection_frame`** ( `string` | string [ ... ] )
+* **`detection_frame`** (string, default: "detection")
 
   The name of the frame of detection.
   
-* **`camera_topic`** ( `string` | string [ ... ] )
+* **`camera_topic`** (string, default: "/galaxy_camera/camera_info")
 
   The name of the topic that is determined that the detection node receives a new frame of image and sends the prediction data to the detection node.
 
-* **`publish_rate`** ( `double`, default: 50 )
+* **`publish_rate`** (double)
 
   Frequency (in Hz) of publishing.Used for both tf and odom.
 
-* **`chassis_angular_data_num`** ( `double` )
+* **`chassis_angular_data_num`** (double)
 
   The number of angle data of chassis.Used for chassis angular average filter.
 
-* **`time_compensation`** ( `double`, default: 0 )
+* **`time_compensation`** (double)
 
   Time(in s) of image transmission delay(in s).Used to compensate for the effects of images transimission delay
 
@@ -130,15 +130,15 @@ _Bullet solver is used to get the bullet drop point_
 
   The air resistance coefficient used for bullet solver when bullet speed is 10 m/s, 15 m/s, 16 m/s, 18 m/s and 30 m/s.
 
-* **`g`** ( `double`, default: 0 )
+* **`g`** (double)
 
   Acceleration of gravity.
 
-* **`delay`** ( `double`, default: 0 )
+* **`delay`** (double)
 
-  Bullet launch delay time(in s) after shooter get the shooting command.Used to compensate for the effects of launch delay.
+  Shooting delay time(in s) after shooter get the shooting command.Used to compensate for the effects of launch delay.
 
-* **`timeout`** ( `double`, default: 0 )
+* **`timeout`** (double)
 
   Timeout time((in s)) of bullet solver.Used to judge whether bullet solver can caculate the bullet drop point.
 
@@ -148,23 +148,23 @@ _Moving average filter is used for filter the target armor center when target is
 
   The debug status.When it is true, debug data will be pulished on the filter topic.
 
-* **`pos_data_num`** ( `double` )
+* **`pos_data_num`** (double, default: 20)
 
   The number of armor position data.
 
-* **`vel_data_num`** ( `double` )
+* **`vel_data_num`** (double, default: 30)
 
   The number of armor linear velocity.
 
-* **`gyro_data_num`** ( `double` )
+* **`gyro_data_num`** (double, default: 100)
 
   The number of target rotation speed data.
 
-* **`center_data_num`** ( `double` )
+* **`center_data_num`** (double, default: 50)
 
   The number of target rotation center position data.
 
-* **`center_offset_z`** ( `double` )
+* **`center_offset_z`** (double)
 
   Offset(in meter) on the z axis.Used to compensate for the error of filter result on z axis.
 
