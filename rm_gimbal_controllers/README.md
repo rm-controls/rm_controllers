@@ -17,9 +17,9 @@ Maintainer: DynamicX**
 The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
 ### Hardware interface type
-+ `JointStateInterface` Used to obtain the speed and position of gimbal joint.
++ `JointStateInterface` Used to get the speed and position of gimbal joint.
 + `EffortJointInterface` Used to send effort command to gimbal joint .
-+ `RoboStateInterface` Used to obtain the current and historical transform between gimbal and the world coordinate system and the transform between visual target and the world coordinate system.
++ `RoboStateInterface` Used to get the current and historical transform between gimbal and the world coordinate system and the transform between visual target and the world coordinate system.
 
 ## Installation
 
@@ -70,8 +70,8 @@ Run the controller with mon launch:
       mon launch rm_gimbal_controller load_controllers.launch
 
 ## Cfg
-* **BulletSolver.cfg**: Add parameters related to ballisitc model to each bullet speed.
-* **Gimbal.cfg**: Add parameters related to image transimission delay.
+* **BulletSolver.cfg**: Add parameters that related to ballisitc model to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
+* **Gimbal.cfg**: Add parameters related to image transimission delay to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
 
 ## Launch files
 
@@ -114,7 +114,7 @@ Run the controller with mon launch:
 
 * **`publish_rate`** (double)
 
-  Frequency (in Hz) of publishing.Used for both tf and odom.
+  Frequency (in Hz) of publishing tf.
 
 * **`chassis_angular_data_num`** (double)
 
@@ -154,7 +154,7 @@ _Moving average filter is used for filter the target armor center when target is
 
 * **`vel_data_num`** (double, default: 30)
 
-  The number of armor linear velocity.
+  The number of armor linear velocity data.
 
 * **`gyro_data_num`** (double, default: 100)
 
