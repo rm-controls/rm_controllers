@@ -112,7 +112,7 @@ Run the controller with mon launch:
 * **`detection_frame`** (string, default: "detection")
 
   The name of the frame of detection.
-  
+
 * **`camera_topic`** (string, default: "/galaxy_camera/camera_info")
 
   The name of the topic that is determined that the detection node receives a new frame of image and sends the prediction data to the detection node.
