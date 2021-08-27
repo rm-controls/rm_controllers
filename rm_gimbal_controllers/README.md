@@ -2,9 +2,9 @@
 
 ## Overview
 
-The rm_gimbal_controllers has three states: RATE, TRACK, and DIRECT. It performs PID control on the two joints of yaw and pitch according to commands. It can also perform moving average filtering based on visual target data and calculate, predict and track targets based on the bullet launch model.
+The rm_gimbal_controllers has three states: RATE, TRACK, and DIRECT. It performs PID control on the yaw joint and pitch joint according to commands. It can also perform moving average filtering based on detection data and calculate, predict and track targets based on the ballistic model.
 
-**Keywords**: gimbal, ballistic solution, ROS, moving average filter
+**Keywords:** ROS, robomaster, gimbal, bullet solver, moving average filter
 
 ### License
 
@@ -80,7 +80,7 @@ To build from source, clone the latest version from this repository into your ca
 ## ROS API
 
 #### Subscribed Topics
-* **`command`** (rm_msgs/ChassisCmd)
+* **`command`** (rm_msgs/GimbnalCmd)
 
   Set gimbal mode, pitch and yaw axis rotation speed, tracking target, pointing target and coordinate system.
 
@@ -93,8 +93,8 @@ To build from source, clone the latest version from this repository into your ca
   Make sure that the detection node receives a new frame of image and sends the prediction data to the detection node.
 
 #### Published Topics
-* **`error`** (rm_msgs/GimbalError)
-  The distance error calculated by the ballistic model to shoot at the current gimbal angle to the target.
+* **`error`** (rm_msgs/GimbalDesError)
+  The error calculated by the ballistic model to shoot at the current gimbal angle to the target.
 
 * **`track`** (rm_msgs/TrackDataArray)
   The predicted data used for detection node to decide the ROI.
@@ -104,17 +104,17 @@ To build from source, clone the latest version from this repository into your ca
 
   The name of the topic where detection node gets predicted data.
 
-* **`camera_topic`** ( `string` | string [ ... ] )
-
-  The name of the topic that return whether camera get a new frame.
-
 * **`detection_frame`** ( `string` | string [ ... ] )
 
   The name of the frame of detection.
+  
+* **`camera_topic`** ( `string` | string [ ... ] )
+
+  The name of the topic that is determined that the detection node receives a new frame of image and sends the prediction data to the detection node.
 
 * **`publish_rate`** ( `double`, default: 50 )
 
-  Frequency ( in Hz ) at which the odometry is published. Used for both tf and odom.
+  Frequency (in Hz) of publishing.Used for both tf and odom.
 
 * **`chassis_angular_data_num`** ( `double` )
 
@@ -125,14 +125,14 @@ To build from source, clone the latest version from this repository into your ca
   Time(in s) of image transmission delay(in s).Used to compensate for the effects of images transimission delay
 
 ##### Bullet solver
-_Bullet solver is used to get the bullet point_
+_Bullet solver is used to get the bullet drop point_
 * **`resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18, resistance_coff_qd_30`** ( `double` )
 
-  The air resistance coeff used for bullet solver when bullet speed is 10 m/s, 15 m/s, 16 m/s, 18 m/s and 30 m/s.
+  The air resistance coefficient used for bullet solver when bullet speed is 10 m/s, 15 m/s, 16 m/s, 18 m/s and 30 m/s.
 
 * **`g`** ( `double`, default: 0 )
 
-  Its value equal air resistance divided by mass.
+  Acceleration of gravity.
 
 * **`delay`** ( `double`, default: 0 )
 
@@ -140,7 +140,7 @@ _Bullet solver is used to get the bullet point_
 
 * **`timeout`** ( `double`, default: 0 )
 
-  Timeout time((in s)) of ballistic model solution.Used to judge whether bullet solver can caculate the bullet point.
+  Timeout time((in s)) of bullet solver.Used to judge whether bullet solver can caculate the bullet drop point.
 
 ##### Moving average filter
 _Moving average filter is used for filter the target armor center when target is spin._
@@ -156,13 +156,13 @@ _Moving average filter is used for filter the target armor center when target is
 
   The number of velocity data.
 
+* **`gyro_data_num`** ( `double` )
+
+  The number of target rotation speed data.
+
 * **`center_data_num`** ( `double` )
 
   The number of armor center position data.
-
-* **`gyro_data_num`** ( `double` )
-
-  The target rotation speed data.
 
 * **`center_offset_z`** ( `double` )
 
