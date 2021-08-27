@@ -69,10 +69,6 @@ Run the controller with mon launch:
 
       mon launch rm_gimbal_controller load_controllers.launch
 
-## Cfg
-* **BulletSolver.cfg**: Add parameters that related to ballisitc model to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
-* **Gimbal.cfg**: Add parameters related to image transimission delay to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
-
 ## Launch files
 
 * **load_controllers.launch**: Load the parameters in config files and load tf and robot_state_controller, joint_state_controller, gimbal_controller.
@@ -80,7 +76,7 @@ Run the controller with mon launch:
 ## ROS API
 
 #### Subscribed Topics
-* **`command`** (rm_msgs/GimbnalCmd)
+* **`command`** (rm_msgs/GimbalCmd)
 
   Set gimbal mode, pitch and yaw axis rotation speed, tracking target, pointing target and coordinate system.
 
