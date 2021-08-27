@@ -115,7 +115,7 @@ Run the controller with mon launch:
 
 * **`publish_rate`** (double)
 
-  Frequency (in Hz) of publishing tf.
+  Frequency (in Hz) of publishing yaw tf when robot is in gyro state or follow state.
 
 * **`chassis_angular_data_num`** (double)
 
