@@ -52,11 +52,46 @@ class JointCalibrationController
 {
 public:
   JointCalibrationController() = default;
+
+  /** @brief Initialize the joint calibration controller.
+   *
+   * @param robot_hw Robot hardware.
+   * @param root_nh Root node handle.
+   * @param controller_nh Controller node handle.
+   *
+   * @return True if the joint calibration controller is initialized successfully.
+   */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+
+  /** @brief Execute corresponding action according to current actuator state.
+   *
+   * Execute corresponding action according to current actuator state such as INITIALIZED, MOVING, CALIBRATED.
+   *
+   * @param time Real time.
+   * @param period Time since the last step.
+   */
   void update(const ros::Time& time, const ros::Duration& period) override;
+
+  /** @brief Switch all of the actuator state to INITIALIZED.
+   *
+   * Switch all of the actuator state to INITIALIZED in order to restart the calibration.
+   *
+   * @param time Real time.
+   */
   void starting(const ros::Time& time) override;
 
+
 private:
+
+  /** @brief Provide a service to know the state of target motors.
+   *
+   *  When requesting to this server, it will return respond about whether target motors has been calibrated.
+   *
+   * @param req The request of knowing the state of target motors.
+   * @param resp The respond included the state of target motors.
+   *
+   * @return True if get respond successfully.
+   */
   bool isCalibrated(control_msgs::QueryCalibrationState::Request& req,
                     control_msgs::QueryCalibrationState::Response& resp);
 
