@@ -85,7 +85,7 @@ private:
 
   /** @brief Provide a service to know the state of target motors.
    *
-   *  When requesting to this server, it will return respond about whether target motors has been calibrated.
+   * When requesting to this server, it will return respond about whether target motors has been calibrated.
    *
    * @param req The request of knowing the state of target motors.
    * @param resp The respond included the state of target motors.
