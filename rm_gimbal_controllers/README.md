@@ -4,7 +4,7 @@
 
 The rm_gimbal_controllers has three states: RATE, TRACK, and DIRECT. It performs PID control on the yaw joint and pitch joint according to commands. It can also perform moving average filtering based on detection data and calculate, predict and track targets based on the ballistic model.
 
-**Keywords:** ROS, robomaster, gimbal, bullet solver, moving average filter
+**Keywords:** ROS, Robomaster, gimbal, bullet solver, moving average filter
 
 ### License
 
@@ -57,15 +57,15 @@ Or better, use `rosdep`:
 To build from source, clone the latest version from this repository into your catkin workspace and compile the package using
 
 	cd catkin_workspace/src
-	git clone https://github.com/ethz-asl/ros_best_practices.git
+	git clone https://github.com/rm-controls/rm_controllers.git
 	cd ../
 	rosdep install --from-paths . --ignore-src
-	catkin_make
+	catkin build
 
 
 ## Usage
 
-* Run the controller with mon launch:
+Run the controller with mon launch:
 
       mon launch rm_gimbal_controller load_controllers.launch
 
@@ -150,11 +150,11 @@ _Moving average filter is used for filter the target armor center when target is
 
 * **`pos_data_num`** ( `double` )
 
-  The number of velocity data.
+  The number of armor position data.
 
 * **`vel_data_num`** ( `double` )
 
-  The number of velocity data.
+  The number of armor linear velocity.
 
 * **`gyro_data_num`** ( `double` )
 
@@ -162,7 +162,7 @@ _Moving average filter is used for filter the target armor center when target is
 
 * **`center_data_num`** ( `double` )
 
-  The number of armor center position data.
+  The number of target rotation center position data.
 
 * **`center_offset_z`** ( `double` )
 
