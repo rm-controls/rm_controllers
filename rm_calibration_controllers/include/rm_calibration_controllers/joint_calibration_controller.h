@@ -52,18 +52,15 @@ class JointCalibrationController
 {
 public:
   JointCalibrationController() = default;
-
-  /** @brief Initialize the joint calibration controller.
+  /** \brief Initialize the joint calibration controller.
    *
    * @param robot_hw Robot hardware.
    * @param root_nh Root node handle.
    * @param controller_nh Controller node handle.
-   *
    * @return True if the joint calibration controller is initialized successfully.
    */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
-
-  /** @brief Execute corresponding action according to current actuator state.
+  /** \brief Execute corresponding action according to current actuator state.
    *
    * Execute corresponding action according to current actuator state such as INITIALIZED, MOVING, CALIBRATED.
    *
@@ -71,8 +68,7 @@ public:
    * @param period Time since the last step.
    */
   void update(const ros::Time& time, const ros::Duration& period) override;
-
-  /** @brief Switch all of the actuator state to INITIALIZED.
+  /** \brief Switch all of the actuator state to INITIALIZED.
    *
    * Switch all of the actuator state to INITIALIZED in order to restart the calibration.
    *
@@ -87,12 +83,10 @@ private:
    *
    * @param req The request of knowing the state of target motors.
    * @param resp The respond included the state of target motors.
-   *
    * @return True if get respond successfully.
    */
   bool isCalibrated(control_msgs::QueryCalibrationState::Request& req,
                     control_msgs::QueryCalibrationState::Response& resp);
-
   ros::Time last_publish_time_;
   ros::ServiceServer is_calibrated_srv_;
   //  enum { INITIALIZED, BEGINNING, MOVING_TO_LOW, MOVING_TO_HIGH, CALIBRATED }; for GPIO switch
