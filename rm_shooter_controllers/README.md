@@ -3,11 +3,11 @@
 ## Overview
 The rm_shooter_controller has four states: STOP, READY, PUSH, and BLOCK, it controls the left and right friction wheels and the trigger wheel through PID algorithm according to the command. It can set the bullet speed by setting the rotation speed of the friction wheel, and at the same time realizes the jam detection.
 
-**Keywords:** shooter, jam detection, ROS
+**Keywords:** shooter, ROS, robomaster
 
 #### License
 
-The source code is released under a [BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/LICENSE).
+The source code is released under a [BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/LICENSE) .
 
 **Author: DynamicX**
 
@@ -84,25 +84,25 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 #### Subscribed Topics
 
-* **`command`**(rm_msgs/ShootCmd)
+* **`command`** (rm_msgs/ShootCmd)
 
   Commands of controller state, bullet speed, frequency of shooting .
 
 #### Parameters
 
-* **`block_effort`, `block_speed`, `block_duration`** (`double`, default: 0)
+* **`block_effort`, `block_speed`, `block_duration`** (`double`)
 
   When the torque of the plucking motor is greater than `block_effort` (in N·m), and the angular velocity is less than `block_speed` (in rad/s), it will be regarded as jamming if it continues for `block_duration` (in s) .
 
-* **`block_overtime`** (`double`, default: 0)
+* **`block_overtime`** (`double`)
 
   If the time to enter block state exceeds `block_overtime` (in s), it will be judged as timeout and exit block state .
 
-* **`anti_block_angle`** (`double`, default: 0)
+* **`anti_block_angle`** (`double`)
 
   If enter block state, the friction wheel will reverse `anti_block_angle` (in rad) to try to get rid of the structing .
 
-* **`anti_block_threshold`** (`double`, default: 0)
+* **`anti_block_threshold`** (`double`)
 
   If the anti angle of the friction wheel exceeds `anti_block_threshold` (in rad), it means that trigger reverse success .
 
