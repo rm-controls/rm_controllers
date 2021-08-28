@@ -2,37 +2,28 @@
 
 ## Overview
 
-There are four states: raw, follow, gyro and twist. The output torque and speed of each motor of the chassis can be
-calculated according to the current state of the control, the received speed and pose of the pan/tilt, and the speed and
-acceleration commands, and the data is returned by the motor to calculate The speed and posture of the chassis are
-released. The control algorithm involved in the chassis controller is PID algorithm.
+There are four states: raw, follow, gyro and twist. The output torque and speed of each motor of the chassis can be calculated according to the current state of the control, the received speed and pose of the pan/tilt, and the speed and acceleration commands, and the data is returned by the motor to calculate The speed and posture of the chassis are released. The control algorithm involved in the chassis controller is PID algorithm.
 
-**Keywords:** mecanum, swerve, balance, chassis.
+**Keywords:** mecanum, swerve, balance, chassis, ROS, RoboMaster
 
 #### License
 
-The source code is released under
-a [BSD 3-Clause license](http://192.168.0.100:7070/dynamicx/rm_chassis_controllers/-/blob/master/LICENSE).
+The source code is released under a [BSD 3-Clause license](http://192.https://github.com/rm-controls/rm_controllers/blob/master/rm_chassis_controllers/LICENSE).
 
 **Author: DynamicX**
 
 **Affiliation: DynamicX**
 
-**Maintainer: DynamicX**
-
-The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04
-and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
+The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
 ### Hardware interface type
 
-`JointStateInterface` Used to obtain the position and speed of the chassis joint.
+`JointStateInterface` Used to get the position and speed of the chassis joint.
 
 `EffortJointInterface` Used to send the torque command of the chassis joint.
 
-`RoboSateInterface` It is used for high-frequency maintenance of the transformation relationship of changing odom to
-base_link.
+`RoboSateInterface` Used for high-frequency maintenance of the transformation relationship of changing odom to base_link.
 
-[![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
 
 ## Installation
 
@@ -93,12 +84,11 @@ mon launch rm_chassis_controllers load_controllers.launch
 
 ## Launch files
 
-* **load_controllers.launch:** It loads tf, robot_localization and some controllers, robot_state_controller,
-  joint_state_controller and chassis controller are included.
+* **load_controllers.launch:** It loads tf, robot_localization and some controllers, robot_state_controller, joint_state_controller and chassis controller are included.
 
 ## ROS API
 
-### Subscribed Topics
+#### Subscribed Topics
 
 * **`base_imu`** ([sensor_msgs/Imu](http://docs.ros.org/en/api/sensor_msgs/html/msg/Imu.html))
   The inertial measurement unit data of base command.
@@ -109,23 +99,23 @@ mon launch rm_chassis_controllers load_controllers.launch
 * **`cmd_vel`** ([geometry_msgs/Twist](http://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html))
   Set the speed of the chassis.
 
-### Published Topics
+#### Published Topics
 
 * **`state_real`** (rm_msgs::BalanceState） Publish the real state.
 * **`odom`**([nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html))
   Chassis odometer information (speed, position, covariance).
 
-### Parameters
+#### Parameters
 
-#### common
+##### common
 
-* **`wheel_radius`** (double, default: 0.02)
+* **`wheel_radius`** (double)
   Radius of the wheels.
-* **`wheel_track`** (double, default: 0.410)
+* **`wheel_track`** (double)
   The distance between the center of the front (rear) two wheels.
-* **`wheel_base`** (double, default: 0.320)
+* **`wheel_base`** (double)
   The distance between the center of axle.
-* **`twist_angular`** (double, default: M_PI / 6)
+* **`twist_angular`** (double)
   Angle of distortion.
 * **`enable_odom_tf`** (bool, default: true)
   Publish to TF directly or not.
@@ -134,13 +124,13 @@ mon launch rm_chassis_controllers load_controllers.launch
 * **`publish_rate`** (double, default: 50)
   Frequency (in Hz) at which the topic is published.
 * **`coeff`** (double)
-  Power factor.
+  It is safety factor.The influence of power loss can be conservatively reduced by adjusting it.
 * **`min_vel`** (double)
-  Minimum velocity at the power.
+  When the motor speed is lower than the minimum speed, the minimum speed is used to calculate the maximum torque.
 * **`timeout`** (double)
   Allowed period (in s) between two commands. If the time is exceed this period, it will turn off.
 
-#### Balance
+##### Balance
 
 * `joint_left_name`(string, default: "joint_left")
   Left wheel joint name or list of joint names.
@@ -157,7 +147,7 @@ mon launch rm_chassis_controllers load_controllers.launch
 * `r`(double[4])
   Weight matrix.
 
-#### Swerve
+##### Swerve
 
 * `/modules/left_front/position`(double[2])
   The position of left front wheel.
@@ -208,4 +198,4 @@ chassis_controller:
 ## Bugs & Feature Requests
 
 Please report bugs and request features using
-the [Issue Tracker](https://github.com/gdut-dynamic-x/simple_chassis_controller/issues) .
+the [Issue Tracker](https://github.com/rm-controls/rm_controllers/issues) .
