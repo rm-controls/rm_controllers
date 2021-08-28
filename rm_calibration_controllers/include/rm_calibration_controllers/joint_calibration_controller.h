@@ -89,7 +89,7 @@ private:
    *
    * When requesting to this server, it will return respond about whether target actuators has been calibrated.
    *
-   * @param req Gets the HttpRequest for the executing action.
+   * @param req The request of knowing the state of target motors.
    * @param resp The respond included the state of target motors.
    * @return True if get respond successfully, false when failed.
    */
