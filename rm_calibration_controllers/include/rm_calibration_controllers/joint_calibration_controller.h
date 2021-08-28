@@ -60,7 +60,7 @@ public:
    * @return True if the joint calibration controller is initialized successfully.
    */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
-  /** @brief Execute corresponding action according to current joint state.
+  /** @brief Execute corresponding action according to current calibration controller state.
    *
    * Execute corresponding action according to current joint state such as INITIALIZED, MOVING, CALIBRATED.
    *
