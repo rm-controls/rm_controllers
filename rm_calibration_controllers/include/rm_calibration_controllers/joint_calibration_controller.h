@@ -57,9 +57,9 @@ public:
    * Get params from param server and check whether these params are set.Init JointVelocityController.Check
    * whether threshold is set correctly.
    *
-   * @param robot_hw Robot hardware.
-   * @param root_nh Root node-handle of a ROS node.
-   * @param controller_nh Controller node handle of a ROS node.
+   * @param robot_hw The robot hardware abstraction.
+   * @param root_nh A NodeHandle in the root of the controller manager namespace. This is where the ROS interfaces are setup (publishers, subscribers, services).
+   * @param controller_nh A NodeHandle in the namespace of the controller. This is where the controller-specific configuration resides.
    * @return True if init successful, false when failed.
    */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
@@ -70,15 +70,15 @@ public:
    * current velocity lower than threshold last for a while, and switch state to CALIBRATED. If CALIBRATED,
    * target joint velocity will be set to zero and wait for next command.
    *
-   * @param time Current time.
-   * @param period Current time - last time.
+   * @param time The current time.
+   * @param period The time passed since the last call to update.
    */
   void update(const ros::Time& time, const ros::Duration& period) override;
   /** @brief Switch all of the actuators state to INITIALIZED.
    *
    * Switch all of the actuator state to INITIALIZED in order to restart the calibration.
    *
-   * @param time Current time.
+   * @param time The current time.
    */
   void starting(const ros::Time& time) override;
 
@@ -87,7 +87,7 @@ private:
    *
    * When requesting to this server, it will return respond about whether target actuators has been calibrated.
    *
-   * @param req The request of knowing the state of target motors.
+   * @param req Gets the HttpRequest for the executing action.
    * @param resp The respond included the state of target motors.
    * @return True if get respond successfully, false when failed.
    */
