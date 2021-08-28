@@ -52,12 +52,15 @@ class JointCalibrationController
 {
 public:
   JointCalibrationController() = default;
-  /** @brief Initialize the joint calibration controller.
+  /** @brief Get necessary params from param server. Init joint_calibration_controller.
+   *
+   * Get params from param server and check whether these params are set.Init JointVelocityController.Check
+   * whether threshold is set correctly.
    *
    * @param robot_hw Robot hardware.
-   * @param root_nh Root node handle.
-   * @param controller_nh Controller node handle.
-   * @return True if the joint calibration controller is initialized successfully.
+   * @param root_nh Root node-handle of a ROS node.
+   * @param controller_nh Controller node handle of a ROS node.
+   * @return True if init successful, false when failed.
    */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
   /** @brief Execute corresponding action according to current calibration controller state.
