@@ -52,7 +52,7 @@ class JointCalibrationController
 {
 public:
   JointCalibrationController() = default;
-  /** \brief Initialize the joint calibration controller.
+  /** @brief Initialize the joint calibration controller.
    *
    * @param robot_hw Robot hardware.
    * @param root_nh Root node handle.
@@ -60,7 +60,7 @@ public:
    * @return True if the joint calibration controller is initialized successfully.
    */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
-  /** \brief Execute corresponding action according to current joint state.
+  /** @brief Execute corresponding action according to current joint state.
    *
    * Execute corresponding action according to current joint state such as INITIALIZED, MOVING, CALIBRATED.
    *
@@ -68,7 +68,7 @@ public:
    * @param period Time since the last step.
    */
   void update(const ros::Time& time, const ros::Duration& period) override;
-  /** \brief Switch all of the actuator state to INITIALIZED.
+  /** @brief Switch all of the actuator state to INITIALIZED.
    *
    * Switch all of the actuator state to INITIALIZED in order to restart the calibration.
    *
