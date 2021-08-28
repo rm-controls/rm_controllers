@@ -8,7 +8,7 @@ There are four states: raw, follow, gyro and twist. The output torque and speed 
 
 #### License
 
-The source code is released under a [BSD 3-Clause license](http://192.https://github.com/rm-controls/rm_controllers/blob/master/rm_chassis_controllers/LICENSE).
+The source code is released under a [BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/rm_chassis_controllers/LICENSE).
 
 **Author: DynamicX**
 
@@ -197,5 +197,4 @@ chassis_controller:
 
 ## Bugs & Feature Requests
 
-Please report bugs and request features using
-the [Issue Tracker](https://github.com/rm-controls/rm_controllers/issues) .
+Please report bugs and request features using the [Issue Tracker](https://github.com/rm-controls/rm_controllers/issues).
