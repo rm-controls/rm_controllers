@@ -45,7 +45,6 @@ sudo rosdep install --from-paths src
 - pluginlib
 - controller_interface
 - hardware_interface
-- controller_interface
 - forward_command_controller
 - realtime_tools
 - control_toolbox
