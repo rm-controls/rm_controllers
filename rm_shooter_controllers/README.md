@@ -1,7 +1,7 @@
 # rm_shooter_controller
 
 ## Overview
-The rm_shooter_controller has four states: STOP, READY, PUSH, and BLOCK, it controls the left and right friction wheels and the trigger wheel through PID algorithm according to the command. It can set the bullet speed by setting the rotation speed of the friction wheel, and at the same time realizes the jam detection.
+The rm_shooter_controller has four states: STOP, READY, PUSH, and BLOCK, it controls the left and right friction wheels and the trigger wheel through PID algorithm according to the command. It can set the bullet speed by setting the angular velocity of the friction wheel, and at the same time realizes the block detection.
 
 **Keywords:** ROS, robomaster, shooter
 
@@ -17,7 +17,7 @@ The rm_shooter_controller package has been tested under [ROS](http://www.ros.org
 
 ### Hardware interface type
 
-+ `JointStateInterface` Used to obtain the speed of friction wheel and trigger wheel and the position of trigger .
++ `JointStateInterface` Used to obtain the speed of friction wheel and trigger wheel and the position of trigger wheel .
 + `EffortJointInterface` Used to send torque commands for friction wheels and trigger wheel .
 
 ## Installation
