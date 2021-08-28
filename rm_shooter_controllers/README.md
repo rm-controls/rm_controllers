@@ -3,17 +3,15 @@
 ## Overview
 The rm_shooter_controller has four states: STOP, READY, PUSH, and BLOCK, it controls the left and right friction wheels and the trigger wheel through PID algorithm according to the command. It can set the bullet speed by setting the rotation speed of the friction wheel, and at the same time realizes the jam detection.
 
-**Keywords:** shooter, ROS, robomaster
+**Keywords:** ROS, robomaster, shooter
 
 #### License
 
 The source code is released under a [BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/LICENSE) .
 
-**Author: DynamicX**
-
-**Affiliation: DynamicX**
-
-**Maintainer: DynamicX**
+**Author: DynamicX<br />
+Affiliation: DynamicX<br />
+Maintainer: DynamicX**
 
 The rm_shooter_controller package has been tested under [ROS](http://www.ros.org) Melodic and Noetic on respectively 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
