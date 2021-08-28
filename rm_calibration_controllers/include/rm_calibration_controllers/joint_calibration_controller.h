@@ -74,11 +74,11 @@ public:
    * @param period Current time - last time.
    */
   void update(const ros::Time& time, const ros::Duration& period) override;
-  /** @brief Switch all of the actuator state to INITIALIZED.
+  /** @brief Switch all of the actuators state to INITIALIZED.
    *
    * Switch all of the actuator state to INITIALIZED in order to restart the calibration.
    *
-   * @param time Real time.
+   * @param time Current time.
    */
   void starting(const ros::Time& time) override;
 
