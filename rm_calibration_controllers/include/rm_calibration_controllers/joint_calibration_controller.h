@@ -58,8 +58,10 @@ public:
    * whether threshold is set correctly.
    *
    * @param robot_hw The robot hardware abstraction.
-   * @param root_nh A NodeHandle in the root of the controller manager namespace. This is where the ROS interfaces are setup (publishers, subscribers, services).
-   * @param controller_nh A NodeHandle in the namespace of the controller. This is where the controller-specific configuration resides.
+   * @param root_nh A NodeHandle in the root of the controller manager namespace. This is where the ROS interfaces are
+   * setup (publishers, subscribers, services).
+   * @param controller_nh A NodeHandle in the namespace of the controller. This is where the controller-specific
+   * configuration resides.
    * @return True if init successful, false when failed.
    */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
