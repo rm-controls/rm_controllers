@@ -27,7 +27,7 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 
 To install all packages from the this repository as Debian packages use
 
-    sudo apt-get install ros-noetic-gimbal-controllers
+    sudo apt-get install ros-noetic-rm-gimbal-controllers
 
 Or better, use `rosdep`:
 
