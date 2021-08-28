@@ -89,7 +89,7 @@ private:
    *
    * @param req The request of knowing the state of target motors.
    * @param resp The respond included the state of target motors.
-   * @return True if get respond successfully.
+   * @return True if get respond successfully, false when failed.
    */
   bool isCalibrated(control_msgs::QueryCalibrationState::Request& req,
                     control_msgs::QueryCalibrationState::Response& resp);
