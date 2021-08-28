@@ -52,14 +52,49 @@ class JointCalibrationController
 {
 public:
   JointCalibrationController() = default;
+  /** @brief Get necessary params from param server. Init joint_calibration_controller.
+   *
+   * Get params from param server and check whether these params are set.Init JointVelocityController.Check
+   * whether threshold is set correctly.
+   *
+   * @param robot_hw The robot hardware abstraction.
+   * @param root_nh A NodeHandle in the root of the controller manager namespace. This is where the ROS interfaces are
+   * setup (publishers, subscribers, services).
+   * @param controller_nh A NodeHandle in the namespace of the controller. This is where the controller-specific
+   * configuration resides.
+   * @return True if init successful, false when failed.
+   */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  /** @brief Execute corresponding action according to current calibration controller state.
+   *
+   * Execute corresponding action according to current joint state. If INITIALIZED, target joint will be set
+   * a vel_search_ and countdown_ to move, and switch state to MOVING. If MOVING, target joint will move until
+   * current velocity lower than threshold last for a while, and switch state to CALIBRATED. If CALIBRATED,
+   * target joint velocity will be set to zero and wait for next command.
+   *
+   * @param time The current time.
+   * @param period The time passed since the last call to update.
+   */
   void update(const ros::Time& time, const ros::Duration& period) override;
+  /** @brief Switch all of the actuators state to INITIALIZED.
+   *
+   * Switch all of the actuator state to INITIALIZED in order to restart the calibration.
+   *
+   * @param time The current time.
+   */
   void starting(const ros::Time& time) override;
 
 private:
+  /** @brief Provide a service to know the state of target actuators.
+   *
+   * When requesting to this server, it will return respond about whether target actuators has been calibrated.
+   *
+   * @param req The request of knowing the state of target motors.
+   * @param resp The respond included the state of target motors.
+   * @return True if get respond successfully, false when failed.
+   */
   bool isCalibrated(control_msgs::QueryCalibrationState::Request& req,
                     control_msgs::QueryCalibrationState::Response& resp);
-
   ros::Time last_publish_time_;
   ros::ServiceServer is_calibrated_srv_;
   //  enum { INITIALIZED, BEGINNING, MOVING_TO_LOW, MOVING_TO_HIGH, CALIBRATED }; for GPIO switch
