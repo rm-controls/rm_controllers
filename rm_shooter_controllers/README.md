@@ -89,15 +89,15 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 * **`block_effort`, `block_speed`, `block_duration`** (double)
 
-  When the torque of the trigger motor is greater than `block_effort` (in N·m), and the angular velocity of trigger motor is less than `block_speed` (in rad/s), it will be regarded as blocking if it continues for `block_duration` (in s), and the the state of shooter controller will switch to block state.
+  When the torque of the trigger motor is greater than `block_effort` (in N·m), and the angular velocity of trigger motor is less than `block_speed` (in rad/s), it will be regarded as blocking if it continues for `block_duration` (in s), and the the state of shooter controller will switch to BLOCK.
 
 * **`block_overtime`** (double)
 
-  If the time to enter block state exceeds `block_overtime` (in s), it will be judged as timeout and the state of shooter controller will switch to push.
+  If the time to enter block state exceeds `block_overtime` (in s), it will be judged as timeout and the state of shooter controller will switch to PUSH.
 
 * **`anti_block_angle`** (double)
 
-  If enter block state, the friction wheel will reverse `anti_block_angle` (in rad) to try to get rid of blocking, when the friction wheel get rid of block state successfully, the state of shooter controller will switch to push.
+  If enter block state, the friction wheel will reverse `anti_block_angle` (in rad) to try to get rid of blocking, when the friction wheel get rid of block state successfully, the state of shooter controller will switch to PUSH.
 
 * **`anti_block_threshold`** (double)
 
