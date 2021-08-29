@@ -71,7 +71,7 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 ## Cfg
 
-+ **shooter.cfg:** Add parameters related to friction wheel speed corresponding to each bullet speed and trigger block detection parameters
++ **shooter.cfg:** Add parameters related to friction wheel's angular velocity corresponding to each bullet speed and trigger block detection parameters
 
 ## Launch files
 
