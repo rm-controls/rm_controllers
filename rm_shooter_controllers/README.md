@@ -89,23 +89,23 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 * **`block_effort`, `block_speed`, `block_duration`** (double)
 
-  When the torque of the trigger motor is greater than `block_effort` (in N·m), and the angular velocity is less than `block_speed` (in rad/s), it will be regarded as blocking if it continues for `block_duration` (in s).
+  When the torque of the trigger motor is greater than `block_effort` (in N·m), and the angular velocity of trigger motor is less than `block_speed` (in rad/s), it will be regarded as blocking if it continues for `block_duration` (in s), and the the state of shooter controller will switch to block state.
 
 * **`block_overtime`** (double)
 
-  If the time to enter block state exceeds `block_overtime` (in s), it will be judged as timeout and exit block state.
+  If the time to enter block state exceeds `block_overtime` (in s), it will be judged as timeout and the state of shooter controller will switch to push.
 
 * **`anti_block_angle`** (double)
 
-  If enter block state, the friction wheel will reverse `anti_block_angle` (in rad) to try to get rid of the structing.
+  If enter block state, the friction wheel will reverse `anti_block_angle` (in rad) to try to get rid of the blocking, if the friction wheel get rid of block state successfully, the state of shooter controller will switch to push.
 
 * **`anti_block_threshold`** (double)
 
-  If the anti angle of the friction wheel exceeds `anti_block_threshold` (in rad), it means that trigger reverse success.
+  If the anti angle of the friction wheel exceeds `anti_block_threshold` (in rad), it means that friction wheel reverse success.
 
 * **`qd_10`, `qd_15`, `qd_18`, `qd_30`** (double)
 
-  It means friction wheel's angular velocity, the number of it's name expresses different bullet speeds (in m/s).
+  These parameters mean the friction wheel's angular velocity, the number of it's name expresses different bullet speeds (in m/s).
 
 ### Controller configuration examples
 
