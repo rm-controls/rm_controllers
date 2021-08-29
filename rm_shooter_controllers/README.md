@@ -93,11 +93,11 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 * **`block_overtime`** (double)
 
-  If the time to enter block state exceeds `block_overtime` (in s), it will be judged as timeout and the state of shooter controller will switch to PUSH.
+  If the time to enter block state exceeds `block_overtime` (in s), the state of shooter controller will switch to PUSH.
 
 * **`anti_block_angle`** (double)
 
-  If enter block state, the friction wheel will reverse `anti_block_angle` (in rad) to try to get rid of blocking, when the friction wheel get rid of block state successfully, the state of shooter controller will switch to PUSH.
+  If shooter controller enter block state, the friction wheel will reverse `anti_block_angle` (in rad) to try to get rid of blocking. When the friction wheel get rid of block state successfully, the state of shooter controller will switch to PUSH.
 
 * **`anti_block_threshold`** (double)
 
