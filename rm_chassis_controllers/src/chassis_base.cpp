@@ -79,9 +79,9 @@ bool ChassisBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& r
                                        static_cast<double>(twist_cov_list[4]), 0., 0., 0., 0., 0., 0.,
                                        static_cast<double>(twist_cov_list[5]) };
 
-  ramp_x = new RampFilter<double>(0, 0.001);
-  ramp_y = new RampFilter<double>(0, 0.001);
-  ramp_w = new RampFilter<double>(0, 0.001);
+  ramp_x_ = new RampFilter<double>(0, 0.001);
+  ramp_y_ = new RampFilter<double>(0, 0.001);
+  ramp_w_ = new RampFilter<double>(0, 0.001);
 
   // init odom tf
   if (enable_odom_tf_)
@@ -146,12 +146,12 @@ void ChassisBase::update(const ros::Time& time, const ros::Duration& period)
       break;
   }
 
-  ramp_x->setAcc(cmd_chassis.accel.linear.x);
-  ramp_y->setAcc(cmd_chassis.accel.linear.y);
-  ramp_w->setAcc(cmd_chassis.accel.angular.z);
-  ramp_x->input(vel_tfed_.x);
-  ramp_y->input(vel_tfed_.y);
-  ramp_w->input(vel_tfed_.z);
+  ramp_x_->setAcc(cmd_chassis.accel.linear.x);
+  ramp_y_->setAcc(cmd_chassis.accel.linear.y);
+  ramp_w_->setAcc(cmd_chassis.accel.angular.z);
+  ramp_x_->input(vel_tfed_.x);
+  ramp_y_->input(vel_tfed_.y);
+  ramp_w_->input(vel_tfed_.z);
   moveJoint(time, period);
   powerLimit();
 }
@@ -311,9 +311,9 @@ void ChassisBase::recovery()
 {
   geometry_msgs::Twist vel = forwardKinematics();
 
-  ramp_x->clear(vel.linear.x);
-  ramp_y->clear(vel.linear.y);
-  ramp_w->clear(vel.angular.z);
+  ramp_x_->clear(vel.linear.x);
+  ramp_y_->clear(vel.linear.y);
+  ramp_w_->clear(vel.angular.z);
 }
 
 void ChassisBase::powerLimit()

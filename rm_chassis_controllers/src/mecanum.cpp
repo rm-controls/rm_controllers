@@ -62,10 +62,10 @@ bool MecanumController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
 void MecanumController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
   double a = (wheel_base_ + wheel_track_) / 2.0;
-  ctrl_lf_.setCommand((ramp_x->output() - ramp_y->output() - ramp_w->output() * a) / wheel_radius_);
-  ctrl_rf_.setCommand((ramp_x->output() + ramp_y->output() + ramp_w->output() * a) / wheel_radius_);
-  ctrl_lb_.setCommand((ramp_x->output() + ramp_y->output() - ramp_w->output() * a) / wheel_radius_);
-  ctrl_rb_.setCommand((ramp_x->output() - ramp_y->output() + ramp_w->output() * a) / wheel_radius_);
+  ctrl_lf_.setCommand((ramp_x_->output() - ramp_y_->output() - ramp_w_->output() * a) / wheel_radius_);
+  ctrl_rf_.setCommand((ramp_x_->output() + ramp_y_->output() + ramp_w_->output() * a) / wheel_radius_);
+  ctrl_lb_.setCommand((ramp_x_->output() + ramp_y_->output() - ramp_w_->output() * a) / wheel_radius_);
+  ctrl_rb_.setCommand((ramp_x_->output() - ramp_y_->output() + ramp_w_->output() * a) / wheel_radius_);
   ctrl_lf_.update(time, period);
   ctrl_rf_.update(time, period);
   ctrl_lb_.update(time, period);

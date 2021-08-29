@@ -54,7 +54,7 @@ bool SentryController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
 
 void SentryController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
-  ctrl_wheel_.setCommand(ramp_x->output() / wheel_radius_);
+  ctrl_wheel_.setCommand(ramp_x_->output() / wheel_radius_);
   ctrl_wheel_.update(time, period);
 }
 
