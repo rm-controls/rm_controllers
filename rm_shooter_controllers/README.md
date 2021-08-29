@@ -97,7 +97,7 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 * **`anti_block_angle`** (double)
 
-  If enter block state, the friction wheel will reverse `anti_block_angle` (in rad) to try to get rid of the blocking, if the friction wheel get rid of block state successfully, the state of shooter controller will switch to push.
+  If enter block state, the friction wheel will reverse `anti_block_angle` (in rad) to try to get rid of blocking, if the friction wheel get rid of block state successfully, the state of shooter controller will switch to push.
 
 * **`anti_block_threshold`** (double)
 
