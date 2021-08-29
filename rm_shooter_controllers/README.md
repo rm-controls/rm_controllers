@@ -101,7 +101,7 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 * **`anti_block_threshold`** (double)
 
-  If the anti angle of the friction wheel exceeds `anti_block_threshold` (in rad), it means that friction wheel reverse success.
+  If the anti angle of the friction wheel exceeds `anti_block_threshold` (in rad), it means that friction wheel reverse successfully.
 
 * **`qd_10`, `qd_15`, `qd_18`, `qd_30`** (double)
 
