@@ -89,8 +89,8 @@ private:
    *
    * When requesting to this server, it will return respond about whether target actuators has been calibrated.
    *
-   * @param req The request of knowing the state of target motors.
-   * @param resp The respond included the state of target motors.
+   * @param req The request of knowing the state of target actuators.
+   * @param resp The respond included the state of target actuators.
    * @return True if get respond successfully, false when failed.
    */
   bool isCalibrated(control_msgs::QueryCalibrationState::Request& req,
