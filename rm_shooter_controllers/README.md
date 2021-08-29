@@ -89,7 +89,7 @@ mon launch rm_shooter_controllers load_controllers.launch
 
 * **`block_effort`, `block_speed`, `block_duration`** (double)
 
-  When the torque of the plucking motor is greater than `block_effort` (in N·m), and the angular velocity is less than `block_speed` (in rad/s), it will be regarded as blocking if it continues for `block_duration` (in s) .
+  When the torque of the trigger motor is greater than `block_effort` (in N·m), and the angular velocity is less than `block_speed` (in rad/s), it will be regarded as blocking if it continues for `block_duration` (in s) .
 
 * **`block_overtime`** (double)
 
