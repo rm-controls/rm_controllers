@@ -14,16 +14,23 @@ The source code is released under a [BSD 3-Clause license](https://github.com/rm
 
 **Affiliation: DynamicX**
 
+**Maintainer: DynamicX**
+
 The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
 
 ### Hardware interface type
 
-`JointStateInterface` Used to get the position and speed of the chassis joint.
+`JointStateInterface` 
 
-`EffortJointInterface` Used to send the torque command of the chassis joint.
+Used to get the position and speed of the chassis joint.
 
-`RoboSateInterface` Used for high-frequency maintenance of the transformation relationship of changing odom to base_link.
+`EffortJointInterface` 
 
+Used to send the torque command of the chassis joint.
+
+`RoboSateInterface` 
+
+Used for high-frequency maintenance of the transformation relationship of changing odom to base_link.
 
 ## Installation
 
@@ -91,18 +98,24 @@ mon launch rm_chassis_controllers load_controllers.launch
 #### Subscribed Topics
 
 * **`base_imu`** ([sensor_msgs/Imu](http://docs.ros.org/en/api/sensor_msgs/html/msg/Imu.html))
+
   The inertial measurement unit data of base command.
 
 * **`command`** (rm_msgs::ChassisCmd)
+
   Set the mode, acceleration, and maximum power of the chassis.
 
 * **`cmd_vel`** ([geometry_msgs/Twist](http://docs.ros.org/en/api/geometry_msgs/html/msg/Twist.html))
+
   Set the speed of the chassis.
 
 #### Published Topics
 
-* **`state_real`** (rm_msgs::BalanceState） Publish the real state.
+* **`state_real`** (rm_msgs::BalanceState）
+
+  Publish the real state.
 * **`odom`**([nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html))
+
   Chassis odometer information (speed, position, covariance).
 
 #### Parameters
@@ -110,56 +123,79 @@ mon launch rm_chassis_controllers load_controllers.launch
 ##### common
 
 * **`wheel_radius`** (double)
+
   Radius of the wheels.
 * **`wheel_track`** (double)
+
   The distance between the center of the front (rear) two wheels.
 * **`wheel_base`** (double)
+
   The distance between the center of axle.
-* **`twist_angular`** (double)
-  Angle of distortion.
+* **`twist_angle`** (double)
+
+  Amplitude of twist at the status of twist.
 * **`enable_odom_tf`** (bool, default: true)
+
   Publish to TF directly or not.
 * **`twist_covariance_diagonal`** (double[6])
+
   The diagonal covariance matrix of twist.
 * **`publish_rate`** (double, default: 50)
+
   Frequency (in Hz) at which the topic is published.
 * **`coeff`** (double)
-  It is safety factor.The influence of power loss can be conservatively reduced by adjusting it.
+
+  The influence of power loss can be conservatively reduced by adjusting safety factor.
 * **`min_vel`** (double)
+
   When the motor speed is lower than the minimum speed, the minimum speed is used to calculate the maximum torque.
 * **`timeout`** (double)
-  Allowed period (in s) between two commands. If the time is exceed this period, it will turn off.
+
+  Allowed period (in s) between two commands. If the time is exceed this period, it will turn off the node.
 
 ##### Balance
 
-* `joint_left_name`(string, default: "joint_left")
+* **`joint_left_name`** (string, default: "joint_left")
+
   Left wheel joint name or list of joint names.
-* `joint_right_name`(string, default: "joint_right")
+* **`joint_right_name`** (string, default: "joint_right")
+
   Right wheel joint name or list of joint names.
-* `com_pitch_offset`(double, default: 0)
+* **`com_pitch_offset`** (double, default: 0)
+
   The reduction ratio of pitch.
-* `a`(double[16])
+* **`a`** (double[16])
+
   State space expression.
-* `b`(double[8])
+* **`b`** (double[8])
+
   State space expression.
-* `q`(double[16])
+* **`q`** (double[16])
+
   Weight matrix.
-* `r`(double[4])
+* **`r`** (double[4])
+
   Weight matrix.
 
 ##### Swerve
 
-* `/modules/left_front/position`(double[2])
+* **`/modules/left_front/position`** (double[2])
+
   The position of left front wheel.
-* `/modules/left_front/pivot/offset`(double)
+* **`/modules/left_front/pivot/offset`** (double)
+
   The reduction ratio of left front pivot.
-* `/modules/left_front/wheel/radius`(double)
+* **`/modules/left_front/wheel/radius`** (double)
+
   The radius of left front wheel.
-* `/modules/right_front/position`(double[2])
+* **`/modules/right_front/position`** (double[2])
+
   The position of right front wheel.
-* `/modules/left_back/position`(double[2])
+* **`/modules/left_back/position`** (double[2])
+
   The position of left back wheel.
-* `/modules/right_back/position`(double[2])
+* **`/modules/right_back/position`** (double[2])
+
   The position of right back wheel.
 
 ## Controller configuration examples
