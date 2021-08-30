@@ -96,7 +96,7 @@ Run the controller with mon launch:
   The predicted data used for detection node to decide the ROI.
 ##### Bullet solver
 * **`model_desire`** ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
-  Used to visualize the desired bullet.
+  Used to visualize the desired bullet trajectory.
 
 * **`model_real`** ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
   Used to visualize the trajectory that caculated by ballistic model in the current gimbal angle.
@@ -115,7 +115,7 @@ Run the controller with mon launch:
 
 * **`publish_rate`** (double)
 
-  Frequency (in Hz) of publishing yaw tf when robot is in gyro state or follow state.
+  Frequency (in Hz) of publishing gimbal error.
 
 * **`chassis_angular_data_num`** (double)
 
