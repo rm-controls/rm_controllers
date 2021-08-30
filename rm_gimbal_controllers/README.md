@@ -1,34 +1,44 @@
 # rm_gimbal_controllers
 
-## 1. Overview
+## Overview
 
-The Controller is RoboMaster robot gimbal controller. It is used for ballistic solution and gimbal moving.
+The rm_gimbal_controllers has three states: RATE, TRACK, and DIRECT. It performs PID control on the yaw joint and pitch joint according to commands. It can also perform moving average filtering based on detection data and calculate, predict and track targets based on the ballistic model.
 
-***Keywords***: gimbal, ballistic solution, ROS
+**Keywords:** ROS, Robomaster, gimbal, bullet solver, moving average filter
 
 ### License
-The source code is released under a [ BSD 3-Clause license](http://192.168.0.100:7070/dynamicx/rm_gimbal_controllers/-/blob/master/LICENSE).
-#### Author: DynamicX
-#### Affiliation: DynamicX
+
+The source code is released under a [ BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/LICENSE).
+
+**Author: DynamicX<br />
+Affiliation: DynamicX<br />
+Maintainer: DynamicX**
 
 The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
-### 1.1. Hardware interface type
-The controller works with pitch joints and yaw joints through a **velocity** interface.
 
-[![Build Status](http://rsl-ci.ethz.ch/buildStatus/icon?job=ros_best_practices)](http://rsl-ci.ethz.ch/job/ros_best_practices/)
+### Hardware interface type
++ `JointStateInterface` Used to get the speed and position of gimbal joint.
++ `EffortJointInterface` Used to send effort command to gimbal joint .
++ `RoboStateInterface` Used to get the current and historical transform between gimbal and the world coordinate system and the transform between visual target and the world coordinate system.
 
-## 2. Installation
+## Installation
 
-#### 2.1. Installation from Packages
-    sudo apt-get install ros-noetic-...
+### Installation from Packages
+
+To install all packages from the this repository as Debian packages use
+
+    sudo apt-get install ros-noetic-rm-gimbal-controllers
+
 Or better, use `rosdep`:
 
     sudo rosdep install --from-paths src
 
-#### 2.2. Building from Source
-##### 2.2.1. Dependencies
-* [Robot Operating System (ROS) ](http://wiki.ros.org/) ( middleware for robotics )
-* [Eigen](https://eigen.tuxfamily.org/index.php?title=Main_Page) ( linear algebra library )
+### Building from Source
+#### Dependencies
+* roscpp
+* roslint
+* rm_msgs
+* rm_common
 * pluginlib
 * hardware_interface
 * controller_interface
@@ -39,184 +49,128 @@ Or better, use `rosdep`:
 * tf2
 * tf2_geometry_msgs
 * angles
-* roscpp
-* roslint
-* rm_msgs
-* rm_common
 * visualization_msgs
 * dynamic_reconfigure
 
-
-#### 2.2.2. Building
+#### Building
 
 To build from source, clone the latest version from this repository into your catkin workspace and compile the package using
 
 	cd catkin_workspace/src
-	git clone https://github.com/ethz-asl/ros_best_practices.git
+	git clone https://github.com/rm-controls/rm_controllers.git
 	cd ../
 	rosdep install --from-paths . --ignore-src
-	catkin_make
+	catkin build
 
 
-## 3. Usage
+## Usage
 
-* Run the controller with mon launch:
+Run the controller with mon launch:
 
       mon launch rm_gimbal_controller load_controllers.launch
 
-## 4. Cfg
-* ***BulletSolver.cfg***: It is used for adding parameters to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
-* ***Gimbal.cfg***: It is used for adding parameters to rqt plugin that you can dynamically adjust parameters in rqt ui interface.
+## Launch files
 
-## 5. Config
+* **load_controllers.launch**: Load the parameters in config files and load tf and robot_state_controller, joint_state_controller, gimbal_controller.
 
-* ***engineer.yaml***: It loads some controllers and the parameters used for engineer robot into the parameter server.
-* ***hero.yaml***: It loads some controllers and the parameters used for hero robot into the parameter server.
-* ***sentry.yaml***: It loads some controllers and the parameters used for sentry robot into the parameter server.
-* ***standard3.yaml***: It loads some controllers and the parameters used for standard3 robot into the parameter server.
-* ***standard4.yaml***: It loads some controllers and the parameters used for standard4 robot into the parameter server.
-* ***standard5.yaml***: It loads some controllers and the parameters used for standard5 robot into the parameter server.
+## ROS API
 
-## 6. Launch files
+#### Subscribed Topics
+* **`command`** (rm_msgs/GimbalCmd)
 
-* ***load_controllers.launch***: It loads tf and some controllers, robot_state_controller, joint_state_controller, lower_gimbal_controller, upper_gimbal_controller is included.
+  Set gimbal mode, pitch and yaw axis rotation speed, tracking target, pointing target and coordinate system.
 
-## 7. ROS API
+* **`/detection`** (rm_msgs/TargetDetectionArray)
 
-### 7.1. Description
-The controller main input is a [geometry_msgs::Twist](http://docs.ros.org/api/geometry_msgs/html/msg/Twist.html) topic in the namespace of the controller.
-### 7.2. Subscribed Topics
-* `command` ()
+  Receive visual recognition data.
 
-  Velocity command.
+* **`/<camera_name>/camera_info`** (CameraInfo)
 
-* `detection_topic` ()
+  Make sure that the detection node receives a new frame of image and sends the prediction data to the detection node.
 
-  Object command.
+#### Published Topics
+* **`error`** (rm_msgs/GimbalDesError)
+  The error calculated by the ballistic model to shoot at the current gimbal angle to the target.
 
-* `camera_topic` ()
+* **`track`** (rm_msgs/TrackDataArray)
+  The predicted data used for detection node to decide the ROI.
+##### Bullet solver
+* **`model_desire`** ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
+  Used to visualize the desired bullet trajectory.
 
-  Image or video command.
+* **`model_real`** ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
+  Used to visualize the trajectory that caculated by ballistic model in the current gimbal angle.
+#### Parameters
+* **`detection_topic`** (string, default: "/detection")
 
-### 7.3. Published Topics
-* `model_desire` ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
-  Display target route of the model.
+  The name of the topic where detection node gets predicted data.
 
-* `model_real` ( [visualization_msgs/Marker](http://docs.ros.org/en/api/visualization_msgs/html/msg/Marker.html) )
-
-  Display real route of the model.
-
-* `id`
-  Publish the id of target.
-
-* `error_des`
-  Process error information.
-
-* `track`
-  Process the track array.
-### 7.4. Parameters
-* `resistance_coff_qd_10` ( `double`, default: 0 )
-
-  The air resistance coeff when bullet speed is 10 m/s.
-
-* `resistance_coff_qd_15` ( `double`, default: 0 )
-
-  The air resistance coeff when bullet speed is 15 m/s.
-
-* `resistance_coff_qd_16` ( `double`, default: 0 )
-
-  The air resistance coeff when bullet speed is 16 m/s.
-
-* `resistance_coff_qd_18` ( `double`, default: 0 )
-
-  The air resistance coeff when bullet speed is 18 m/s.
-
-* `resistance_coff_qd_30` ( `double`, default: 0 )
-
-  The air resistance coeff when bullet speed is 30 m/s.
-
-* `g` ( `double`, default: 0 )
-
-  The value of acceleration of gravity.
-
-* `dt` ( `double`, default: 0 )
-
-  The duration of sending data.
-
-* `delay` ( `double`, default: 0 )
-
-  Bullet launch delay.
-
-* `timeout` ( `double`, default: 0 )
-
-  Timeout time of bullet model solution.
-
-* `detection_topic` ( `string` | string [ ... ] )
-
-  The name of a topic about some form of detection.
-
-* `camera_topic` ( `string` | string [ ... ] )
-
-  The name of a topic about some form of camera info.
-
-* `detection_frame` ( `string` | string [ ... ] )
+* **`detection_frame`** (string, default: "detection")
 
   The name of the frame of detection.
 
-* `publish_rate` ( `double`, default: 50 )
+* **`camera_topic`** (string, default: "/galaxy_camera/camera_info")
 
-  Frequency ( in Hz ) at which the odometry is published. Used for both tf and odom.
+  The name of the topic that is determined that the detection node receives a new frame of image and sends the prediction data to the detection node.
 
-* `chassis_angular_data_num` ( `double` )
+* **`publish_rate`** (double)
 
-  Deflection angle of chassis.
+  Frequency (in Hz) of publishing gimbal error.
 
-* `time_compensation` ( `double`, default: 0 )
+* **`chassis_angular_data_num`** (double)
 
-  Time of image transmission delay.
+  The number of angle data of chassis.Used for chassis angular average filter.
 
-* `is_debug` ( `bool`, default: true )
+* **`time_compensation`** (double)
 
-  The debug status.
+  Time(in s) of image transmission delay(in s).Used to compensate for the effects of images transimission delay
 
-* `pos_data_num` ( `double` )
+##### Bullet solver
+_Bullet solver is used to get the bullet drop point_
+* **`resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18, resistance_coff_qd_30`** ( `double` )
 
-  The data of filter position.
+  The air resistance coefficient used for bullet solver when bullet speed is 10 m/s, 15 m/s, 16 m/s, 18 m/s and 30 m/s.
 
-* `vel_data_num` ( `double` )
+* **`g`** (double)
 
-  The data of filter velocity.
+  Acceleration of gravity.
 
-* `center_data_num` ( `double` )
+* **`delay`** (double)
 
-  The data of filter center.
+  Shooting delay time(in s) after shooter get the shooting command.Used to compensate for the effects of launch delay.
 
-* `gyro_data_num` ( `double` )
+* **`timeout`** (double)
 
-  The data of filter gyro velocity.
+  Timeout time((in s)) of bullet solver.Used to judge whether bullet solver can caculate the bullet drop point.
 
-* `center_offset_z` ( `double` )
+##### Moving average filter
+_Moving average filter is used for filter the target armor center when target is spin._
+* **`is_debug`** ( `bool`, default: true )
 
-  The filter center reduction ratio.
+  The debug status.When it is true, debug data will be pulished on the filter topic.
 
-## 8. Controller configuration examples
+* **`pos_data_num`** (double, default: 20)
 
-### 8.1. Minimal description
-```
-gimbal_controller:
-    type: rm_gimbal_controllers/Controller
-    time_compensation: 0.03
-    publish_rate: 100
-    chassis_angular_data_num: 20
-    camera_topic: "/galaxy_camera/camera_info"
-    yaw:
-      joint: "yaw_joint"
-      pid: { p: 8, i: 0, d: 0.4, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
-    pitch:
-      joint: "pitch_joint"
-      pid: { p: 10, i: 50, d: 0.3, i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
-```
-### 8.2. Complete description
+  The number of armor position data.
+
+* **`vel_data_num`** (double, default: 30)
+
+  The number of armor linear velocity data.
+
+* **`gyro_data_num`** (double, default: 100)
+
+  The number of target rotation speed data.
+
+* **`center_data_num`** (double, default: 50)
+
+  The number of target rotation center position data.
+
+* **`center_offset_z`** (double)
+
+  Offset(in meter) on the z axis.Used to compensate for the error of filter result on z axis.
+
+## Controller configuration examples
+
 ```
 gimbal_controller:
     type: rm_gimbal_controllers/Controller
@@ -251,6 +205,6 @@ gimbal_controller:
 ```
 
 
-## 9. Bugs & Feature Requests
+## Bugs & Feature Requests
 
-Please report bugs and request features using the [Issue Tracker](https://github.com/gdut-dynamic-x/rm_template/issues).
+Please report bugs and request features using the [Issue Tracker](https://github.com/rm-controls/rm_controllers/issues).
