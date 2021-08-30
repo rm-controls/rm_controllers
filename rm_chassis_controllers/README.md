@@ -127,10 +127,10 @@ mon launch rm_chassis_controllers load_controllers.launch
   Radius of the wheels.
 * **`wheel_track`** (double)
 
-  The distance between the center of the front (rear) two wheels.
+  The distance between the center of the left and right wheels on the same side.
 * **`wheel_base`** (double)
 
-  The distance between the center of axle.
+  The distance between the center of the front and rear wheels on the same side.
 * **`twist_angle`** (double)
 
   Amplitude of twist at the status of twist.
