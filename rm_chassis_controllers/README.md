@@ -20,15 +20,15 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 
 ### Hardware interface type
 
-`JointStateInterface` 
+`JointStateInterface`
 
 Used to get the position and speed of the chassis joint.
 
-`EffortJointInterface` 
+`EffortJointInterface`
 
 Used to send the torque command of the chassis joint.
 
-`RoboSateInterface` 
+`RoboSateInterface`
 
 Used for high-frequency maintenance of the transformation relationship of changing odom to base_link.
 
