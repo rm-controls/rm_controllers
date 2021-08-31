@@ -8,7 +8,7 @@ The controller is RoboMaster robot shooter controller. It is used for reading jo
 
 #### License
 
-The source code is released under a [BSD 3-Clause license]().
+The source code is released under a [BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/LICENSE).
 
 **Author: DynamicX**
 
