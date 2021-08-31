@@ -20,17 +20,12 @@ The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic an
 
 ### Hardware interface type
 
-`JointStateInterface`
++ `JointStateInterface` Used to get the position and speed of chassis wheel joint.
 
-Used to get the position and speed of the chassis joint.
++ `EffortJointInterface` Used to send the torque command of chassis wheel joint.
 
-`EffortJointInterface`
-
-Used to send the torque command of the chassis joint.
-
-`RoboSateInterface`
-
-Used for high-frequency maintenance of the transformation relationship of changing odom to base_link.
++ `RoboSateInterface` Used for high-frequency maintenance of the transformation relationship of changing odom to
+  base_link.
 
 ## Installation
 
@@ -255,4 +250,3 @@ chassis_controller:
 ## Bugs & Feature Requests
 
 Please report bugs and request features using the [Issue Tracker](https://github.com/rm-controls/rm_controllers/issues).
-
