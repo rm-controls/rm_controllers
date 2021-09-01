@@ -18,6 +18,7 @@ find_package(catkin REQUIRED
         rm_msgs
         rm_common
 
+        nav_msgs
         pluginlib
         hardware_interface
         controller_interface
