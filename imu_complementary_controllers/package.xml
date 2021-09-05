@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>imu_filter_controllers</name>
+  <name>imu_complementary_controllers</name>
   <version>0.0.0</version>
-  <description>The imu_filter_controllers package</description>
+  <description>The imu_complementary_controllers package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -49,10 +49,16 @@
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>roscpp</depend>
-  <depend>roslint</depend>
+  <build_depend>COMPONENTS</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>roslint</build_depend>
+  <build_export_depend>COMPONENTS</build_export_depend>
+  <build_export_depend>roscpp</build_export_depend>
+  <build_export_depend>roslint</build_export_depend>
+  <exec_depend>COMPONENTS</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>roslint</exec_depend>
 
-  <depend>imu_complementary_filter</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
