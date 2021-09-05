@@ -48,7 +48,7 @@ public:
   MecanumController() = default;
   /** @brief Execute ChassisBase::init. Get necessary handles.
    *
-   * Execute ChassisBase::init. Get lf, lb, rf, rb handles so that we can controls four wheels conveniently.
+   * Execute ChassisBase::init. Init lf, lb, rf, rb handles so that we can controls four wheels conveniently.
    *
    * @param robot_hw The robot hardware abstraction.
    * @param root_nh A NodeHandle in the root of the controller manager namespace. This is where the ROS interfaces are
