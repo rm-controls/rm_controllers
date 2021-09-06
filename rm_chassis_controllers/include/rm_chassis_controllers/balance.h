@@ -35,7 +35,8 @@
 // Created by chenzheng on 2021/2/23.
 //
 
-#pragma once
+#ifndef RM_CHASSIS_CONTROLLER_STANDARD_H
+#define RM_CHASSIS_CONTROLLER_STANDARD_H
 
 #include "rm_chassis_controllers/chassis_base.h"
 #include <sensor_msgs/Imu.h>
@@ -49,13 +50,48 @@ class BalanceController : public ChassisBase
 {
 public:
   BalanceController() = default;
+  /** @brief Get necessary param. Init hardware interface. Creat publisher and subscriber.
+   *
+   * @param robot_hw The robot hardware abstraction.
+   * @param root_nh A NodeHandle in the root of the controller manager namespace. This is where the ROS interfaces are
+   * setup (publishers, subscribers, services).
+   * @param controller_nh A NodeHandle in the namespace of the controller. This is where the controller-specific
+   * configuration resides.
+   * @return True if initialization was successful and the controller
+   * is ready to be started.
+   */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  /** @brief Execute ChassisBase::update(). Set and publish necessary params.
+   *
+   * @param time The current time.
+   * @param period The time passed since the last call to update.
+   */
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
+  /** @brief
+   *
+   * @param a
+   * @param b
+   * @param q
+   * @param r
+   */
   void getK(XmlRpc::XmlRpcValue a, XmlRpc::XmlRpcValue b, XmlRpc::XmlRpcValue q, XmlRpc::XmlRpcValue r);
+  /** @brief Receive current command and transform it to joint command.
+   *
+   * @param time The current time.
+   * @param period The time passed since the last call to update.
+   */
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
+  /** @brief Calculate current linear_x and angular_z according to current velocity.
+   *
+   * @return Calculated vel_data included linear_x and angular_z
+   */
   geometry_msgs::Twist forwardKinematics() override;
+  /** @brief Write current command from sensor_msgs::Imu.
+   *
+   * @param data This is a message to hold data from an IMU (Inertial Measurement Unit)
+   */
   void dataImuCallback(const sensor_msgs::ImuConstPtr& data);
 
   hardware_interface::JointHandle joint_left_, joint_right_;
@@ -78,3 +114,5 @@ private:
 };
 
 }  // namespace rm_chassis_controllers
+
+#endif  // RM_CHASSIS_CONTROLLER_STANDARD_H
