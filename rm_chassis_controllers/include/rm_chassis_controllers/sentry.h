@@ -35,7 +35,8 @@
 // Created by flying on 2021/1/18.
 //
 
-#pragma once
+#ifndef RM_CHASSIS_CONTROLLER_SENTRY_H
+#define RM_CHASSIS_CONTROLLER_SENTRY_H
 
 #include "rm_chassis_controllers/chassis_base.h"
 
@@ -45,13 +46,33 @@ class SentryController : public ChassisBase
 {
 public:
   SentryController() = default;
+  /** @brief Execute ChassisBase::init. Init necessary handles.
+   *
+   * @param robot_hw The robot hardware abstraction.
+   * @param root_nh A NodeHandle in the root of the controller manager namespace. This is where the ROS interfaces are
+   * setup (publishers, subscribers, services).
+   * @param controller_nh A NodeHandle in the namespace of the controller. This is where the controller-specific
+   * configuration resides.
+   * @return True if initialization was successful and the controller
+   * is ready to be started.
+   */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
 
 private:
+  /** @brief Calculate correct command and set it to wheel.
+   *
+   * @param time The current time.
+   * @param period The time passed since the last call to update.
+   */
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
+  /** @brief Calculate current linear_x according to current velocity.
+   *
+   * @return Calculated vel_data included linear_x.
+   */
   geometry_msgs::Twist forwardKinematics() override;
 
   effort_controllers::JointVelocityController ctrl_wheel_;
 };
 
 }  // namespace rm_chassis_controllers
+#endif  // RM_CHASSIS_CONTROLLER_STANDARD_H
