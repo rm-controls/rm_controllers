@@ -35,8 +35,7 @@
 // Created by huakang on 2021/3/21.
 //
 
-#ifndef RM_CHASSIS_CONTROLLER_CHASSIS_BASE_H_
-#define RM_CHASSIS_CONTROLLER_CHASSIS_BASE_H_
+#pragma once
 
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
@@ -181,5 +180,3 @@ protected:
 };
 
 }  // namespace rm_chassis_controllers
-
-#endif  // RM_CHASSIS_CONTROLLER_CHASSIS_BASE_H_

@@ -35,8 +35,7 @@
 // Created by chenzheng on 2021/2/23.
 //
 
-#ifndef RM_CHASSIS_CONTROLLER_STANDARD_H
-#define RM_CHASSIS_CONTROLLER_STANDARD_H
+#pragma once
 
 #include "rm_chassis_controllers/chassis_base.h"
 #include <sensor_msgs/Imu.h>
@@ -114,5 +113,3 @@ private:
 };
 
 }  // namespace rm_chassis_controllers
-
-#endif  // RM_CHASSIS_CONTROLLER_STANDARD_H

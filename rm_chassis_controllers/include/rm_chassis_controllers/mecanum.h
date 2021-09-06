@@ -35,8 +35,7 @@
 // Created by flying on 2021/1/18.
 //
 
-#ifndef RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
-#define RM_CHASSIS_CONTROLLER_MECANUM_CONTROLLER_H
+#pragma once
 
 #include "rm_chassis_controllers/chassis_base.h"
 
