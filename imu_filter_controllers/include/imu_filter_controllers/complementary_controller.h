@@ -13,14 +13,16 @@
 #include <tf/transform_broadcaster.h>
 
 #include "imu_complementary_filter/complementary_filter.h"
+#include <rm_common/hardware_interface/complementary_interface.h>
 
 namespace imu_filter_controllers
 {
 class ComplementaryController
 {
 public:
-  ComplementaryController(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
-  virtual ~ComplementaryController();
+  ComplementaryController() = default;
+  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh);
+  void update(const ros::Time& time, const ros::Duration& /*period*/);
 
 private:
   // Convenience typedefs
@@ -36,34 +38,31 @@ private:
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 
-  boost::shared_ptr<Synchronizer> sync_;
-  boost::shared_ptr<ImuSubscriber> imu_subscriber_;
-  boost::shared_ptr<MagSubscriber> mag_subscriber_;
+  tf::TransformBroadcaster tf_broadcaster_;
 
-  ros::Publisher imu_publisher_;
-      ros::Publisher rpy_publisher_;
-      ros::Publisher state_publisher_;
-      tf::TransformBroadcaster tf_broadcaster_;
+  // hardware_interface
+  hardware_interface::ComplementaryHandle complementary_handle_{};
 
-      // Parameters:
-      bool use_mag_;
-      bool publish_tf_;
-      bool reverse_tf_;
-      double constant_dt_;
-      bool publish_debug_topics_;
-      std::string fixed_frame_;
+  // Parameters:
+  bool use_mag_;
+  bool publish_tf_;
+  bool reverse_tf_;
+  double constant_dt_;
+  bool publish_debug_topics_;
+  std::string fixed_frame_;
 
-      // State variables:
-      imu_tools::ComplementaryFilter filter_;
-      ros::Time time_prev_;
-      bool initialized_filter_;
+  // State variables:
+  imu_tools::ComplementaryFilter filter_;
+  ros::Time time_prev_;
+  bool initialized_filter_;
 
-      void initializeParams();
-      void imuCallback(const ImuMsg::ConstPtr& imu_msg_raw);
-      void imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw, const MagMsg::ConstPtr& mav_msg);
-      void publish(const sensor_msgs::Imu::ConstPtr& imu_msg_raw);
+  void initializeParams();
+  double CalculateDt(geometry_msgs::Vector3& a, geometry_msgs::Vector3& m, geometry_msgs::Vector3& w, ros::Time& time);
+  void imuCallback(const ImuMsg::ConstPtr& imu_msg_raw);
+  void imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw, const MagMsg::ConstPtr& mav_msg);
+  void publish(const sensor_msgs::Imu::ConstPtr& imu_msg_raw);
 
-      tf::Quaternion hamiltonToTFQuaternion(double q0, double q1, double q2, double q3) const;
+  tf::Quaternion hamiltonToTFQuaternion(double q0, double q1, double q2, double q3) const;
 };
 
 }  // namespace imu_filter_controllers

@@ -9,48 +9,71 @@
 
 namespace imu_filter_controllers
 {
-ComplementaryController::ComplementaryController(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private)
-  : nh_(nh), nh_private_(nh_private), initialized_filter_(false)
+bool ComplementaryController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
+                                   ros::NodeHandle& controller_nh)
 {
+  // base init
+  nh_ = controller_nh;
+  nh_private_ = root_nh;
+  initialized_filter_ = false;
+
   ROS_INFO("Starting ComplementaryFilterROS");
   initializeParams();
+}
 
-  int queue_size = 5;
+void ComplementaryController::update(const ros::Time& time, const ros::Duration& /*period*/)
+{
+  // Get the orientation:
+  double q0, q1, q2, q3;
+  geometry_msgs::Vector3 imu_msg;
+  filter_.getOrientation(q0, q1, q2, q3);
+  tf::Quaternion q = hamiltonToTFQuaternion(q0, q1, q2, q3);
 
-  // Register publishers:
-  imu_publisher_ = nh_.advertise<sensor_msgs::Imu>(ros::names::resolve("imu") + "/data", queue_size);
+  //
+  imu_msg = complementary_handle_.getAngularVelocity();
+
+  if (filter_.getDoBiasEstimation())
+  {
+    imu_msg.x -= filter_.getAngularVelocityBiasX();
+    imu_msg.y -= filter_.getAngularVelocityBiasY();
+    imu_msg.z -= filter_.getAngularVelocityBiasZ();
+  }
+
+  complementary_handle_.setAngularVelocity(imu_msg);
 
   if (publish_debug_topics_)
   {
-    rpy_publisher_ =
-        nh_.advertise<geometry_msgs::Vector3Stamped>(ros::names::resolve("imu") + "/rpy/filtered", queue_size);
+    geometry_msgs::Vector3Stamped rpy;
+
+    tf::Matrix3x3 M;
+    M.setRotation(q);
+    M.getRPY(rpy.vector.x, rpy.vector.y, rpy.vector.z);
 
     if (filter_.getDoBiasEstimation())
     {
-      state_publisher_ = nh_.advertise<std_msgs::Bool>(ros::names::resolve("imu") + "/steady_state", queue_size);
+      std_msgs::Bool state_msg;
+      state_msg.data = filter_.getSteadyState();
+      complementary_handle_.setStateMsg(state_msg);
     }
   }
 
-  // Register IMU raw data subscriber.
-  imu_subscriber_.reset(new ImuSubscriber(nh_, ros::names::resolve("imu") + "/data_raw", queue_size));
-
-  // Register magnetic data subscriber.
-  if (use_mag_)
+  if (publish_tf_)
   {
-    mag_subscriber_.reset(new MagSubscriber(nh_, ros::names::resolve("imu") + "/mag", queue_size));
+    tf::Transform transform;
+    transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
+    transform.setRotation(q);
 
-    sync_.reset(new Synchronizer(SyncPolicy(queue_size), *imu_subscriber_, *mag_subscriber_));
-    sync_->registerCallback(boost::bind(&ComplementaryController::imuMagCallback, this, _1, _2));
+    if (reverse_tf_)
+    {
+      tf_broadcaster_.sendTransform(tf::StampedTransform(transform.inverse(), complementary_handle_.getStamp(),
+                                                         complementary_handle_.getFrameId(), fixed_frame_));
+    }
+    else
+    {
+      tf_broadcaster_.sendTransform(tf::StampedTransform(transform, complementary_handle_.getStamp(), fixed_frame_,
+                                                         complementary_handle_.getFrameId()));
+    }
   }
-  else
-  {
-    imu_subscriber_->registerCallback(&ComplementaryController::imuCallback, this);
-  }
-}
-
-ComplementaryController::~ComplementaryController()
-{
-  ROS_INFO("Destroying ComplementaryFilterROS");
 }
 
 void ComplementaryController::initializeParams()
@@ -110,52 +133,10 @@ void ComplementaryController::initializeParams()
   }
 }
 
-void ComplementaryController::imuCallback(const ImuMsg::ConstPtr& imu_msg_raw)
+// maybe wrong
+double ComplementaryController::CalculateDt(geometry_msgs::Vector3& a, geometry_msgs::Vector3& m,
+                                            geometry_msgs::Vector3& w, ros::Time& time)
 {
-  const geometry_msgs::Vector3& a = imu_msg_raw->linear_acceleration;
-  const geometry_msgs::Vector3& w = imu_msg_raw->angular_velocity;
-  const ros::Time& time = imu_msg_raw->header.stamp;
-
-  // Initialize.
-  if (!initialized_filter_)
-  {
-    time_prev_ = time;
-    initialized_filter_ = true;
-    return;
-  }
-
-  // determine dt: either constant, or from IMU timestamp
-  double dt;
-  if (constant_dt_ > 0.0)
-    dt = constant_dt_;
-  else
-    dt = (time - time_prev_).toSec();
-
-  time_prev_ = time;
-
-  // Update the filter.
-  filter_.update(a.x, a.y, a.z, w.x, w.y, w.z, dt);
-
-  // Publish state.
-  publish(imu_msg_raw);
-}
-
-void ComplementaryController::imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw, const MagMsg::ConstPtr& mag_msg)
-{
-  const geometry_msgs::Vector3& a = imu_msg_raw->linear_acceleration;
-  const geometry_msgs::Vector3& w = imu_msg_raw->angular_velocity;
-  const geometry_msgs::Vector3& m = mag_msg->magnetic_field;
-  const ros::Time& time = imu_msg_raw->header.stamp;
-
-  // Initialize.
-  if (!initialized_filter_)
-  {
-    time_prev_ = time;
-    initialized_filter_ = true;
-    return;
-  }
-
-  // Calculate dt.
   double dt = (time - time_prev_).toSec();
   time_prev_ = time;
   // ros::Time t_in, t_out;
@@ -165,80 +146,6 @@ void ComplementaryController::imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw
     filter_.update(a.x, a.y, a.z, w.x, w.y, w.z, dt);
   else
     filter_.update(a.x, a.y, a.z, w.x, w.y, w.z, m.x, m.y, m.z, dt);
-
-  // t_out = ros::Time::now();
-  // float dt_tot = (t_out - t_in).toSec() * 1000.0; // In msec.
-  // printf("%.6f\n", dt_tot);
-  //  Publish state.
-  publish(imu_msg_raw);
-}
-
-tf::Quaternion ComplementaryController::hamiltonToTFQuaternion(double q0, double q1, double q2, double q3) const
-{
-  // ROS uses the Hamilton quaternion convention (q0 is the scalar). However,
-  // the ROS quaternion is in the form [x, y, z, w], with w as the scalar.
-  return tf::Quaternion(q1, q2, q3, q0);
-}
-
-void ComplementaryController::publish(const sensor_msgs::Imu::ConstPtr& imu_msg_raw)
-{
-  // Get the orientation:
-  double q0, q1, q2, q3;
-  filter_.getOrientation(q0, q1, q2, q3);
-  tf::Quaternion q = hamiltonToTFQuaternion(q0, q1, q2, q3);
-
-  // Create and publish fitlered IMU message.
-  boost::shared_ptr<sensor_msgs::Imu> imu_msg = boost::make_shared<sensor_msgs::Imu>(*imu_msg_raw);
-  tf::quaternionTFToMsg(q, imu_msg->orientation);
-
-  // Account for biases.
-  if (filter_.getDoBiasEstimation())
-  {
-    imu_msg->angular_velocity.x -= filter_.getAngularVelocityBiasX();
-    imu_msg->angular_velocity.y -= filter_.getAngularVelocityBiasY();
-    imu_msg->angular_velocity.z -= filter_.getAngularVelocityBiasZ();
-  }
-
-  imu_publisher_.publish(imu_msg);
-
-  if (publish_debug_topics_)
-  {
-    // Create and publish roll, pitch, yaw angles
-    geometry_msgs::Vector3Stamped rpy;
-    rpy.header = imu_msg_raw->header;
-
-    tf::Matrix3x3 M;
-    M.setRotation(q);
-    M.getRPY(rpy.vector.x, rpy.vector.y, rpy.vector.z);
-    rpy_publisher_.publish(rpy);
-
-    // Publish whether we are in the steady state, when doing bias estimation
-    if (filter_.getDoBiasEstimation())
-    {
-      std_msgs::Bool state_msg;
-      state_msg.data = filter_.getSteadyState();
-      state_publisher_.publish(state_msg);
-    }
-  }
-
-  if (publish_tf_)
-  {
-    // Create and publish the ROS tf.
-    tf::Transform transform;
-    transform.setOrigin(tf::Vector3(0.0, 0.0, 0.0));
-    transform.setRotation(q);
-
-    if (reverse_tf_)
-    {
-      tf_broadcaster_.sendTransform(tf::StampedTransform(transform.inverse(), imu_msg_raw->header.stamp,
-                                                         imu_msg_raw->header.frame_id, fixed_frame_));
-    }
-    else
-    {
-      tf_broadcaster_.sendTransform(
-          tf::StampedTransform(transform, imu_msg_raw->header.stamp, fixed_frame_, imu_msg_raw->header.frame_id));
-    }
-  }
 }
 
 }  // namespace imu_filter_controllers
