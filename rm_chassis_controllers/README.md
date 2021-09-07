@@ -6,31 +6,14 @@ There are four states: raw, follow, gyro and twist. The output torque and speed 
 
 **Keywords:** mecanum, swerve, balance, chassis, ROS, RoboMaster
 
-#### License
-
-The source code is released under a [BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/rm_chassis_controllers/LICENSE).
-
-**Author: DynamicX**
-
-**Affiliation: DynamicX**
-
-**Maintainer: DynamicX**
-
-The package has been tested under [ROS](https://www.ros.org/) Indigo, Melodic and Noetic on respectively Ubuntu 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
-
 ### Hardware interface type
 
-`JointStateInterface`
++ `JointStateInterface` Used to get the position and speed of chassis wheel joint.
 
-Used to get the position and speed of the chassis joint.
++ `EffortJointInterface` Used to send the torque command of chassis wheel joint.
 
-`EffortJointInterface`
-
-Used to send the torque command of the chassis joint.
-
-`RoboSateInterface`
-
-Used for high-frequency maintenance of the transformation relationship of changing odom to base_link.
++ `RoboSateInterface` Used for high-frequency maintenance of the transformation relationship of changing odom to
+  base_link.
 
 ## Installation
 
@@ -110,10 +93,6 @@ mon launch rm_chassis_controllers load_controllers.launch
   Set the speed of the chassis.
 
 #### Published Topics
-
-* **`state_real`** (rm_msgs::BalanceState）
-
-  Publish the real state.
 * **`odom`**([nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html))
 
   Chassis odometer information (speed, position, covariance).
@@ -136,11 +115,11 @@ mon launch rm_chassis_controllers load_controllers.launch
 
 * **`twist_angle`** (double)
 
-  Amplitude of twist at the status of twist.
+  Amplitude of twist at `twist` status.
 
 * **`enable_odom_tf`** (bool, default: true)
 
-  Publish to TF directly or not.
+  Option.If set this param true, it will send Transform from odom to base.
 
 * **`twist_covariance_diagonal`** (double[6])
 
@@ -148,15 +127,15 @@ mon launch rm_chassis_controllers load_controllers.launch
 
 * **`publish_rate`** (double, default: 50)
 
-  Frequency (in Hz) at which the topic is published.
+  Frequency (in Hz) of publishing Transform.
 
 * **`coeff`** (double)
 
-  The influence of power loss can be conservatively reduced by adjusting safety factor.
+  A coefficient. Adjust this coefficient to reduce the impact of power loss.
 
 * **`min_vel`** (double)
 
-  When the motor speed is lower than the minimum speed, the minimum speed is used to calculate the maximum torque.
+  The minimum velocity of chassis joint which is used to calculate the max torque.
 
 * **`timeout`** (double)
 
@@ -194,30 +173,25 @@ mon launch rm_chassis_controllers load_controllers.launch
 
 ##### Swerve
 
-* **`/modules/left_front/position`** (double[2])
+* **`/modules/<module_name>/position`** (double[2])
 
-  The position of left front wheel.
+  The position of module.
 
-* **`/modules/left_front/pivot/offset`** (double)
+* **`/modules/<module_name>/pivot/joint`** (string)
 
-  The reduction ratio of left front pivot.
+  Joint between chassis and privot.
 
-* **`/modules/left_front/wheel/radius`** (double)
+* **`/modules/<module_name>/pivot/offset`** (double)
 
-  The radius of left front wheel.
+  Angle between the wheel rotation axis and the chassis's Y axis.
 
-* **`/modules/right_front/position`** (double[2])
+* **`/modules/<module_name>/wheel/joint`** (string)
 
-  The position of right front wheel.
+  Joint between privot and wheel.
 
-* **`/modules/left_back/position`** (double[2])
+* **`/modules/<module_name>/wheel/radius`** (double)
 
-  The position of left back wheel.
-
-* **`/modules/right_back/position`** (double[2])
-
-  The position of right back wheel.
-
+  The radius of wheel.
 
 ## Controller configuration examples
 
