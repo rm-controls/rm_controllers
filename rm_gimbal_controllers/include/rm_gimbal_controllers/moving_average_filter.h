@@ -53,7 +53,7 @@ class MovingAverageFilterTrack
 {
 public:
   explicit MovingAverageFilterTrack(ros::NodeHandle& nh, int id,
-                                    hardware_interface::RobotStateHandle robot_state_handle);
+                                    rm_control::RobotStateHandle robot_state_handle);
   void input(const geometry_msgs::TransformStamped& map2detection, const std::string pitch_frame);
   geometry_msgs::TransformStamped getTransform() const
   {
@@ -108,7 +108,7 @@ private:
   MovingAverageFilter<double>* ma_filter_gyro_vel_;
 
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::MovingAverageData>> realtime_pub_;
-  hardware_interface::RobotStateHandle robot_state_handle_;
+  rm_control::RobotStateHandle robot_state_handle_;
 
   bool is_debug_{};
   bool is_gyro_{};
