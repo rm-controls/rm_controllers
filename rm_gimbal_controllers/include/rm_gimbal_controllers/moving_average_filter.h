@@ -52,8 +52,7 @@ namespace moving_average_filter
 class MovingAverageFilterTrack
 {
 public:
-  explicit MovingAverageFilterTrack(ros::NodeHandle& nh, int id,
-                                    rm_control::RobotStateHandle robot_state_handle);
+  explicit MovingAverageFilterTrack(ros::NodeHandle& nh, int id, rm_control::RobotStateHandle robot_state_handle);
   void input(const geometry_msgs::TransformStamped& map2detection, const std::string pitch_frame);
   geometry_msgs::TransformStamped getTransform() const
   {
