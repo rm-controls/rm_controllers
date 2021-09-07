@@ -53,6 +53,8 @@
   <depend>roslint</depend>
 
   <depend>imu_complementary_filter</depend>
+  <depend>rm_common</depend>
+  <depend>hardware_interface</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

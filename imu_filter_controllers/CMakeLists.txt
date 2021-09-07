@@ -7,6 +7,8 @@ find_package(catkin REQUIRED
         roslint
 
         imu_complementary_filter
+        rm_common
+        hardware_interface
         )
 
 catkin_package(
@@ -19,6 +21,8 @@ catkin_package(
         roslint
 
         imu_complementary_filter
+        rm_common
+        hardware_interface
 )
 
 include_directories(
