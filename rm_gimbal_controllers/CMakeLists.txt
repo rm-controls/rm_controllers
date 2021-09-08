@@ -34,7 +34,6 @@ find_package(catkin REQUIRED
 
 generate_dynamic_reconfigure_options(
         cfg/BulletSolver.cfg
-        cfg/Gimbal.cfg
 )
 
 ###################################
@@ -83,7 +82,7 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(${PROJECT_NAME} src/standard.cpp src/bullet_solver.cpp src/moving_average_filter.cpp)
+add_library(${PROJECT_NAME} src/standard.cpp src/bullet_solver.cpp)
 
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
