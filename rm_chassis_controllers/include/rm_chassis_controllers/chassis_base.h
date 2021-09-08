@@ -58,7 +58,7 @@ struct Command
 };
 
 class ChassisBase : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                                          hardware_interface::RobotStateInterface>
+                                                                          rm_control::RobotStateInterface>
 {
 public:
   ChassisBase() = default;
@@ -82,7 +82,7 @@ protected:
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   std::vector<hardware_interface::JointHandle> joint_handles_{};
-  hardware_interface::RobotStateHandle robot_state_handle_{};
+  rm_control::RobotStateHandle robot_state_handle_{};
 
   double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, power_coeff_{},
       power_min_vel_{}, timeout_{};

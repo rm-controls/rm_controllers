@@ -115,7 +115,7 @@ mon launch rm_chassis_controllers load_controllers.launch
 
 * **`twist_angle`** (double)
 
-  Amplitude of twist at `twist` status.
+  Amplitude of twist at `twist` state.
 
 * **`enable_odom_tf`** (bool, default: true)
 

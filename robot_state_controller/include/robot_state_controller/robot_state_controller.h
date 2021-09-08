@@ -65,7 +65,7 @@ public:
 
 class RobotStateController
   : public controller_interface::MultiInterfaceController<hardware_interface::JointStateInterface,
-                                                          hardware_interface::RobotStateInterface>
+                                                          rm_control::RobotStateInterface>
 {
 public:
   RobotStateController() = default;
