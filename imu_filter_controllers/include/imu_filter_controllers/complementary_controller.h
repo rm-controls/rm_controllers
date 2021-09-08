@@ -25,15 +25,6 @@ public:
   void update(const ros::Time& time, const ros::Duration& /*period*/);
 
 private:
-  // Convenience typedefs
-  typedef sensor_msgs::Imu ImuMsg;
-  typedef sensor_msgs::MagneticField MagMsg;
-  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::Imu, MagMsg> MySyncPolicy;
-  typedef message_filters::sync_policies::ApproximateTime<ImuMsg, MagMsg> SyncPolicy;
-  typedef message_filters::Synchronizer<SyncPolicy> Synchronizer;
-  typedef message_filters::Subscriber<ImuMsg> ImuSubscriber;
-  typedef message_filters::Subscriber<MagMsg> MagSubscriber;
-
   // ROS-related variables.
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -51,16 +42,23 @@ private:
   bool publish_debug_topics_;
   std::string fixed_frame_;
 
+  // msg
+  geometry_msgs::Vector3 imu_angular_velocity_;
+  geometry_msgs::Vector3 imu_linear_acceleration_;
+  ros::Time imu_time_;
+  std::string imu_frame_id_;
+
   // State variables:
   imu_tools::ComplementaryFilter filter_;
   ros::Time time_prev_;
   bool initialized_filter_;
 
+  /** @brief init params
+   *
+   */
   void initializeParams();
-  double CalculateDt(geometry_msgs::Vector3& a, geometry_msgs::Vector3& m, geometry_msgs::Vector3& w, ros::Time& time);
-  void imuCallback(const ImuMsg::ConstPtr& imu_msg_raw);
-  void imuMagCallback(const ImuMsg::ConstPtr& imu_msg_raw, const MagMsg::ConstPtr& mav_msg);
-  void publish(const sensor_msgs::Imu::ConstPtr& imu_msg_raw);
+  void UpdateFilter(const geometry_msgs::Vector3 imu_angular_velocity_,
+                    const geometry_msgs::Vector3 imu_linear_acceleration_, const ros::Time time);
 
   tf::Quaternion hamiltonToTFQuaternion(double q0, double q1, double q2, double q3) const;
 };
