@@ -48,7 +48,7 @@ namespace rm_calibration_controllers
 {
 class JointCalibrationController
   : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                          hardware_interface::ActuatorExtraInterface>
+                                                          rm_control::ActuatorExtraInterface>
 {
 public:
   JointCalibrationController() = default;
@@ -106,7 +106,7 @@ private:
   };
   int state_{}, countdown_{};
   double vel_search_{}, threshold_{};
-  std::vector<hardware_interface::ActuatorExtraHandle> actuators_;
+  std::vector<rm_control::ActuatorExtraHandle> actuators_;
   effort_controllers::JointVelocityController velocity_ctrl_;
 };
 
