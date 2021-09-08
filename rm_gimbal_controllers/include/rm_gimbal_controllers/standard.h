@@ -67,7 +67,6 @@ private:
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   bool updateTf();
 
-  hardware_interface::EffortJointInterface* effort_joint_interface_{};
   rm_control::RobotStateHandle robot_state_handle_;
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
@@ -79,8 +78,7 @@ private:
 
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
 
-  geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_;
-  geometry_msgs::TransformStamped map2base_;
+  geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_, map2base_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
   std::string gimbal_des_frame_id_{};

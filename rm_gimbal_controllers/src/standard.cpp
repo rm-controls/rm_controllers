@@ -51,7 +51,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
 
-  effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
+  hardware_interface::EffortJointInterface* effort_joint_interface =
+      robot_hw->get<hardware_interface::EffortJointInterface>();
   robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
 
   if (!controller_nh.getParam("publish_rate", publish_rate_))
@@ -60,7 +61,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     return false;
   }
 
-  if (!ctrl_yaw_.init(effort_joint_interface_, nh_yaw) || !ctrl_pitch_.init(effort_joint_interface_, nh_pitch))
+  if (!ctrl_yaw_.init(effort_joint_interface, nh_yaw) || !ctrl_pitch_.init(effort_joint_interface, nh_pitch))
     return false;
 
   gimbal_des_frame_id_ = ctrl_pitch_.joint_urdf_->child_link_name + "_des";
@@ -75,6 +76,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   map2base_.transform.rotation.w = 1.;
 
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
+  error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error_des", 100));
 
   bullet_solver_ = new bullet_solver::BulletSolver(nh_bullet_solver);
 
