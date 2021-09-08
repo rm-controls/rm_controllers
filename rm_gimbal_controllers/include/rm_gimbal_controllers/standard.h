@@ -41,6 +41,7 @@
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
+#include <hardware_interface/imu_sensor_interface.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_msgs/GimbalCmd.h>
 #include <rm_msgs/GimbalDesError.h>
@@ -68,6 +69,7 @@ private:
   bool updateTf();
 
   rm_control::RobotStateHandle robot_state_handle_;
+  hardware_interface::ImuSensorHandle imu_sensor_handle_;
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
   bullet_solver::BulletSolver* bullet_solver_{};
@@ -81,7 +83,7 @@ private:
   geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_, map2base_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
-  std::string gimbal_des_frame_id_{};
+  std::string gimbal_des_frame_id_{}, imu_name_{};
 
   double publish_rate_{};
   bool state_changed_{};
