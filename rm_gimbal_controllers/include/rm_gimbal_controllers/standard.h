@@ -50,8 +50,9 @@
 
 namespace rm_gimbal_controllers
 {
-class Controller : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                                         rm_control::RobotStateInterface>
+class Controller : public controller_interface::MultiInterfaceController<rm_control::RobotStateInterface,
+                                                                         hardware_interface::ImuSensorInterface,
+                                                                         hardware_interface::EffortJointInterface>
 {
 public:
   Controller() = default;

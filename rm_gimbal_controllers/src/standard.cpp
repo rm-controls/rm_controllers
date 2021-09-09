@@ -56,14 +56,11 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
       robot_hw->get<hardware_interface::EffortJointInterface>();
   if (!ctrl_yaw_.init(effort_joint_interface, nh_yaw) || !ctrl_pitch_.init(effort_joint_interface, nh_pitch))
     return false;
-
   robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
-  if (!controller_nh.getParam("imu_name", imu_name_))
-  {
-    ROS_ERROR("Gimbal imu_name doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
-    return false;
-  }
-  imu_sensor_handle_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(imu_name_);
+  imu_name_ = getParam(controller_nh, "imu_name", static_cast<std::string>("gimbal_imu"));
+  hardware_interface::ImuSensorInterface* imu_sensor_interface =
+      robot_hw->get<hardware_interface::ImuSensorInterface>();
+  imu_sensor_handle_ = imu_sensor_interface->getHandle(imu_name_);
 
   gimbal_des_frame_id_ = ctrl_pitch_.joint_urdf_->child_link_name + "_des";
   map2gimbal_des_.header.frame_id = "map";
@@ -234,11 +231,20 @@ void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des)
 
 void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
+  geometry_msgs::Vector3 gyro, angular_vel_pitch, angular_vel_yaw;
+  gyro.x = imu_sensor_handle_.getAngularVelocity()[0];
+  gyro.y = imu_sensor_handle_.getAngularVelocity()[1];
+  gyro.z = imu_sensor_handle_.getAngularVelocity()[2];
+
   geometry_msgs::TransformStamped base_frame2des;
   try
   {
     base_frame2des = robot_state_handle_.lookupTransform(ctrl_yaw_.joint_urdf_->parent_link_name, gimbal_des_frame_id_,
                                                          ros::Time(0));
+    tf2::doTransform(gyro, angular_vel_pitch,
+                     robot_state_handle_.lookupTransform("pitch", imu_sensor_handle_.getFrameId(), ros::Time::now()));
+    tf2::doTransform(gyro, angular_vel_yaw,
+                     robot_state_handle_.lookupTransform("yaw", imu_sensor_handle_.getFrameId(), ros::Time::now()));
   }
   catch (tf2::TransformException& ex)
   {
@@ -248,8 +254,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   double roll_des, pitch_des, yaw_des;  // desired position
   quatToRPY(base_frame2des.transform.rotation, roll_des, pitch_des, yaw_des);
 
-  ctrl_yaw_.setCommand(yaw_des, 0.);
-  ctrl_pitch_.setCommand(pitch_des, 0.);
+  ctrl_yaw_.setCommand(yaw_des, ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
+  ctrl_pitch_.setCommand(pitch_des, ctrl_yaw_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
 }
