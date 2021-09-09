@@ -67,7 +67,6 @@ private:
   void direct(const ros::Time& time);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
-  bool updateTf();
 
   rm_control::RobotStateHandle robot_state_handle_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
