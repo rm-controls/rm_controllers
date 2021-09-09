@@ -239,12 +239,12 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   geometry_msgs::TransformStamped base_frame2des;
   try
   {
-    base_frame2des = robot_state_handle_.lookupTransform(ctrl_yaw_.joint_urdf_->parent_link_name, gimbal_des_frame_id_,
-                                                         ros::Time(0));
+    base_frame2des =
+        robot_state_handle_.lookupTransform(ctrl_yaw_.joint_urdf_->parent_link_name, gimbal_des_frame_id_, time);
     tf2::doTransform(gyro, angular_vel_pitch,
-                     robot_state_handle_.lookupTransform("pitch", imu_sensor_handle_.getFrameId(), ros::Time::now()));
+                     robot_state_handle_.lookupTransform("pitch", imu_sensor_handle_.getFrameId(), time));
     tf2::doTransform(gyro, angular_vel_yaw,
-                     robot_state_handle_.lookupTransform("yaw", imu_sensor_handle_.getFrameId(), ros::Time::now()));
+                     robot_state_handle_.lookupTransform("yaw", imu_sensor_handle_.getFrameId(), time));
   }
   catch (tf2::TransformException& ex)
   {
@@ -264,8 +264,8 @@ bool Controller::updateTf()
 {
   try
   {
-    map2pitch_ = robot_state_handle_.lookupTransform("map", ctrl_pitch_.joint_urdf_->child_link_name, ros::Time(0));
-    map2base_ = robot_state_handle_.lookupTransform("map", ctrl_yaw_.joint_urdf_->parent_link_name, ros::Time(0));
+    map2pitch_ = robot_state_handle_.lookupTransform("map", ctrl_pitch_.joint_urdf_->child_link_name, time);
+    map2base_ = robot_state_handle_.lookupTransform("map", ctrl_yaw_.joint_urdf_->parent_link_name, time);
   }
   catch (tf2::TransformException& ex)
   {
