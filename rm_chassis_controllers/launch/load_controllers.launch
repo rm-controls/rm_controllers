@@ -2,8 +2,6 @@
     <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, hero, engineer]"/>
     <arg name="ekf" default="false"/>
     <arg name="odom_tf" default="true"/>
-    <arg name="yaw_tf" default="false"/>
-    <arg name="mecanum_chassis" default="true"/>
 
     <rosparam file="$(find rm_chassis_controllers)/config/$(arg robot_type).yaml" command="load"/>
     <rosparam if="$(arg ekf)" param="controllers/chassis_controller/enable_odom_tf">false</rosparam>
@@ -22,11 +20,7 @@
           clear_params="true">
         <rosparam command="load" file="$(find rm_chassis_controllers)/config/localization.yaml"/>
     </node>
-    <node if="$(arg odom_tf)" pkg="tf" type="static_transform_publisher" name="odom_tf_publisher"
-          args="0 0 0 0 0 0 1 map odom 100"/>
 
-    <!--  for test !!! -->
-    <node if="$(arg yaw_tf)" pkg="tf" type="static_transform_publisher" name="yaw_tf_publisher"
-          args="0 0 0 1 0 0 0 map yaw 100"/>
-
+    <node if="$(arg base_link_tf)" pkg="tf2_ros" type="static_transform_publisher" name="odom_tf_publisher"
+          args="0 0 0 0 0 0 1 map base_link"/>
 </launch>
