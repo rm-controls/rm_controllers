@@ -21,6 +21,6 @@
         <rosparam command="load" file="$(find rm_chassis_controllers)/config/localization.yaml"/>
     </node>
 
-    <node if="$(arg base_link_tf)" pkg="tf2_ros" type="static_transform_publisher" name="odom_tf_publisher"
-          args="0 0 0 0 0 0 1 map base_link"/>
+    <node if="$(arg odom_tf)" pkg="tf2_ros" type="static_transform_publisher" name="odom_tf_publisher"
+          args="0 0 0 0 0 0 1 map odom"/>
 </launch>
