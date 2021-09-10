@@ -135,22 +135,46 @@ void RobotStateController::update(const ros::Time& time, const ros::Duration& /*
     tf_transform.child_frame_id = stripSlash(seg->second.tip);
     tf_static_transforms.push_back(tf_transform);
   }
-  // Loop over subscribe
-  for (const auto& item : tf_msg_.readFromRT()->transforms)
-  {
-    tf_transforms.push_back(item);
-  }
-  for (const auto& item : tf_static_msg_.readFromRT()->transforms)
-  {
-    tf_static_transforms.push_back(item);
-  }
-  tf_msg_.readFromRT()->transforms.clear();
-  tf_static_msg_.readFromRT()->transforms.clear();
-
   for (const auto& tran : tf_transforms)
     tf_buffer_->setTransform(tran, "robot_state_controller", false);
   for (const auto& tran : tf_static_transforms)
     tf_buffer_->setTransform(tran, "robot_state_controller", true);
+  tf_transforms.clear();
+  tf_static_transforms.clear();
+  // Loop over subscribe
+  for (const auto& item : tf_msg_.readFromRT()->transforms)
+  {
+    try
+    {
+      if (item.header.stamp !=
+          tf_buffer_->lookupTransform(item.child_frame_id, item.header.frame_id, item.header.stamp).header.stamp)
+        tf_transforms.push_back(item);
+    }
+    catch (tf2::TransformException& ex)
+    {
+      tf_transforms.push_back(item);
+    }
+  }
+  for (const auto& item : tf_static_msg_.readFromRT()->transforms)
+  {
+    try
+    {
+      if (item.header.stamp !=
+          tf_buffer_->lookupTransform(item.child_frame_id, item.header.frame_id, item.header.stamp).header.stamp)
+        tf_static_transforms.push_back(item);
+    }
+    catch (tf2::TransformException& ex)
+    {
+      tf_static_transforms.push_back(item);
+    }
+  }
+  tf_msg_.readFromRT()->transforms.clear();
+  tf_static_msg_.readFromRT()->transforms.clear();
+  for (const auto& tran : tf_transforms)
+    tf_buffer_->setTransform(tran, "outside", false);
+  for (const auto& tran : tf_static_transforms)
+    tf_buffer_->setTransform(tran, "outside", true);
+
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
     tf_broadcaster_.sendTransform(tf_transforms);
