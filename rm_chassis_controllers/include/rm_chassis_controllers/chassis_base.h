@@ -162,7 +162,7 @@ protected:
     TWIST
   };
   int state_ = GYRO;
-  RampFilter<double>*ramp_x{}, *ramp_y{}, *ramp_w{};
+  RampFilter<double>*ramp_x_{}, *ramp_y_{}, *ramp_w_{};
   std::string follow_source_frame_{};
 
   ros::Time last_publish_time_;
