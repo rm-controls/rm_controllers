@@ -59,7 +59,7 @@ struct Config
 };
 
 class Controller : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                                         hardware_interface::RobotStateInterface>
+                                                                         rm_control::RobotStateInterface>
 {
 public:
   Controller() = default;

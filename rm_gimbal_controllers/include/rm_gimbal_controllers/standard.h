@@ -61,7 +61,7 @@ struct Config
 };
 
 class Controller : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                                         hardware_interface::RobotStateInterface>
+                                                                         rm_control::RobotStateInterface>
 {
 public:
   Controller() = default;
@@ -89,7 +89,7 @@ private:
   ros::NodeHandle nh_moving_average_filter_;
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
-  hardware_interface::RobotStateHandle robot_state_handle_;
+  rm_control::RobotStateHandle robot_state_handle_;
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
   bullet_solver::BulletSolver* bullet_solver_{};

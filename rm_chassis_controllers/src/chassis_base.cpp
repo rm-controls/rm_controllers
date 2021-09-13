@@ -66,7 +66,7 @@ bool ChassisBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& r
     ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
-  robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
+  robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
 
   // Setup odometry realtime publisher + odom message constant fields
   odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "odom", 100));

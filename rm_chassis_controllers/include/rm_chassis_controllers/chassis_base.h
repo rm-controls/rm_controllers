@@ -58,31 +58,97 @@ struct Command
 };
 
 class ChassisBase : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                                          hardware_interface::RobotStateInterface>
+                                                                          rm_control::RobotStateInterface>
 {
 public:
   ChassisBase() = default;
+  /** @brief Get and check params for covariances. Setup odometry realtime publisher + odom message constant fields.
+   * init odom tf.
+   *
+   * @param robot_hw The robot hardware abstraction.
+   * @param root_nh A NodeHandle in the root of the controller manager namespace. This is where the ROS interfaces are
+   * setup (publishers, subscribers, services).
+   * @param controller_nh A NodeHandle in the namespace of the controller. This is where the controller-specific
+   * configuration resides.
+   * @return True if initialization was successful and the controller
+   * is ready to be started.
+   */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  /** @brief Receive real_time command from manual. Execute different action according to current mode. Set
+   * necessary params of chassis. Execute power limit.
+   *
+   * Receive real_time command from manual and check whether it is normally, if can not receive command from manual
+   * for a while, chassis's velocity will be set zero to avoid out of control. Execute different action according
+   * to current mode such as RAW, FOLLOW, GYRO, TWIST.(Their specific usage will be explain in the next). UpdateOdom,Set
+   * necessary params such as Acc and vel_tfed. Execute moving action and powerlimit.
+   *
+   * @param time The current time.
+   * @param period The time passed since the last call to update.
+   */
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 protected:
+  /** @briefThe The mode RAW: original state.
+   *
+   *  The mode raw: original state. Linear velocity will be set zero to stop move.
+   */
   void raw();
+  /** @brief The mode FOLLOW: chassis will follow gimbal.
+   *
+   * The mode FOLLOW: The chassis's direct will follow gimbal's direct all the time.
+   *
+   * @param time The current time.
+   * @param period The time passed since the last call to update.
+   */
   void follow(const ros::Time& time, const ros::Duration& period);
+  /** @brief The mode TWIST: Just moving chassis.
+   *
+   * The mode TWIST: Chassis will move independent and will not effect by gimbal's move.
+   *
+   * @param time The current time.
+   * @param period The time passed since the last call to update.
+   */
   void twist(const ros::Time& time, const ros::Duration& period);
+  /** @brief The mode GYRO: Moving like a top.
+   *
+   * The mode GYRO: Chassis will rotate around itself.
+   */
   void gyro();
   virtual void moveJoint(const ros::Time& time, const ros::Duration& period) = 0;
   virtual geometry_msgs::Twist forwardKinematics() = 0;
+  /** @brief Init frame on base_link. Integral vel to pos and angle.
+   *
+   * @param time The current time.
+   * @param period The time passed since the last call to update.
+   */
   void updateOdom(const ros::Time& time, const ros::Duration& period);
+  /** @brief Set chassis velocity to zero.
+   */
   void recovery();
+  /** @brief Transform tf velocity to base link frame.
+   *
+   * @param from The father frame.
+   */
   void tfVelToBase(const std::string& from);
+  /** @brief To limit the chassis power according to current power limit.
+   *
+   * Receive power limit from command. Set max_effort command to chassis to avoid exceed power limit.
+   */
   void powerLimit();
-
+  /** @brief Write current command from rm_msgs::ChassisCmd.
+   *
+   * @param msg This message contains various state parameter settings for basic chassis control
+   */
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr& msg);
+  /** @brief Write current command from  geometry_msgs::Twist.
+   *
+   * @param msg This expresses velocity in free space broken into its linear and angular parts.
+   */
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   std::vector<hardware_interface::JointHandle> joint_handles_{};
-  hardware_interface::RobotStateHandle robot_state_handle_{};
+  rm_control::RobotStateHandle robot_state_handle_{};
 
   double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, power_coeff_{},
       power_min_vel_{}, timeout_{};

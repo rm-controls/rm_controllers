@@ -52,7 +52,7 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
     return false;
   }
   for (int i = 0; i < actuators.size(); ++i)
-    actuators_.push_back(robot_hw->get<hardware_interface::ActuatorExtraInterface>()->getHandle(actuators[i]));
+    actuators_.push_back(robot_hw->get<rm_control::ActuatorExtraInterface>()->getHandle(actuators[i]));
   if (!controller_nh.getParam("search_velocity", vel_search_))
   {
     ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
