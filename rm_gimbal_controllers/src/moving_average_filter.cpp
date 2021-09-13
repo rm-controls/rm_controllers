@@ -43,7 +43,7 @@
 namespace moving_average_filter
 {
 MovingAverageFilterTrack::MovingAverageFilterTrack(ros::NodeHandle& nh, int id,
-                                                   hardware_interface::RobotStateHandle robot_state_handle)
+                                                   rm_control::RobotStateHandle robot_state_handle)
 {
   robot_state_handle_ = std::move(robot_state_handle);
   if (!nh.getParam("is_debug", is_debug_) || !nh.getParam("pos_data_num", pos_data_num_) ||

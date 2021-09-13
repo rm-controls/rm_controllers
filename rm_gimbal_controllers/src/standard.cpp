@@ -54,7 +54,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   nh_moving_average_filter_ = ros::NodeHandle(controller_nh, "moving_average_filter");
 
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
-  robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
+  robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
 
   int chassis_angular_data_num{};
   std::string detection_topic{}, camera_topic{};

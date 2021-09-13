@@ -82,8 +82,8 @@ bool RobotStateController::init(hardware_interface::RobotHW* robot_hw, ros::Node
   static_tf_broadcaster_.init(root_nh);
   tf_buffer_ = new tf2_ros::Buffer(ros::Duration(duration));
   tf_listener_ = new tf2_ros::TransformListener(*tf_buffer_);
-  hardware_interface::RobotStateHandle robot_state_handle("robot_state", tf_buffer_);
-  robot_hw->get<hardware_interface::RobotStateInterface>()->registerHandle(robot_state_handle);
+  rm_control::RobotStateHandle robot_state_handle("robot_state", tf_buffer_);
+  robot_hw->get<rm_control::RobotStateInterface>()->registerHandle(robot_state_handle);
 
   return true;
 }
