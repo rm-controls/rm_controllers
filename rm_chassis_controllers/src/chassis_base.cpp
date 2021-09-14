@@ -117,8 +117,12 @@ void ChassisBase::update(const ros::Time& time, const ros::Duration& period)
   }
   else
   {
-    vel_cmd_.x = cmd_vel.linear.x;
-    vel_cmd_.y = cmd_vel.linear.y;
+    ramp_x_->setAcc(cmd_chassis.accel.linear.x);
+    ramp_y_->setAcc(cmd_chassis.accel.linear.y);
+    ramp_x_->input(cmd_vel.linear.x);
+    ramp_y_->input(cmd_vel.linear.y);
+    vel_cmd_.x = ramp_x_->output();
+    vel_cmd_.y = ramp_y_->output();
     vel_cmd_.z = cmd_vel.angular.z;
   }
 
@@ -146,12 +150,10 @@ void ChassisBase::update(const ros::Time& time, const ros::Duration& period)
       break;
   }
 
-  ramp_x_->setAcc(cmd_chassis.accel.linear.x);
-  ramp_y_->setAcc(cmd_chassis.accel.linear.y);
   ramp_w_->setAcc(cmd_chassis.accel.angular.z);
-  ramp_x_->input(vel_tfed_.x);
-  ramp_y_->input(vel_tfed_.y);
-  ramp_w_->input(vel_tfed_.z);
+  ramp_w_->input(vel_cmd_.z);
+  vel_cmd_.z = ramp_w_->output();
+
   moveJoint(time, period);
   powerLimit();
 }
@@ -180,7 +182,7 @@ void ChassisBase::follow(const ros::Time& time, const ros::Duration& period)
               roll, pitch, yaw);
     double follow_error = angles::shortest_angular_distance(yaw, 0);
     pid_follow_.computeCommand(-follow_error, period);
-    vel_tfed_.z = pid_follow_.getCurrentCmd();
+    vel_cmd_.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException& ex)
   {
@@ -219,7 +221,7 @@ void ChassisBase::twist(const ros::Time& time, const ros::Duration& period)
         angles::shortest_angular_distance(yaw, twist_angular_ * sin(2 * M_PI * time.toSec()) + off_set);
 
     pid_follow_.computeCommand(-follow_error, period);  // The actual output is opposite to the calculated value
-    vel_tfed_.z = pid_follow_.getCurrentCmd();
+    vel_cmd_.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException& ex)
   {
@@ -248,7 +250,7 @@ void ChassisBase::raw()
 
     recovery();
   }
-  vel_tfed_ = vel_cmd_;
+  vel_cmd_ = vel_cmd_;
 }
 
 void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
@@ -308,11 +310,9 @@ void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
 
 void ChassisBase::recovery()
 {
-  geometry_msgs::Twist vel = forwardKinematics();
-
-  ramp_x_->clear(vel.linear.x);
-  ramp_y_->clear(vel.linear.y);
-  ramp_w_->clear(vel.angular.z);
+  ramp_x_->clear(vel_cmd_.x);
+  ramp_y_->clear(vel_cmd_.y);
+  ramp_w_->clear(vel_cmd_.z);
 }
 
 void ChassisBase::powerLimit()
@@ -346,7 +346,7 @@ void ChassisBase::tfVelToBase(const std::string& from)
 {
   try
   {
-    tf2::doTransform(vel_cmd_, vel_tfed_, robot_state_handle_.lookupTransform("base_link", from, ros::Time(0)));
+    tf2::doTransform(vel_cmd_, vel_cmd_, robot_state_handle_.lookupTransform("base_link", from, ros::Time(0)));
   }
   catch (tf2::TransformException& ex)
   {

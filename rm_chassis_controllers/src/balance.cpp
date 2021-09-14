@@ -98,8 +98,8 @@ geometry_msgs::Twist BalanceController::forwardKinematics()
 
 void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
-  x_ref_(2) = ramp_x_->output();
-  x_ref_(3) = ramp_w_->output();
+  x_ref_(2) = vel_cmd_.x;
+  x_ref_(3) = vel_cmd_.z;
 
   imu_data_ = *imu_rt_buffer_.readFromRT();
   double roll{}, pitch{}, yaw{};
