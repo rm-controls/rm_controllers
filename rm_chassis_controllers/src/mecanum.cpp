@@ -85,6 +85,5 @@ geometry_msgs::Twist MecanumController::forwardKinematics()
   vel_data.angular.z = 2 * (rf_velocity - lf_velocity - lb_velocity + rb_velocity) * k / (wheel_base_ + wheel_track_);
   return vel_data;
 }
-
 }  // namespace rm_chassis_controllers
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::MecanumController, controller_interface::ControllerBase)
