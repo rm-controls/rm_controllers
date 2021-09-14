@@ -74,6 +74,4 @@ private:
 
   effort_controllers::JointVelocityController ctrl_lf_, ctrl_rf_, ctrl_lb_, ctrl_rb_;
 };
-
 }  // namespace rm_chassis_controllers
-
