@@ -92,8 +92,7 @@ void SwerveController::moveJoint(const ros::Time& time, const ros::Duration& per
     // Direction flipping and Stray module mitigation
     double a = angles::shortest_angular_distance(module.ctrl_pivot_->joint_.getPosition(), vel_angle);
     double b = angles::shortest_angular_distance(module.ctrl_pivot_->joint_.getPosition(), vel_angle + M_PI);
-    if (std::abs(vel_cmd_.x) + std::abs(vel_cmd_.y) >= 0.01)
-      module.ctrl_pivot_->setCommand(std::abs(a) < std::abs(b) ? vel_angle : vel_angle + M_PI);
+    module.ctrl_pivot_->setCommand(std::abs(a) < std::abs(b) ? vel_angle : vel_angle + M_PI);
     module.ctrl_wheel_->setCommand(vel.norm() / module.wheel_radius_ * std::cos(a));
     module.ctrl_pivot_->update(time, period);
     module.ctrl_wheel_->update(time, period);
