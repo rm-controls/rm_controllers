@@ -250,7 +250,6 @@ void ChassisBase::raw()
 
     recovery();
   }
-  vel_cmd_ = vel_cmd_;
 }
 
 void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
@@ -291,7 +290,6 @@ void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
     }
   }
 
-  robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
     if (odom_pub_->trylock())
@@ -306,6 +304,8 @@ void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
       tf_broadcaster_.sendTransform(odom2base_);
     last_publish_time_ = time;
   }
+  else if (enable_odom_tf_)
+    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 }
 
 void ChassisBase::recovery()
