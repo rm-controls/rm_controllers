@@ -167,7 +167,7 @@ protected:
 
   ros::Time last_publish_time_;
   geometry_msgs::TransformStamped odom2base_{};
-  geometry_msgs::Vector3 vel_cmd_{};   // x, y
+  geometry_msgs::Vector3 vel_cmd_{};  // x, y
   control_toolbox::Pid pid_follow_;
 
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;

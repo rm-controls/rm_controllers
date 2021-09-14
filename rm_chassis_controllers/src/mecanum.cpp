@@ -87,5 +87,4 @@ geometry_msgs::Twist MecanumController::forwardKinematics()
 }
 
 }  // namespace rm_chassis_controllers
-
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::MecanumController, controller_interface::ControllerBase)
