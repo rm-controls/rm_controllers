@@ -19,7 +19,7 @@ class ComplementaryController
 public:
   ComplementaryController() = default;
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
-  void update(const ros::Time& time, const ros::Duration& /*period*/) override;
+  void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
   // Parameters:

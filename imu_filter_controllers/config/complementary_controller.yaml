@@ -1,3 +1,7 @@
 controllers:
   imu_filter_controller:
     type: imu_filter_controllers/ComplementaryController
+    name: "gimbal_imu"
+    do_bias_estimation: true
+    do_adaptive_gain: true
+    bias_alpha: 0.001
