@@ -29,10 +29,9 @@ private:
   // hardware_interface
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
   rm_control::ImuExtraHandle imu_extra_handle_;
-  //
+
   sensor_msgs::Temperature imu_temp_;
   sensor_msgs::TimeReference trigger_time_;
-  std::string frame_id;
 
   std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::Imu> > imu_data_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::Temperature> > imu_temp_pub_;
@@ -40,8 +39,7 @@ private:
 
   // State variables:
   imu_tools::ComplementaryFilter filter_;
-  ros::Time last_publish_time_;
   bool initialized_filter_;
 };
-}  // namespace imu_filter_controllers
 
+}  // namespace imu_filter_controllers

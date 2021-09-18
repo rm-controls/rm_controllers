@@ -99,7 +99,6 @@ void ComplementaryController::update(const ros::Time& time, const ros::Duration&
       trigger_time_pub_->msg_.time_ref = time;
       imu_data_pub_->unlockAndPublish();
     }
-    last_publish_time_ = time;
   }
 }
 
