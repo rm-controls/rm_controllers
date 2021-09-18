@@ -2,27 +2,35 @@ cmake_minimum_required(VERSION 3.0.2)
 project(imu_filter_controllers)
 
 find_package(catkin REQUIRED
-        COMPONENTS
-        roscpp
-        roslint
+    COMPONENTS
+    roscpp
+    roslint
 
-        imu_complementary_filter
-        rm_common
-        hardware_interface
-        )
+    rm_msgs
+    rm_common
+
+    pluginlib
+    imu_complementary_filter
+    hardware_interface
+    realtime_tools
+    )
 
 catkin_package(
-        INCLUDE_DIRS
-        include
-        LIBRARIES
-        ${PROJECT_NAME}
-        CATKIN_DEPENDS
-        roscpp
-        roslint
+    INCLUDE_DIRS
+    include
+    CATKIN_DEPENDS
+    roscpp
+    roslint
 
-        imu_complementary_filter
-        rm_common
-        hardware_interface
+    rm_msgs
+    rm_common
+
+    pluginlib
+    imu_complementary_filter
+    hardware_interface
+    controller_interface
+    realtime_tools
+    LIBRARIES ${PROJECT_NAME}
 )
 
 include_directories(

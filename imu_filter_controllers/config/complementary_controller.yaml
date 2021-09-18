@@ -1,0 +1,3 @@
+controllers:
+  imu_filter_controller:
+    type: imu_filter_controllers/ComplementaryController
