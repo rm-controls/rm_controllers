@@ -263,7 +263,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   quatToRPY(base_frame2des.transform.rotation, roll_des, pitch_des, yaw_des);
 
   ctrl_yaw_.setCommand(yaw_des, ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
-  ctrl_pitch_.setCommand(pitch_des, ctrl_yaw_.joint_.getVelocity() - angular_vel_pitch.y);
+  ctrl_pitch_.setCommand(pitch_des, ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
 }
