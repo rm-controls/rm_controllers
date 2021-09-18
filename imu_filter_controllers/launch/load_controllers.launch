@@ -1,0 +1,7 @@
+<launch>
+    <rosparam file="$(find imu_filter_controllers)/config/complementary_controller.yaml" command="load"/>
+    <!-- load the controllers -->
+    <node name="controller_spawner" pkg="controller_manager" type="spawner"
+          respawn="false" output="screen"
+          args="controllers/imu_filter_controller "/>
+</launch>

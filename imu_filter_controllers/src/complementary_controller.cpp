@@ -73,8 +73,8 @@ void ComplementaryController::update(const ros::Time& time, const ros::Duration&
     imu_data_pub_->msg_.header.frame_id = imu_sensor_handle_.getFrameId();
     return;
   }
-  const double* a = imu_sensor_handle_.getAngularVelocity();
-  const double* w = imu_sensor_handle_.getLinearAcceleration();
+  const double* a = imu_sensor_handle_.getLinearAcceleration();
+  const double* w = imu_sensor_handle_.getAngularVelocity();
 
   // Update the filter.
   filter_.update(a[0], a[1], a[2], w[0], w[1], w[2], period.toSec());
