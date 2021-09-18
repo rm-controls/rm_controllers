@@ -86,6 +86,7 @@ void ComplementaryController::update(const ros::Time& time, const ros::Duration&
   tf::Quaternion q(q1, q2, q3, q0);
   geometry_msgs::Quaternion quat;
   tf::quaternionTFToMsg(q, quat);
+  imu_extra_handle_.setOrientation(quat.x, quat.y, quat.z, quat.w);
   if (imu_extra_handle_.getCameraTrigger())
   {
     if (imu_data_pub_->trylock())
