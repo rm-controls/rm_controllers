@@ -21,7 +21,7 @@ bool Controller::init(hardware_interface::RobotHW *robot_hw,
     return false;
   }
   imu_sensor_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(imu_name);
-  robot_state_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
+  robot_state_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
 
 
   imu_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::Imu>(root_nh, "imu_data", 100));

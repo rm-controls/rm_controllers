@@ -16,7 +16,7 @@
 namespace rm_orientation_controller {
 class Controller :
     public controller_interface::MultiInterfaceController<hardware_interface::ImuSensorInterface,
-                                                          hardware_interface::RobotStateInterface> {
+                                                          rm_control::RobotStateInterface> {
  public:
   Controller() = default;
   bool init(hardware_interface::RobotHW *robot_hw,
@@ -27,7 +27,7 @@ class Controller :
   double publish_rate_{};
 
   hardware_interface::ImuSensorHandle imu_sensor_;
-  hardware_interface::RobotStateHandle robot_state_;
+  rm_control::RobotStateHandle robot_state_;
 
   rm_common::TfRtBroadcaster tf_broadcaster_{};
   geometry_msgs::TransformStamped source2target_msg_;
