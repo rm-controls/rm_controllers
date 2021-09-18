@@ -34,7 +34,7 @@
 //
 // Created by qiayuan on 1/16/21.
 //
-#include "rm_gimbal_controllers/standard.h"
+#include "rm_gimbal_controllers/gimbal_base.h"
 
 #include <string>
 #include <angles/angles.h>
