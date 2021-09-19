@@ -53,11 +53,11 @@ bool ComplementaryController::init(hardware_interface::RobotHW* robot_hw, ros::N
   imu_sensor_handle_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(name);
   imu_extra_handle_ = robot_hw->get<rm_control::ImuExtraInterface>()->getHandle(name);
 
-  imu_data_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::Imu>(controller_nh, "imu_data", 100));
+  imu_data_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::Imu>(root_nh, name + "/data", 100));
   imu_temp_pub_.reset(
-      new realtime_tools::RealtimePublisher<sensor_msgs::Temperature>(controller_nh, "imu_temperature", 100));
+      new realtime_tools::RealtimePublisher<sensor_msgs::Temperature>(root_nh, name + "/temperature", 100));
   trigger_time_pub_.reset(
-      new realtime_tools::RealtimePublisher<sensor_msgs::TimeReference>(controller_nh, "imu_trigger_time", 100));
+      new realtime_tools::RealtimePublisher<sensor_msgs::TimeReference>(root_nh, name + "/trigger_time", 100));
 
   return true;
 }
@@ -93,13 +93,29 @@ void ComplementaryController::update(const ros::Time& time, const ros::Duration&
     if (imu_data_pub_->trylock())
     {
       imu_data_pub_->msg_.header.stamp = time;
+      imu_data_pub_->msg_.angular_velocity.x = imu_sensor_handle_.getAngularVelocity()[0];
+      imu_data_pub_->msg_.angular_velocity.y = imu_sensor_handle_.getAngularVelocity()[1];
+      imu_data_pub_->msg_.angular_velocity.z = imu_sensor_handle_.getAngularVelocity()[2];
+      imu_data_pub_->msg_.linear_acceleration.x = imu_sensor_handle_.getLinearAcceleration()[0];
+      imu_data_pub_->msg_.linear_acceleration.y = imu_sensor_handle_.getLinearAcceleration()[1];
+      imu_data_pub_->msg_.linear_acceleration.z = imu_sensor_handle_.getLinearAcceleration()[2];
       imu_data_pub_->msg_.orientation.x = quat.x;
       imu_data_pub_->msg_.orientation.y = quat.y;
       imu_data_pub_->msg_.orientation.z = quat.z;
       imu_data_pub_->msg_.orientation.w = quat.w;
-      imu_temp_pub_->msg_.temperature = imu_extra_handle_.getTemperature();
-      trigger_time_pub_->msg_.time_ref = time;
       imu_data_pub_->unlockAndPublish();
+      imu_temp_pub_->unlockAndPublish();
+    }
+    if (imu_temp_pub_->trylock())
+    {
+      imu_temp_pub_->msg_.header.stamp = time;
+      imu_temp_pub_->msg_.temperature = imu_extra_handle_.getTemperature();
+      imu_temp_pub_->unlockAndPublish();
+    }
+    if (trigger_time_pub_->trylock())
+    {
+      trigger_time_pub_->msg_.time_ref = time;
+      trigger_time_pub_->unlockAndPublish();
     }
   }
 }
