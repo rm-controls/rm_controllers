@@ -70,6 +70,7 @@ void ComplementaryController::update(const ros::Time& time, const ros::Duration&
   if (!initialized_filter_)
   {
     initialized_filter_ = true;
+    last_update_ = time;
     imu_data_pub_->msg_.header.frame_id = imu_sensor_handle_.getFrameId();
     return;
   }
@@ -77,8 +78,8 @@ void ComplementaryController::update(const ros::Time& time, const ros::Duration&
   const double* w = imu_sensor_handle_.getAngularVelocity();
 
   // Update the filter.
-  filter_.update(a[0], a[1], a[2], w[0], w[1], w[2], period.toSec());
-
+  filter_.update(a[0], a[1], a[2], w[0], w[1], w[2], (time - last_update_).toSec());
+  last_update_ = time;
   double q0, q1, q2, q3;
   filter_.getOrientation(q0, q1, q2, q3);
   // ROS uses the Hamilton quaternion convention (q0 is the scalar). However,

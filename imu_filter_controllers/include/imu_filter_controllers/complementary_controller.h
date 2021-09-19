@@ -40,6 +40,7 @@ private:
   // State variables:
   imu_tools::ComplementaryFilter filter_;
   bool initialized_filter_;
+  ros::Time last_update_;
 };
 
 }  // namespace imu_filter_controllers
