@@ -1,13 +1,4 @@
 controllers:
-  robot_state_controller:
-    type: robot_state_controller/RobotStateController
-    publish_rate: 100
-  imu_sensor_controller:
-    type: imu_sensor_controller/ImuSensorController
-    publish_rate: 100
-  joint_state_controller:
-    type: joint_state_controller/JointStateController
-    publish_rate: 100
   chassis_controller:
     type: rm_chassis_controllers/MecanumController
     publish_rate: 100
