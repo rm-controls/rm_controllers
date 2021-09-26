@@ -13,17 +13,17 @@
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <sensor_msgs/Imu.h>
 
-namespace rm_orientation_controller {
-class Controller :
-    public controller_interface::MultiInterfaceController<hardware_interface::ImuSensorInterface,
-                                                          rm_control::RobotStateInterface> {
- public:
+namespace rm_orientation_controller
+{
+class Controller : public controller_interface::MultiInterfaceController<hardware_interface::ImuSensorInterface,
+                                                                         rm_control::RobotStateInterface>
+{
+public:
   Controller() = default;
-  bool init(hardware_interface::RobotHW *robot_hw,
-            ros::NodeHandle &root_nh, ros::NodeHandle &controller_nh) override;
-  void update(const ros::Time &time, const ros::Duration &period) override;
+  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  void update(const ros::Time& time, const ros::Duration& period) override;
 
- private:
+private:
   double publish_rate_{};
 
   hardware_interface::ImuSensorHandle imu_sensor_;
@@ -40,6 +40,6 @@ class Controller :
 
   std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::Imu> > imu_pub_;
 };
-};
+};  // namespace rm_orientation_controller
 
-#endif //SRC_RM_SOFTWARE_RM_CONTROLLERS_RM_ORIENTATION_CONTROLLERS_INCLUDE_ORIENTATION_CONTROLLER_H_
+#endif  // SRC_RM_SOFTWARE_RM_CONTROLLERS_RM_ORIENTATION_CONTROLLERS_INCLUDE_ORIENTATION_CONTROLLER_H_
