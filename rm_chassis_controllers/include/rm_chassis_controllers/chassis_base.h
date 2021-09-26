@@ -56,9 +56,8 @@ struct Command
   rm_msgs::ChassisCmd cmd_chassis_;
   ros::Time stamp_;
 };
-
-class ChassisBase : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                                          rm_control::RobotStateInterface>
+template <typename... T>
+class ChassisBase : public controller_interface::MultiInterfaceController<T...>
 {
 public:
   ChassisBase() = default;

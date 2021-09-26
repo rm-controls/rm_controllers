@@ -45,8 +45,8 @@
 
 namespace rm_chassis_controllers
 {
-class BalanceController : public ChassisBase
-{
+class BalanceController : public ChassisBase<hardware_interface::EffortJointInterface, rm_control::RobotStateInterface>
+{  // TODO(chenzhen) Add imu_sensor_interface
 public:
   BalanceController() = default;
   /** @brief Get necessary param. Init hardware interface. Creat publisher and subscriber.

@@ -41,7 +41,7 @@
 
 namespace rm_chassis_controllers
 {
-class SentryController : public ChassisBase
+class SentryController : public ChassisBase<hardware_interface::EffortJointInterface, rm_control::RobotStateInterface>
 {
 public:
   SentryController() = default;
