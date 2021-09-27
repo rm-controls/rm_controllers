@@ -288,6 +288,7 @@ void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
       odom2base_quat.normalize();
       odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
     }
+    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
   }
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
@@ -304,8 +305,6 @@ void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
       tf_broadcaster_.sendTransform(odom2base_);
     last_publish_time_ = time;
   }
-  else if (enable_odom_tf_)
-    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 }
 
 void ChassisBase::recovery()
