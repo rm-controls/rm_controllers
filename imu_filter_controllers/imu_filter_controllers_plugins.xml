@@ -1,0 +1,9 @@
+<library path="lib/libimu_filter_controllers">
+
+    <class name="imu_filter_controllers/ComplementaryController" type="imu_filter_controllers::ComplementaryController"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+        </description>
+    </class>
+
+</library>

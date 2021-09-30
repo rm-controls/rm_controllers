@@ -33,7 +33,6 @@ private:
   geometry_msgs::TransformStamped source2target_msg_;
 
   ros::Time last_br_;
-  std::string frame_fixed_;
   std::string frame_source_;
   std::string frame_target_;
   double last_orientation_x, last_orientation_y;
