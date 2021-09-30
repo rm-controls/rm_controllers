@@ -84,6 +84,7 @@ private:
   bool use_tf_static_{};
   bool ignore_timestamp_{};
   double publish_rate_{};
+  ros::Time last_update_;
   ros::Time last_publish_time_;
 
   std::map<std::string, hardware_interface::JointStateHandle> jnt_states_;
