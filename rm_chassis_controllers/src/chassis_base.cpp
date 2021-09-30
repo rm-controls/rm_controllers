@@ -40,10 +40,13 @@
 #include <rm_common/ori_tool.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <angles/angles.h>
+#include <hardware_interface/imu_sensor_interface.h>
 
 namespace rm_chassis_controllers
 {
-template class ChassisBase<hardware_interface::EffortJointInterface, rm_control::RobotStateInterface>;
+template class ChassisBase<rm_control::RobotStateInterface, hardware_interface::EffortJointInterface>;
+template class ChassisBase<rm_control::RobotStateInterface, hardware_interface::ImuSensorInterface,
+                           hardware_interface::EffortJointInterface>;
 
 template <typename... T>
 bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,

@@ -38,15 +38,15 @@
 #pragma once
 
 #include "rm_chassis_controllers/chassis_base.h"
-#include <sensor_msgs/Imu.h>
-#include <nav_msgs/Odometry.h>
-#include <Eigen/Dense>
+
 #include <rm_common/lqr.h>
+#include <hardware_interface/imu_sensor_interface.h>
 
 namespace rm_chassis_controllers
 {
-class BalanceController : public ChassisBase<hardware_interface::EffortJointInterface, rm_control::RobotStateInterface>
-{  // TODO(chenzhen) Add imu_sensor_interface
+class BalanceController : public ChassisBase<rm_control::RobotStateInterface, hardware_interface::ImuSensorInterface,
+                                             hardware_interface::EffortJointInterface>
+{
 public:
   BalanceController() = default;
   /** @brief Get necessary param. Init hardware interface. Creat publisher and subscriber.
@@ -87,19 +87,13 @@ private:
    * @return Calculated vel_data included linear_x and angular_z
    */
   geometry_msgs::Twist forwardKinematics() override;
-  /** @brief Write current command from sensor_msgs::Imu.
-   *
-   * @param data This is a message to hold data from an IMU (Inertial Measurement Unit)
-   */
-  void dataImuCallback(const sensor_msgs::ImuConstPtr& data);
 
   hardware_interface::JointHandle joint_left_, joint_right_;
-  ros::Subscriber data_imu_sub_;
-  ros::Publisher state_real_pub_;
-  realtime_tools::RealtimeBuffer<sensor_msgs::Imu> imu_rt_buffer_;
-  sensor_msgs::Imu imu_data_;
+  hardware_interface::ImuSensorHandle imu_sensor_handle_;
 
-  // class member about full state feedback controller
+  ros::Publisher state_real_pub_;
+
+  // Class member about full state feedback controller
   static const int STATE_DIM = 4;
   static const int CONTROL_DIM = 2;
   Eigen::Matrix<double, STATE_DIM, 1> x_{}, x_ref_{};
