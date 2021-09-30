@@ -52,7 +52,7 @@ struct Module
   effort_controllers::JointVelocityController* ctrl_wheel_;
 };
 
-class SwerveController : public ChassisBase<hardware_interface::EffortJointInterface, rm_control::RobotStateInterface>
+class SwerveController : public ChassisBase<rm_control::RobotStateInterface, hardware_interface::EffortJointInterface>
 {
 public:
   SwerveController() = default;
