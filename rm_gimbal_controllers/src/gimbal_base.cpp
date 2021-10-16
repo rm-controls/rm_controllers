@@ -228,7 +228,9 @@ void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des)
   double yaw_delta = angles::shortest_angular_distance(yaw_base, yaw_des);
   map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(
       0.,
-      pitch_delta <= ctrl_pitch_.joint_urdf_->limits->upper && pitch_delta >= ctrl_pitch_.joint_urdf_->limits->lower ?
+      (pitch_delta <= ctrl_pitch_.joint_urdf_->limits->upper && pitch_delta >= ctrl_pitch_.joint_urdf_->limits->lower) ||
+              (angles::two_pi_complement(pitch_delta) <= ctrl_pitch_.joint_urdf_->limits->upper &&
+               angles::two_pi_complement(pitch_delta) >= ctrl_pitch_.joint_urdf_->limits->lower) ?
           pitch_des :
           pitch_now,
       (yaw_delta <= ctrl_yaw_.joint_urdf_->limits->upper && yaw_delta >= ctrl_yaw_.joint_urdf_->limits->lower) ||
