@@ -10,4 +10,4 @@
 ## Documentation
 [rm-controls Documentation](https://rm-controls.github.io/)
 
-[rm-control Doxygen Documentation](https://rm-controls.github.io/rm_controllers/index.html)
+[rm-control Doxygen Documentation](https://rm-controller.netlify.app/)
