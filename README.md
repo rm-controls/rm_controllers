@@ -8,6 +8,6 @@
 ### Licenses
 [![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Frm-controls%2Frm_controllers.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Frm-controls%2Frm_controllers?ref=badge_large)
 ## Documentation
-[rm-controls Documentation](https://rm-controls.github.io/)
+[rm-controls Documentation](https://rm-controls-docs.pages.dev/)
 
-[rm-control Doxygen Documentation](https://rm-controls.github.io/rm_controllers/index.html)
+[rm-control Doxygen Documentation](https://rm-controller.netlify.app/)
