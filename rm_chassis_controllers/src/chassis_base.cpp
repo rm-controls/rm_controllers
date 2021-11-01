@@ -332,44 +332,28 @@ void ChassisBase<T...>::recovery()
 template <typename... T>
 void ChassisBase<T...>::powerLimit()
 {
-  std::vector<double> cmd_effort;
-  std::vector<double> real_vel;
-  double total_power{ 0.0 };
   double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
-  int i = 0;
-  for (const auto& joint : joint_handles_)  // Loop all chassis joint
+  // Three coefficients of a quadratic equation in one variable
+  double a = 0., b = 0., c = 0.;
+  for (const auto& joint : joint_handles_)
   {
-    // The pivot joint of swerve drive doesn't need power limit
-    if (joint.getName().find("wheel") != std::string::npos)
+    double cmd_effort = joint.getCommand();
+    double real_vel = joint.getVelocity();
+    if (joint.getName().find("wheel") != std::string::npos)  // The pivot joint of swerve drive doesn't need power limit
     {
-      cmd_effort.push_back(joint.getCommand());
-      real_vel.push_back(joint.getVelocity());
-      total_power += std::abs(cmd_effort[i] * real_vel[i]) + effort_coeff_ * square(cmd_effort[i]) +
-                     velocity_coeff_ * square(real_vel[i]);
-      i++;
+      a += square(cmd_effort);
+      b += std::abs(cmd_effort * real_vel);
+      c += square(real_vel);
     }
   }
-  i = 0;
-  if (total_power < power_limit)
+  a *= effort_coeff_;
+  c = c * velocity_coeff_ - power_limit;
+  // Root formula for quadratic equation in one variable
+  double zoom_coeff = (-b + sqrt(square(b) - 4 * a * c)) / (2 * a);
+  if (zoom_coeff > 1)
     return;
   else
   {
-    // Three coefficients of a quadratic equation in one variable
-    double a{ 0.0 }, b{ 0.0 }, c{ 0.0 };
-    for (const auto& joint : joint_handles_)
-    {
-      if (joint.getName().find("wheel") != std::string::npos)
-      {
-        a += square(cmd_effort[i]);
-        b += std::abs(cmd_effort[i] * real_vel[i]);
-        c += square(real_vel[i]);
-        i++;
-      }
-    }
-    a *= effort_coeff_;
-    c = c * velocity_coeff_ - power_limit;
-    // Root formula for quadratic equation in one variable
-    double zoom_coeff = (-b + sqrt(square(b) - 4 * a * c)) / (2 * a);
     for (auto joint : joint_handles_)
       if (joint.getName().find("wheel") != std::string::npos)
       {
