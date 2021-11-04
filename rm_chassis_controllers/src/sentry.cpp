@@ -53,7 +53,6 @@ bool SentryController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
     return false;
   if (!ctrl_brake_joint_.init(effort_joint_interface_, nh_brake))
     return false;
-  zero_position_ = ctrl_brake_joint_.getPosition();
   run_state_ = NORMAL;
   joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_wheel_.getJointName()));
   joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_brake_joint_.getJointName()));
@@ -63,40 +62,32 @@ bool SentryController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
 void SentryController::update(const ros::Time& time, const ros::Duration& period)
 {
   if (last_vel_cmd_ * vel_cmd_.x < 0)
-    run_state_ = BRAKE;
+    run_state_ = CATAPULT;
   last_vel_cmd_ = vel_cmd_.x;
   if (run_state_ == NORMAL)
   {
     ChassisBase::update(time, period);
     catapult_initial_velocity_ = ctrl_wheel_.joint_.getVelocity();
   }
-  else if (run_state_ == BRAKE)
-    brake(time, period);
+  else
+    catapult(time, period);
 }
 
 void SentryController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
   ctrl_wheel_.setCommand(vel_cmd_.x / wheel_radius_);
-  ctrl_brake_joint_.setCommand(zero_position_);
+  ctrl_brake_joint_.setCommand(0.);
   ctrl_wheel_.update(time, period);
   ctrl_brake_joint_.update(time, period);
 }
 
-void SentryController::brake(const ros::Time& time, const ros::Duration& period)
+void SentryController::catapult(const ros::Time& time, const ros::Duration& period)
 {
-  if (catapult_initial_velocity_ > 0)
-  {
-    ctrl_brake_joint_.setCommand(zero_position_ + brake_angle_);
-  }
-  else
-  {
-    ctrl_brake_joint_.setCommand(zero_position_ - brake_angle_);
-  }
-  double real_vel = ctrl_wheel_.joint_.getVelocity();
-  if ((catapult_initial_velocity_ * real_vel < 0) &&
-      (std::abs(real_vel) > std::abs(catapult_initial_velocity_ * vel_coff_)))
+  ctrl_brake_joint_.setCommand(catapult_initial_velocity_ > 0 ? brake_angle_ : -brake_angle_);
+  if ((catapult_initial_velocity_ * ctrl_wheel_.joint_.getVelocity() < 0) &&
+      (std::abs(ctrl_wheel_.joint_.getVelocity()) > std::abs(catapult_initial_velocity_ * vel_coff_)))
     run_state_ = NORMAL;
-  if (run_state_ == BRAKE)
+  if (run_state_ == CATAPULT)
   {
     ctrl_wheel_.joint_.setCommand(0.);
     ctrl_brake_joint_.update(time, period);

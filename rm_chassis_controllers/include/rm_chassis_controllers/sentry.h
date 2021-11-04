@@ -66,7 +66,7 @@ private:
    * @param period The time passed since the last call to update.
    */
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
-  void brake(const ros::Time& time, const ros::Duration& period);
+  void catapult(const ros::Time& time, const ros::Duration& period);
   /** @brief Calculate current linear_x according to current velocity.
    *
    * @return Calculated vel_data included linear_x.
@@ -78,10 +78,9 @@ private:
   enum
   {
     NORMAL,
-    BRAKE,
+    CATAPULT,
   };
   int run_state_;
-  double zero_position_;
   double catapult_initial_velocity_;
   double brake_angle_;
   double vel_coff_;
