@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Add custom source
-        run: |
-          wget -O - https://rmsource.gdutelc.com/ubuntu/key/public.key | sudo apt-key add -
-          echo "deb https://rmsource.gdutelc.com/ubuntu/ focal main" | sudo tee -a /etc/apt/sources.list
       - uses: ros-tooling/setup-ros@v0.2
         with:
           required-ros-distributions: noetic
+      - name: Add custom source
+        run: |
+          wget -O - https://rmsource.gdutelc.com/ubuntu/key/public.key | sudo apt-key add -
+          echo "deb https://rmsource.gdutelc.com/ubuntu/ focal main" | sudo tee -a /etc/apt/sources.list.d/ros-latest.list
       - uses: ros-tooling/action-ros-ci@v0.2
         with:
           target-ros1-distro: noetic
