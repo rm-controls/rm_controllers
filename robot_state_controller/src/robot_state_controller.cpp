@@ -100,8 +100,14 @@ std::string stripSlash(const std::string& in)
   return in;
 }
 
-void RobotStateController::update(const ros::Time& time, const ros::Duration& /*period*/)
+void RobotStateController::update(const ros::Time& time, const ros::Duration& period)
 {
+  if (last_update_ > time)
+  {
+    ROS_WARN("Moved backwards in time (probably because ROS clock was reset), clear all tf buffer!");
+    tf_buffer_->clear();
+  }
+  last_update_ = time;
   std::vector<geometry_msgs::TransformStamped> tf_transforms, tf_static_transforms;
   geometry_msgs::TransformStamped tf_transform;
   // Loop over all float segments

@@ -40,10 +40,17 @@
 #include <rm_common/ori_tool.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <angles/angles.h>
+#include <hardware_interface/imu_sensor_interface.h>
 
 namespace rm_chassis_controllers
 {
-bool ChassisBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
+template class ChassisBase<rm_control::RobotStateInterface, hardware_interface::EffortJointInterface>;
+template class ChassisBase<rm_control::RobotStateInterface, hardware_interface::ImuSensorInterface,
+                           hardware_interface::EffortJointInterface>;
+
+template <typename... T>
+bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
+                             ros::NodeHandle& controller_nh)
 {
   if (!controller_nh.getParam("publish_rate", publish_rate_) || !controller_nh.getParam("power/coeff", power_coeff_) ||
       !controller_nh.getParam("power/min_vel", power_min_vel_) || !controller_nh.getParam("timeout", timeout_))
@@ -65,8 +72,8 @@ bool ChassisBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& r
   for (int i = 0; i < twist_cov_list.size(); ++i)
     ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
-  effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
+  effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
 
   // Setup odometry realtime publisher + odom message constant fields
   odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "odom", 100));
@@ -104,7 +111,8 @@ bool ChassisBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& r
   return true;
 }
 
-void ChassisBase::update(const ros::Time& time, const ros::Duration& period)
+template <typename... T>
+void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& period)
 {
   rm_msgs::ChassisCmd cmd_chassis = cmd_rt_buffer_.readFromRT()->cmd_chassis_;
   geometry_msgs::Twist cmd_vel = cmd_rt_buffer_.readFromRT()->cmd_vel_;
@@ -158,7 +166,8 @@ void ChassisBase::update(const ros::Time& time, const ros::Duration& period)
   powerLimit();
 }
 
-void ChassisBase::follow(const ros::Time& time, const ros::Duration& period)
+template <typename... T>
+void ChassisBase<T...>::follow(const ros::Time& time, const ros::Duration& period)
 {
   if (state_changed_)
   {
@@ -190,7 +199,8 @@ void ChassisBase::follow(const ros::Time& time, const ros::Duration& period)
   }
 }
 
-void ChassisBase::twist(const ros::Time& time, const ros::Duration& period)
+template <typename... T>
+void ChassisBase<T...>::twist(const ros::Time& time, const ros::Duration& period)
 {
   if (state_changed_)
   {
@@ -229,7 +239,8 @@ void ChassisBase::twist(const ros::Time& time, const ros::Duration& period)
   }
 }
 
-void ChassisBase::gyro()
+template <typename... T>
+void ChassisBase<T...>::gyro()
 {
   if (state_changed_)
   {
@@ -241,7 +252,8 @@ void ChassisBase::gyro()
   tfVelToBase("yaw");
 }
 
-void ChassisBase::raw()
+template <typename... T>
+void ChassisBase<T...>::raw()
 {
   if (state_changed_)
   {
@@ -252,7 +264,8 @@ void ChassisBase::raw()
   }
 }
 
-void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
+template <typename... T>
+void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& period)
 {
   geometry_msgs::Twist vel_base = forwardKinematics();  // on base_link frame
   if (enable_odom_tf_)
@@ -288,6 +301,7 @@ void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
       odom2base_quat.normalize();
       odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
     }
+    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
   }
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
@@ -304,18 +318,18 @@ void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
       tf_broadcaster_.sendTransform(odom2base_);
     last_publish_time_ = time;
   }
-  else if (enable_odom_tf_)
-    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 }
 
-void ChassisBase::recovery()
+template <typename... T>
+void ChassisBase<T...>::recovery()
 {
   ramp_x_->clear(vel_cmd_.x);
   ramp_y_->clear(vel_cmd_.y);
   ramp_w_->clear(vel_cmd_.z);
 }
 
-void ChassisBase::powerLimit()
+template <typename... T>
+void ChassisBase<T...>::powerLimit()
 {
   double total_effort = 0.0;
   double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
@@ -342,7 +356,8 @@ void ChassisBase::powerLimit()
   }
 }
 
-void ChassisBase::tfVelToBase(const std::string& from)
+template <typename... T>
+void ChassisBase<T...>::tfVelToBase(const std::string& from)
 {
   try
   {
@@ -354,13 +369,15 @@ void ChassisBase::tfVelToBase(const std::string& from)
   }
 }
 
-void ChassisBase::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr& msg)
+template <typename... T>
+void ChassisBase<T...>::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr& msg)
 {
   cmd_struct_.cmd_chassis_ = *msg;
   cmd_rt_buffer_.writeFromNonRT(cmd_struct_);
 }
 
-void ChassisBase::cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg)
+template <typename... T>
+void ChassisBase<T...>::cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
   cmd_struct_.cmd_vel_ = *msg;
   cmd_struct_.stamp_ = ros::Time::now();

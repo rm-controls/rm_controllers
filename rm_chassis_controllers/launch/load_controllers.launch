@@ -6,21 +6,12 @@
     <rosparam file="$(find rm_chassis_controllers)/config/$(arg robot_type).yaml" command="load"/>
     <rosparam if="$(arg ekf)" param="controllers/chassis_controller/enable_odom_tf">false</rosparam>
 
-
-    <!-- load the controllers -->
-    <node name="controller_spawner" pkg="controller_manager" type="spawner"
-          respawn="false" output="screen"
-          args="
-          controllers/robot_state_controller
-          controllers/joint_state_controller
-          controllers/chassis_controller
-  "/>
-
+    <node name="controller_loader" pkg="controller_manager" type="controller_manager" output="screen"
+          args="load controllers/chassis_controller"/>
     <node if="$(arg ekf)" pkg="robot_localization" type="ekf_localization_node" name="ekf_localization"
           clear_params="true">
         <rosparam command="load" file="$(find rm_chassis_controllers)/config/localization.yaml"/>
     </node>
-
     <node if="$(arg odom_tf)" pkg="tf2_ros" type="static_transform_publisher" name="odom_tf_publisher"
           args="0 0 0 0 0 0 1 map odom"/>
 </launch>

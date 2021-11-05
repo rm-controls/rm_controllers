@@ -1,0 +1,12 @@
+<library path="lib/librm_orientation_controller">
+
+    <class name="rm_orientation_controller/Controller" type="rm_orientation_controller::Controller"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+            The Controller is RoboMaster robot Orientation controller. It expects a EffortJointInterface type of
+            hardware
+            interface.
+        </description>
+    </class>
+
+</library>
