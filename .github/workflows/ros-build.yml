@@ -1,0 +1,31 @@
+
+name: ros-build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ros-tooling/setup-ros@v0.2
+        with:
+          required-ros-distributions: noetic
+      - uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          target-ros1-distro: noetic
+      - name: Package deb
+        run: ./.github/scripts/package.sh
+      - name: deploy file
+        uses: wlixcc/SFTP-Deploy-Action@v1.0
+        with:
+          username: '${{ secrets.SOURCE_SSH_NAME }}'
+          server: '${{ secrets.SOURCE_SSH_HOST }}'
+          ssh_private_key: ${{ secrets.SOURCE_SSH_KEYGEN }}
+          local_path: './*.{deb,ddeb}'
+          remote_path: '/usr/local/web/rm-source/ubuntu/incoming'
+          args: '-o ConnectTimeout=5'
