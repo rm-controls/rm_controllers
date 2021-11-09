@@ -52,9 +52,10 @@ template <typename... T>
 bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
                              ros::NodeHandle& controller_nh)
 {
-  if (!controller_nh.getParam("publish_rate", publish_rate_) ||
+  if (!controller_nh.getParam("publish_rate", publish_rate_) || !controller_nh.getParam("timeout", timeout_) ||
       !controller_nh.getParam("power/vel_coeff", velocity_coeff_) ||
-      !controller_nh.getParam("power/effort_coeff", effort_coeff_) || !controller_nh.getParam("timeout", timeout_))
+      !controller_nh.getParam("power/effort_coeff", effort_coeff_) ||
+      !controller_nh.getParam("power/power_offset", power_offset_))
   {
     ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
@@ -347,20 +348,14 @@ void ChassisBase<T...>::powerLimit()
     }
   }
   a *= effort_coeff_;
-  c = c * velocity_coeff_ - power_limit;
+  c = c * velocity_coeff_ - power_offset_ - power_limit;
   // Root formula for quadratic equation in one variable
   double zoom_coeff = (-b + sqrt(square(b) - 4 * a * c)) / (2 * a);
-  if (zoom_coeff > 1)
-    return;
-  else
-  {
-    for (auto joint : joint_handles_)
-      if (joint.getName().find("wheel") != std::string::npos)
-      {
-        double cmd = joint.getCommand();
-        joint.setCommand(cmd * zoom_coeff);
-      }
-  }
+  for (auto joint : joint_handles_)
+    if (joint.getName().find("wheel") != std::string::npos)
+    {
+      joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
+    }
 }
 
 template <typename... T>
