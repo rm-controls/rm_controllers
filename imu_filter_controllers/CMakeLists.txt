@@ -41,6 +41,7 @@ include_directories(
 
 ## Declare a C++ executable
 add_library(${PROJECT_NAME}
+        src/imu_filter_base.cpp
         src/complementary_controller.cpp
         )
 
