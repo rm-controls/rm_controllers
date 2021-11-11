@@ -43,6 +43,7 @@ include_directories(
 add_library(${PROJECT_NAME}
         src/imu_filter_base.cpp
         src/complementary_controller.cpp
+        src/madgwick_controller.cpp
         )
 
 target_link_libraries(${PROJECT_NAME}

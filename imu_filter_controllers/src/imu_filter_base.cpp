@@ -64,6 +64,19 @@ void ImuFilterBase::update(const ros::Time& time, const ros::Duration& period)
       imu_data_pub_->msg_.orientation.y = quat.y;
       imu_data_pub_->msg_.orientation.z = quat.z;
       imu_data_pub_->msg_.orientation.w = quat.w;
+      imu_data_pub_->msg_.orientation_covariance = { imu_sensor_handle_.getOrientationCovariance()[0], 0., 0., 0.,
+                                                     imu_sensor_handle_.getOrientationCovariance()[4], 0., 0., 0.,
+                                                     imu_sensor_handle_.getOrientationCovariance()[8] };
+      imu_data_pub_->msg_.angular_velocity_covariance = {
+        imu_sensor_handle_.getAngularVelocityCovariance()[0], 0., 0., 0.,
+        imu_sensor_handle_.getAngularVelocityCovariance()[4], 0., 0., 0.,
+        imu_sensor_handle_.getAngularVelocityCovariance()[8]
+      };
+      imu_data_pub_->msg_.linear_acceleration_covariance = {
+        imu_sensor_handle_.getLinearAccelerationCovariance()[0], 0., 0., 0.,
+        imu_sensor_handle_.getLinearAccelerationCovariance()[4], 0., 0., 0.,
+        imu_sensor_handle_.getLinearAccelerationCovariance()[8]
+      };
       imu_data_pub_->unlockAndPublish();
     }
     if (imu_temp_pub_->trylock())

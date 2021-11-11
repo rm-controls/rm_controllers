@@ -12,7 +12,6 @@ bool ComplementaryController::getFilterParam(ros::NodeHandle& controller_nh)
   double bias_alpha;
   bool do_adaptive_gain;
   controller_nh.param("use_mag", use_mag_, false);
-  controller_nh.param("publish_debug_topics", publish_debug_topics_, false);
   controller_nh.param("gain_acc", gain_acc, 0.01);
   controller_nh.param("gain_mag", gain_mag, 0.01);
   controller_nh.param("do_bias_estimation", do_bias_estimation, true);
