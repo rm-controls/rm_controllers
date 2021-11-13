@@ -49,7 +49,7 @@ bool SentryController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
   ros::NodeHandle nh_brake = ros::NodeHandle(controller_nh, "brake_joint");
   if (!nh_brake.getParam("brake_angle", brake_angle_) || !nh_brake.getParam("velocity_coefficient", vel_coff_))
   {
-    ROS_ERROR("Could not find parameters: brake_angel or velocity_coefficient");
+    ROS_ERROR("Could not find parameters: brake_angle or velocity_coefficient");
   }
   if (!ctrl_wheel_.init(effort_joint_interface_, nh_wheel) || !ctrl_brake_joint_.init(effort_joint_interface_, nh_brake))
     return false;
