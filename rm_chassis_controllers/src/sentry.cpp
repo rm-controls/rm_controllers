@@ -47,8 +47,10 @@ bool SentryController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
   ChassisBase::init(robot_hw, root_nh, controller_nh);
   ros::NodeHandle nh_wheel = ros::NodeHandle(controller_nh, "wheel");
   ros::NodeHandle nh_brake = ros::NodeHandle(controller_nh, "brake_joint");
-  nh_brake.getParam("brake_angle", brake_angle_);
-  nh_brake.getParam("velocity_coefficient", vel_coff_);
+  if( nh_brake.getParam("brake_angle", brake_angle_) && nh_brake.getParam("velocity_coefficient", vel_coff_) )
+  {
+      ROS_ERROR("Could not find parameters");
+  }
   if (!ctrl_wheel_.init(effort_joint_interface_, nh_wheel))
     return false;
   if (!ctrl_brake_joint_.init(effort_joint_interface_, nh_brake))
@@ -61,9 +63,9 @@ bool SentryController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
 
 void SentryController::update(const ros::Time& time, const ros::Duration& period)
 {
-  if (last_vel_cmd_ * vel_cmd_.x < 0)
+    if ( last_vel_cmd_ * cmd_rt_buffer_.readFromRT()->cmd_vel_.linear.x < 0 )
     run_state_ = CATAPULT;
-  last_vel_cmd_ = vel_cmd_.x;
+    last_vel_cmd_ = cmd_rt_buffer_.readFromRT()->cmd_vel_.linear.x ;
   if (run_state_ == NORMAL)
   {
     ChassisBase::update(time, period);
