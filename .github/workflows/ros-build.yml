@@ -24,6 +24,7 @@ jobs:
           sed -e "s/\"//g" | \
           sed -e "s/browser_download_url://g" |\
           sed -e "s/^[ \t]*//g" ) && \
+          sudo apt-get -f -y install && \
           sudo dpkg -i *.deb
       - uses: ros-tooling/action-ros-ci@v0.2
         with:
