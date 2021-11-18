@@ -15,9 +15,6 @@ jobs:
       - uses: ros-tooling/setup-ros@v0.2
         with:
           required-ros-distributions: noetic
-      - uses: ros-tooling/action-ros-ci@v0.2
-        with:
-          target-ros1-distro: noetic
       - name: Add custom source
         run: |
           mkdir /tmp/custom
@@ -27,8 +24,11 @@ jobs:
           sed -e "s/\"//g" | \
           sed -e "s/browser_download_url://g" |\
           sed -e "s/^[ \t]*//g" ) && \
-          sudo apt-get -f -y install && \
-          sudo dpkg -i *.deb
+          sudo dpkg -i *.deb || \
+          sudo apt-get -f -y install 
+      - uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          target-ros1-distro: noetic
       - name: Package deb
         run: ./.github/scripts/package.sh
       - name: deploy file
