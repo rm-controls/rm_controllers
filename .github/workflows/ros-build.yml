@@ -25,7 +25,7 @@ jobs:
           sed -e "s/browser_download_url://g" |\
           sed -e "s/^[ \t]*//g" ) && \
           sudo dpkg -i *.deb || \
-          sudo apt-get -f -y install 
+          sudo apt-get -f -y install
       - uses: ros-tooling/action-ros-ci@v0.2
         with:
           target-ros1-distro: noetic
