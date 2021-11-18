@@ -1,0 +1,42 @@
+
+name: ros-build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ros-tooling/setup-ros@v0.2
+        with:
+          required-ros-distributions: noetic
+      - name: Add custom source
+        run: |
+          mkdir /tmp/custom
+          cd /tmp/custom
+          wget -i <( curl https://api.github.com/repos/rm-controls/rm_control/releases/latest | \
+          grep  "browser_download_url" | \
+          sed -e "s/\"//g" | \
+          sed -e "s/browser_download_url://g" |\
+          sed -e "s/^[ \t]*//g" ) && \
+          sudo dpkg -i *.deb || \
+          sudo apt-get -f -y install
+      - uses: ros-tooling/action-ros-ci@v0.2
+        with:
+          target-ros1-distro: noetic
+      - name: Package deb
+        run: ./.github/scripts/package.sh
+      - name: deploy file
+        uses: wlixcc/SFTP-Deploy-Action@v1.0
+        with:
+          username: '${{ secrets.SOURCE_SSH_NAME }}'
+          server: '${{ secrets.SOURCE_SSH_HOST }}'
+          ssh_private_key: ${{ secrets.SOURCE_SSH_KEYGEN }}
+          local_path: './*.{deb,ddeb}'
+          remote_path: '/usr/local/web/rm-source/ubuntu/incoming'
+          args: '-o ConnectTimeout=5'
