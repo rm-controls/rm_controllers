@@ -17,8 +17,13 @@ jobs:
           required-ros-distributions: noetic
       - name: Add custom source
         run: |
-          wget -O - https://rmsource.gdutelc.com/ubuntu/key/public.key | sudo apt-key add -
-          echo "deb https://rmsource.gdutelc.com/ubuntu/ focal main" | sudo tee -a /etc/apt/sources.list.d/ros-latest.list
+          cd /tmp/custom
+          wget -O - `curl https://api.github.com/repos/rm-controls/rm_control/releases/latest | \
+          grep  "browser_download_url" | \
+          sed -e "s/\"//g" | \
+          sed -e "s/browser_download_url://g" |\
+          sed -e "s/^[ \t]*//g"`;
+          sudo dpkg -i *.deb
       - uses: ros-tooling/action-ros-ci@v0.2
         with:
           target-ros1-distro: noetic
