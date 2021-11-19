@@ -11,6 +11,7 @@ find_package(catkin REQUIRED
 
         pluginlib
         imu_complementary_filter
+        imu_filter_madgwick
         hardware_interface
         controller_interface
         realtime_tools
@@ -28,6 +29,7 @@ catkin_package(
 
         pluginlib
         imu_complementary_filter
+        imu_filter_madgwick
         hardware_interface
         controller_interface
         realtime_tools
