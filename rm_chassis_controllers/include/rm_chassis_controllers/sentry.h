@@ -85,6 +85,9 @@ private:
   double brake_angle_;
   double vel_coff_;
   double last_vel_cmd_{ 0. };
+  ros::Time lock_time_;
+  bool maybe_lock_;
+  double lock_duratoin_;
 };
 
 }  // namespace rm_chassis_controllers
