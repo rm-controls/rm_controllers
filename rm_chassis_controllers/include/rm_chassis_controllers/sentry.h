@@ -57,7 +57,6 @@ public:
    * is ready to be started.
    */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
-  void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
   /** @brief Calculate correct command and set it to wheel.
@@ -67,6 +66,7 @@ private:
    */
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   void catapult(const ros::Time& time, const ros::Duration& period);
+  void normal(const ros::Time& time, const ros::Duration& period);
   /** @brief Calculate current linear_x according to current velocity.
    *
    * @return Calculated vel_data included linear_x.
@@ -75,12 +75,8 @@ private:
 
   effort_controllers::JointVelocityController ctrl_wheel_;
   effort_controllers::JointPositionController ctrl_brake_joint_;
-  enum
-  {
-    NORMAL,
-    CATAPULT,
-  };
-  int run_state_;
+
+  bool if_brake_;
   double catapult_initial_velocity_;
   double brake_angle_;
   double vel_coff_;

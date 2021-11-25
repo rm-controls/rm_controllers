@@ -54,24 +54,10 @@ bool SentryController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
   }
   if (!ctrl_wheel_.init(effort_joint_interface_, nh_wheel) || !ctrl_brake_joint_.init(effort_joint_interface_, nh_brake))
     return false;
-  run_state_ = NORMAL;
+  if_brake_ = false;
   joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_wheel_.getJointName()));
   joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_brake_joint_.getJointName()));
   return true;
-}
-
-void SentryController::update(const ros::Time& time, const ros::Duration& period)
-{
-  if (last_vel_cmd_ * cmd_rt_buffer_.readFromRT()->cmd_vel_.linear.x < 0)
-    run_state_ = CATAPULT;
-  last_vel_cmd_ = cmd_rt_buffer_.readFromRT()->cmd_vel_.linear.x;
-  if (run_state_ == NORMAL)
-  {
-    ChassisBase::update(time, period);
-    catapult_initial_velocity_ = ctrl_wheel_.joint_.getVelocity();
-  }
-  else
-    catapult(time, period);
 }
 
 void SentryController::moveJoint(const ros::Time& time, const ros::Duration& period)
@@ -80,30 +66,36 @@ void SentryController::moveJoint(const ros::Time& time, const ros::Duration& per
   ctrl_brake_joint_.setCommand(0.);
   ctrl_wheel_.update(time, period);
   ctrl_brake_joint_.update(time, period);
+
+  if (last_vel_cmd_ * cmd_rt_buffer_.readFromRT()->cmd_vel_.linear.x < 0)
+    if_brake_ = true;
+  last_vel_cmd_ = cmd_rt_buffer_.readFromRT()->cmd_vel_.linear.x;
+  if (if_brake_ == false)
+  {
+    normal(time, period);
+  }
+  else
+    catapult(time, period);
 }
 
 void SentryController::catapult(const ros::Time& time, const ros::Duration& period)
 {
-  if (!maybe_lock_)
-  {
-    lock_time_ = time;
-    maybe_lock_ = true;
-  }
-  ctrl_brake_joint_.setCommand(catapult_initial_velocity_ > 0 ? brake_angle_ : -brake_angle_);
+  ROS_INFO("[sentryChassis] Enter CATAPULT");
+  lock_time_ = time;
+  ctrl_brake_joint_.setCommand(catapult_initial_velocity_ > 0 ? -brake_angle_ : brake_angle_);
   if ((catapult_initial_velocity_ * ctrl_wheel_.joint_.getVelocity() < 0) &&
       (std::abs(ctrl_wheel_.joint_.getVelocity()) > std::abs(catapult_initial_velocity_ * vel_coff_)))
-    run_state_ = NORMAL;
-  if (run_state_ == CATAPULT)
+    if_brake_ = false;
+  if (if_brake_)
   {
     ctrl_wheel_.joint_.setCommand(0.);
     ctrl_brake_joint_.update(time, period);
   }
   if ((time - lock_time_).toSec() > lock_duratoin_)
   {
-    run_state_ = NORMAL;
+    if_brake_ = false;
     ctrl_brake_joint_.setCommand(0.);
     ROS_INFO("[sentryChassis] Exit CATAPULT");
-    maybe_lock_ = false;
   }
 }
 
@@ -112,6 +104,11 @@ geometry_msgs::Twist SentryController::forwardKinematics()
   geometry_msgs::Twist vel_data;
   vel_data.linear.x = ctrl_wheel_.joint_.getVelocity() * wheel_radius_;
   return vel_data;
+}
+
+void SentryController::normal(const ros::Time& time, const ros::Duration& period)
+{
+  catapult_initial_velocity_ = ctrl_wheel_.joint_.getVelocity();
 }
 
 }  // namespace rm_chassis_controllers
