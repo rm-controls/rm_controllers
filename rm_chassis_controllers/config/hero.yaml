@@ -27,10 +27,11 @@ controllers:
       pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     wheel_base: 0.47
     wheel_track: 0.505
-    power:
-      effort_coeff: 12.0
-      vel_coeff: 0.0048
-      power_offset: -3
+    power_limit:
+      - keyword: "wheel"
+        effort_coeff: 12.0
+        vel_coeff: 0.0048
+        power_offset: -3.
     twist_angular: 0.5233
     timeout: 0.1
     pid_follow: { p: 8, i: 0, d: 4.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
