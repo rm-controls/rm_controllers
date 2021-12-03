@@ -47,6 +47,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
+#include "rm_chassis_controllers/power_limit.h"
 
 namespace rm_chassis_controllers
 {
@@ -133,11 +134,6 @@ protected:
    *
    * Receive power limit from command. Set max_effort command to chassis to avoid exceed power limit.
    */
-  void powerLimit();
-  /** @brief Write current command from rm_msgs::ChassisCmd.
-   *
-   * @param msg This message contains various state parameter settings for basic chassis control
-   */
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr& msg);
   /** @brief Write current command from  geometry_msgs::Twist.
    *
@@ -148,6 +144,7 @@ protected:
   rm_control::RobotStateHandle robot_state_handle_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   std::vector<hardware_interface::JointHandle> joint_handles_{};
+  std::vector<power_limit::PowerLimit> power_limits_{};
 
   double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, timeout_{}, effort_coeff_{},
       velocity_coeff_{}, power_offset_{};

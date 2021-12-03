@@ -52,10 +52,7 @@ template <typename... T>
 bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
                              ros::NodeHandle& controller_nh)
 {
-  if (!controller_nh.getParam("publish_rate", publish_rate_) || !controller_nh.getParam("timeout", timeout_) ||
-      !controller_nh.getParam("power/vel_coeff", velocity_coeff_) ||
-      !controller_nh.getParam("power/effort_coeff", effort_coeff_) ||
-      !controller_nh.getParam("power/power_offset", power_offset_))
+  if (!controller_nh.getParam("publish_rate", publish_rate_) || !controller_nh.getParam("timeout", timeout_))
   {
     ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
@@ -165,7 +162,6 @@ void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& perio
   vel_cmd_.z = ramp_w_->output();
 
   moveJoint(time, period);
-  powerLimit();
 }
 
 template <typename... T>
@@ -328,34 +324,6 @@ void ChassisBase<T...>::recovery()
   ramp_x_->clear(vel_cmd_.x);
   ramp_y_->clear(vel_cmd_.y);
   ramp_w_->clear(vel_cmd_.z);
-}
-
-template <typename... T>
-void ChassisBase<T...>::powerLimit()
-{
-  double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
-  // Three coefficients of a quadratic equation in one variable
-  double a = 0., b = 0., c = 0.;
-  for (const auto& joint : joint_handles_)
-  {
-    double cmd_effort = joint.getCommand();
-    double real_vel = joint.getVelocity();
-    if (joint.getName().find("wheel") != std::string::npos)  // The pivot joint of swerve drive doesn't need power limit
-    {
-      a += square(cmd_effort);
-      b += std::abs(cmd_effort * real_vel);
-      c += square(real_vel);
-    }
-  }
-  a *= effort_coeff_;
-  c = c * velocity_coeff_ - power_offset_ - power_limit;
-  // Root formula for quadratic equation in one variable
-  double zoom_coeff = (-b + sqrt(square(b) - 4 * a * c)) / (2 * a);
-  for (auto joint : joint_handles_)
-    if (joint.getName().find("wheel") != std::string::npos)
-    {
-      joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
-    }
 }
 
 template <typename... T>
