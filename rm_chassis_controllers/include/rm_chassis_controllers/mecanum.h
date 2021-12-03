@@ -73,5 +73,6 @@ private:
   geometry_msgs::Twist forwardKinematics() override;
 
   effort_controllers::JointVelocityController ctrl_lf_, ctrl_rf_, ctrl_lb_, ctrl_rb_;
+  power_limit::PowerLimit* mecanum_power_limit_;
 };
 }  // namespace rm_chassis_controllers
