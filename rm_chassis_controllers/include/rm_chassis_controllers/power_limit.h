@@ -33,6 +33,7 @@ public:
 
   std::string keyword_;
   double effort_coeff_, vel_coeff_, power_offset_;
+  double final_a, final_b, final_c;
   hardware_interface::JointHandle joint_;
 };
 }  // namespace power_limit

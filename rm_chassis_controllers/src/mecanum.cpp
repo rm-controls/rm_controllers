@@ -80,6 +80,7 @@ void MecanumController::moveJoint(const ros::Time& time, const ros::Duration& pe
   ctrl_rf_.update(time, period);
   ctrl_lb_.update(time, period);
   ctrl_rb_.update(time, period);
+  ChassisBase::moveJoint(time, period);
 }
 
 geometry_msgs::Twist MecanumController::forwardKinematics()
