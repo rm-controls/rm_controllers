@@ -28,8 +28,9 @@ controllers:
     wheel_base: 0.47
     wheel_track: 0.505
     power:
-      coeff: 0.58
-      min_vel: 5.4
+      effort_coeff: 12.0
+      vel_coeff: 0.0048
+      power_offset: -3
     twist_angular: 0.5233
     timeout: 0.1
     pid_follow: { p: 8, i: 0, d: 4.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
