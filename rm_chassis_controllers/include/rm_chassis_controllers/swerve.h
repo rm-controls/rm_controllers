@@ -57,6 +57,8 @@ class SwerveController : public ChassisBase<rm_control::RobotStateInterface, har
 public:
   SwerveController() = default;
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  power_limit::PowerLimit* wheel_power_limit_;
+  power_limit::PowerLimit* pivot_power_limit_;
 
 private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;

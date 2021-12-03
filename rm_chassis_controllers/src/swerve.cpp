@@ -75,6 +75,10 @@ bool SwerveController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
       m.pivot_offset_ = module.second["pivot"]["offset"];
     joint_handles_.push_back(m.ctrl_pivot_->joint_);
     joint_handles_.push_back(m.ctrl_wheel_->joint_);
+    wheel_power_limit_ = new power_limit::PowerLimit(controller_nh, *m.ctrl_wheel_);
+    power_limits_.push_back(*wheel_power_limit_);
+    pivot_power_limit_ = new power_limit::PowerLimit(controller_nh, *m.ctrl_pivot_);
+    power_limits_.push_back(*pivot_power_limit_);
     modules_.push_back(m);
   }
   return true;
@@ -97,6 +101,7 @@ void SwerveController::moveJoint(const ros::Time& time, const ros::Duration& per
     module.ctrl_pivot_->update(time, period);
     module.ctrl_wheel_->update(time, period);
   }
+  ChassisBase::moveJoint(time, period);
 }
 
 geometry_msgs::Twist SwerveController::forwardKinematics()
