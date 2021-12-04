@@ -18,11 +18,11 @@ bool ImuFilterBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle&
   imu_sensor_handle_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(name);
   imu_extra_handle_ = robot_hw->get<rm_control::ImuExtraInterface>()->getHandle(name);
 
-  imu_data_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::Imu>(root_nh, name + "/data", 100));
+  imu_data_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::Imu>(controller_nh, name + "/data", 100));
   imu_temp_pub_.reset(
-      new realtime_tools::RealtimePublisher<sensor_msgs::Temperature>(root_nh, name + "/temperature", 100));
+      new realtime_tools::RealtimePublisher<sensor_msgs::Temperature>(controller_nh, name + "/temperature", 100));
   trigger_time_pub_.reset(
-      new realtime_tools::RealtimePublisher<sensor_msgs::TimeReference>(root_nh, name + "/trigger_time", 100));
+      new realtime_tools::RealtimePublisher<sensor_msgs::TimeReference>(controller_nh, name + "/trigger_time", 100));
   return true;
 }
 void ImuFilterBase::update(const ros::Time& time, const ros::Duration& period)
