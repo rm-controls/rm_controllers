@@ -135,6 +135,18 @@ protected:
       power_limit.final_a = queue_[power_limit.keyword_].a * power_limit.effort_coeff_;
       power_limit.final_c =
           queue_[power_limit.keyword_].c * power_limit.vel_coeff_ - power_limit.power_offset_ - power_limit_;
+      queue_[power_limit.keyword_].zoom_coeff_ =
+          (square(power_limit.final_b) - 4 * power_limit.final_a * power_limit.final_c) > 0 ?
+              ((-power_limit.final_b +
+                sqrt(square(power_limit.final_b) - 4 * power_limit.final_a * power_limit.final_c)) /
+               (2 * power_limit.final_a)) :
+              0.;
+    }
+    for (auto& power_limit : power_limits_)
+    {
+      power_limit.joint_.setCommand(queue_[power_limit.keyword_].zoom_coeff_ > 1 ?
+                                        power_limit.joint_.getCommand() :
+                                        power_limit.joint_.getCommand() * queue_[power_limit.keyword_].zoom_coeff_);
     }
   };
   virtual geometry_msgs::Twist forwardKinematics() = 0;
