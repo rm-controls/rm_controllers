@@ -17,6 +17,7 @@
 
   <depend>pluginlib</depend>
   <depend>imu_complementary_filter</depend>
+  <depend>imu_filter_madgwick</depend>
   <depend>hardware_interface</depend>
   <depend>controller_interface</depend>
   <depend>realtime_tools</depend>
