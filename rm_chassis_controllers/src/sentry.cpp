@@ -46,63 +46,64 @@ bool SentryController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
 {
   ChassisBase::init(robot_hw, root_nh, controller_nh);
   ros::NodeHandle nh_wheel = ros::NodeHandle(controller_nh, "wheel");
-  ros::NodeHandle nh_brake = ros::NodeHandle(controller_nh, "brake_wheel");
-  if (!nh_brake.getParam("brake_angle", brake_angle_) || !nh_brake.getParam("velocity_coefficient", vel_coff_) ||
+  ros::NodeHandle nh_brake = ros::NodeHandle(controller_nh, "catapult");
+  if (!nh_brake.getParam("catapult_angle", catapult_angle_) || !nh_brake.getParam("velocity_coefficient", vel_coff_) ||
       !nh_brake.getParam("lock_duration", lock_duratoin_))
   {
-    ROS_ERROR("Could not find parameters: brake_angle, velocity_coefficient or lock_duration");
+    ROS_ERROR("Could not find parameters: catapult_angle, velocity_coefficient or lock_duration");
   }
-  if (!ctrl_wheel_.init(effort_joint_interface_, nh_wheel) || !ctrl_brake_joint_.init(effort_joint_interface_, nh_brake))
+  if (!ctrl_wheel_.init(effort_joint_interface_, nh_wheel) ||
+      !ctrl_catapult_joint_.init(effort_joint_interface_, nh_brake))
     return false;
-  if_brake_ = false;
+  if_catapult_ = false;
   joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_wheel_.getJointName()));
-  joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_brake_joint_.getJointName()));
+  joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_catapult_joint_.getJointName()));
   return true;
 }
 
 void SentryController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
   ctrl_wheel_.setCommand(vel_cmd_.x / wheel_radius_);
-  ctrl_brake_joint_.setCommand(0.);
+  ctrl_catapult_joint_.setCommand(0.);
   ctrl_wheel_.update(time, period);
-  ctrl_brake_joint_.update(time, period);
+  ctrl_catapult_joint_.update(time, period);
 
   if (last_vel_cmd_ * cmd_rt_buffer_.readFromRT()->cmd_vel_.linear.x < 0)
   {
-    if_brake_ = true;
+    if_catapult_ = true;
     ROS_INFO("[sentryChassis] Enter CATAPULT");
   }
   last_vel_cmd_ = cmd_rt_buffer_.readFromRT()->cmd_vel_.linear.x;
-  if (if_brake_ == false)
+  if (if_catapult_ == false)
   {
     normal(time, period);
+    lock_time_ = time;
   }
   else
   {
-    lock_time_ = time;
     catapult(time, period);
   }
 }
 
 void SentryController::catapult(const ros::Time& time, const ros::Duration& period)
 {
-  ctrl_brake_joint_.setCommand(catapult_initial_velocity_ > 0 ? -brake_angle_ : brake_angle_);
-  if (if_brake_)
+  ctrl_catapult_joint_.setCommand(catapult_initial_velocity_ > 0 ? -catapult_angle_ : catapult_angle_);
+  if (if_catapult_)
   {
     ctrl_wheel_.joint_.setCommand(0.);
-    ctrl_brake_joint_.update(time, period);
+    ctrl_catapult_joint_.update(time, period);
   }
   if ((catapult_initial_velocity_ * ctrl_wheel_.joint_.getVelocity() < 0) &&
-      (std::abs(ctrl_wheel_.joint_.getVelocity()) > std::abs(catapult_initial_velocity_ * vel_coff_)))
+      (std::abs(ctrl_wheel_.joint_.getVelocity()) > std::abs(catapult_initial_velocity_ * vel_coff_)) &&
+      (std::abs(catapult_initial_velocity_ * ctrl_wheel_.joint_.getVelocity()) > 1e-2))
   {
-    if_brake_ = false;
+    if_catapult_ = false;
     ROS_INFO("[sentryChassis] Enter NORMAL");
   }
   if ((time - lock_time_).toSec() > lock_duratoin_)
   {
-    ROS_INFO("[sentryChassis] Enter NORMAL");
-    ctrl_brake_joint_.setCommand(0.);
-    if_brake_ = false;
+    ctrl_catapult_joint_.setCommand(0.);
+    if_catapult_ = false;
     ROS_INFO("[sentryChassis] Exit CATAPULT");
   }
 }
