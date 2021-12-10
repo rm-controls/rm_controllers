@@ -41,7 +41,7 @@
 
 namespace rm_chassis_controllers
 {
-class MecanumController : public ChassisBase
+class MecanumController : public ChassisBase<rm_control::RobotStateInterface, hardware_interface::EffortJointInterface>
 {
 public:
   MecanumController() = default;

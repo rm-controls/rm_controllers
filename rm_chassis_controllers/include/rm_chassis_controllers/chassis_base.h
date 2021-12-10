@@ -56,9 +56,8 @@ struct Command
   rm_msgs::ChassisCmd cmd_chassis_;
   ros::Time stamp_;
 };
-
-class ChassisBase : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                                          rm_control::RobotStateInterface>
+template <typename... T>
+class ChassisBase : public controller_interface::MultiInterfaceController<T...>
 {
 public:
   ChassisBase() = default;
@@ -146,12 +145,12 @@ protected:
    */
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
 
+  rm_control::RobotStateHandle robot_state_handle_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   std::vector<hardware_interface::JointHandle> joint_handles_{};
-  rm_control::RobotStateHandle robot_state_handle_{};
 
-  double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, power_coeff_{},
-      power_min_vel_{}, timeout_{};
+  double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, timeout_{}, effort_coeff_{},
+      velocity_coeff_{}, power_offset_{};
   bool enable_odom_tf_ = false;
   bool state_changed_ = true;
   enum

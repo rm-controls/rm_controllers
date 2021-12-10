@@ -6,4 +6,10 @@
         </description>
     </class>
 
+    <class name="imu_filter_controllers/MadgwickController" type="imu_filter_controllers::MadgwickController"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+        </description>
+    </class>
+
 </library>
