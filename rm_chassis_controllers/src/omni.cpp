@@ -13,8 +13,11 @@ bool OmniController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
                           ros::NodeHandle& controller_nh)
 {
   ChassisBase::init(robot_hw, root_nh, controller_nh);
-  if (controller_nh.getParam("wheel_to_center_radius", wheel2center_radius_))
-    ROS_ERROR("wheel_to_center_radius is not set");
+  if (!controller_nh.getParam("chassis_radius", chassis_radius_))
+  {
+    ROS_ERROR("chassis_radius is not set");
+    return false;
+  }
   ros::NodeHandle nh_lf = ros::NodeHandle(controller_nh, "left_front");
   ros::NodeHandle nh_rf = ros::NodeHandle(controller_nh, "right_front");
   ros::NodeHandle nh_lb = ros::NodeHandle(controller_nh, "left_back");
@@ -31,10 +34,10 @@ bool OmniController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
 
 void OmniController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
-  ctrl_rf_.setCommand((-vel_cmd_.x + (vel_cmd_.z * wheel2center_radius_)) / wheel_radius_);
-  ctrl_lf_.setCommand((-vel_cmd_.y + (vel_cmd_.z * wheel2center_radius_)) / wheel_radius_);
-  ctrl_lb_.setCommand((vel_cmd_.x + (vel_cmd_.z * wheel2center_radius_)) / wheel_radius_);
-  ctrl_rb_.setCommand((vel_cmd_.y + (vel_cmd_.z * wheel2center_radius_)) / wheel_radius_);
+  ctrl_rf_.setCommand((-vel_cmd_.x + (vel_cmd_.z * chassis_radius_)) / wheel_radius_);
+  ctrl_lf_.setCommand((-vel_cmd_.y + (vel_cmd_.z * chassis_radius_)) / wheel_radius_);
+  ctrl_lb_.setCommand((vel_cmd_.x + (vel_cmd_.z * chassis_radius_)) / wheel_radius_);
+  ctrl_rb_.setCommand((vel_cmd_.y + (vel_cmd_.z * chassis_radius_)) / wheel_radius_);
   ctrl_lf_.update(time, period);
   ctrl_rf_.update(time, period);
   ctrl_lb_.update(time, period);
@@ -51,7 +54,7 @@ geometry_msgs::Twist OmniController::forwardKinematics()
   double rb_velocity = ctrl_rb_.joint_.getVelocity();
   vel_data.linear.x = k * (-rf_velocity + lb_velocity);
   vel_data.linear.y = k * (-lf_velocity + rb_velocity);
-  vel_data.angular.z = k * (lf_velocity + rf_velocity + lb_velocity + rb_velocity) / (2 * wheel2center_radius_);
+  vel_data.angular.z = k * (lf_velocity + rf_velocity + lb_velocity + rb_velocity) / (2 * chassis_radius_);
   return vel_data;
 }
 }  // namespace rm_chassis_controllers

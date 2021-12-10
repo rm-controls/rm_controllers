@@ -18,7 +18,7 @@ private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   geometry_msgs::Twist forwardKinematics() override;
 
-  double wheel2center_radius_;
+  double chassis_radius_;
   effort_controllers::JointVelocityController ctrl_lf_, ctrl_rf_, ctrl_lb_, ctrl_rb_;
 };
 }  // namespace rm_chassis_controllers
