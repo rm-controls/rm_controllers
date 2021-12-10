@@ -350,7 +350,7 @@ void ChassisBase<T...>::powerLimit()
   a *= effort_coeff_;
   c = c * velocity_coeff_ - power_offset_ - power_limit;
   // Root formula for quadratic equation in one variable
-  double zoom_coeff = (-b + sqrt(square(b) - 4 * a * c)) / (2 * a);
+  double zoom_coeff = (square(b) - 4 * a * c) > 0 ? ((-b + sqrt(square(b) - 4 * a * c)) / (2 * a)) : 0.;
   for (auto joint : joint_handles_)
     if (joint.getName().find("wheel") != std::string::npos)
     {

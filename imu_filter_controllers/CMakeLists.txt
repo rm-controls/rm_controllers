@@ -11,6 +11,7 @@ find_package(catkin REQUIRED
 
         pluginlib
         imu_complementary_filter
+        imu_filter_madgwick
         hardware_interface
         controller_interface
         realtime_tools
@@ -28,6 +29,7 @@ catkin_package(
 
         pluginlib
         imu_complementary_filter
+        imu_filter_madgwick
         hardware_interface
         controller_interface
         realtime_tools
@@ -41,7 +43,9 @@ include_directories(
 
 ## Declare a C++ executable
 add_library(${PROJECT_NAME}
+        src/imu_filter_base.cpp
         src/complementary_controller.cpp
+        src/madgwick_controller.cpp
         )
 
 target_link_libraries(${PROJECT_NAME}
