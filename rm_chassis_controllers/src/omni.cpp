@@ -34,10 +34,10 @@ bool OmniController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
 
 void OmniController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
-  ctrl_rf_.setCommand((-vel_cmd_.x + (vel_cmd_.z * chassis_radius_)) / wheel_radius_);
-  ctrl_lf_.setCommand((-vel_cmd_.y + (vel_cmd_.z * chassis_radius_)) / wheel_radius_);
-  ctrl_lb_.setCommand((vel_cmd_.x + (vel_cmd_.z * chassis_radius_)) / wheel_radius_);
-  ctrl_rb_.setCommand((vel_cmd_.y + (vel_cmd_.z * chassis_radius_)) / wheel_radius_);
+  ctrl_rf_.setCommand(((vel_cmd_.x + vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
+  ctrl_lf_.setCommand(((-vel_cmd_.x + vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
+  ctrl_lb_.setCommand(((-vel_cmd_.x - vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
+  ctrl_rb_.setCommand(((vel_cmd_.x - vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
   ctrl_lf_.update(time, period);
   ctrl_rf_.update(time, period);
   ctrl_lb_.update(time, period);
@@ -52,8 +52,8 @@ geometry_msgs::Twist OmniController::forwardKinematics()
   double rf_velocity = ctrl_rf_.joint_.getVelocity();
   double lb_velocity = ctrl_lb_.joint_.getVelocity();
   double rb_velocity = ctrl_rb_.joint_.getVelocity();
-  vel_data.linear.x = k * (-rf_velocity + lb_velocity);
-  vel_data.linear.y = k * (-lf_velocity + rb_velocity);
+  vel_data.linear.x = k * (-lf_velocity + rf_velocity - lb_velocity + rb_velocity) / sqrt(2);
+  vel_data.linear.y = k * (lf_velocity + rf_velocity - lb_velocity - rb_velocity) / sqrt(2);
   vel_data.angular.z = k * (lf_velocity + rf_velocity + lb_velocity + rb_velocity) / (2 * chassis_radius_);
   return vel_data;
 }
