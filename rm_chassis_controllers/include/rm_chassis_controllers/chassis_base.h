@@ -58,12 +58,6 @@ struct Command
   rm_msgs::ChassisCmd cmd_chassis_;
   ros::Time stamp_;
 };
-struct Coeff
-{
-  double a = 0, b = 0, c = 0;
-  double final_a, final_b, final_c;
-  double zoom_coeff_;
-};
 template <typename... T>
 class ChassisBase : public controller_interface::MultiInterfaceController<T...>
 {
@@ -121,34 +115,8 @@ protected:
    * The mode GYRO: Chassis will rotate around itself.
    */
   void gyro();
-  virtual void moveJoint(const ros::Time& time, const ros::Duration& period)
-  {
-    std::map<std::string, Coeff> queue_{};
-    double power_limit_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
-    for (auto& power_limit : power_limits_)
-    {
-      double cmd_effort = power_limit.joint_.getCommand();
-      double real_vel = power_limit.joint_.getVelocity();
-      queue_[power_limit.keyword_].a += square(cmd_effort);
-      queue_[power_limit.keyword_].b += std::abs(cmd_effort * real_vel);
-      queue_[power_limit.keyword_].c += square(real_vel);
-      power_limit.final_a = queue_[power_limit.keyword_].a * power_limit.effort_coeff_;
-      power_limit.final_c =
-          queue_[power_limit.keyword_].c * power_limit.vel_coeff_ - power_limit.power_offset_ - power_limit_;
-      queue_[power_limit.keyword_].zoom_coeff_ =
-          (square(power_limit.final_b) - 4 * power_limit.final_a * power_limit.final_c) > 0 ?
-              ((-power_limit.final_b +
-                sqrt(square(power_limit.final_b) - 4 * power_limit.final_a * power_limit.final_c)) /
-               (2 * power_limit.final_a)) :
-              0.;
-    }
-    for (auto& power_limit : power_limits_)
-    {
-      power_limit.joint_.setCommand(queue_[power_limit.keyword_].zoom_coeff_ > 1 ?
-                                        power_limit.joint_.getCommand() :
-                                        power_limit.joint_.getCommand() * queue_[power_limit.keyword_].zoom_coeff_);
-    }
-  };
+  virtual void moveJoint(const ros::Time& time, const ros::Duration& period);
+
   virtual geometry_msgs::Twist forwardKinematics() = 0;
   /** @brief Init frame on base_link. Integral vel to pos and angle.
    *
