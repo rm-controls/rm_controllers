@@ -24,7 +24,6 @@ public:
         std::string arr = xml_value[i]["keyword"];
         if (joint_.getName().find(arr) != std::string::npos)
         {
-          keyword_ = arr;
           effort_coeff_ = xml_value[i]["effort_coeff"];
           vel_coeff_ = xml_value[i]["vel_coeff"];
           power_offset_ = xml_value[i]["power_offset"];
@@ -46,7 +45,6 @@ public:
         std::string arr = xml_value[i]["keyword"];
         if (joint_.getName().find(arr) != std::string::npos)
         {
-          keyword_ = arr;
           effort_coeff_ = xml_value[i]["effort_coeff"];
           vel_coeff_ = xml_value[i]["vel_coeff"];
           power_offset_ = xml_value[i]["power_offset"];
@@ -55,9 +53,7 @@ public:
     }
   }
 
-  std::string keyword_;
   double effort_coeff_, vel_coeff_, power_offset_;
-  double final_a, final_b, final_c;
   hardware_interface::JointHandle joint_;
 };
 }  // namespace power_limit

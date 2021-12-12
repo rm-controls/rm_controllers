@@ -263,6 +263,28 @@ void ChassisBase<T...>::raw()
 }
 
 template <typename... T>
+void ChassisBase<T...>::moveJoint(const ros::Time& time, const ros::Duration& period)
+{
+  double power_limit_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
+  double a = 0., b = 0., c = 0.;
+  for (auto& power_limit : power_limits_)
+  {
+    double cmd_effort = power_limit.joint_.getCommand();
+    double real_vel = power_limit.joint_.getVelocity();
+    a += square(cmd_effort);
+    b += std::abs(cmd_effort * real_vel);
+    c += square(real_vel);
+  }
+  a *= effort_coeff_;
+  c = c * velocity_coeff_ - power_offset_ - power_limit_;
+  double zoom_coeff = (square(b) - 4 * a * c) > 0 ? ((-b + sqrt(square(b) - 4 * a * c)) / (2 * a)) : 0.;
+  for (auto& power_limit : power_limits_)
+  {
+    power_limit.joint_.setCommand(zoom_coeff > 1 ? power_limit.joint_.getCommand() :
+                                                   power_limit.joint_.getCommand() * zoom_coeff);
+  }
+};
+template <typename... T>
 void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& period)
 {
   geometry_msgs::Twist vel_base = forwardKinematics();  // on base_link frame
