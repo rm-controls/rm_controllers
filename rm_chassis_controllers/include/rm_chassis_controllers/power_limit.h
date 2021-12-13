@@ -6,7 +6,7 @@
 
 #include <effort_controllers/joint_position_controller.h>
 
-namespace power_limit
+namespace rm_chassis_controllers
 {
 class PowerLimit
 {
@@ -56,4 +56,4 @@ public:
   double effort_coeff_, vel_coeff_, power_offset_;
   hardware_interface::JointHandle joint_;
 };
-}  // namespace power_limit
+}  // namespace rm_chassis_controllers
