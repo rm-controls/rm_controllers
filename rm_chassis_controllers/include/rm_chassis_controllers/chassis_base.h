@@ -146,7 +146,7 @@ protected:
   rm_control::RobotStateHandle robot_state_handle_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   std::vector<hardware_interface::JointHandle> joint_handles_{};
-  std::vector<power_limit::PowerLimit> power_limits_{};
+  std::vector<PowerLimit> power_limits_{};
 
   double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, timeout_{}, effort_coeff_{},
       velocity_coeff_{}, power_offset_{};

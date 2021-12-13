@@ -57,13 +57,13 @@ bool MecanumController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   joint_handles_.push_back(ctrl_lb_.joint_);
   joint_handles_.push_back(ctrl_rb_.joint_);
 
-  mecanum_power_limit_ = new power_limit::PowerLimit(controller_nh, ctrl_lb_);
+  mecanum_power_limit_ = new PowerLimit(controller_nh, ctrl_lb_);
   power_limits_.push_back(*mecanum_power_limit_);
-  mecanum_power_limit_ = new power_limit::PowerLimit(controller_nh, ctrl_rf_);
+  mecanum_power_limit_ = new PowerLimit(controller_nh, ctrl_rf_);
   power_limits_.push_back(*mecanum_power_limit_);
-  mecanum_power_limit_ = new power_limit::PowerLimit(controller_nh, ctrl_lb_);
+  mecanum_power_limit_ = new PowerLimit(controller_nh, ctrl_lb_);
   power_limits_.push_back(*mecanum_power_limit_);
-  mecanum_power_limit_ = new power_limit::PowerLimit(controller_nh, ctrl_rb_);
+  mecanum_power_limit_ = new PowerLimit(controller_nh, ctrl_rb_);
   power_limits_.push_back(*mecanum_power_limit_);
 
   return true;
