@@ -349,6 +349,34 @@ void ChassisBase<T...>::recovery()
 }
 
 template <typename... T>
+void ChassisBase<T...>::powerLimit()
+{
+  double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
+  // Three coefficients of a quadratic equation in one variable
+  double a = 0., b = 0., c = 0.;
+  for (const auto& joint : joint_handles_)
+  {
+    double cmd_effort = joint.getCommand();
+    double real_vel = joint.getVelocity();
+    if (joint.getName().find("wheel") != std::string::npos)  // The pivot joint of swerve drive doesn't need power limit
+    {
+      a += square(cmd_effort);
+      b += std::abs(cmd_effort * real_vel);
+      c += square(real_vel);
+    }
+  }
+  a *= effort_coeff_;
+  c = c * velocity_coeff_ - power_offset_ - power_limit;
+  // Root formula for quadratic equation in one variable
+  double zoom_coeff = (square(b) - 4 * a * c) > 0 ? ((-b + sqrt(square(b) - 4 * a * c)) / (2 * a)) : 0.;
+  for (auto joint : joint_handles_)
+    if (joint.getName().find("wheel") != std::string::npos)
+    {
+      joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
+    }
+}
+
+template <typename... T>
 void ChassisBase<T...>::tfVelToBase(const std::string& from)
 {
   try

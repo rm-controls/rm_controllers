@@ -1,0 +1,7 @@
+<launch>
+    <rosparam file="$(find imu_filter_controllers)/config/complementary_controller.yaml" command="load"/>
+    <rosparam file="$(find imu_filter_controllers)/config/madgwick_controller.yaml" command="load"/>
+    <!-- load the controllers -->
+    <node name="controller_loader" pkg="controller_manager" type="spawner" output="screen"
+          args="controllers/imu_complementary_filter_controller controllers/imu_madgwick_filter_controller"/>
+</launch>

@@ -2,8 +2,7 @@
 // Created by bruce on 2021/5/19.
 //
 
-#ifndef SRC_RM_SOFTWARE_RM_CONTROLLERS_RM_ORIENTATION_CONTROLLERS_INCLUDE_ORIENTATION_CONTROLLER_H_
-#define SRC_RM_SOFTWARE_RM_CONTROLLERS_RM_ORIENTATION_CONTROLLERS_INCLUDE_ORIENTATION_CONTROLLER_H_
+#pragma once
 
 #include <controller_interface/controller.h>
 #include <controller_interface/multi_interface_controller.h>
@@ -39,6 +38,4 @@ private:
 
   std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::Imu> > imu_pub_;
 };
-};  // namespace rm_orientation_controller
-
-#endif  // SRC_RM_SOFTWARE_RM_CONTROLLERS_RM_ORIENTATION_CONTROLLERS_INCLUDE_ORIENTATION_CONTROLLER_H_
+}  // namespace rm_orientation_controller
