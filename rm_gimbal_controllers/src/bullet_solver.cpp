@@ -40,7 +40,7 @@
 #include <tf/transform_datatypes.h>
 #include <rm_common/ori_tool.h>
 
-namespace bullet_solver
+namespace rm_gimbal_controllers
 {
 BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
 {
@@ -249,4 +249,4 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .timeout = config.timeout };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
-}  // namespace bullet_solver
+}  // namespace rm_gimbal_controllers
