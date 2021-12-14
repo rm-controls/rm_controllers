@@ -72,7 +72,7 @@ private:
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
-  bullet_solver::BulletSolver* bullet_solver_{};
+  BulletSolver* bullet_solver_{};
 
   ros::Time last_publish_time_{};
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
