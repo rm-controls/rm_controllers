@@ -48,7 +48,7 @@ namespace rm_gimbal_controllers
 bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
 {
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
-  bullet_solver_ = new bullet_solver::BulletSolver(nh_bullet_solver);
+  bullet_solver_ = new BulletSolver(nh_bullet_solver);
 
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");

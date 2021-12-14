@@ -40,7 +40,7 @@
 #include <tf/transform_datatypes.h>
 #include <rm_common/ori_tool.h>
 
-namespace bullet_solver
+namespace rm_gimbal_controllers
 {
 BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
 {
