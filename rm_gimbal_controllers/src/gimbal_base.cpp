@@ -77,6 +77,17 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
 
+  urdf::Model urdf;
+  if (!urdf.initParamWithNodeHandle("robot_description", controller_nh))
+  {
+    ROS_ERROR("Failed to parse urdf file");
+    return false;
+  }
+  inertial_origin_.x = urdf.getLink("pitch")->inertial->origin.position.x;
+  inertial_origin_.y = urdf.getLink("pitch")->inertial->origin.position.y;
+  inertial_origin_.z = urdf.getLink("pitch")->inertial->origin.position.z;
+  mass_ = urdf.getLink("pitch")->inertial->mass;
+
   return true;
 }
 
@@ -279,6 +290,15 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
+  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + forwardFeed(time));
+}
+
+double Controller::forwardFeed(const ros::Time& time)
+{
+  Eigen::Vector3d mg(0, 0, mass_ * 9.8);
+  tf2::doTransform(mg, mg, robot_state_handle_.lookupTransform("pitch", "map", time));
+  Eigen::Vector3d mass_origin(inertial_origin_.x, inertial_origin_.y, inertial_origin_.z);
+  return -mass_origin.cross(mg).norm();
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)

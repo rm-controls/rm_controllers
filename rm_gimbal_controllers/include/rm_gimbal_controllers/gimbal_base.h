@@ -37,6 +37,7 @@
 
 #pragma once
 
+#include <urdf/model.h>
 #include <effort_controllers/joint_position_controller.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
@@ -47,6 +48,8 @@
 #include <rm_msgs/GimbalDesError.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_gimbal_controllers/bullet_solver.h>
+#include <tf2_eigen/tf2_eigen.h>
+#include <Eigen/Eigen>
 
 namespace rm_gimbal_controllers
 {
@@ -66,6 +69,7 @@ private:
   void track(const ros::Time& time);
   void direct(const ros::Time& time);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
+  double forwardFeed(const ros::Time& time);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
 
   rm_control::RobotStateHandle robot_state_handle_;
@@ -87,6 +91,9 @@ private:
 
   double publish_rate_{};
   bool state_changed_{};
+
+  geometry_msgs::Vector3 inertial_origin_;
+  double mass_;
 
   enum
   {
