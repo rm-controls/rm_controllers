@@ -62,6 +62,8 @@ private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   geometry_msgs::Twist forwardKinematics() override;
   std::vector<Module> modules_;
+  rm_chassis_controllers::PowerLimit* power_limit_wheel_{};
+  rm_chassis_controllers::PowerLimit* power_limit_pivot_{};
 };
 
 }  // namespace rm_chassis_controllers
