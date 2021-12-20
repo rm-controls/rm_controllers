@@ -83,6 +83,7 @@ include_directories(
 add_library(${PROJECT_NAME}
         src/chassis_base.cpp
         src/mecanum.cpp
+        src/omni.cpp
         src/sentry.cpp
         src/balance.cpp
         src/swerve.cpp
