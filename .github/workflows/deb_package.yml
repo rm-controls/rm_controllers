@@ -1,5 +1,5 @@
 
-name: ros-build
+name: deb-package
 
 on:
   push:
