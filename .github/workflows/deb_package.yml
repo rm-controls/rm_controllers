@@ -12,10 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        path: 'rm_controllers'
+        with:
+          path: 'rm_controllers'
       - uses: actions/checkout@v2
-        repository: 'rm_controls/rm_control'
-        path: 'rm_control'
+        with:
+          repository: 'rm_controls/rm_control'
+          path: 'rm_control'
       - uses: ros-tooling/setup-ros@v0.2
         with:
           required-ros-distributions: noetic
