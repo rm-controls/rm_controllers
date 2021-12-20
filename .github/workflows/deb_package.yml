@@ -12,8 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          path: 'rm_controllers'
       - uses: actions/checkout@v2
         with:
           repository: 'rm-controls/rm_control'
