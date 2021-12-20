@@ -16,7 +16,7 @@ jobs:
           path: 'rm_controllers'
       - uses: actions/checkout@v2
         with:
-          repository: 'rm_controls/rm_control'
+          repository: 'rm-controls/rm_control'
           path: 'rm_control'
       - uses: ros-tooling/setup-ros@v0.2
         with:
