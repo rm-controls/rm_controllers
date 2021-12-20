@@ -129,11 +129,6 @@ protected:
    * @param from The father frame.
    */
   void tfVelToBase(const std::string& from);
-  /** @brief To limit the chassis power according to current power limit.
-   *
-   * Receive power limit from command. Set max_effort command to chassis to avoid exceed power limit.
-   */
-  void powerLimit();
   /** @brief Write current command from rm_msgs::ChassisCmd.
    *
    * @param msg This message contains various state parameter settings for basic chassis control
