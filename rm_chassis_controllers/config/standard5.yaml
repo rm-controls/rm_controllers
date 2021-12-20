@@ -5,8 +5,9 @@ controllers:
     publish_rate: 100
     enable_odom_tf: true
     power:
-      coeff: 0.535
-      min_vel: 4.4
+      effort_coeff: 12.0
+      vel_coeff: 0.0048
+      power_offset: 0
     twist_angular: 0.5233
     timeout: 0.1
     pid_follow: { p: 5, i: 0, d: 0.05, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
