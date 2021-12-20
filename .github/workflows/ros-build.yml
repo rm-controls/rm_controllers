@@ -13,25 +13,18 @@ jobs:
     if: ${{ github.repository == 'rm-controls/rm_controllers' }}
     steps:
       - uses: actions/checkout@v2
+        path: 'rm_controllers'
+      - uses: actions/checkout@v2
+        repository: 'rm_controls/rm_control'
+        path: 'rm_control'
       - uses: ros-tooling/setup-ros@v0.2
         with:
           required-ros-distributions: noetic
-      - name: Add custom source
-        run: |
-          mkdir /tmp/custom
-          cd /tmp/custom
-          wget -i <( curl https://api.github.com/repos/rm-controls/rm_control/releases/latest | \
-          grep  "browser_download_url" | \
-          sed -e "s/\"//g" | \
-          sed -e "s/browser_download_url://g" |\
-          sed -e "s/^[ \t]*//g" ) && \
-          sudo dpkg -i *.deb || \
-          sudo apt-get -f -y install
-      - uses: ros-tooling/action-ros-ci@v0.2
-        with:
-          target-ros1-distro: noetic
+      - name: Build and install from source
+        id: build-and-install
+        run: .github/scripts/build.sh noetic
       - name: Package deb
-        run: ./.github/scripts/package.sh
+        run: .github/scripts/package.sh noetic rm_controllers ${{ steps.build-and-install.outputs.catkin-ws-directory }}
       - name: Upload deb package to source
         uses: appleboy/scp-action@master
         with:
