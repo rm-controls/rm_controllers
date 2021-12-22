@@ -116,8 +116,9 @@ protected:
   void gyro();
   virtual void moveJoint(const ros::Time& time, const ros::Duration& period)
   {
+    double power_limit_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
     for (auto& power_limit : power_limits_)
-      power_limit.limit();
+      power_limit.limit(power_limit_);
   }
   virtual geometry_msgs::Twist forwardKinematics() = 0;
   /** @brief Init frame on base_link. Integral vel to pos and angle.
