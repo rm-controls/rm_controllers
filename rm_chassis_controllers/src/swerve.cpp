@@ -97,6 +97,7 @@ void SwerveController::moveJoint(const ros::Time& time, const ros::Duration& per
     module.ctrl_pivot_->update(time, period);
     module.ctrl_wheel_->update(time, period);
   }
+  ChassisBase::moveJoint(time, period);
 }
 
 geometry_msgs::Twist SwerveController::forwardKinematics()

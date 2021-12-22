@@ -74,6 +74,14 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
 
+  XmlRpc::XmlRpcValue xml_value;
+  controller_nh.getParam("power_limit", xml_value);
+  ROS_ASSERT(xml_value.getType() == XmlRpc::XmlRpcValue::Type::TypeArray);
+  for (int i = 0; i < xml_value.size(); i++)
+  {
+    power_limits_.push_back(PowerLimit(xml_value[i], *effort_joint_interface_));
+  }
+
   // Setup odometry realtime publisher + odom message constant fields
   odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "odom", 100));
   odom_pub_->msg_.header.frame_id = "odom";

@@ -47,6 +47,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
+#include "rm_chassis_controllers/power_limit.h"
 
 namespace rm_chassis_controllers
 {
@@ -113,7 +114,11 @@ protected:
    * The mode GYRO: Chassis will rotate around itself.
    */
   void gyro();
-  virtual void moveJoint(const ros::Time& time, const ros::Duration& period) = 0;
+  virtual void moveJoint(const ros::Time& time, const ros::Duration& period)
+  {
+    for (auto& power_limit : power_limits_)
+      power_limit.limit();
+  }
   virtual geometry_msgs::Twist forwardKinematics() = 0;
   /** @brief Init frame on base_link. Integral vel to pos and angle.
    *
@@ -143,6 +148,7 @@ protected:
   rm_control::RobotStateHandle robot_state_handle_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   std::vector<hardware_interface::JointHandle> joint_handles_{};
+  std::vector<PowerLimit> power_limits_{};
 
   double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, timeout_{}, effort_coeff_{},
       velocity_coeff_{}, power_offset_{};
