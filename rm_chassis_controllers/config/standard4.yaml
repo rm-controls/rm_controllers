@@ -12,10 +12,10 @@ controllers:
     enable_odom_tf: true
     power_limit:
       - joint:
-          - "right_front_wheel_motor"
-          - "left_front_wheel_motor"
-          - "left_back_wheel_motor"
-          - "right_back_wheel_motor"
+          - "right_front_wheel_joint"
+          - "left_front_wheel_joint"
+          - "left_back_wheel_joint"
+          - "right_back_wheel_joint"
         effort_coeff: 12.0
         vel_coeff: 0.0048
         power_offset: -3.
