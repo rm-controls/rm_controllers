@@ -45,9 +45,8 @@ public:
     }
   }
 
-  void limit()
+  void limit(double power_limit)
   {
-    double power_limit = 60;
     // Three coefficients of a quadratic equation in one variable
     double a = 0., b = 0., c = 0.;
     for (const auto& joint : joint_handles_)
@@ -65,7 +64,6 @@ public:
     for (auto joint : joint_handles_)
     {
       joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
-      std::cout << joint.getName() << std::endl;
     }
   }
 
