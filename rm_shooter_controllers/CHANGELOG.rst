@@ -2,8 +2,8 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.2 (2022-01-06)
+------------------
 * Merge branch 'master' of https://github.com/YuuinIH/rm_controllers
 * Merge branch 'gimbal/opti_or_simplify' into chassis/balance_imu_interface
 * Update the config of rm_shooter_controller, load only one controller on launch instead of spawn controllers

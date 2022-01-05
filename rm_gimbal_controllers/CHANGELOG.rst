@@ -2,8 +2,8 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.2 (2022-01-06)
+------------------
 * Merge branch 'rm-controls-master'
 * Merge branch 'master' of https://github.com/rm-controls/rm_controllers into rm-controls-master
 * Merge pull request `#30 <https://github.com/YuuinIH/rm_controllers/issues/30>`_ from ljq-lv/rm_gimbal_controllers

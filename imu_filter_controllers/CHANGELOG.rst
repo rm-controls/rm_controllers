@@ -2,8 +2,8 @@
 Changelog for package imu_filter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.2 (2022-01-06)
+------------------
 * Merge branch 'rm-controls-master'
 * Merge branch 'master' of https://github.com/rm-controls/rm_controllers into rm-controls-master
 * Merge branch 'master' into omni_wheel_controller
