@@ -2,8 +2,8 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.2 (2022-01-08)
+------------------
 * Merge pull request `#30 <https://github.com/rm-controls/rm_controllers/issues/30>`_ from ljq-lv/rm_gimbal_controllers
   Modify namespace on rm_gimbal_controllers
 * Modify namespace from bullet_solver to rm_gimbal_controllers

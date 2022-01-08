@@ -2,8 +2,8 @@
 Changelog for package rm_orientation_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.2 (2022-01-08)
+------------------
 * Merge branch 'master' into omni_wheel_controller
 * Merge pull request `#23 <https://github.com/rm-controls/rm_controllers/issues/23>`_ from ye-luo-xi-tui/master
   Add ImuFilterBase, overwrite ComplementaryController, add MadgwickController

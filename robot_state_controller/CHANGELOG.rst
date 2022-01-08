@@ -2,8 +2,8 @@
 Changelog for package robot_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.2 (2022-01-08)
+------------------
 * Merge branch 'master' of https://github.com/YuuinIH/rm_controllers
 * Merge branch 'master' into chassis/balance_imu_interface
 * Clear tf buffer when simulation reset

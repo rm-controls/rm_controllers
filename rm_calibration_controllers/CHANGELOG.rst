@@ -2,8 +2,8 @@
 Changelog for package rm_calibration_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.2 (2022-01-08)
+------------------
 * Merge branch 'master' into chassis/fix_filter
 * Merge remote-tracking branch 'origin/master'
 * Merge branch 'namespace'

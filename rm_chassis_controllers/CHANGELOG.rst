@@ -2,8 +2,8 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.2 (2022-01-08)
+------------------
 * Merge pull request `#31 <https://github.com/rm-controls/rm_controllers/issues/31>`_ from ye-luo-xi-tui/modify_params
   Modify chassis configuration
 * Update standard3.yaml.
