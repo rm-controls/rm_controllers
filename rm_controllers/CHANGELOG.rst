@@ -2,6 +2,9 @@
 Changelog for package rm_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.1.1 (2021-08-12)
 ------------------
 * Set all version to the same
