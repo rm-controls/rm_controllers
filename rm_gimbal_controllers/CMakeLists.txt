@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_definitions(-Wall -Werror)
 
 ## Find catkin macros and libraries
+find_package(Eigen3 REQUIRED)
+
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
@@ -47,6 +49,7 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
         INCLUDE_DIRS
+        ${EIGEN3_INCLUDE_DIR}
         include
         LIBRARIES
         CATKIN_DEPENDS
@@ -79,6 +82,7 @@ catkin_package(
 include_directories(
         include
         ${catkin_INCLUDE_DIRS}
+        ${EIGEN3_INCLUDE_DIR}
 )
 
 ## Declare a cpp library

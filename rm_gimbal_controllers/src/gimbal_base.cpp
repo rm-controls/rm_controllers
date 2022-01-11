@@ -47,6 +47,20 @@ namespace rm_gimbal_controllers
 {
 bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
 {
+  XmlRpc::XmlRpcValue xml_rpc_value;
+  bool enable_feedforward;
+  enable_feedforward = controller_nh.getParam("feedforward", xml_rpc_value);
+  if (enable_feedforward)
+  {
+    ROS_ASSERT(xml_rpc_value.hasMember("mass_origin"));
+    ROS_ASSERT(xml_rpc_value.hasMember("gravity"));
+    ROS_ASSERT(xml_rpc_value.hasMember("enable_gravity_compensation"));
+  }
+  mass_origin_.x = enable_feedforward ? (double)xml_rpc_value["mass_origin"][0] : 0.;
+  mass_origin_.z = enable_feedforward ? (double)xml_rpc_value["mass_origin"][2] : 0.;
+  gravity_ = enable_feedforward ? (double)xml_rpc_value["gravity"] : 0.;
+  enable_gravity_compensation_ = enable_feedforward && (bool)xml_rpc_value["enable_gravity_compensation"];
+
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   bullet_solver_ = new BulletSolver(nh_bullet_solver);
 
@@ -279,6 +293,25 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
+  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
+}
+
+double Controller::feedForward(const ros::Time& time)
+{
+  Eigen::Vector3d gravity(0, 0, -gravity_);
+  tf2::doTransform(gravity, gravity,
+                   robot_state_handle_.lookupTransform(ctrl_pitch_.joint_urdf_->child_link_name, "map", time));
+  Eigen::Vector3d mass_origin(mass_origin_.x, 0, mass_origin_.z);
+  double feedforward = -mass_origin.cross(gravity).y();
+  if (enable_gravity_compensation_)
+  {
+    Eigen::Vector3d gravity_compensation(0, 0, gravity_);
+    tf2::doTransform(gravity_compensation, gravity_compensation,
+                     robot_state_handle_.lookupTransform(ctrl_pitch_.joint_urdf_->child_link_name,
+                                                         ctrl_pitch_.joint_urdf_->parent_link_name, time));
+    feedforward -= mass_origin.cross(gravity_compensation).y();
+  }
+  return feedforward;
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)
