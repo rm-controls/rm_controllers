@@ -47,7 +47,7 @@
 #include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
 
-namespace bullet_solver
+namespace rm_gimbal_controllers
 {
 struct Config
 {
@@ -92,4 +92,4 @@ private:
   visualization_msgs::Marker marker_desire_;
   visualization_msgs::Marker marker_real_;
 };
-}  // namespace bullet_solver
+}  // namespace rm_gimbal_controllers

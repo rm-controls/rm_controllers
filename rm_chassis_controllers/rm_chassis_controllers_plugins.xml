@@ -8,6 +8,14 @@
             type of hardware interface.
         </description>
     </class>
+    <class name="rm_chassis_controllers/OmniController"
+           type="rm_chassis_controllers::OmniController"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+            The OmniController is Robomaster Omnidirectional wheel Chassis controller. It expects a EffortJointInterface
+            type of hardware interface.
+        </description>
+    </class>
     <class name="rm_chassis_controllers/SentryController"
            type="rm_chassis_controllers::SentryController"
            base_class_type="controller_interface::ControllerBase">

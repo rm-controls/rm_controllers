@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>imu_filter_controllers</name>
-  <version>0.0.0</version>
+  <version>0.1.2</version>
   <description>The imu_filter_controllers package</description>
   <maintainer email="ljq@todo.todo">ljq</maintainer>
   <license>TODO</license>
@@ -17,6 +17,7 @@
 
   <depend>pluginlib</depend>
   <depend>imu_complementary_filter</depend>
+  <depend>imu_filter_madgwick</depend>
   <depend>hardware_interface</depend>
   <depend>controller_interface</depend>
   <depend>realtime_tools</depend>
