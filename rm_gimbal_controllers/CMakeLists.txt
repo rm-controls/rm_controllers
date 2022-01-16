@@ -10,7 +10,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_definitions(-Wall -Werror)
 
 ## Find catkin macros and libraries
-find_package(Eigen3 REQUIRED)
 
 find_package(catkin REQUIRED
         COMPONENTS
@@ -28,6 +27,7 @@ find_package(catkin REQUIRED
         control_toolbox
         effort_controllers
         tf2
+        tf2_eigen
         tf2_geometry_msgs
         visualization_msgs
         dynamic_reconfigure
@@ -49,7 +49,6 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
         INCLUDE_DIRS
-        ${EIGEN3_INCLUDE_DIR}
         include
         LIBRARIES
         CATKIN_DEPENDS
@@ -67,6 +66,7 @@ catkin_package(
         control_toolbox
         effort_controllers
         tf2
+        tf2_eigen
         tf2_geometry_msgs
         visualization_msgs
         dynamic_reconfigure
@@ -82,7 +82,6 @@ catkin_package(
 include_directories(
         include
         ${catkin_INCLUDE_DIRS}
-        ${EIGEN3_INCLUDE_DIR}
 )
 
 ## Declare a cpp library
