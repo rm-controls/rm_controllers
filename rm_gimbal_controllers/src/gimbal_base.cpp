@@ -74,7 +74,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   map2base_.transform.rotation.w = 1.;
 
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
-  track_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalTrack>("Track", 1, &Controller::trackCB, this);
+  cmd_track_sub_ = controller_nh.subscribe<rm_msgs::TrackCmd>("Track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
 
@@ -90,7 +90,7 @@ void Controller::starting(const ros::Time& /*unused*/)
 void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
   cmd_gimbal_ = *cmd_rt_buffer_.readFromRT();
-  track_gimbal_ = *track_rt_buffer_.readFromNonRT();
+  cmd_track_ = *track_rt_buffer_.readFromNonRT();
   try
   {
     map2pitch_ = robot_state_handle_.lookupTransform("map", ctrl_pitch_.joint_urdf_->child_link_name, time);
@@ -150,32 +150,32 @@ void Controller::track(const ros::Time& time)
   quatToRPY(map2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
   double yaw_compute = yaw_real;
   double pitch_compute = -pitch_real;
-  geometry_msgs::Point target_pos = track_gimbal_.target_pos.point;
-  geometry_msgs::Vector3 target_vel = track_gimbal_.target_vel.vector;
+  geometry_msgs::Point target_pos = cmd_track_.target_pos.point;
+  geometry_msgs::Vector3 target_vel = cmd_track_.target_vel.vector;
   try
   {
-    if (!track_gimbal_.target_pos.header.frame_id.empty())
+    if (!cmd_track_.target_pos.header.frame_id.empty())
       tf2::doTransform(target_pos, target_pos,
-                       robot_state_handle_.lookupTransform("map", track_gimbal_.target_pos.header.frame_id,
-                                                           track_gimbal_.target_pos.header.stamp));
-    if (!track_gimbal_.target_vel.header.frame_id.empty())
+                       robot_state_handle_.lookupTransform("map", cmd_track_.target_pos.header.frame_id,
+                                                           cmd_track_.target_pos.header.stamp));
+    if (!cmd_track_.target_vel.header.frame_id.empty())
       tf2::doTransform(target_vel, target_vel,
-                       robot_state_handle_.lookupTransform("map", track_gimbal_.target_vel.header.frame_id,
-                                                           track_gimbal_.target_vel.header.stamp));
+                       robot_state_handle_.lookupTransform("map", cmd_track_.target_vel.header.frame_id,
+                                                           cmd_track_.target_vel.header.stamp));
   }
   catch (tf2::TransformException& ex)
   {
     ROS_WARN("%s", ex.what());
   }
 
-  bool solve_success = bullet_solver_->solve(target_pos, target_vel, track_gimbal_.bullet_speed);
+  bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_track_.bullet_speed);
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
     if (error_pub_->trylock())
     {
-      double error = bullet_solver_->getGimbalError(target_pos, target_vel, yaw_compute, pitch_compute,
-                                                    track_gimbal_.bullet_speed);
+      double error =
+          bullet_solver_->getGimbalError(target_pos, target_vel, yaw_compute, pitch_compute, cmd_track_.bullet_speed);
       error_pub_->msg_.stamp = time;
       error_pub_->msg_.error = solve_success ? error : 1.0;
       error_pub_->unlockAndPublish();
@@ -288,7 +288,7 @@ void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)
   cmd_rt_buffer_.writeFromNonRT(*msg);
 }
 
-void Controller::trackCB(const rm_msgs::GimbalTrackConstPtr& msg)
+void Controller::trackCB(const rm_msgs::TrackCmdConstPtr& msg)
 {
   track_rt_buffer_.writeFromNonRT(*msg);
 }
