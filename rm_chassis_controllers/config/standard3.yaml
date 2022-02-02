@@ -1,14 +1,20 @@
 controllers:
-  robot_state_controller:
-    type: robot_state_controller/RobotStateController
-    publish_rate: 100
-  joint_state_controller:
-    type: joint_state_controller/JointStateController
-    publish_rate: 100
   chassis_controller:
     type: rm_chassis_controllers/OmniController
+    # ChassisBase
     publish_rate: 100
     enable_odom_tf: true
+    power:
+      effort_coeff: 12.0
+      vel_coeff: 0.0048
+      power_offset: 0
+    twist_angular: 0.5233
+    timeout: 0.1
+    pid_follow: { p: 8, i: 0, d: 4.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
+
+    # OmniController
+    chassis_radius: 0.208
     wheel_radius: 0.07625
     left_front:
       joint: "left_front_wheel_joint"
@@ -22,13 +28,3 @@ controllers:
     right_back:
       joint: "right_back_wheel_joint"
       pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
-    twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
-
-    chassis_radius: 0.208
-    power:
-      effort_coeff: 12.0
-      vel_coeff: 0.0048
-      power_offset: 0
-    twist_angular: 0.5233
-    timeout: 0.1
-    pid_follow: { p: 5, i: 0, d: 0.8, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
