@@ -255,9 +255,11 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     base_frame2des =
         robot_state_handle_.lookupTransform(ctrl_yaw_.joint_urdf_->parent_link_name, gimbal_des_frame_id_, time);
     tf2::doTransform(gyro, angular_vel_pitch,
-                     robot_state_handle_.lookupTransform("pitch", imu_sensor_handle_.getFrameId(), time));
+                     robot_state_handle_.lookupTransform(ctrl_pitch_.joint_urdf_->child_link_name,
+                                                         imu_sensor_handle_.getFrameId(), time));
     tf2::doTransform(gyro, angular_vel_yaw,
-                     robot_state_handle_.lookupTransform("yaw", imu_sensor_handle_.getFrameId(), time));
+                     robot_state_handle_.lookupTransform(ctrl_yaw_.joint_urdf_->child_link_name,
+                                                         imu_sensor_handle_.getFrameId(), time));
   }
   catch (tf2::TransformException& ex)
   {
