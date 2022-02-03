@@ -1,5 +1,5 @@
 controllers:
-  imu_madgwick_filter_controller:
+  imu_filter_controller:
     type: imu_filter_controllers/MadgwickController
     name: "gimbal_imu"
     gain: 0.00123

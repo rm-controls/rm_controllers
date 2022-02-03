@@ -11,7 +11,7 @@ controllers:
     trigger:
       joint: "trigger_joint"
       pid: { p: 50.0, i: 0.0, d: 1.5, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
-    push_per_rotation: 8
+    push_per_rotation: 9
     push_qd_threshold: 0.90
     block_effort: 0.95
     block_speed: 0.1
