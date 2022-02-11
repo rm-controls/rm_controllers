@@ -1,10 +1,4 @@
 controllers:
-  robot_state_controller:
-    type: robot_state_controller/RobotStateController
-    publish_rate: 50
-  joint_state_controller:
-    type: joint_state_controller/JointStateController
-    publish_rate: 50
   gimbal_controller:
     type: rm_gimbal_controllers/Controller
     time_compensation: 0.008

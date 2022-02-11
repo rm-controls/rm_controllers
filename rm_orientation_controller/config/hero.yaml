@@ -1,7 +1,4 @@
 controllers:
-  robot_state_controller:
-    type: robot_state_controller/RobotStateController
-    publish_rate: 50
   orientation_controller:
     imu_name: gimbal_imu
     type: rm_orientation_controller/Controller
