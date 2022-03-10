@@ -1,0 +1,7 @@
+controllers:
+  left_tof_sensor_controller:
+    type: tof_sensor_controllers/Controller
+    name: "left_chassis_tof"
+  right_tof_sensor_controller:
+    type: tof_sensor_controllers/Controller
+    name: "right_chassis_tof"
