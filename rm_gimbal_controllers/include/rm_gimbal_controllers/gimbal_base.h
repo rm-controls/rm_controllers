@@ -65,6 +65,8 @@ private:
   void rate(const ros::Time& time, const ros::Duration& period);
   void track(const ros::Time& time);
   void direct(const ros::Time& time);
+  bool setDesIntoLimit(double& real_des, double current_des, double last_des, double base2gimbal_current_des,
+                       double base2gimbal_last_des, const urdf::JointConstSharedPtr& joint_urdf);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
 

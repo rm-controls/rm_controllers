@@ -119,6 +119,46 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   moveJoint(time, period);
 }
 
+void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des)
+{
+  tf2::Quaternion map2base, map2last_des, map2gimbal_des;
+  tf2::Quaternion base2gimbal_des;
+  double pitch_last, yaw_last;
+  tf2::fromMsg(map2base_.transform.rotation, map2base);
+  tf2::fromMsg(map2gimbal_des_.transform.rotation, map2last_des);
+  map2gimbal_des.setRPY(0, pitch_des, yaw_des);
+  base2gimbal_des = map2base.inverse() * map2gimbal_des;
+  tf2::Quaternion base2last_des = map2base.inverse() * map2last_des;
+  double roll_temp, base2gimbal_current_des_pitch, base2gimbal_current_des_yaw;
+  double base2gimbal_last_des_pitch, base2gimbal_last_des_yaw;
+  quatToRPY(map2gimbal_des_.transform.rotation, roll_temp, pitch_last, yaw_last);
+  quatToRPY(toMsg(base2gimbal_des), roll_temp, base2gimbal_current_des_pitch, base2gimbal_current_des_yaw);
+  quatToRPY(toMsg(base2last_des), roll_temp, base2gimbal_last_des_pitch, base2gimbal_last_des_yaw);
+  double pitch_real_des, yaw_real_des;
+
+  if (!setDesIntoLimit(pitch_real_des, pitch_des, pitch_last, base2gimbal_current_des_pitch, base2gimbal_last_des_pitch,
+                       ctrl_pitch_.joint_urdf_))
+  {
+    double yaw_temp;
+    tf2::Quaternion base2new_des;
+    base2new_des.setRPY(0, ctrl_pitch_.getPosition(), base2gimbal_current_des_yaw);
+    quatToRPY(toMsg(map2base * base2new_des), roll_temp, pitch_real_des, yaw_temp);
+  }
+
+  if (!setDesIntoLimit(yaw_real_des, yaw_des, yaw_last, base2gimbal_current_des_yaw, base2gimbal_last_des_yaw,
+                       ctrl_yaw_.joint_urdf_))
+  {
+    double pitch_temp;
+    tf2::Quaternion base2new_des;
+    base2new_des.setRPY(0, base2gimbal_current_des_pitch, ctrl_yaw_.getPosition());
+    quatToRPY(toMsg(map2base * base2new_des), roll_temp, pitch_temp, yaw_real_des);
+  }
+
+  map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0., pitch_real_des, yaw_real_des);
+  map2gimbal_des_.header.stamp = time;
+  robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controllers");
+}
+
 void Controller::rate(const ros::Time& time, const ros::Duration& period)
 {
   if (state_changed_)
@@ -218,75 +258,23 @@ void Controller::direct(const ros::Time& time)
   setDes(time, yaw, pitch);
 }
 
-void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des)
+bool Controller::setDesIntoLimit(double& real_des, double current_des, double last_des, double base2gimbal_current_des,
+                                 double base2gimbal_last_des, const urdf::JointConstSharedPtr& joint_urdf)
 {
-  tf2::Quaternion map2base, map2now, map2gimbal_des;
-  tf2::Quaternion base2gimbal_des;
-  double pitch_now, yaw_now;
-  tf2::fromMsg(map2base_.transform.rotation, map2base);
-  tf2::fromMsg(map2gimbal_des_.transform.rotation, map2now);
-  map2gimbal_des.setRPY(0, pitch_des, yaw_des);
-  base2gimbal_des = map2base.inverse() * map2gimbal_des;
-  tf2::Quaternion base2now = map2base.inverse() * map2now;
-  double roll_temp, pitch_delta, yaw_delta;
-  quatToRPY(map2gimbal_des_.transform.rotation, roll_temp, pitch_now, yaw_now);
-  quatToRPY(toMsg(base2gimbal_des), roll_temp, pitch_delta, yaw_delta);
-  double pitch, yaw;
-
-  if ((pitch_delta <= ctrl_pitch_.joint_urdf_->limits->upper && pitch_delta >= ctrl_pitch_.joint_urdf_->limits->lower) ||
-      (angles::two_pi_complement(pitch_delta) <= ctrl_pitch_.joint_urdf_->limits->upper &&
-       angles::two_pi_complement(pitch_delta) >= ctrl_pitch_.joint_urdf_->limits->lower))
-    pitch = pitch_des;
+  double upper_limit, lower_limit;
+  upper_limit = joint_urdf->limits ? joint_urdf->limits->upper : 1e16;
+  lower_limit = joint_urdf->limits ? joint_urdf->limits->lower : -1e16;
+  if ((base2gimbal_current_des <= upper_limit && base2gimbal_current_des >= lower_limit) ||
+      (angles::two_pi_complement(base2gimbal_current_des) <= upper_limit &&
+       angles::two_pi_complement(base2gimbal_current_des) >= lower_limit))
+    real_des = current_des;
+  else if ((base2gimbal_last_des <= upper_limit && base2gimbal_last_des >= lower_limit) ||
+           (angles::two_pi_complement(base2gimbal_last_des) <= upper_limit &&
+            angles::two_pi_complement(base2gimbal_last_des) >= lower_limit))
+    real_des = last_des;
   else
-  {
-    double yaw_temp;
-    quatToRPY(toMsg(base2now), roll_temp, pitch_delta, yaw_temp);
-    if ((pitch_delta <= ctrl_pitch_.joint_urdf_->limits->upper &&
-         pitch_delta >= ctrl_pitch_.joint_urdf_->limits->lower) ||
-        (angles::two_pi_complement(pitch_delta) <= ctrl_pitch_.joint_urdf_->limits->upper &&
-         angles::two_pi_complement(pitch_delta) >= ctrl_pitch_.joint_urdf_->limits->lower))
-      pitch = pitch_now;
-    else
-    {
-      tf2::Quaternion base2new_des;
-      base2new_des.setRPY(
-          0,
-          std::abs(angles::shortest_angular_distance(pitch_delta, ctrl_pitch_.joint_urdf_->limits->upper)) <
-                  std::abs(angles::shortest_angular_distance(pitch_delta, ctrl_pitch_.joint_urdf_->limits->lower)) ?
-              ctrl_pitch_.joint_urdf_->limits->upper - 0.1 :
-              ctrl_pitch_.joint_urdf_->limits->lower + 0.1,
-          yaw_delta);
-      quatToRPY(toMsg(map2base * base2new_des), roll_temp, pitch, yaw_temp);
-    }
-  }
-
-  if ((yaw_delta <= ctrl_yaw_.joint_urdf_->limits->upper && yaw_delta >= ctrl_yaw_.joint_urdf_->limits->lower) ||
-      (angles::two_pi_complement(yaw_delta) <= ctrl_yaw_.joint_urdf_->limits->upper &&
-       angles::two_pi_complement(yaw_delta) >= ctrl_yaw_.joint_urdf_->limits->lower))
-    yaw = yaw_des;
-  else
-  {
-    double pitch_temp;
-    quatToRPY(toMsg(base2now), roll_temp, pitch_temp, yaw_delta);
-    if ((yaw_delta <= ctrl_yaw_.joint_urdf_->limits->upper && yaw_delta >= ctrl_yaw_.joint_urdf_->limits->lower) ||
-        (angles::two_pi_complement(yaw_delta) <= ctrl_yaw_.joint_urdf_->limits->upper &&
-         angles::two_pi_complement(yaw_delta) >= ctrl_yaw_.joint_urdf_->limits->lower))
-      yaw = yaw_now;
-    else
-    {
-      tf2::Quaternion base2new_des;
-      base2new_des.setRPY(
-          0, pitch_delta,
-          std::abs(angles::shortest_angular_distance(yaw_delta, ctrl_yaw_.joint_urdf_->limits->upper)) <
-                  std::abs(angles::shortest_angular_distance(yaw_delta, ctrl_yaw_.joint_urdf_->limits->lower)) ?
-              ctrl_yaw_.joint_urdf_->limits->upper - 0.1 :
-              ctrl_yaw_.joint_urdf_->limits->lower + 0.1);
-      quatToRPY(toMsg(map2base * base2new_des), roll_temp, pitch_temp, yaw);
-    }
-  }
-  map2gimbal_des_.transform.rotation = tf::createQuaternionMsgFromRollPitchYaw(0., pitch, yaw);
-  map2gimbal_des_.header.stamp = time;
-  robot_state_handle_.setTransform(map2gimbal_des_, "rm_gimbal_controllers");
+    return false;
+  return true;
 }
 
 void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
@@ -316,8 +304,19 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   double roll_des, pitch_des, yaw_des;  // desired position
   quatToRPY(base_frame2des.transform.rotation, roll_des, pitch_des, yaw_des);
 
-  ctrl_yaw_.setCommand(yaw_des, ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
-  ctrl_pitch_.setCommand(pitch_des, ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
+  double pitch_vel_target, yaw_vel_target;
+  if (state_ == RATE)
+  {
+    pitch_vel_target = cmd_gimbal_.rate_pitch;
+    yaw_vel_target = cmd_gimbal_.rate_yaw;
+  }
+  else
+  {
+    pitch_vel_target = 0;
+    yaw_vel_target = 0;
+  }
+  ctrl_yaw_.setCommand(yaw_des, yaw_vel_target + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
+  ctrl_pitch_.setCommand(pitch_des, pitch_vel_target + ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
 }
