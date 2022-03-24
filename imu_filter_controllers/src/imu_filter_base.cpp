@@ -27,7 +27,7 @@ bool ImuFilterBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle&
 }
 void ImuFilterBase::update(const ros::Time& time, const ros::Duration& period)
 {
-  if (!imu_extra_handle_.getGyroUpdated() || !imu_extra_handle_.getAccelUpdated())
+  if (!imu_extra_handle_.getAccelUpdated())
     return;
   // For first update.
   if (!initialized_filter_)
