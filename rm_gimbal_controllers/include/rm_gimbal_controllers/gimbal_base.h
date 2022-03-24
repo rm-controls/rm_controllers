@@ -47,6 +47,8 @@
 #include <rm_msgs/GimbalDesError.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_gimbal_controllers/bullet_solver.h>
+#include <tf2_eigen/tf2_eigen.h>
+#include <Eigen/Eigen>
 
 namespace rm_gimbal_controllers
 {
@@ -66,6 +68,7 @@ private:
   void track(const ros::Time& time);
   void direct(const ros::Time& time);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
+  double feedForward(const ros::Time& time);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
 
   rm_control::RobotStateHandle robot_state_handle_;
@@ -87,6 +90,10 @@ private:
 
   double publish_rate_{};
   bool state_changed_{};
+
+  geometry_msgs::Vector3 mass_origin_;
+  double gravity_;
+  bool enable_gravity_compensation_;
 
   enum
   {
