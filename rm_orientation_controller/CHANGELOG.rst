@@ -2,6 +2,16 @@
 Changelog for package rm_orientation_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.3 (2022-03-28)
+------------------
+* Merge branch 'master' into forward_feed
+* Merge pull request `#40 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/40>`_ from ye-luo-xi-tui/maintain
+  Delete configuration of robot_state_controller in each of controllers' config file
+* Delete configuration of robot_state_controller in each of controllers' config file
+* Merge branch 'master' into standard3
+* Merge remote-tracking branch 'origin/master'
+* Contributors: QiayuanLiao, qiayuan, ye-luo-xi-tui, yezi
+
 0.1.2 (2022-01-08)
 ------------------
 * Merge branch 'master' into omni_wheel_controller
