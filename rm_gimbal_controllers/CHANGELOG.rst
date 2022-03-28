@@ -2,6 +2,31 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.3 (2022-03-28)
+------------------
+* Merge pull request `#42 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/42>`_ from ye-luo-xi-tui/fix_gimbal
+  Fix bug in gimbal_controller
+* Merge pull request `#37 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/37>`_ from ye-luo-xi-tui/forward_feed
+  Add feedforward in gimbal control
+* Merge branch 'master' into forward_feed
+* Simplify the codes. Set vel_target under rate mode.
+* Fix bug which relative to limit in gimbal_controller.
+* Merge pull request `#40 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/40>`_ from ye-luo-xi-tui/maintain
+  Delete configuration of robot_state_controller in each of controllers' config file
+* Merge branch 'master' into 'standard3'.
+* Merge branch 'master' into maintain
+  # Conflicts:
+  #	rm_chassis_controllers/config/standard3.yaml
+  #	rm_chassis_controllers/config/standard4.yaml
+* Delete configuration of robot_state_controller in each of controllers' config file
+* Merge branch 'master' into standard3
+* Delete eigen, tf2_eigen instead.
+* chore: add missing deps
+* Merge remote-tracking branch 'origin/master'
+* Change frame id of gimbal while transforming angular_vel form imu to pitch/yaw for engineer or sentry.
+* Add feedforward in gimbal control.
+* Contributors: QiayuanLiao, StarHeart, qiayuan, ye-luo-xi-tui, yezi
+
 0.1.2 (2022-01-08)
 ------------------
 * Merge pull request `#30 <https://github.com/rm-controls/rm_controllers/issues/30>`_ from ljq-lv/rm_gimbal_controllers
