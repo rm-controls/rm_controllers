@@ -1,7 +1,0 @@
-controllers:
-  imu_filter_controller:
-    type: imu_filter_controllers/MadgwickController
-    name: "gimbal_imu"
-    gain: 0.00123
-    zeta: 0.0
-    world_frame: enu
