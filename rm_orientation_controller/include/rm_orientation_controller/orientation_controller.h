@@ -23,9 +23,13 @@ public:
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
+  bool getTransform(const ros::Time& time, geometry_msgs::TransformStamped& source2target, const double x,
+                    const double y, const double z, const double w);
+  void imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg);
   double publish_rate_{};
 
   hardware_interface::ImuSensorHandle imu_sensor_;
+  ros::Subscriber imu_data_sub_;
   rm_control::RobotStateHandle robot_state_;
 
   rm_common::TfRtBroadcaster tf_broadcaster_{};
@@ -35,7 +39,5 @@ private:
   std::string frame_source_;
   std::string frame_target_;
   double last_orientation_x, last_orientation_y;
-
-  std::shared_ptr<realtime_tools::RealtimePublisher<sensor_msgs::Imu> > imu_pub_;
 };
 }  // namespace rm_orientation_controller
