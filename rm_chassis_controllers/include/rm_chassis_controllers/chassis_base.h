@@ -152,6 +152,7 @@ protected:
   double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, timeout_{}, effort_coeff_{},
       velocity_coeff_{}, power_offset_{};
   bool enable_odom_tf_ = false;
+  bool publish_odom_tf_ = false;
   bool state_changed_ = true;
   enum
   {
