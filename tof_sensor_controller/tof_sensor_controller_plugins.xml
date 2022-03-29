@@ -1,0 +1,8 @@
+<library path="lib/libtof_sensor_controller">
+
+    <class name="tof_sensor_controller/Controller" type="tof_sensor_controller::Controller"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+        </description>
+    </class>
+</library>
