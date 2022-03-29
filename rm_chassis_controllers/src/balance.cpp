@@ -52,6 +52,9 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   ChassisBase::init(robot_hw, root_nh, controller_nh);
   com_pitch_offset_ = getParam(controller_nh, "com_pitch_offset", 0.);
 
+  imu_sensor_handle_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(
+      getParam(controller_nh, "imu_name", std::string("base_imu")));
+
   joint_left_ =
       effort_joint_interface_->getHandle(getParam(controller_nh, "joint_left_name", std::string("joint_left")));
   joint_right_ =
@@ -66,7 +69,6 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   controller_nh.getParam("r", r);
   getK(a, b, q, r);
   state_real_pub_ = root_nh.advertise<rm_msgs::BalanceState>("state_real", 100);
-  data_imu_sub_ = root_nh.subscribe<sensor_msgs::Imu>("base_imu", 1, &BalanceController::dataImuCallback, this);
 
   return true;
 }
@@ -91,30 +93,30 @@ geometry_msgs::Twist BalanceController::forwardKinematics()
   geometry_msgs::Twist vel_data;
   double joint_left_velocity = joint_left_.getVelocity();
   double joint_right_velocity = joint_right_.getVelocity();
-  vel_data.linear.x = ((joint_left_velocity + joint_right_velocity) / 2 + imu_data_.angular_velocity.y) * wheel_radius_;
+  vel_data.linear.x =
+      ((joint_left_velocity + joint_right_velocity) / 2 + imu_sensor_handle_.getAngularVelocity()[1]) * wheel_radius_;
   vel_data.angular.z = (-joint_left_velocity + joint_right_velocity) * wheel_radius_ / wheel_base_;
   return vel_data;
 }
 
 void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
-  x_ref_(2) = ramp_x_->output();
-  x_ref_(3) = ramp_w_->output();
-
-  imu_data_ = *imu_rt_buffer_.readFromRT();
+  x_ref_(2) = vel_cmd_.x;
+  x_ref_(3) = vel_cmd_.z;
+  geometry_msgs::Quaternion quat;
+  quat.x = imu_sensor_handle_.getOrientation()[0];
+  quat.y = imu_sensor_handle_.getOrientation()[1];
+  quat.z = imu_sensor_handle_.getOrientation()[2];
+  quat.w = imu_sensor_handle_.getOrientation()[3];
   double roll{}, pitch{}, yaw{};
-  quatToRPY(imu_data_.orientation, roll, pitch, yaw);
-  x_ << pitch + com_pitch_offset_, imu_data_.angular_velocity.y,
-      forwardKinematics().linear.x + imu_data_.angular_velocity.y * 0.147, imu_data_.angular_velocity.z;
+  quatToRPY(quat, roll, pitch, yaw);
+  x_ << pitch + com_pitch_offset_, imu_sensor_handle_.getAngularVelocity()[1],
+      forwardKinematics().linear.x + imu_sensor_handle_.getAngularVelocity()[1] * 0.147,
+      imu_sensor_handle_.getAngularVelocity()[2];
 
   u_ = k_ * (x_ref_ - x_);
   joint_left_.setCommand(u_(0));
   joint_right_.setCommand(u_(1));
-}
-
-void BalanceController::dataImuCallback(const sensor_msgs::ImuConstPtr& data)
-{
-  imu_rt_buffer_.writeFromNonRT(*data);
 }
 
 void BalanceController::getK(XmlRpc::XmlRpcValue a, XmlRpc::XmlRpcValue b, XmlRpc::XmlRpcValue q, XmlRpc::XmlRpcValue r)

@@ -1,10 +1,4 @@
 controllers:
-  robot_state_controller:
-    type: robot_state_controller/RobotStateController
-    publish_rate: 50
-  joint_state_controller:
-    type: joint_state_controller/JointStateController
-    publish_rate: 50
   gimbal_controller:
     type: rm_gimbal_controllers/Controller
     time_compensation: 0.008
@@ -17,6 +11,10 @@ controllers:
     pitch:
       joint: "pitch_joint"
       pid: { p: 20, i: 200, d: 0.4, i_clamp_max: 0.8, i_clamp_min: -0.8, antiwindup: true, publish_state: true }
+    feedforward:
+      gravity: 0.0
+      enable_gravity_compensation: false
+      mass_origin: [ 0.0,0.0,0.0 ]
     bullet_solver:
       resistance_coff_qd_10: 0.1
       resistance_coff_qd_15: 0.4

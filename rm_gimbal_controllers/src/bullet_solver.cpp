@@ -40,7 +40,7 @@
 #include <tf/transform_datatypes.h>
 #include <rm_common/ori_tool.h>
 
-namespace bullet_solver
+namespace rm_gimbal_controllers
 {
 BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
 {
@@ -221,7 +221,7 @@ double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vec
   return error;
 }
 
-void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t)
+void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t /*unused*/)
 {
   ROS_INFO("[Bullet Solver] Dynamic params change");
   if (!dynamic_reconfig_initialized_)
@@ -249,4 +249,4 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .timeout = config.timeout };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
-}  // namespace bullet_solver
+}  // namespace rm_gimbal_controllers

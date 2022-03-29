@@ -1,0 +1,7 @@
+controllers:
+  orientation_controller:
+    type: rm_orientation_controller/Controller
+    publish_rate: 100
+    name: "gimbal_imu"
+    frame_source: "odom"
+    frame_target: "base_link"

@@ -1,23 +1,6 @@
 <launch>
     <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, hero, engineer]"/>
-    <arg name="load_controller" default="true"/>
-
     <rosparam file="$(find rm_shooter_controllers)/config/$(arg robot_type).yaml" command="load"/>
-    <rosparam file="$(find rm_gimbal_controllers)/config/$(arg robot_type).yaml" command="load"/>
-
-    <!-- load the controllers -->
-    <node if="$(arg load_controller)" name="controller_spawner" pkg="controller_manager" type="spawner"
-          respawn="false" output="screen"
-          args="
-          controllers/robot_state_controller
-          controllers/joint_state_controller
-          controllers/upper_gimbal_controller
-          controllers/lower_gimbal_controller
-          controllers/upper_shooter_controller
-          controllers/lower_shooter_controller
-    "/>
-
-    <node pkg="tf" type="static_transform_publisher" name=""
-          args="0 0 0 0 0 0 1 map base_link 100"/>
-
+    <node name="controller_loader" pkg="controller_manager" type="controller_manager" output="screen"
+          args="load controllers/shooter_controller"/>
 </launch>

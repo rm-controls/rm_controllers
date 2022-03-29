@@ -48,6 +48,7 @@
 #include <tf2_ros/buffer.h>
 #include <urdf/model.h>
 #include <kdl/tree.hpp>
+#include <realtime_tools/realtime_buffer.h>
 
 namespace robot_state_controller
 {
@@ -65,7 +66,7 @@ public:
 
 class RobotStateController
   : public controller_interface::MultiInterfaceController<hardware_interface::JointStateInterface,
-                                                          hardware_interface::RobotStateInterface>
+                                                          rm_control::RobotStateInterface>
 {
 public:
   RobotStateController() = default;
@@ -73,7 +74,9 @@ public:
   void update(const ros::Time& time, const ros::Duration& /*period*/) override;
 
 private:
-  virtual void addChildren(KDL::SegmentMap::const_iterator segment);
+  void addChildren(KDL::SegmentMap::const_iterator segment);
+  void tfSubCallback(const tf2_msgs::TFMessageConstPtr& msg);
+  void staticSubCallback(const tf2_msgs::TFMessageConstPtr& msg);
 
   urdf::Model model_{};
   std::map<std::string, urdf::JointMimicSharedPtr>* mimic_{};
@@ -81,16 +84,20 @@ private:
   bool use_tf_static_{};
   bool ignore_timestamp_{};
   double publish_rate_{};
+  ros::Time last_update_;
   ros::Time last_publish_time_;
 
   std::map<std::string, hardware_interface::JointStateHandle> jnt_states_;
   std::map<std::string, SegmentPair> segments_, segments_fixed_;
 
+  tf2_ros::Buffer* tf_buffer_{};
   rm_common::TfRtBroadcaster tf_broadcaster_;
   rm_common::StaticTfRtBroadcaster static_tf_broadcaster_;
-
-  tf2_ros::Buffer* tf_buffer_{};
-  tf2_ros::TransformListener* tf_listener_{};
+  // Do not use tf2_ros::TransformListener because it will lead to setTransform calling twice when publishing the transform
+  ros::Subscriber tf_sub_;
+  ros::Subscriber tf_static_sub_;
+  realtime_tools::RealtimeBuffer<tf2_msgs::TFMessage> tf_msg_;
+  realtime_tools::RealtimeBuffer<tf2_msgs::TFMessage> tf_static_msg_;
 };
 
 }  // namespace robot_state_controller

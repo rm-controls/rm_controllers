@@ -40,13 +40,22 @@
 #include <rm_common/ori_tool.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <angles/angles.h>
+#include <hardware_interface/imu_sensor_interface.h>
 
 namespace rm_chassis_controllers
 {
-bool ChassisBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
+template class ChassisBase<rm_control::RobotStateInterface, hardware_interface::EffortJointInterface>;
+template class ChassisBase<rm_control::RobotStateInterface, hardware_interface::ImuSensorInterface,
+                           hardware_interface::EffortJointInterface>;
+
+template <typename... T>
+bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
+                             ros::NodeHandle& controller_nh)
 {
-  if (!controller_nh.getParam("publish_rate", publish_rate_) || !controller_nh.getParam("power/coeff", power_coeff_) ||
-      !controller_nh.getParam("power/min_vel", power_min_vel_) || !controller_nh.getParam("timeout", timeout_))
+  if (!controller_nh.getParam("publish_rate", publish_rate_) || !controller_nh.getParam("timeout", timeout_) ||
+      !controller_nh.getParam("power/vel_coeff", velocity_coeff_) ||
+      !controller_nh.getParam("power/effort_coeff", effort_coeff_) ||
+      !controller_nh.getParam("power/power_offset", power_offset_))
   {
     ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
@@ -65,8 +74,8 @@ bool ChassisBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& r
   for (int i = 0; i < twist_cov_list.size(); ++i)
     ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
 
+  robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
-  robot_state_handle_ = robot_hw->get<hardware_interface::RobotStateInterface>()->getHandle("robot_state");
 
   // Setup odometry realtime publisher + odom message constant fields
   odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "odom", 100));
@@ -104,7 +113,8 @@ bool ChassisBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& r
   return true;
 }
 
-void ChassisBase::update(const ros::Time& time, const ros::Duration& period)
+template <typename... T>
+void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& period)
 {
   rm_msgs::ChassisCmd cmd_chassis = cmd_rt_buffer_.readFromRT()->cmd_chassis_;
   geometry_msgs::Twist cmd_vel = cmd_rt_buffer_.readFromRT()->cmd_vel_;
@@ -117,8 +127,12 @@ void ChassisBase::update(const ros::Time& time, const ros::Duration& period)
   }
   else
   {
-    vel_cmd_.x = cmd_vel.linear.x;
-    vel_cmd_.y = cmd_vel.linear.y;
+    ramp_x_->setAcc(cmd_chassis.accel.linear.x);
+    ramp_y_->setAcc(cmd_chassis.accel.linear.y);
+    ramp_x_->input(cmd_vel.linear.x);
+    ramp_y_->input(cmd_vel.linear.y);
+    vel_cmd_.x = ramp_x_->output();
+    vel_cmd_.y = ramp_y_->output();
     vel_cmd_.z = cmd_vel.angular.z;
   }
 
@@ -146,17 +160,16 @@ void ChassisBase::update(const ros::Time& time, const ros::Duration& period)
       break;
   }
 
-  ramp_x_->setAcc(cmd_chassis.accel.linear.x);
-  ramp_y_->setAcc(cmd_chassis.accel.linear.y);
   ramp_w_->setAcc(cmd_chassis.accel.angular.z);
-  ramp_x_->input(vel_tfed_.x);
-  ramp_y_->input(vel_tfed_.y);
-  ramp_w_->input(vel_tfed_.z);
+  ramp_w_->input(vel_cmd_.z);
+  vel_cmd_.z = ramp_w_->output();
+
   moveJoint(time, period);
   powerLimit();
 }
 
-void ChassisBase::follow(const ros::Time& time, const ros::Duration& period)
+template <typename... T>
+void ChassisBase<T...>::follow(const ros::Time& time, const ros::Duration& period)
 {
   if (state_changed_)
   {
@@ -180,7 +193,7 @@ void ChassisBase::follow(const ros::Time& time, const ros::Duration& period)
               roll, pitch, yaw);
     double follow_error = angles::shortest_angular_distance(yaw, 0);
     pid_follow_.computeCommand(-follow_error, period);
-    vel_tfed_.z = pid_follow_.getCurrentCmd();
+    vel_cmd_.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException& ex)
   {
@@ -188,7 +201,8 @@ void ChassisBase::follow(const ros::Time& time, const ros::Duration& period)
   }
 }
 
-void ChassisBase::twist(const ros::Time& time, const ros::Duration& period)
+template <typename... T>
+void ChassisBase<T...>::twist(const ros::Time& time, const ros::Duration& period)
 {
   if (state_changed_)
   {
@@ -219,7 +233,7 @@ void ChassisBase::twist(const ros::Time& time, const ros::Duration& period)
         angles::shortest_angular_distance(yaw, twist_angular_ * sin(2 * M_PI * time.toSec()) + off_set);
 
     pid_follow_.computeCommand(-follow_error, period);  // The actual output is opposite to the calculated value
-    vel_tfed_.z = pid_follow_.getCurrentCmd();
+    vel_cmd_.z = pid_follow_.getCurrentCmd();
   }
   catch (tf2::TransformException& ex)
   {
@@ -227,7 +241,8 @@ void ChassisBase::twist(const ros::Time& time, const ros::Duration& period)
   }
 }
 
-void ChassisBase::gyro()
+template <typename... T>
+void ChassisBase<T...>::gyro()
 {
   if (state_changed_)
   {
@@ -239,7 +254,8 @@ void ChassisBase::gyro()
   tfVelToBase("yaw");
 }
 
-void ChassisBase::raw()
+template <typename... T>
+void ChassisBase<T...>::raw()
 {
   if (state_changed_)
   {
@@ -248,10 +264,10 @@ void ChassisBase::raw()
 
     recovery();
   }
-  vel_tfed_ = vel_cmd_;
 }
 
-void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
+template <typename... T>
+void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& period)
 {
   geometry_msgs::Twist vel_base = forwardKinematics();  // on base_link frame
   if (enable_odom_tf_)
@@ -287,6 +303,7 @@ void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
       odom2base_quat.normalize();
       odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
     }
+    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
   }
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
@@ -303,51 +320,50 @@ void ChassisBase::updateOdom(const ros::Time& time, const ros::Duration& period)
       tf_broadcaster_.sendTransform(odom2base_);
     last_publish_time_ = time;
   }
-  else if (enable_odom_tf_)
-    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 }
 
-void ChassisBase::recovery()
+template <typename... T>
+void ChassisBase<T...>::recovery()
 {
-  geometry_msgs::Twist vel = forwardKinematics();
-
-  ramp_x_->clear(vel.linear.x);
-  ramp_y_->clear(vel.linear.y);
-  ramp_w_->clear(vel.angular.z);
+  ramp_x_->clear(vel_cmd_.x);
+  ramp_y_->clear(vel_cmd_.y);
+  ramp_w_->clear(vel_cmd_.z);
 }
 
-void ChassisBase::powerLimit()
+template <typename... T>
+void ChassisBase<T...>::powerLimit()
 {
-  double total_effort = 0.0;
   double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
-  for (const auto& joint : joint_handles_)  // Loop all chassis joint
-    if (joint.getName().find("wheel") != std::string::npos)
-      // The pivot joint of swerve drive doesn't need power limit
-      total_effort += std::abs(joint.getCommand());
-  if (total_effort < 1e-9)
-    return;
-  for (auto joint : joint_handles_)
+  // Three coefficients of a quadratic equation in one variable
+  double a = 0., b = 0., c = 0.;
+  for (const auto& joint : joint_handles_)
   {
-    if (joint.getName().find("wheel") != std::string::npos)
+    double cmd_effort = joint.getCommand();
+    double real_vel = joint.getVelocity();
+    if (joint.getName().find("wheel") != std::string::npos)  // The pivot joint of swerve drive doesn't need power limit
     {
-      double cmd_effort = joint.getCommand();
-      // TODO: O3 bug when using:
-      // double vel = joint.getVelocity();
-      // double max_effort = std::abs(power_coeff_ * cmd_effort / total_effort * power_limit /
-      //          (std::abs(vel) > power_min_vel_ ? vel : power_min_vel_));
-      double max_effort =
-          std::abs(power_coeff_ * cmd_effort / total_effort * power_limit /
-                   (std::abs(joint.getVelocity()) > power_min_vel_ ? joint.getVelocity() : power_min_vel_));
-      joint.setCommand(minAbs(cmd_effort, max_effort));
+      a += square(cmd_effort);
+      b += std::abs(cmd_effort * real_vel);
+      c += square(real_vel);
     }
   }
+  a *= effort_coeff_;
+  c = c * velocity_coeff_ - power_offset_ - power_limit;
+  // Root formula for quadratic equation in one variable
+  double zoom_coeff = (square(b) - 4 * a * c) > 0 ? ((-b + sqrt(square(b) - 4 * a * c)) / (2 * a)) : 0.;
+  for (auto joint : joint_handles_)
+    if (joint.getName().find("wheel") != std::string::npos)
+    {
+      joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
+    }
 }
 
-void ChassisBase::tfVelToBase(const std::string& from)
+template <typename... T>
+void ChassisBase<T...>::tfVelToBase(const std::string& from)
 {
   try
   {
-    tf2::doTransform(vel_cmd_, vel_tfed_, robot_state_handle_.lookupTransform("base_link", from, ros::Time(0)));
+    tf2::doTransform(vel_cmd_, vel_cmd_, robot_state_handle_.lookupTransform("base_link", from, ros::Time(0)));
   }
   catch (tf2::TransformException& ex)
   {
@@ -355,13 +371,15 @@ void ChassisBase::tfVelToBase(const std::string& from)
   }
 }
 
-void ChassisBase::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr& msg)
+template <typename... T>
+void ChassisBase<T...>::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr& msg)
 {
   cmd_struct_.cmd_chassis_ = *msg;
   cmd_rt_buffer_.writeFromNonRT(cmd_struct_);
 }
 
-void ChassisBase::cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg)
+template <typename... T>
+void ChassisBase<T...>::cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
   cmd_struct_.cmd_vel_ = *msg;
   cmd_struct_.stamp_ = ros::Time::now();
