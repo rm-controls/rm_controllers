@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<package format="2">
+    <name>rm_orientation_controller</name>
+    <version>0.1.3</version>
+    <description>RoboMaster standard robot orientation controller</description>
+    <maintainer email="liaoqiayuan@gmail.com">Qiayuan Liao</maintainer>
+    <license>BSD</license>
+    <author email="liaoqiayuan@gmail.com">Qiayuan Liao</author>
+
+    <!-- buildtool_depend: dependencies of the build process -->
+    <buildtool_depend>catkin</buildtool_depend>
+    <!-- depend: build, export, and execution dependency -->
+    <depend>roscpp</depend>
+    <depend>roslint</depend>
+
+    <depend>sensor_msgs</depend>
+    <depend>rm_msgs</depend>
+    <depend>rm_common</depend>
+
+    <depend>pluginlib</depend>
+    <depend>hardware_interface</depend>
+    <depend>controller_interface</depend>
+    <depend>forward_command_controller</depend>
+    <depend>realtime_tools</depend>
+    <depend>tf2</depend>
+    <depend>tf2_geometry_msgs</depend>
+    <depend>angles</depend>
+
+    <export>
+        <controller_interface plugin="${prefix}/rm_orientation_controller_plugin.xml"/>
+    </export>
+</package>

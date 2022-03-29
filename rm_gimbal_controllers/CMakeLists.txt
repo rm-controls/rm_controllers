@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_definitions(-Wall -Werror)
 
 ## Find catkin macros and libraries
+
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
@@ -26,6 +27,7 @@ find_package(catkin REQUIRED
         control_toolbox
         effort_controllers
         tf2
+        tf2_eigen
         tf2_geometry_msgs
         visualization_msgs
         dynamic_reconfigure
@@ -34,7 +36,6 @@ find_package(catkin REQUIRED
 
 generate_dynamic_reconfigure_options(
         cfg/BulletSolver.cfg
-        cfg/Gimbal.cfg
 )
 
 ###################################
@@ -65,6 +66,7 @@ catkin_package(
         control_toolbox
         effort_controllers
         tf2
+        tf2_eigen
         tf2_geometry_msgs
         visualization_msgs
         dynamic_reconfigure
@@ -83,7 +85,7 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(${PROJECT_NAME} src/standard.cpp src/bullet_solver.cpp src/moving_average_filter.cpp)
+add_library(${PROJECT_NAME} src/gimbal_base.cpp src/bullet_solver.cpp)
 
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})

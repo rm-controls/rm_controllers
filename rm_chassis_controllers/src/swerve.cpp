@@ -84,16 +84,15 @@ bool SwerveController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
 
 void SwerveController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
-  Vec2<double> vel_center(ramp_x_->output(), ramp_y_->output());
+  Vec2<double> vel_center(vel_cmd_.x, vel_cmd_.y);
   for (auto& module : modules_)
   {
-    Vec2<double> vel = vel_center + ramp_w_->output() * Vec2<double>(-module.position_.y(), module.position_.x());
+    Vec2<double> vel = vel_center + vel_cmd_.z * Vec2<double>(-module.position_.y(), module.position_.x());
     double vel_angle = std::atan2(vel.y(), vel.x()) + module.pivot_offset_;
     // Direction flipping and Stray module mitigation
     double a = angles::shortest_angular_distance(module.ctrl_pivot_->joint_.getPosition(), vel_angle);
     double b = angles::shortest_angular_distance(module.ctrl_pivot_->joint_.getPosition(), vel_angle + M_PI);
-    if (std::abs(vel_tfed_.x) + std::abs(vel_tfed_.y) + std::abs(vel_tfed_.z) >= 0.01)
-      module.ctrl_pivot_->setCommand(std::abs(a) < std::abs(b) ? vel_angle : vel_angle + M_PI);
+    module.ctrl_pivot_->setCommand(std::abs(a) < std::abs(b) ? vel_angle : vel_angle + M_PI);
     module.ctrl_wheel_->setCommand(vel.norm() / module.wheel_radius_ * std::cos(a));
     module.ctrl_pivot_->update(time, period);
     module.ctrl_wheel_->update(time, period);

@@ -1,22 +1,16 @@
 controllers:
-  robot_state_controller:
-    type: robot_state_controller/RobotStateController
-    publish_rate: 50
-  joint_state_controller:
-    type: joint_state_controller/JointStateController
-    publish_rate: 50
   gimbal_controller:
     type: rm_gimbal_controllers/Controller
-    time_compensation: 0.03
-    publish_rate: 100
-    chassis_angular_data_num: 20
-    camera_topic: "/galaxy_camera/camera_info"
     yaw:
       joint: "yaw_joint"
       pid: { p: 10, i: 100, d: 0.4, i_clamp_max: 0.3, i_clamp_min: -0.3, antiwindup: true, publish_state: true }
     pitch:
       joint: "pitch_joint"
       pid: { p: 15, i: 50, d: 0.3, i_clamp_max: 0.4, i_clamp_min: -0.4, antiwindup: true, publish_state: true }
+    feedforward:
+      gravity: 0.0
+      enable_gravity_compensation: false
+      mass_origin: [ 0.0,0.0,0.0 ]
     bullet_solver:
       resistance_coff_qd_10: 0.45
       resistance_coff_qd_15: 1.0
@@ -28,10 +22,3 @@ controllers:
       dt: 0.001
       timeout: 0.001
       publish_rate: 50
-    moving_average_filter:
-      is_debug: true
-      center_offset_z: 0.05
-      pos_data_num: 20
-      vel_data_num: 30
-      center_data_num: 50
-      gyro_data_num: 100

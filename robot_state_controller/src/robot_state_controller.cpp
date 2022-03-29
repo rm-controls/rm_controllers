@@ -53,6 +53,16 @@ bool RobotStateController::init(hardware_interface::RobotHW* robot_hw, ros::Node
   double duration;
   controller_nh.param("buffer_duration", duration, 10.);
 
+  tf_buffer_ = new tf2_ros::Buffer(ros::Duration(duration));
+  rm_control::RobotStateHandle robot_state_handle("robot_state", tf_buffer_);
+  robot_hw->get<rm_control::RobotStateInterface>()->registerHandle(robot_state_handle);
+
+  tf_broadcaster_.init(root_nh);
+  static_tf_broadcaster_.init(root_nh);
+  tf_sub_ = controller_nh.subscribe<tf2_msgs::TFMessage>("/tf", 100, &RobotStateController::tfSubCallback, this);
+  tf_static_sub_ =
+      controller_nh.subscribe<tf2_msgs::TFMessage>("/tf_static", 100, &RobotStateController::staticSubCallback, this);
+
   if (!model_.initParam("robot_description"))
   {
     ROS_ERROR("Failed to init URDF from robot description");
@@ -78,13 +88,6 @@ bool RobotStateController::init(hardware_interface::RobotHW* robot_hw, ros::Node
     jnt_states_.insert(std::make_pair<std::string, hardware_interface::JointStateHandle>(
         joint_names[i].c_str(), robot_hw->get<hardware_interface::JointStateInterface>()->getHandle(joint_names[i])));
 
-  tf_broadcaster_.init(root_nh);
-  static_tf_broadcaster_.init(root_nh);
-  tf_buffer_ = new tf2_ros::Buffer(ros::Duration(duration));
-  tf_listener_ = new tf2_ros::TransformListener(*tf_buffer_);
-  hardware_interface::RobotStateHandle robot_state_handle("robot_state", tf_buffer_);
-  robot_hw->get<hardware_interface::RobotStateInterface>()->registerHandle(robot_state_handle);
-
   return true;
 }
 
@@ -97,11 +100,17 @@ std::string stripSlash(const std::string& in)
   return in;
 }
 
-void RobotStateController::update(const ros::Time& time, const ros::Duration&)
+void RobotStateController::update(const ros::Time& time, const ros::Duration& period)
 {
+  if (last_update_ > time)
+  {
+    ROS_WARN("Moved backwards in time (probably because ROS clock was reset), clear all tf buffer!");
+    tf_buffer_->clear();
+  }
+  last_update_ = time;
   std::vector<geometry_msgs::TransformStamped> tf_transforms, tf_static_transforms;
   geometry_msgs::TransformStamped tf_transform;
-  // loop over all float segments
+  // Loop over all float segments
   for (auto& item : segments_)
   {
     auto jnt_iter = jnt_states_.find(item.first);
@@ -122,8 +131,7 @@ void RobotStateController::update(const ros::Time& time, const ros::Duration&)
     tf_transform.child_frame_id = stripSlash(item.second.tip);
     tf_transforms.push_back(tf_transform);
   }
-
-  // loop over all fixed segments
+  // Loop over all fixed segments
   for (std::map<std::string, SegmentPair>::const_iterator seg = segments_fixed_.begin(); seg != segments_fixed_.end();
        seg++)
   {
@@ -133,7 +141,10 @@ void RobotStateController::update(const ros::Time& time, const ros::Duration&)
     tf_transform.child_frame_id = stripSlash(seg->second.tip);
     tf_static_transforms.push_back(tf_transform);
   }
-
+  for (const auto& tran : tf_transforms)
+    tf_buffer_->setTransform(tran, "robot_state_controller", false);
+  for (const auto& tran : tf_static_transforms)
+    tf_buffer_->setTransform(tran, "robot_state_controller", true);
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
     tf_broadcaster_.sendTransform(tf_transforms);
@@ -143,13 +154,41 @@ void RobotStateController::update(const ros::Time& time, const ros::Duration&)
       tf_broadcaster_.sendTransform(tf_static_transforms);
     last_publish_time_ = time;
   }
-  else
+  tf_transforms.clear();
+  tf_static_transforms.clear();
+  // Loop over subscribe
+  for (const auto& item : tf_msg_.readFromRT()->transforms)
   {
-    for (const auto& tran : tf_transforms)
-      tf_buffer_->setTransform(tran, "robot_state_controller", false);
-    for (const auto& tran : tf_static_transforms)
-      tf_buffer_->setTransform(tran, "robot_state_controller", true);
+    try
+    {
+      if (item.header.stamp !=
+          tf_buffer_->lookupTransform(item.child_frame_id, item.header.frame_id, item.header.stamp).header.stamp)
+        tf_transforms.push_back(item);
+    }
+    catch (tf2::TransformException& ex)
+    {
+      tf_transforms.push_back(item);
+    }
   }
+  for (const auto& item : tf_static_msg_.readFromRT()->transforms)
+  {
+    try
+    {
+      if (item.header.stamp !=
+          tf_buffer_->lookupTransform(item.child_frame_id, item.header.frame_id, item.header.stamp).header.stamp)
+        tf_static_transforms.push_back(item);
+    }
+    catch (tf2::TransformException& ex)
+    {
+      tf_static_transforms.push_back(item);
+    }
+  }
+  tf_msg_.readFromRT()->transforms.clear();
+  tf_static_msg_.readFromRT()->transforms.clear();
+  for (const auto& tran : tf_transforms)
+    tf_buffer_->setTransform(tran, "outside", false);
+  for (const auto& tran : tf_static_transforms)
+    tf_buffer_->setTransform(tran, "outside", true);
 }
 
 // add children to correct maps
@@ -185,6 +224,17 @@ void RobotStateController::addChildren(const KDL::SegmentMap::const_iterator seg
     addChildren(i);
   }
 }
+
+void RobotStateController::tfSubCallback(const tf2_msgs::TFMessageConstPtr& msg)
+{
+  tf_msg_.writeFromNonRT(*msg);
+}
+
+void RobotStateController::staticSubCallback(const tf2_msgs::TFMessageConstPtr& msg)
+{
+  tf_static_msg_.writeFromNonRT(*msg);
+}
+
 }  // namespace robot_state_controller
 
 PLUGINLIB_EXPORT_CLASS(robot_state_controller::RobotStateController, controller_interface::ControllerBase)
