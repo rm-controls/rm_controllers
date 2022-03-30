@@ -13,7 +13,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 {
   std::string name;
   if (!controller_nh.getParam("name", name) || !controller_nh.getParam("frame_source", frame_source_) ||
-      !controller_nh.getParam("frame_target", frame_target_) || !controller_nh.getParam("publish_rate", publish_rate_))
+      !controller_nh.getParam("frame_target", frame_target_))
   {
     ROS_ERROR("Some params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
@@ -26,19 +26,11 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   source2target_msg_.header.frame_id = frame_source_;
   source2target_msg_.child_frame_id = frame_target_;
   source2target_msg_.transform.rotation.w = 1.0;
-  last_orientation_x = 0.0;
-  last_orientation_y = 0.0;
   return true;
 }
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
-  if (imu_sensor_.getOrientation()[0] == last_orientation_x && imu_sensor_.getOrientation()[1] == last_orientation_y)
-  {
-    return;
-  }
-  last_orientation_x = imu_sensor_.getOrientation()[0];
-  last_orientation_y = imu_sensor_.getOrientation()[1];
   geometry_msgs::TransformStamped source2target;
   source2target.header.stamp = time;
   source2target.header.stamp.nsec += 1;  // Avoid redundant timestamp
@@ -85,11 +77,7 @@ void Controller::imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg)
   source2target.header.stamp = msg->header.stamp;
   if (getTransform(msg->header.stamp, source2target, msg->orientation.x, msg->orientation.y, msg->orientation.z,
                    msg->orientation.w))
-    if ((ros::Time::now() - last_br_).toSec() > (1 / publish_rate_))
-    {
-      tf_broadcaster_.sendTransform(source2target);
-      last_br_ = ros::Time::now();
-    }
+    tf_broadcaster_.sendTransform(source2target);
 }
 
 }  // namespace rm_orientation_controller
