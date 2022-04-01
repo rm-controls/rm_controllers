@@ -13,7 +13,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 {
   std::string name;
   if (!controller_nh.getParam("name", name) || !controller_nh.getParam("frame_source", frame_source_) ||
-      !controller_nh.getParam("frame_target", frame_target_) || !controller_nh.getParam("publish_rate", publish_rate_))
+      !controller_nh.getParam("frame_target", frame_target_))
   {
     ROS_ERROR("Some params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
@@ -21,54 +21,63 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   imu_sensor_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(name);
   robot_state_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
 
-  imu_pub_.reset(new realtime_tools::RealtimePublisher<sensor_msgs::Imu>(root_nh, "imu_data", 100));
   tf_broadcaster_.init(root_nh);
+  imu_data_sub_ = root_nh.subscribe<sensor_msgs::Imu>("data", 1, &Controller::imuDataCallback, this);
   source2target_msg_.header.frame_id = frame_source_;
   source2target_msg_.child_frame_id = frame_target_;
   source2target_msg_.transform.rotation.w = 1.0;
-  last_orientation_x = 0.0;
-  last_orientation_y = 0.0;
   return true;
 }
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
-  if (imu_sensor_.getOrientation()[0] == last_orientation_x && imu_sensor_.getOrientation()[1] == last_orientation_y)
-  {
-    return;
-  }
-  last_orientation_x = imu_sensor_.getOrientation()[0];
-  last_orientation_y = imu_sensor_.getOrientation()[1];
-  source2target_msg_.header.stamp = time;
-  source2target_msg_.header.stamp.nsec += 1;  // Avoid redundant timestamp
+  geometry_msgs::TransformStamped source2target;
+  source2target.header.stamp = time;
+  source2target.header.stamp.nsec += 1;  // Avoid redundant timestamp
+  source2target_msg_ =
+      getTransform(ros::Time(0), source2target, imu_sensor_.getOrientation()[0], imu_sensor_.getOrientation()[1],
+                   imu_sensor_.getOrientation()[2], imu_sensor_.getOrientation()[3]) ?
+          source2target :
+          source2target_msg_;
+  robot_state_.setTransform(source2target_msg_, "rm_orientation_controller");
+}
+
+bool Controller::getTransform(const ros::Time& time, geometry_msgs::TransformStamped& source2target, const double x,
+                              const double y, const double z, const double w)
+{
+  source2target.header.frame_id = frame_source_;
+  source2target.child_frame_id = frame_target_;
+  source2target.transform.rotation.w = 1.0;
   tf2::Transform source2odom, odom2fixed, fixed2target;
   try
   {
     geometry_msgs::TransformStamped tf_msg;
-    tf_msg = robot_state_.lookupTransform(frame_source_, "odom", ros::Time(0));
+    tf_msg = robot_state_.lookupTransform(frame_source_, "odom", time);
     tf2::fromMsg(tf_msg.transform, source2odom);
-    tf_msg = robot_state_.lookupTransform("odom", imu_sensor_.getFrameId(), ros::Time(0));
+    tf_msg = robot_state_.lookupTransform("odom", imu_sensor_.getFrameId(), time);
     tf2::fromMsg(tf_msg.transform, odom2fixed);
-    tf_msg = robot_state_.lookupTransform(imu_sensor_.getFrameId(), frame_target_, ros::Time(0));
+    tf_msg = robot_state_.lookupTransform(imu_sensor_.getFrameId(), frame_target_, time);
     tf2::fromMsg(tf_msg.transform, fixed2target);
   }
   catch (tf2::TransformException& ex)
   {
-    robot_state_.setTransform(source2target_msg_, "rm_orientation_controller");
     ROS_WARN("%s", ex.what());
-    return;
+    return false;
   }
   tf2::Quaternion odom2fixed_quat;
-  odom2fixed_quat.setValue(imu_sensor_.getOrientation()[0], imu_sensor_.getOrientation()[1],
-                           imu_sensor_.getOrientation()[2], imu_sensor_.getOrientation()[3]);
+  odom2fixed_quat.setValue(x, y, z, w);
   odom2fixed.setRotation(odom2fixed_quat);
-  source2target_msg_.transform = tf2::toMsg(source2odom * odom2fixed * fixed2target);
-  if ((time.toSec() - last_br_.toSec()) > 0.01)
-  {
-    tf_broadcaster_.sendTransform(source2target_msg_);
-    last_br_ = time;
-  }
-  robot_state_.setTransform(source2target_msg_, "rm_orientation_controller");
+  source2target.transform = tf2::toMsg(source2odom * odom2fixed * fixed2target);
+  return true;
+}
+
+void Controller::imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg)
+{
+  geometry_msgs::TransformStamped source2target;
+  source2target.header.stamp = msg->header.stamp;
+  if (getTransform(ros::Time(0), source2target, msg->orientation.x, msg->orientation.y, msg->orientation.z,
+                   msg->orientation.w))
+    tf_broadcaster_.sendTransform(source2target);
 }
 
 }  // namespace rm_orientation_controller
