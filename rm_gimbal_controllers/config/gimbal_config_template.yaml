@@ -1,0 +1,36 @@
+controllers:
+  robot_state_controller:
+    type: robot_state_controller/RobotStateController
+    publish_rate: 50
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50
+  gimbal_controller:
+    type: rm_gimbal_controllers/Controller
+    time_compensation: 0.03
+    publish_rate: 100
+    chassis_angular_data_num: 20
+    yaw:
+      joint: "yaw_joint"
+      pid: { p: 0.4, i: 0.0, d: 0.04, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
+    pitch:
+      joint: "pitch_joint"
+      pid: { p: 0.8, i: 0.0, d: 0.03, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }
+    bullet_solver:
+      resistance_coff_qd_10: 0.45
+      resistance_coff_qd_15: 1.0
+      resistance_coff_qd_16: 0.7
+      resistance_coff_qd_18: 0.55
+      resistance_coff_qd_30: 3.0
+      g: 9.81
+      delay: 0.2
+      dt: 0.001
+      timeout: 0.001
+      publish_rate: 50
+    moving_average_filter:
+      is_debug: true
+      center_offset_z: 0.05
+      pos_data_num: 20
+      vel_data_num: 30
+      center_data_num: 100
+      gyro_data_num: 100
