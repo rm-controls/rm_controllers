@@ -1,0 +1,4 @@
+controllers:
+  tof_sensor_controller:
+    type: tof_sensor_controller/Controller
+    publish_rate: 50
