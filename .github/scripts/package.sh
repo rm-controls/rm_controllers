@@ -17,7 +17,7 @@ run_directory=`pwd`
 
 mkdir $tmp_space
 cp -r ./ $tmp_space
-package_list=`find $tmp_space -name package.xml | sed 's/package.xml//g'`
+package_list=`find $tmp_space -maxdepth 2 -name package.xml | sed 's/package.xml//g'`
 CM_PREFIX_PATH=`sed 's/:/;/g' <<< $CMAKE_PREFIX_PATH`
 
 for package_source in $package_list

@@ -1,6 +1,6 @@
 controllers:
   chassis_controller:
-    type: rm_chassis_controllers/MecanumController
+    type: rm_chassis_controllers/OmniController
     # ChassisBase
     publish_rate: 100
     enable_odom_tf: true
@@ -13,9 +13,8 @@ controllers:
     pid_follow: { p: 8, i: 0, d: 4.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
 
-    # MecanumController
-    wheel_base: 0.395
-    wheel_track: 0.374
+    # OmniController
+    chassis_radius: 0.208
     wheel_radius: 0.07625
     left_front:
       joint: "left_front_wheel_joint"

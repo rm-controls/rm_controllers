@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_definitions(-Wall -Werror)
 
 ## Find catkin macros and libraries
+
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
@@ -26,6 +27,7 @@ find_package(catkin REQUIRED
         control_toolbox
         effort_controllers
         tf2
+        tf2_eigen
         tf2_geometry_msgs
         visualization_msgs
         dynamic_reconfigure
@@ -64,6 +66,7 @@ catkin_package(
         control_toolbox
         effort_controllers
         tf2
+        tf2_eigen
         tf2_geometry_msgs
         visualization_msgs
         dynamic_reconfigure

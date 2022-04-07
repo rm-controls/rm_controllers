@@ -65,6 +65,7 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
+  publish_odom_tf_ = getParam(controller_nh, "publish_odom_tf", false);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue twist_cov_list;
@@ -316,7 +317,7 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
       odom_pub_->msg_.twist.twist.angular.z = vel_base.angular.z;
       odom_pub_->unlockAndPublish();
     }
-    if (enable_odom_tf_)
+    if (enable_odom_tf_ && publish_odom_tf_)
       tf_broadcaster_.sendTransform(odom2base_);
     last_publish_time_ = time;
   }
