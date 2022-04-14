@@ -211,18 +211,16 @@ void Controller::track(const ros::Time& time)
   quatToRPY(map2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
   double yaw_compute = yaw_real;
   double pitch_compute = -pitch_real;
-  geometry_msgs::Point target_pos = cmd_track_.target_pos.point;
-  geometry_msgs::Vector3 target_vel = cmd_track_.target_vel.vector;
+  geometry_msgs::Point target_pos = cmd_track_.target_pos;
+  geometry_msgs::Vector3 target_vel = cmd_track_.target_vel;
   try
   {
-    if (!cmd_track_.target_pos.header.frame_id.empty())
+    if (!cmd_track_.header.frame_id.empty())
       tf2::doTransform(target_pos, target_pos,
-                       robot_state_handle_.lookupTransform("map", cmd_track_.target_pos.header.frame_id,
-                                                           cmd_track_.target_pos.header.stamp));
-    if (!cmd_track_.target_vel.header.frame_id.empty())
+                       robot_state_handle_.lookupTransform("map", cmd_track_.header.frame_id, cmd_track_.header.stamp));
+    if (!cmd_track_.header.frame_id.empty())
       tf2::doTransform(target_vel, target_vel,
-                       robot_state_handle_.lookupTransform("map", cmd_track_.target_vel.header.frame_id,
-                                                           cmd_track_.target_vel.header.stamp));
+                       robot_state_handle_.lookupTransform("map", cmd_track_.header.frame_id, cmd_track_.header.stamp));
   }
   catch (tf2::TransformException& ex)
   {
