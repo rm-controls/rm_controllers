@@ -44,6 +44,7 @@
 #include <hardware_interface/imu_sensor_interface.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_msgs/GimbalCmd.h>
+#include <rm_msgs/TrackCmd.h>
 #include <rm_msgs/GimbalDesError.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_gimbal_controllers/bullet_solver.h>
@@ -67,11 +68,12 @@ private:
   void rate(const ros::Time& time, const ros::Duration& period);
   void track(const ros::Time& time);
   void direct(const ros::Time& time);
-  bool setDesIntoLimit(double& real_des, double current_des, double last_des, double base2gimbal_current_des,
-                       double base2gimbal_last_des, const urdf::JointConstSharedPtr& joint_urdf);
+  bool setDesIntoLimit(double& real_des, double current_des, double base2gimbal_current_des,
+                       const urdf::JointConstSharedPtr& joint_urdf);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   double feedForward(const ros::Time& time);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
+  void trackCB(const rm_msgs::TrackCmdConstPtr& msg);
 
   rm_control::RobotStateHandle robot_state_handle_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
@@ -82,12 +84,15 @@ private:
   ros::Time last_publish_time_{};
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   ros::Subscriber cmd_gimbal_sub_;
+  ros::Subscriber cmd_track_sub_;
 
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
+  realtime_tools::RealtimeBuffer<rm_msgs::TrackCmd> track_rt_buffer_;
 
   geometry_msgs::TransformStamped map2gimbal_des_, map2pitch_, map2base_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
+  rm_msgs::TrackCmd cmd_track_;
   std::string gimbal_des_frame_id_{}, imu_name_{};
 
   double publish_rate_{};
