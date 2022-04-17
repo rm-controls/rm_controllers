@@ -26,7 +26,8 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
   for (int i = 0; i < joints.size(); ++i)
     joint_handles_.push_back(effort_joint_interface->getHandle(joints[i]));
 
-  double m_total, l, g, dt;
+  double m_total, l, g, dt;  //  m_total and l represent the total mass and distance between the pivot point to the
+                             //  center of gravity of the whole system respectively.
   if (!controller_nh.getParam("m_total", m_total))
   {
     ROS_ERROR("Params m_total doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
