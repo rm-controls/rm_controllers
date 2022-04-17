@@ -24,7 +24,8 @@ public:
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-  double inertia_total_, inertia_wheel_;
+  double inertia_total_;  // the system’s total moment of inertia around the pivot point in
+  double inertia_wheel_;  // the reaction wheel’s moment of inertia
 
   static const int STATE_DIM = 3;
   static const int CONTROL_DIM = 1;
