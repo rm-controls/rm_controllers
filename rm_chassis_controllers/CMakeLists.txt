@@ -87,6 +87,7 @@ add_library(${PROJECT_NAME}
         src/sentry.cpp
         src/balance.cpp
         src/swerve.cpp
+        src/reaction_wheel.cpp
         )
 
 ## Specify libraries to link executable targets against
