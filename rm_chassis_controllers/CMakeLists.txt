@@ -85,7 +85,6 @@ add_library(${PROJECT_NAME}
         src/mecanum.cpp
         src/omni.cpp
         src/sentry.cpp
-        src/balance.cpp
         src/swerve.cpp
         src/reaction_wheel.cpp
         )
