@@ -7,7 +7,7 @@
 #include <rm_common/ros_utilities.h>
 #include <rm_common/ori_tool.h>
 #include <geometry_msgs/Quaternion.h>
-#include <pluginlib/class_list_macros.hpp>
+#include "pluginlib/class_list_macros.hpp"
 
 namespace rm_chassis_controllers
 {
@@ -149,5 +149,4 @@ void ReactionWheelController::update(const ros::Time& time, const ros::Duration&
 }
 
 }  // namespace rm_chassis_controllers
-
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::ReactionWheelController, controller_interface::ControllerBase)
