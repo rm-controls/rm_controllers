@@ -1,0 +1,28 @@
+controllers:
+  chassis_controller:
+    type: rm_chassis_controllers/ReactionWheelController
+    publish_rate: 100
+    enable_odom_tf: true
+
+    joints:
+      - "reaction_wheel_joint"
+
+    m_total: 13.489909
+    l: 0.18
+    g: -9.81
+    dt: 0.001
+
+    inertia_total: 1.955277
+    inertia_wheel: 1.795e-3
+
+    q: [[1.5, 0, 0],
+        [0, 10, 0],
+        [0, 0, 0.01]]
+    r: [[50]]
+
+  imus:
+    imu_base:
+    frame_id: base_imu
+    orientation_covariance_diagonal: [ 0.0012, 0.0012, 0.0012 ]
+    angular_velocity_covariance: [ 0.0004, 0.0004, 0.0004 ]
+    linear_acceleration_covariance: [ 0.01, 0.01, 0.01 ]
