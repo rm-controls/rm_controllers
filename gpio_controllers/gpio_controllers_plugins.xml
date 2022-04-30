@@ -1,8 +1,0 @@
-<library path="lib/gpio_controllers">
-
-    <class name="gpio_controllers/Controller" type="gpio_controllers::Controller"
-           base_class_type="controller_interface::ControllerBase">
-        <description>
-        </description>
-    </class>
-</library>
