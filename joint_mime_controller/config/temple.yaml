@@ -1,0 +1,6 @@
+controllers:
+  joint1_mime_controller:
+    type: joint_mine_controller/Controller
+    joint_mime: "joint1"
+    joint: "joint1_mime"
+    pid: { p: 8, i: 0, d: 0.4, i_clamp_max: 0.0, i_clamp_min: -0.0, antiwindup: true, publish_state: true }

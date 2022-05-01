@@ -1,0 +1,8 @@
+<library path="lib/libjoint_mime_controller">
+
+    <class name="joint_mime_controller/Controller" type="joint_mime_controller::Controller"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+        </description>
+    </class>
+</library>
