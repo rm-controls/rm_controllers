@@ -11,7 +11,7 @@ bool Controller::init(rm_control::TfRadarInterface* hw, ros::NodeHandle& root_nh
 {
   const std::vector<std::string>& tf_radar_names = hw->getNames();
   for (const auto& tf_radar_name : tf_radar_names)
-    ROS_DEBUG("Got sensor %s", tf_radar_name.c_str());
+    ROS_DEBUG("Got radar %s", tf_radar_name.c_str());
 
   for (const auto& tf_radar_name : tf_radar_names)
   {
@@ -32,9 +32,8 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   {
     if (realtime_pubs_[i]->trylock())
     {
-      realtime_pubs_[i]->msg_.distance = tf_radar_[i].getDistance();
+      realtime_pubs_[i]->msg_.distance = tf_radar_[i].getDistance() / 100.;
       realtime_pubs_[i]->msg_.strength = tf_radar_[i].getStrength();
-      realtime_pubs_[i]->msg_.signal = tf_radar_[i].getSignal();
       realtime_pubs_[i]->msg_.stamp = time;
       realtime_pubs_[i]->unlockAndPublish();
     }
