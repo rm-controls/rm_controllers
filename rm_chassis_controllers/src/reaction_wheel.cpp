@@ -22,8 +22,8 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
   joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(
       getParam(controller_nh, "joint", std::string("reaction_wheel_joint")));
 
-  double m_total, l, g, dt;  //  m_total and l represent the total mass and distance between the pivot point to the
-                             //  center of gravity of the whole system respectively.
+  double m_total, l, g;  //  m_total and l represent the total mass and distance between the pivot point to the
+                         //  center of gravity of the whole system respectively.
   if (!controller_nh.getParam("m_total", m_total))
   {
     ROS_ERROR("Params m_total doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
@@ -49,11 +49,9 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
     ROS_ERROR("Params inertia_wheel_ doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (!controller_nh.getParam("dt", dt))
-  {
-    ROS_ERROR("Params dt doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
-    return false;
-  }
+
+  q_.setZero();
+  r_.setZero();
   XmlRpc::XmlRpcValue q, r;
   controller_nh.getParam("q", q);
   controller_nh.getParam("r", r);
@@ -92,6 +90,7 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
   }
 
   k_ = lqr.getK();
+  ROS_INFO_STREAM("K of LQR:" << k_);
   return true;
 }
 

@@ -10,7 +10,6 @@ controllers:
     m_total: 13.489909
     l: 0.18
     g: -9.81
-    dt: 0.001
 
     inertia_total: 1.955277
     inertia_wheel: 1.795e-3
