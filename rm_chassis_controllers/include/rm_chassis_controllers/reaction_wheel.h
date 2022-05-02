@@ -35,7 +35,7 @@ private:
   Eigen::Matrix<double, CONTROL_DIM, CONTROL_DIM> r_{};
 
   hardware_interface::ImuSensorHandle imu_handle_;
-  std::vector<hardware_interface::JointHandle> joint_handles_{};
+  hardware_interface::JointHandle joint_handle_;
 };
 
 }  // namespace rm_chassis_controllers

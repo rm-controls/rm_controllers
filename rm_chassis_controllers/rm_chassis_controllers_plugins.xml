@@ -32,5 +32,14 @@
             type of hardware interface.
         </description>
     </class>
+    <class name="rm_chassis_controllers/ReactionWheelController"
+           type="rm_chassis_controllers::ReactionWheelController"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+            The ReactionWheelController is RoboMaster balance standard robot Balance controller. It expects a
+            EffortJointInterface type of hardware interface.
+        </description>
+    </class>
+
 
 </library>

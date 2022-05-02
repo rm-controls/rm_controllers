@@ -19,13 +19,8 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
 
   imu_handle_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(
       getParam(controller_nh, "imu_name", std::string("base_imu")));
-  XmlRpc::XmlRpcValue joints;
-  controller_nh.getParam("joints", joints);
-  ROS_ASSERT(joints.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  hardware_interface::EffortJointInterface* effort_joint_interface =
-      robot_hw->get<hardware_interface::EffortJointInterface>();
-  for (int i = 0; i < joints.size(); ++i)
-    joint_handles_.push_back(effort_joint_interface->getHandle(joints[i]));
+  joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(
+      getParam(controller_nh, "joint", std::string("reaction_wheel_joint")));
 
   double m_total, l, g, dt;  //  m_total and l represent the total mass and distance between the pivot point to the
                              //  center of gravity of the whole system respectively.
@@ -67,34 +62,22 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
   ROS_ASSERT(q.size() == STATE_DIM);
   for (int i = 0; i < STATE_DIM; ++i)
   {
-    ROS_ASSERT(q[i].getType() == XmlRpc::XmlRpcValue::TypeArray);
-    ROS_ASSERT(q[i].size() == STATE_DIM);
-    for (int j = 0; j < STATE_DIM; ++j)
-    {
-      ROS_ASSERT(q[i][j].getType() == XmlRpc::XmlRpcValue::TypeDouble ||
-                 q[i][j].getType() == XmlRpc::XmlRpcValue::TypeInt);
-      if (q[i][j].getType() == XmlRpc::XmlRpcValue::TypeDouble)
-        q_(i, j) = static_cast<double>(q[i][j]);
-      else if (q[i][j].getType() == XmlRpc::XmlRpcValue::TypeInt)
-        q_(i, j) = static_cast<int>(q[i][j]);
-    }
+    ROS_ASSERT(q[i].getType() == XmlRpc::XmlRpcValue::TypeDouble || q[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
+    if (q[i].getType() == XmlRpc::XmlRpcValue::TypeDouble)
+      q_(i, i) = static_cast<double>(q[i]);
+    else if (q[i].getType() == XmlRpc::XmlRpcValue::TypeInt)
+      q_(i, i) = static_cast<int>(q[i]);
   }
   // Check and get R
   ROS_ASSERT(r.getType() == XmlRpc::XmlRpcValue::TypeArray);
   ROS_ASSERT(r.size() == CONTROL_DIM);
   for (int i = 0; i < CONTROL_DIM; ++i)
   {
-    ROS_ASSERT(r[i].getType() == XmlRpc::XmlRpcValue::TypeArray);
-    ROS_ASSERT(r[i].size() == CONTROL_DIM);
-    for (int j = 0; j < CONTROL_DIM; ++j)
-    {
-      ROS_ASSERT(r[i][j].getType() == XmlRpc::XmlRpcValue::TypeDouble ||
-                 r[i][j].getType() == XmlRpc::XmlRpcValue::TypeInt);
-      if (r[i][j].getType() == XmlRpc::XmlRpcValue::TypeDouble)
-        r_(i, j) = static_cast<double>(r[i][j]);
-      else if (r[i][j].getType() == XmlRpc::XmlRpcValue::TypeInt)
-        r_(i, j) = static_cast<int>(r[i][j]);
-    }
+    ROS_ASSERT(r[i].getType() == XmlRpc::XmlRpcValue::TypeDouble || r[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
+    if (r[i].getType() == XmlRpc::XmlRpcValue::TypeDouble)
+      r_(i, i) = static_cast<double>(r[i]);
+    else if (r[i].getType() == XmlRpc::XmlRpcValue::TypeInt)
+      r_(i, i) = static_cast<int>(r[i]);
   }
 
   // Continuous model \dot{x} = A x + B u
@@ -115,11 +98,7 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
 void ReactionWheelController::update(const ros::Time& time, const ros::Duration& period)
 {
   double pitch_rate = imu_handle_.getAngularVelocity()[1];
-  double wheel_rate = 0;
-  double num_joints = static_cast<double>(joint_handles_.size());
-  for (const auto& joint : joint_handles_)
-    wheel_rate += joint.getVelocity();
-  wheel_rate /= num_joints;
+  double wheel_rate = joint_handle_.getVelocity();
 
   // TODO: simplify, add new quatToRPY
   geometry_msgs::Quaternion quat;
@@ -134,9 +113,8 @@ void ReactionWheelController::update(const ros::Time& time, const ros::Duration&
   x(1) = inertia_total_ * pitch_rate + inertia_wheel_ * wheel_rate;
   x(2) = inertia_wheel_ * (pitch_rate + wheel_rate);
   Eigen::Matrix<double, CONTROL_DIM, 1> u;
-  u = k_ * (-x) / num_joints;  // regulate to zero: K*(0 - x)
-  for (auto joint : joint_handles_)
-    joint.setCommand(u(0));
+  u = k_ * (-x);  // regulate to zero: K*(0 - x)
+  joint_handle_.setCommand(u(0));
 }
 
 }  // namespace rm_chassis_controllers
