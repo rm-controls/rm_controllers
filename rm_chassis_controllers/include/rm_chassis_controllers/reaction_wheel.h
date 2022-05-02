@@ -1,7 +1,7 @@
 //
 // Created by qiayuan on 2022/4/17.
 //
-// Reference: Nonlinear Analysis and Control of a Reaction Wheel-based 3D Inverted Pendulum
+// Reference: The Cubli: A Cube that can Jump Up and Balance
 
 #pragma once
 
@@ -24,9 +24,6 @@ public:
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-  double inertia_total_;  // the system’s total moment of inertia around the pivot point in
-  double inertia_wheel_;  // the reaction wheel’s moment of inertia
-
   static const int STATE_DIM = 3;
   static const int CONTROL_DIM = 1;
   Eigen::Matrix<double, CONTROL_DIM, STATE_DIM> k_{};

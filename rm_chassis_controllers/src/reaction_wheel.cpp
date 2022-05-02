@@ -22,11 +22,30 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
   joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(
       getParam(controller_nh, "joint", std::string("reaction_wheel_joint")));
 
-  double m_total, l, g;  //  m_total and l represent the total mass and distance between the pivot point to the
-                         //  center of gravity of the whole system respectively.
-  if (!controller_nh.getParam("m_total", m_total))
+  // i_b is moment of inertia of the pendulum body around the pivot point,
+  // i_w is the moment of inertia of the wheel around the rotational axis of the motor
+  // l is the distance between the motor axis and the pivot point
+  // l_b is the distance between the center of mass of the pendulum body and the pivot point
+  double m_b, m_w, i_b, i_w, l, l_b, g;
+
+  if (!controller_nh.getParam("m_b", m_b))
   {
-    ROS_ERROR("Params m_total doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("Params m_b doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("m_w", m_w))
+  {
+    ROS_ERROR("Params m_w doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("i_b", i_b))
+  {
+    ROS_ERROR("Params i_b doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("i_w", i_w))
+  {
+    ROS_ERROR("Params i_w doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
   if (!controller_nh.getParam("l", l))
@@ -34,19 +53,14 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
     ROS_ERROR("Params l doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+  if (!controller_nh.getParam("l_b", l_b))
+  {
+    ROS_ERROR("Params l_b doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
   if (!controller_nh.getParam("g", g))
   {
     ROS_ERROR("Params g doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
-    return false;
-  }
-  if (!controller_nh.getParam("inertia_total", inertia_total_))
-  {
-    ROS_ERROR("Params inertia_total doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
-    return false;
-  }
-  if (!controller_nh.getParam("inertia_wheel", inertia_wheel_))
-  {
-    ROS_ERROR("Params inertia_wheel_ doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
 
@@ -79,8 +93,17 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
   }
 
   // Continuous model \dot{x} = A x + B u
-  a_ << 0., 1 / inertia_total_, -1 / inertia_total_, m_total * l * g, 0., 0., 0, 0, 0;
-  b_ << 0., 0., 1.;
+  double temp = i_b + m_w * l * l;
+  double a_1_0 = (m_b * l_b + m_w * l) * g / temp;
+  double a_1_1 = 0.;  // TODO:  dynamic friction coefficient
+  double a_1_2 = 0.;  // TODO:  dynamic friction coefficient
+  double a_2_0 = -a_1_0;
+  double a_2_1 = 0.;
+  double a_2_2 = 0.;
+  double b_1 = -1. / temp;
+  double b_2 = (temp + i_w) / (i_w * temp);
+  a_ << 0., 1., 0., a_1_0, a_1_1, a_1_2, a_2_0, a_2_1, a_2_2;
+  b_ << 0., b_1, b_2;
 
   Lqr<double> lqr(a_, b_, q_, r_);
   if (!lqr.computeK())
@@ -96,9 +119,6 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
 
 void ReactionWheelController::update(const ros::Time& time, const ros::Duration& period)
 {
-  double pitch_rate = imu_handle_.getAngularVelocity()[1];
-  double wheel_rate = joint_handle_.getVelocity();
-
   // TODO: simplify, add new quatToRPY
   geometry_msgs::Quaternion quat;
   quat.x = imu_handle_.getOrientation()[0];
@@ -109,8 +129,8 @@ void ReactionWheelController::update(const ros::Time& time, const ros::Duration&
   quatToRPY(quat, roll, pitch, yaw);
   Eigen::Matrix<double, STATE_DIM, 1> x;
   x(0) = pitch;
-  x(1) = inertia_total_ * pitch_rate + inertia_wheel_ * wheel_rate;
-  x(2) = inertia_wheel_ * (pitch_rate + wheel_rate);
+  x(1) = imu_handle_.getAngularVelocity()[1];
+  x(2) = joint_handle_.getVelocity();
   Eigen::Matrix<double, CONTROL_DIM, 1> u;
   u = k_ * (-x);  // regulate to zero: K*(0 - x)
   joint_handle_.setCommand(u(0));
