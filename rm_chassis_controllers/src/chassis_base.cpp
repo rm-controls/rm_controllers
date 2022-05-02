@@ -252,7 +252,7 @@ void ChassisBase<T...>::gyro()
 
     recovery();
   }
-  tfVelToBase("yaw");
+  tfVelToBase(follow_source_frame_);
 }
 
 template <typename... T>

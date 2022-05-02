@@ -22,6 +22,9 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
   joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(
       getParam(controller_nh, "joint", std::string("reaction_wheel_joint")));
 
+  left_wheel_handle_ = robot_hw->get<hardware_interface::JointStateInterface>()->getHandle("left_wheel_joint");
+  right_wheel_handle_ = robot_hw->get<hardware_interface::JointStateInterface>()->getHandle("right_wheel_joint");
+
   // i_b is moment of inertia of the pendulum body around the pivot point,
   // i_w is the moment of inertia of the wheel around the rotational axis of the motor
   // l is the distance between the motor axis and the pivot point
@@ -93,8 +96,9 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
   }
 
   // Continuous model \dot{x} = A x + B u
+  torque_g_ = (m_b * l_b + m_w * l) * g;
   double temp = i_b + m_w * l * l;
-  double a_1_0 = (m_b * l_b + m_w * l) * g / temp;
+  double a_1_0 = torque_g_ / temp;
   double a_1_1 = 0.;  // TODO:  dynamic friction coefficient
   double a_1_2 = 0.;  // TODO:  dynamic friction coefficient
   double a_2_0 = -a_1_0;
@@ -131,6 +135,9 @@ void ReactionWheelController::update(const ros::Time& time, const ros::Duration&
   x(0) = pitch;
   x(1) = imu_handle_.getAngularVelocity()[1];
   x(2) = joint_handle_.getVelocity();
+
+  double pitch_des = std::asin((left_wheel_handle_.getEffort() + right_wheel_handle_.getEffort()) / torque_g_);
+  x(0) = x(0) - pitch_des;
   Eigen::Matrix<double, CONTROL_DIM, 1> u;
   u = k_ * (-x);  // regulate to zero: K*(0 - x)
   joint_handle_.setCommand(u(0));

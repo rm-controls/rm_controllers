@@ -15,7 +15,8 @@ namespace rm_chassis_controllers
 using Eigen::Matrix;
 class ReactionWheelController
   : public controller_interface::MultiInterfaceController<hardware_interface::ImuSensorInterface,
-                                                          hardware_interface::EffortJointInterface>
+                                                          hardware_interface::EffortJointInterface,
+                                                          hardware_interface::JointStateInterface>
 {
 public:
   ReactionWheelController() = default;
@@ -33,6 +34,8 @@ private:
 
   hardware_interface::ImuSensorHandle imu_handle_;
   hardware_interface::JointHandle joint_handle_;
+  hardware_interface::JointStateHandle left_wheel_handle_, right_wheel_handle_;
+  double torque_g_;
 };
 
 }  // namespace rm_chassis_controllers
