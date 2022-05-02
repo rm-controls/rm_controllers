@@ -100,15 +100,6 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
   // Continuous model \dot{x} = A x + B u
   a_ << 0., 1 / inertia_total_, -1 / inertia_total_, m_total * l * g, 0., 0., 0, 0, 0;
   b_ << 0., 0., 1.;
-  // Convert model from continuous to discrete time: x_{n+1} = A x_{n} + B u_{n}
-  Matrix<double, STATE_DIM + CONTROL_DIM, STATE_DIM + CONTROL_DIM> ab_c;
-  ab_c.setZero();
-  ab_c.block(0, 0, STATE_DIM, STATE_DIM) = a_;
-  ab_c.block(0, STATE_DIM, STATE_DIM, CONTROL_DIM) = b_;
-  ab_c = dt * ab_c;
-  Matrix<double, STATE_DIM + CONTROL_DIM, STATE_DIM + CONTROL_DIM> exp = ab_c.exp();
-  a_ = exp.block(0, 0, STATE_DIM, STATE_DIM);
-  b_ = exp.block(0, STATE_DIM, STATE_DIM, CONTROL_DIM);
 
   Lqr<double> lqr(a_, b_, q_, r_);
   if (!lqr.computeK())
