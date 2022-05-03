@@ -3,7 +3,6 @@
 //
 
 #include <rm_common/ros_utilities.h>
-#include <string>
 #include "gpio_controller/gpio_controller.h"
 #include <pluginlib/class_list_macros.hpp>
 
@@ -13,7 +12,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 {
   robot_hw_interface = robot_hw;
   XmlRpc::XmlRpcValue xml_rpc_value;
-  if (!controller_nh.getParam("gpio_control", xml_rpc_value))
+
+  if (!controller_nh.getParam("gpios", xml_rpc_value))
   {
     ROS_WARN("No gpio_control specified");
   }
@@ -33,22 +33,20 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     ROS_DEBUG("Got write_gpio %s", gpio_write_handles_[i].getName().c_str());
 
   // realtime publisher
-  gpio_pubs_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GpioReadArray>(controller_nh, "gpios/data", 100));
+  gpio_pubs_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GpioReadArray>(controller_nh, "data", 100));
 
-  cmd_subscriber_ = controller_nh.subscribe<rm_msgs::GpioWrite>("command", 1, &Controller::setGpioCmd, this);
+  cmd_subscriber_ = controller_nh.subscribe<rm_msgs::GpioWrite>("gpio_command", 1, &Controller::setGpioCmd, this);
   return true;
 }
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
-  std_msgs::Header header;
-  header.stamp = time;
   for (unsigned i = 0; i < gpio_read_handles_.size(); i++)
   {
-    gpio_read_array.GpioReads[i].gpio_name = gpio_read_handles_[i].getName();
-    gpio_read_array.GpioReads[i].gpio_state = gpio_read_handles_[i].getValue();
+    gpio_pubs_->msg_.GpioReads[i].gpio_name = gpio_read_handles_[i].getName();
+    gpio_pubs_->msg_.GpioReads[i].gpio_state = gpio_read_handles_[i].getValue();
   }
-  gpio_read_array.header = header;
+  gpio_pubs_->msg_.header.stamp = time;
   gpio_pubs_->unlockAndPublish();
 }
 
@@ -75,6 +73,7 @@ bool Controller::parseGpioData(XmlRpc::XmlRpcValue& gpio_datas, ros::NodeHandle&
       gpio_write_handles_.push_back(write_handle_);
     }
   }
+  return true;
 }
 
 void Controller::setGpioCmd(const rm_msgs::GpioWriteConstPtr& msg)
@@ -83,7 +82,7 @@ void Controller::setGpioCmd(const rm_msgs::GpioWriteConstPtr& msg)
   {
     if (it->getName().compare(msg->gpio_name))
     {
-      //      it->setCommand(msg->gpio_state);
+      it->setCommand(msg->gpio_state);
       return;
     }
   }
