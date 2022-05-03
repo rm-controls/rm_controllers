@@ -147,8 +147,18 @@ void ReactionWheelController::update(const ros::Time& time, const ros::Duration&
   x(2) = joint_handle_.getVelocity();
 
   pitch_offset_ = (1. - alpha_) * pitch_offset_ + alpha_ * pitch;
-  if (std::abs(pitch_offset_) > 0.32)  // recover
-    pitch_offset_ = 0.;
+
+  if (std::abs(pitch_offset_) > 0.2)  // TODO pitch_max rosparam
+  {
+    if (std::abs(x(2)) < 1e-2)  // Damped
+      pitch_offset_ = 0.;
+    else  // Damping
+    {
+      joint_handle_.setCommand(-0.4 * x(2));  // TODO damping_factor rosparam
+      return;
+    }
+  }
+
   //  double pitch_des = std::asin((left_wheel_handle_.getEffort() + right_wheel_handle_.getEffort()) / torque_g_);
   double pitch_des = pitch_offset_;
   //  double pitch_des = 0.;

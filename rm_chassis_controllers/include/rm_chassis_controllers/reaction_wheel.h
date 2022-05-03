@@ -5,10 +5,10 @@
 
 #pragma once
 
+#include <rm_common/lqr.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/imu_sensor_interface.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <rm_common/lqr.h>
 
 namespace rm_chassis_controllers
 {
