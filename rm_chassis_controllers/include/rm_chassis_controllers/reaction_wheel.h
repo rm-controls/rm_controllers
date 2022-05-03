@@ -22,6 +22,7 @@ public:
   ReactionWheelController() = default;
 
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  void starting(const ros::Time& time) override;
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
@@ -35,7 +36,7 @@ private:
   hardware_interface::ImuSensorHandle imu_handle_;
   hardware_interface::JointHandle joint_handle_;
   hardware_interface::JointStateHandle left_wheel_handle_, right_wheel_handle_;
-  double torque_g_;
+  double alpha_, torque_g_, pitch_offset_;
 };
 
 }  // namespace rm_chassis_controllers

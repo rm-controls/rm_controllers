@@ -67,6 +67,11 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
     return false;
   }
 
+  if (!controller_nh.getParam("alpha", alpha_))
+  {
+    ROS_ERROR("Params alpha doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
   q_.setZero();
   r_.setZero();
   XmlRpc::XmlRpcValue q, r;
@@ -121,6 +126,11 @@ bool ReactionWheelController::init(hardware_interface::RobotHW* robot_hw, ros::N
   return true;
 }
 
+void ReactionWheelController::starting(const ros::Time& time)
+{
+  pitch_offset_ = 0.;
+}
+
 void ReactionWheelController::update(const ros::Time& time, const ros::Duration& period)
 {
   // TODO: simplify, add new quatToRPY
@@ -136,7 +146,11 @@ void ReactionWheelController::update(const ros::Time& time, const ros::Duration&
   x(1) = imu_handle_.getAngularVelocity()[1];
   x(2) = joint_handle_.getVelocity();
 
+  pitch_offset_ = (1. - alpha_) * pitch_offset_ + alpha_ * pitch;
   double pitch_des = std::asin((left_wheel_handle_.getEffort() + right_wheel_handle_.getEffort()) / torque_g_);
+  //  double pitch_des = pitch_offset_;
+  //  double pitch_des = 0.;
+
   x(0) = x(0) - pitch_des;
   Eigen::Matrix<double, CONTROL_DIM, 1> u;
   u = k_ * (-x);  // regulate to zero: K*(0 - x)
