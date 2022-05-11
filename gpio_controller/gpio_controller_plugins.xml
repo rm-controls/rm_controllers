@@ -1,6 +1,6 @@
-<library path="lib/libtof_sensor_controller">
+<library path="lib/libgpio_controller">
 
-    <class name="tof_sensor_controller/Controller" type="tof_sensor_controller::Controller"
+    <class name="gpio_controller/Controller" type="gpio_controller::Controller"
            base_class_type="controller_interface::ControllerBase">
         <description>
         </description>

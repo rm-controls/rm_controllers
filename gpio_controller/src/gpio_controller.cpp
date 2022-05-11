@@ -10,32 +10,44 @@ namespace gpio_controller
 {
 bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
 {
-  robot_hw_interface = robot_hw;
   XmlRpc::XmlRpcValue xml_rpc_value;
+  controller_nh.getParam("gpios", xml_rpc_value);
 
-  if (!controller_nh.getParam("gpios", xml_rpc_value))
+  ROS_DEBUG_STREAM("xml_rpc_value:" << xml_rpc_value);
+  for (auto it = xml_rpc_value.begin(); it != xml_rpc_value.end(); ++it)
   {
-    ROS_WARN("No gpio_control specified");
-  }
-  else
-  {
-    parseGpioData(xml_rpc_value, controller_nh);
+    ROS_ASSERT(it->second.hasMember("type"));
+    std::string gpioType = it->second["type"];
+    std::string gpioName = it->first;
+
+    if (gpioType.compare("in") == 0)
+    {
+      rm_control::GpioReadHandle read_handle_ = robot_hw->get<rm_control::GpioReadInterface>()->getHandle(gpioName);
+      gpio_read_handles_.push_back(read_handle_);
+    }
+    else if (gpioType.compare("out") == 0)
+    {
+      rm_control::GpioWriteHandle write_handle_ = robot_hw->get<rm_control::GpioWriteInterface>()->getHandle(gpioName);
+      gpio_write_handles_.push_back(write_handle_);
+    }
+    else
+    {
+      ROS_WARN_STREAM("Gpio " << it->first << " has no gpio_type.");
+      continue;
+    }
   }
 
   for (unsigned i = 0; i < gpio_read_handles_.size(); i++)
   {
     ROS_DEBUG("Got read_gpio %s", gpio_read_handles_[i].getName().c_str());
-    gpio_read_array.GpioReads[i].gpio_name = gpio_read_handles_[i].getName();
-    gpio_read_array.GpioReads[i].gpio_state = gpio_read_handles_[i].getValue();
   }
-
   for (unsigned i = 0; i < gpio_write_handles_.size(); i++)
     ROS_DEBUG("Got write_gpio %s", gpio_write_handles_[i].getName().c_str());
 
   // realtime publisher
-  gpio_pubs_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GpioReadArray>(controller_nh, "data", 100));
+  gpio_pubs_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GpioData>(controller_nh, "data", 100));
 
-  cmd_subscriber_ = controller_nh.subscribe<rm_msgs::GpioWrite>("gpio_command", 1, &Controller::setGpioCmd, this);
+  cmd_subscriber_ = controller_nh.subscribe<rm_msgs::GpioData>("gpio_command", 1, &Controller::setGpioCmd, this);
   return true;
 }
 
@@ -43,50 +55,31 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
   for (unsigned i = 0; i < gpio_read_handles_.size(); i++)
   {
-    gpio_pubs_->msg_.GpioReads[i].gpio_name = gpio_read_handles_[i].getName();
-    gpio_pubs_->msg_.GpioReads[i].gpio_state = gpio_read_handles_[i].getValue();
+    gpio_pubs_->msg_.header[i].stamp = time;
+    gpio_pubs_->msg_.gpio_name[i] = gpio_read_handles_[i].getName();
+    gpio_pubs_->msg_.gpio_state[i] = gpio_read_handles_[i].getValue();
   }
-  gpio_pubs_->msg_.header.stamp = time;
-  gpio_pubs_->unlockAndPublish();
+  if (gpio_read_handles_.size() != 0)
+  {
+    gpio_pubs_->unlockAndPublish();
+  }
 }
 
-bool Controller::parseGpioData(XmlRpc::XmlRpcValue& gpio_datas, ros::NodeHandle& robot_controller_nh)
+void Controller::setGpioCmd(const rm_msgs::GpioDataConstPtr& msg)
 {
-  for (auto it = gpio_datas.begin(); it != gpio_datas.end(); ++it)
+  for (unsigned i = 0; i < gpio_write_handles_.size(); i++)
   {
-    std::string gpioType = it->second;
-    if (!it->second.hasMember("out") && !it->second.hasMember("in"))
+    for (unsigned j = 0; msg->gpio_name.size(); j++)
     {
-      ROS_ERROR_STREAM("Gpio " << it->first << " has no gpio_type.");
-      continue;
+      if ((msg->gpio_name[j].compare(gpio_write_handles_[i].getName())))
+      {
+        gpio_write_handles_[i].setCommand(msg->gpio_state[j]);
+        return;
+      }
     }
-    if (gpioType.compare("in"))
-    {
-      rm_control::GpioReadHandle read_handle_ =
-          robot_hw_interface->get<rm_control::GpioReadInterface>()->getHandle(it->first);
-      gpio_read_handles_.push_back(read_handle_);
-    }
-    if (gpioType.compare("out"))
-    {
-      rm_control::GpioWriteHandle write_handle_ =
-          robot_hw_interface->get<rm_control::GpioWriteInterface>()->getHandle(it->first);
-      gpio_write_handles_.push_back(write_handle_);
-    }
+    ROS_WARN("Not this %s", msg->gpio_name[i].c_str());
+    return;
   }
-  return true;
-}
-
-void Controller::setGpioCmd(const rm_msgs::GpioWriteConstPtr& msg)
-{
-  for (auto it = gpio_write_handles_.begin(); it != gpio_write_handles_.end(); ++it)
-  {
-    if (it->getName().compare(msg->gpio_name))
-    {
-      it->setCommand(msg->gpio_state);
-      return;
-    }
-  }
-  ROS_WARN("Not this %s", msg->gpio_name.c_str());
 }
 
 }  // namespace gpio_controller
