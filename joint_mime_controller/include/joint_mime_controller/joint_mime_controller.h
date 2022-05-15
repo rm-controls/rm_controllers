@@ -1,8 +1,8 @@
 //
-// Created by ljq on 2022/5/1.
+// Created by ljq on 2022/5/15.
 //
 
-#pragma  once
+#pragma once
 
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/tf_rt_broadcaster.h>
@@ -22,15 +22,13 @@ namespace joint_mime_controller
 class JointMimeController
 {
 public:
-		JointMimeController() = default;
-		bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh);
-		void upddate(const ros::Time& time);
+  JointMimeController() = default;
+  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh);
+  void upddate(const ros::Time& time);
 
 private:
-
 };
 
-
-}
+}  // namespace joint_mime_controller
 
 PLUGINLIB_EXPORT_CLASS(joint_mime_controller::JointMimeController, controller_interface::ControllerBase)

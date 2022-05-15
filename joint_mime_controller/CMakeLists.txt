@@ -61,11 +61,11 @@ install(
 
 # Mark other files for installation
 install(
-        DIRECTORY config launch
+        DIRECTORY config
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 install(
-        FILES tof_sensor_controller_plugins.xml
+        FILES joint_mime_controller_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
