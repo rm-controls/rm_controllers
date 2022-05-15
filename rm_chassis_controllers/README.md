@@ -4,7 +4,7 @@
 
 There are four states: raw, follow, gyro and twist. The output torque and speed of each motor of the chassis can be calculated according to the current state of the control, the received speed and pose of the pan/tilt, and the speed and acceleration commands, and the data is returned by the motor to calculate The speed and posture of the chassis are released. The control algorithm involved in the chassis controller is PID algorithm.
 
-**Keywords:** mecanum, swerve, balance, chassis, ROS, RoboMaster
+**Keywords:** mecanum, swerve, reaction wheel, chassis, sentry, omni, ROS, RoboMaster
 
 ### Hardware interface type
 
@@ -14,7 +14,6 @@ There are four states: raw, follow, gyro and twist. The output torque and speed 
 
 + `RoboSateInterface` Used for high-frequency maintenance of the transformation relationship of changing odom to
   base_link.
-
 ## Installation
 
 ### Installation from Packages
@@ -35,23 +34,22 @@ sudo rosdep install --from-paths src
 
 #### Dependencies
 
-* [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
+* [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics), 
 * roscpp
-* roslint
-* rm_msgs
-* rm_common
-* pluginlib
-* hardware_interface
-* controller_interface
-* forward_command_controller
-* realtime_tools
-* control_toolbox
-* effort_controllers
-* tf2
-* tf2_geometry_msgs
+* roslint 
+* rm_msgs 
+* rm_common 
+* nav_msgs 
+* pluginlib 
+* hardware_interface 
+* controller_interface 
+* forward_command_controller 
+* realtime_tools 
+* control_toolbox 
+* effort_controllers 
+* tf2 
+* tf2_geometry_msgs 
 * angles
-* imu_sensor_controller
-* robot_localization
 
 #### Building
 
@@ -80,10 +78,6 @@ mon launch rm_chassis_controllers load_controllers.launch
 
 #### Subscribed Topics
 
-* **`base_imu`** ([sensor_msgs/Imu](http://docs.ros.org/en/api/sensor_msgs/html/msg/Imu.html))
-
-  The inertial measurement unit data of base command.
-
 * **`command`** (rm_msgs::ChassisCmd)
 
   Set the mode, acceleration, and maximum power of the chassis.
@@ -99,7 +93,7 @@ mon launch rm_chassis_controllers load_controllers.launch
 
 #### Parameters
 
-##### common
+##### chassis_base
 
 * **`wheel_radius`** (double)
 
@@ -119,49 +113,44 @@ mon launch rm_chassis_controllers load_controllers.launch
 
 * **`enable_odom_tf`** (bool, default: true)
 
-  Option.If set this param true, it will send Transform from odom to base.
-
-* **`twist_covariance_diagonal`** (double[6])
-
-  The diagonal covariance matrix of twist.
+  Option.If set this param true, it will enable send Transform from odom to base.
 
 * **`publish_rate`** (double, default: 50)
 
   Frequency (in Hz) of publishing Transform.
 
-* **`coeff`** (double)
-
-  A coefficient. Adjust this coefficient to reduce the impact of power loss.
-
-* **`min_vel`** (double)
-
-  The minimum velocity of chassis joint which is used to calculate the max torque.
-
 * **`timeout`** (double)
 
   Allowed period (in s) between two commands. If the time is exceed this period, the speed of chassis will be set 0.
 
-##### Balance
+* **`effort_coeff_`** (double)
 
-* **`joint_left_name`** (string, default: "joint_left")
+  A coefficient used to compute "zoom_coeff" which is used to adjust the chassis power.
 
-  Left wheel joint name or list of joint names.
+* **`vel_coeff_`**(double)
 
-* **`joint_right_name`** (string, default: "joint_right")
+  A coefficient used to compute "zoom_coeff" which is used to adjust the chassis power.
 
-  Right wheel joint name or list of joint names.
+* **`power_offset_`**(double)
 
-* **`com_pitch_offset`** (double, default: 0)
+  The offset of chassis power.
 
-  The reduction ratio of pitch.
+* **`publish_odom_tf_`** (bool, default: false)
 
-* **`a`** (double[16])
+  Option.If set this param true, it will send Transform from odom to base.
 
-  State space expression.
+* **`twist_covariance_diagonal`**(double[6])
 
-* **`b`** (double[8])
+  The diagonal covariance matrix of twist.
+##### Reaction_wheel
 
-  State space expression.
+* **`imu_name`** (string)
+
+  Imu name.
+
+* **`joint`** (string)
+
+  Joint names.
 
 * **`q`** (double[16])
 
@@ -170,6 +159,38 @@ mon launch rm_chassis_controllers load_controllers.launch
 * **`r`** (double[4])
 
   Weight matrix.
+
+* **`alpha_`**(double)
+
+  Used to compute pitch_offset.
+
+* **`m_b`** (double)
+
+  Mass of the pendulum body.
+
+* **`m_w`** (double)
+
+  Mass of the wheel.
+
+* **`l_b`** (double)
+
+  The distance between the center of mass of the pendulum body and the pivot point.
+
+* **`l`** (double)
+
+  The distance between the motor axis and the pivot point.
+
+* **`i_b`** (double)
+
+  The moment of inertia of the pendulum body around the pivot point.
+
+* **`i_w`** (double)
+
+  The moment of inertia of the wheel around the rotational axis of the motor
+
+* **`g`** (double)
+
+  Negative value of gravitational acceleration.
 
 ##### Swerve
 
@@ -192,6 +213,24 @@ mon launch rm_chassis_controllers load_controllers.launch
 * **`/modules/<module_name>/wheel/radius`** (double)
 
   The radius of wheel.
+
+##### Sentry
+* **`catapult_angle_`**(double)
+
+  Angle of catapult. Whether the angle is positive or negative depends on the direction of the chassis speed.
+
+* **`lock_duratoin_`**(double)
+
+  Lock duration of the catapult.
+
+* **`velocity_coefficient`**(double)
+
+  A coefficient used to judge whether enter normal mode or not.
+
+##### Omni
+* **`chassis_radius`**(double)
+
+  Radius of the omni wheel chassis，it is used to compute the chassis angular velocity.
 
 ## Controller configuration examples
 
