@@ -4,14 +4,24 @@
 
 #include "joint_mime_controller/joint_mime_controller.h"
 
-#include <kdl_parser/kdl_parser.hpp>
-#include <tf2_kdl/tf2_kdl.h>
 namespace joint_mime_controller
 {
-bool JointMimeController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh){
+bool JointMimeController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh)
+{
+  if (!controller_nh.getParam("joint_mime", joint_mime))
+  {
+    ROS_ERROR("joint_mime is not set");
+    return false;
+  }
 
+  joint_state_handle_ = robot_hw->get<hardware_interface::JointStateInterface>()->getHandle(joint_mime);
+  joint_mime_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), controller_nh);
 };
 
-void JointMimeController::update(const ros::Time& time){};
+void JointMimeController::update(const ros::Time& time, const ros::Duration& period)
+{
+  joint_mime_ctrl_.setCommand(joint_state_handle_.getPosition());
+  joint_mime_ctrl_.update(time, period);
+};
 
 }  // namespace joint_mime_controller

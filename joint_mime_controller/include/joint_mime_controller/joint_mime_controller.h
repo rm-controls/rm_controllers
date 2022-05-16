@@ -4,29 +4,27 @@
 
 #pragma once
 
-#include <rm_common/hardware_interface/robot_state_interface.h>
-#include <rm_common/tf_rt_broadcaster.h>
-
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_state_interface.h>
+#include <effort_controllers/joint_position_controller.h>
+
 #include <pluginlib/class_list_macros.hpp>
-#include <tf2_ros/static_transform_broadcaster.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/buffer.h>
-#include <urdf/model.h>
-#include <kdl/tree.hpp>
-#include <realtime_tools/realtime_buffer.h>
 
 namespace joint_mime_controller
 {
 class JointMimeController
+  : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
+                                                          hardware_interface::JointStateInterface>
 {
 public:
   JointMimeController() = default;
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh);
-  void upddate(const ros::Time& time);
+  void update(const ros::Time& time, const ros::Duration& period);
 
 private:
+  effort_controllers::JointPositionController joint_mime_ctrl_;
+  hardware_interface::JointStateHandle joint_state_handle_;
+  std::string joint_mime;
 };
 
 }  // namespace joint_mime_controller
