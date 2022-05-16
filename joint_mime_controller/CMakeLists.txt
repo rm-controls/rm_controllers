@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
         pluginlib
         hardware_interface
         controller_interface
-        realtime_tools
         )
 
 catkin_package(
@@ -28,7 +27,6 @@ catkin_package(
         pluginlib
         hardware_interface
         controller_interface
-        realtime_tools
         LIBRARIES ${PROJECT_NAME}
 )
 
