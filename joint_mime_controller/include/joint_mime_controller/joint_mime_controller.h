@@ -24,7 +24,7 @@ public:
 private:
   effort_controllers::JointPositionController joint_mime_ctrl_;
   hardware_interface::JointStateHandle joint_state_handle_;
-  std::string joint_mime;
+  std::string joint_mime_name_;
 };
 
 }  // namespace joint_mime_controller
