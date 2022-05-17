@@ -5,10 +5,6 @@ find_package(catkin REQUIRED COMPONENTS
         roscpp
         roslint
 
-        rm_msgs
-        rm_common
-
-
         pluginlib
         hardware_interface
         controller_interface
@@ -20,9 +16,6 @@ catkin_package(
         CATKIN_DEPENDS
         roscpp
         roslint
-
-        rm_msgs
-        rm_common
 
         pluginlib
         hardware_interface

@@ -9,14 +9,11 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
-  <depend>rm_msgs</depend>
-  <depend>rm_common</depend>
   <depend>pluginlib</depend>
   <depend>roscpp</depend>
   <depend>roslint</depend>
   <depend>controller_interface</depend>
   <depend>hardware_interface</depend>
-
 
   <export>
     <controller_interface plugin="${prefix}/joint_mime_controller_plugins.xml"/>
