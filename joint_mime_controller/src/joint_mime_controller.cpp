@@ -15,6 +15,7 @@ bool JointMimeController::init(hardware_interface::RobotHW* robot_hw, ros::NodeH
   }
   joint_state_handle_ = robot_hw->get<hardware_interface::JointStateInterface>()->getHandle(joint_mime_name_);
   joint_mime_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), controller_nh);
+  return true;
 };
 
 void JointMimeController::update(const ros::Time& time, const ros::Duration& period)
