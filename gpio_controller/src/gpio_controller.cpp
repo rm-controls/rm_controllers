@@ -69,17 +69,15 @@ void Controller::setGpioCmd(const rm_msgs::GpioDataConstPtr& msg)
 {
   for (unsigned i = 0; i < gpio_write_handles_.size(); i++)
   {
-    for (unsigned j = 0; msg->gpio_name.size(); j++)
+    for (unsigned j = 0; j < msg->gpio_name.size(); j++)
     {
-      if ((msg->gpio_name[j].compare(gpio_write_handles_[i].getName())))
+      if ((msg->gpio_name[j].find(gpio_write_handles_[i].getName()) != std::string::npos))
       {
         gpio_write_handles_[i].setCommand(msg->gpio_state[j]);
-        return;
       }
     }
-    ROS_WARN("Not this %s", msg->gpio_name[i].c_str());
-    return;
   }
+  return;
 }
 
 }  // namespace gpio_controller

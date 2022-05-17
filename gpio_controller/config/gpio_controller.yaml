@@ -2,5 +2,6 @@ controllers:
   gpio_controller:
     type: gpio_controller/Controller
     gpios:
-      valve:
+      valve_1:
         type: "out"
+
