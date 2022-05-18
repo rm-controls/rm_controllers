@@ -10,14 +10,14 @@
 
 #include <pluginlib/class_list_macros.hpp>
 
-namespace joint_mime_controller
+namespace mimic_joint_controller
 {
-class JointMimeController
+class MimicJointController
   : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
                                                           hardware_interface::JointStateInterface>
 {
 public:
-  JointMimeController() = default;
+  MimicJointController() = default;
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh) override;
   void update(const ros::Time& time, const ros::Duration& period) override;
 
@@ -27,6 +27,6 @@ private:
   std::string mimic_joint_name_;
 };
 
-}  // namespace joint_mime_controller
+}  // namespace mimic_joint_controller
 
-PLUGINLIB_EXPORT_CLASS(joint_mime_controller::JointMimeController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(mimic_joint_controller::MimicJointController, controller_interface::ControllerBase)

@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>joint_mime_controller</name>
+  <name>mimic_joint_controller</name>
   <version>0.0.0</version>
-  <description>The joint_mime_controller package</description>
+  <description>The mimic_joint_controller package</description>
   <maintainer email="lvjunqi@todo.todo">ljq</maintainer>
 
   <license>BSD</license>
@@ -16,6 +16,6 @@
   <depend>hardware_interface</depend>
 
   <export>
-    <controller_interface plugin="${prefix}/joint_mime_controller_plugins.xml"/>
+    <controller_interface plugin="${prefix}/mimic_joint_controller_plugins.xml"/>
   </export>
 </package>

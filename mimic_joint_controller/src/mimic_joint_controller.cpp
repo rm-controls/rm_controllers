@@ -2,11 +2,11 @@
 // Created by ljq on 2022/5/15.
 //
 
-#include "joint_mime_controller/joint_mime_controller.h"
+#include "mimic_joint_controller/mimic_joint_controller.h"
 
-namespace joint_mime_controller
+namespace mimic_joint_controller
 {
-bool JointMimeController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh)
+bool MimicJointController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh)
 {
   if (!controller_nh.getParam("joint_mime", mimic_joint_name_))
   {
@@ -18,10 +18,10 @@ bool JointMimeController::init(hardware_interface::RobotHW* robot_hw, ros::NodeH
   return true;
 };
 
-void JointMimeController::update(const ros::Time& time, const ros::Duration& period)
+void MimicJointController::update(const ros::Time& time, const ros::Duration& period)
 {
   mimic_joint_ctrl_.setCommand(target_state_handle_.getPosition());
   mimic_joint_ctrl_.update(time, period);
 };
 
-}  // namespace joint_mime_controller
+}  // namespace mimic_joint_controller

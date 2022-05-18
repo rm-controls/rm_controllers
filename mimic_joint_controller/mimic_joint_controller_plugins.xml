@@ -1,0 +1,8 @@
+<library path="lib/libmimic_joint_controller">
+
+    <class name="mimic_joint_controller/MimicJointController" type="mimic_joint_controller::MimicJointController"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+        </description>
+    </class>
+</library>

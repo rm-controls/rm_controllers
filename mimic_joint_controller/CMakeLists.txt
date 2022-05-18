@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(joint_mime_controller)
+project(mimic_joint_controller)
 
 find_package(catkin REQUIRED COMPONENTS
         roscpp
@@ -29,7 +29,7 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
-        src/joint_mime_controller.cpp
+        src/mimic_joint_controller.cpp
         )
 
 target_link_libraries(${PROJECT_NAME}
@@ -56,7 +56,7 @@ install(
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 install(
-        FILES joint_mime_controller_plugins.xml
+        FILES mimic_joint_controller_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
