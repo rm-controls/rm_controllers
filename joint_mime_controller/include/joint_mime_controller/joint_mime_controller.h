@@ -18,8 +18,8 @@ class JointMimeController
 {
 public:
   JointMimeController() = default;
-  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh);
-  void update(const ros::Time& time, const ros::Duration& period);
+  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh) override;
+  void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
   effort_controllers::JointPositionController joint_mime_ctrl_;
