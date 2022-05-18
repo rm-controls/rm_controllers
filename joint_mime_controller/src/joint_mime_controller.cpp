@@ -14,14 +14,14 @@ bool JointMimeController::init(hardware_interface::RobotHW* robot_hw, ros::NodeH
     return false;
   }
   target_state_handle_ = robot_hw->get<hardware_interface::JointStateInterface>()->getHandle(mimic_joint_name_);
-  minic_joint_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), controller_nh);
+  mimic_joint_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), controller_nh);
   return true;
 };
 
 void JointMimeController::update(const ros::Time& time, const ros::Duration& period)
 {
-  minic_joint_ctrl_.setCommand(target_state_handle_.getPosition());
-  minic_joint_ctrl_.update(time, period);
+  mimic_joint_ctrl_.setCommand(target_state_handle_.getPosition());
+  mimic_joint_ctrl_.update(time, period);
 };
 
 }  // namespace joint_mime_controller
