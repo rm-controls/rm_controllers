@@ -22,9 +22,9 @@ public:
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-  effort_controllers::JointPositionController joint_mime_ctrl_;
-  hardware_interface::JointStateHandle joint_state_handle_;
-  std::string joint_mime_name_;
+  effort_controllers::JointPositionController minic_joint_ctrl_;
+  hardware_interface::JointStateHandle target_state_handle_;
+  std::string mimic_joint_name_;
 };
 
 }  // namespace joint_mime_controller
