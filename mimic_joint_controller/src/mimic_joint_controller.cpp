@@ -8,9 +8,9 @@ namespace mimic_joint_controller
 {
 bool MimicJointController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh)
 {
-  if (!controller_nh.getParam("joint_mime", mimic_joint_name_))
+  if (!controller_nh.getParam("mimic_joint", mimic_joint_name_))
   {
-    ROS_ERROR("joint_mime is not set");
+    ROS_ERROR("mimic_joint is not set");
     return false;
   }
   target_state_handle_ = robot_hw->get<hardware_interface::JointStateInterface>()->getHandle(mimic_joint_name_);
