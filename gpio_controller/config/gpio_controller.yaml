@@ -2,5 +2,11 @@ controllers:
   gpio_controller:
     type: gpio_controller/Controller
     gpios:
-      valve_1:
+      gripper1:
         type: "out"
+
+#hw
+#  gpios:
+#    gripper1:
+#      pin: 145
+#      direction: out
