@@ -1,0 +1,123 @@
+# robot_state_controller
+
+## Overview
+
+Robot_state_controller uses the URDF specified by the parameter robot_description and the joint positions from the topic joint_states to calculate the forward kinematics of the robot and publish the results via tf, and reading the external incoming tf and manage maintenance.
+
+**keywords:** ROS, urdf, transformation, joint
+
+#### License
+
+The source code is released under a [BSD 3-Clause license](https://github.com/rm-controls/rm_controllers/blob/master/LICENSE).
+
+**Author: DynamicX<br />
+Affiliation: DynamicX<br />
+Maintainer: DynamicX**
+
+The robot_state_controller package has been tested under [ROS](http://www.ros.org) Melodic and Noetic on respectively 18.04 and 20.04. This is research code, expect that it changes often and any fitness for a particular purpose is disclaimed.
+
+### Hardware interface type
+
++ `JointStateInterface` Used to get the names and data of different joints.
++ `RobotStateInterface` Used to get tf buffer data of different robot states.
+
+## Installation
+
+### Installation from Packages
+
+To install all packages from this repository as Debian packages use
+
+```
+sudo apt-get install ros-noetic-robot-state-controller
+```
+
+or better use `rosdep`:
+
+```
+sudo rosdep install --from-paths src
+```
+
+### Building from Source
+
+#### Dependencies
+
+* roscpp
+* roslint
+* rm_common
+* hardware_interface
+* controller_interface
+* urdf
+* tf2_ros
+* tf2_kdl
+* kdl_parser
+* realtime_tools
+* pluginlib
+
+#### Building
+
+To build this package with catkin build. Clone the latest version from this repository into your catkin workspace.
+
+```
+catkin_workspace/src
+git clone https://github.com/rm-controls/rm_controllers.git
+rosdep install --from-paths . --ignore-src
+catkin build
+```
+
+## Usage
+
+Run the controller with mon launch:
+
+```
+mon launch robot_state_controller load_controllers.launch
+```
+
+## Launch files
+
+- **load_controller.launch:** Load the parameters in config files and load the robot_state_controller.
+
+## ROS API
+
+#### Subscribed Topics
+
+* **`tf`** (tf2_msgs/TFMessage)
+
+  Obtain and manage maintenance real-time transformation information.
+
+* **`tf_static`**(tf2_msgs/TFMessage)
+
+  Obtain and manage maintenance static transformation information.
+
+#### Parameters
+
+* **`publish_rate`** (double)
+
+  Publish frequency of state publisher, default: 50Hz.
+
+* **`use_tf_static`** (bool)
+
+  Set whether to use the /tf_static latched static transform broadcaster.Default: true.
+
+* **`ignore_timestamp`** (bool)
+
+  If true, ignore the publish_frequency and the timestamp of joint_states and publish a tf for each of the received joint_states. Default: false.
+
+* **`buffer_duration`** (double)
+
+  The time to keep a history of transforms.
+
+* **`robot_description`** (string)
+
+  The urdf xml robot description.
+
+#### Complete description
+
+```
+robot_state_controller:
+  type: robot_state_controller/RobotStateController
+  publish_rate: 100
+```
+
+## Bugs & Feature Requests
+
+Please report bugs and request features using the [Issue Tracker](https://github.com/rm-controls/rm_controllers/issues).
