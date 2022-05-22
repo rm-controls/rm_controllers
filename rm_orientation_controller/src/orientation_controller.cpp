@@ -42,6 +42,8 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
           source2target :
           source2target_msg_;
   robot_state_.setTransform(source2target_msg_, "rm_orientation_controller");
+  if (!receive_imu_msg_)
+    tf_broadcaster_.sendTransform(source2target_msg_);
 }
 
 bool Controller::getTransform(const ros::Time& time, geometry_msgs::TransformStamped& source2target, const double x,
@@ -75,6 +77,8 @@ bool Controller::getTransform(const ros::Time& time, geometry_msgs::TransformSta
 
 void Controller::imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg)
 {
+  if (!receive_imu_msg_)
+    receive_imu_msg_ = true;
   geometry_msgs::TransformStamped source2target;
   source2target.header.stamp = msg->header.stamp;
   if (getTransform(ros::Time(0), source2target, msg->orientation.x, msg->orientation.y, msg->orientation.z,
