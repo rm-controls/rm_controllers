@@ -24,7 +24,7 @@ public:
 private:
   effort_controllers::JointPositionController mimic_joint_ctrl_;
   hardware_interface::JointStateHandle target_state_handle_;
-  std::string mimic_joint_name_;
+  std::string target_joint_name_;
 };
 
 }  // namespace mimic_joint_controller
