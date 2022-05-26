@@ -36,5 +36,6 @@ private:
   std::string frame_target_;
 
   ros::Subscriber imu_data_sub_;
+  bool receive_imu_msg_ = false;
 };
 }  // namespace rm_orientation_controller
