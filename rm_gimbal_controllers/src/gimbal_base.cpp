@@ -88,7 +88,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   odom2base_.transform.rotation.w = 1.;
 
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
-  cmd_track_sub_ = controller_nh.subscribe<rm_msgs::TrackCmd>("track_command", 1, &Controller::trackCB, this);
+  data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackCmd>("/track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
 
@@ -104,7 +104,7 @@ void Controller::starting(const ros::Time& /*unused*/)
 void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
   cmd_gimbal_ = *cmd_rt_buffer_.readFromRT();
-  cmd_track_ = *track_rt_buffer_.readFromNonRT();
+  data_track_ = *track_rt_buffer_.readFromNonRT();
   try
   {
     odom2pitch_ = robot_state_handle_.lookupTransform("odom", ctrl_pitch_.joint_urdf_->child_link_name, time);
@@ -211,16 +211,18 @@ void Controller::track(const ros::Time& time)
   quatToRPY(odom2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
   double yaw_compute = yaw_real;
   double pitch_compute = -pitch_real;
-  geometry_msgs::Point target_pos = cmd_track_.target_pos;
-  geometry_msgs::Vector3 target_vel = cmd_track_.target_vel;
+  geometry_msgs::Point target_pos = data_track_.target_pos;
+  geometry_msgs::Vector3 target_vel = data_track_.target_vel;
   try
   {
-    if (!cmd_track_.header.frame_id.empty())
+    if (!data_track_.header.frame_id.empty())
       tf2::doTransform(target_pos, target_pos,
-                       robot_state_handle_.lookupTransform("odom", cmd_track_.header.frame_id, cmd_track_.header.stamp));
-    if (!cmd_track_.header.frame_id.empty())
+                       robot_state_handle_.lookupTransform("odom", data_track_.header.frame_id,
+                                                           data_track_.header.stamp));
+    if (!data_track_.header.frame_id.empty())
       tf2::doTransform(target_vel, target_vel,
-                       robot_state_handle_.lookupTransform("odom", cmd_track_.header.frame_id, cmd_track_.header.stamp));
+                       robot_state_handle_.lookupTransform("odom", data_track_.header.frame_id,
+                                                           data_track_.header.stamp));
   }
   catch (tf2::TransformException& ex)
   {

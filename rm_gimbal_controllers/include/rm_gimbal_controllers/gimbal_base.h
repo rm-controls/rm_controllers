@@ -84,7 +84,7 @@ private:
   ros::Time last_publish_time_{};
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   ros::Subscriber cmd_gimbal_sub_;
-  ros::Subscriber cmd_track_sub_;
+  ros::Subscriber data_track_sub_;
 
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TrackCmd> track_rt_buffer_;
@@ -92,7 +92,7 @@ private:
   geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
-  rm_msgs::TrackCmd cmd_track_;
+  rm_msgs::TrackCmd data_track_;
   std::string gimbal_des_frame_id_{}, imu_name_{};
 
   double publish_rate_{};
