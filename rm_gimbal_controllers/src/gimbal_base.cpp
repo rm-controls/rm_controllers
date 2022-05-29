@@ -88,7 +88,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   odom2base_.transform.rotation.w = 1.;
 
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
-  data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackCmd>("/track", 1, &Controller::trackCB, this);
+  data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
 
@@ -367,7 +367,7 @@ void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)
   cmd_rt_buffer_.writeFromNonRT(*msg);
 }
 
-void Controller::trackCB(const rm_msgs::TrackCmdConstPtr& msg)
+void Controller::trackCB(const rm_msgs::TrackDataConstPtr& msg)
 {
   track_rt_buffer_.writeFromNonRT(*msg);
 }
