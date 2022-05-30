@@ -12,8 +12,8 @@
 
 namespace gpio_controller
 {
-class Controller
-  : public controller_interface::MultiInterfaceController<rm_control::GpioReadInterface, rm_control::GpioWriteInterface>
+class Controller : public controller_interface::MultiInterfaceController<rm_control::GpioStateInterface,
+                                                                         rm_control::GpioCommandInterface>
 {
 public:
   Controller() = default;
@@ -25,11 +25,12 @@ public:
 private:
   void setGpioCmd(const rm_msgs::GpioDataConstPtr& msg);
 
-  std::vector<rm_control::GpioReadHandle> gpio_read_handles_;
-  std::vector<rm_control::GpioWriteHandle> gpio_write_handles_;
+  std::vector<rm_control::GpioStateHandle> gpio_state_handles_;
+  std::vector<rm_control::GpioCommandHandle> gpio_command_handles_;
 
   ros::Subscriber cmd_subscriber_;
   typedef std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GpioData>> RtpublisherPtr;
   RtpublisherPtr gpio_pubs_;
+  std::vector<RtpublisherPtr> realtime_pubs_;
 };
 }  // namespace gpio_controller

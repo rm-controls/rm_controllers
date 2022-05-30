@@ -2,8 +2,8 @@ controllers:
   gpio_controller:
     type: gpio_controller/Controller
     gpios:
-      gripper1:
-        type: "out"
+      gpio1:
+        name: "gripper1"
 
 #hw
 #  gpios:
