@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>mimic_joint_controller</name>
+  <version>0.0.0</version>
+  <description>The mimic_joint_controller package</description>
+  <maintainer email="lvjunqi@todo.todo">ljq</maintainer>
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>pluginlib</depend>
+  <depend>roscpp</depend>
+  <depend>roslint</depend>
+  <depend>controller_interface</depend>
+  <depend>hardware_interface</depend>
+
+  <export>
+    <controller_interface plugin="${prefix}/mimic_joint_controller_plugins.xml"/>
+  </export>
+</package>

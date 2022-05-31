@@ -1,0 +1,6 @@
+controllers:
+  mimic_joint1_controller:
+    type: mimic_joint_controller/MimicJointController
+    target_joint: "joint1"
+    joint: "mimic_joint1"
+    pid: { p: 8, i: 0, d: 0.4, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
