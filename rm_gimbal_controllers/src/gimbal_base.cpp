@@ -71,10 +71,19 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   if (!ctrl_yaw_.init(effort_joint_interface, nh_yaw) || !ctrl_pitch_.init(effort_joint_interface, nh_pitch))
     return false;
   robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
-  imu_name_ = getParam(controller_nh, "imu_name", static_cast<std::string>("gimbal_imu"));
-  hardware_interface::ImuSensorInterface* imu_sensor_interface =
-      robot_hw->get<hardware_interface::ImuSensorInterface>();
-  imu_sensor_handle_ = imu_sensor_interface->getHandle(imu_name_);
+  if (!controller_nh.hasParam("imu_name"))
+    has_imu_ = false;
+  if (has_imu_)
+  {
+    imu_name_ = getParam(controller_nh, "imu_name", static_cast<std::string>("gimbal_imu"));
+    hardware_interface::ImuSensorInterface* imu_sensor_interface =
+        robot_hw->get<hardware_interface::ImuSensorInterface>();
+    imu_sensor_handle_ = imu_sensor_interface->getHandle(imu_name_);
+  }
+  else
+  {
+    ROS_INFO("Param imu_name has not set, use motors' data instead of imu.");
+  }
 
   gimbal_des_frame_id_ = ctrl_pitch_.joint_urdf_->child_link_name + "_des";
   odom2gimbal_des_.header.frame_id = "odom";
@@ -302,27 +311,34 @@ bool Controller::setDesIntoLimit(double& real_des, double current_des, double ba
 void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
   geometry_msgs::Vector3 gyro, angular_vel_pitch, angular_vel_yaw;
-  gyro.x = imu_sensor_handle_.getAngularVelocity()[0];
-  gyro.y = imu_sensor_handle_.getAngularVelocity()[1];
-  gyro.z = imu_sensor_handle_.getAngularVelocity()[2];
-
+  if (has_imu_)
+  {
+    gyro.x = imu_sensor_handle_.getAngularVelocity()[0];
+    gyro.y = imu_sensor_handle_.getAngularVelocity()[1];
+    gyro.z = imu_sensor_handle_.getAngularVelocity()[2];
+    try
+    {
+      tf2::doTransform(gyro, angular_vel_pitch,
+                       robot_state_handle_.lookupTransform(ctrl_pitch_.joint_urdf_->child_link_name,
+                                                           imu_sensor_handle_.getFrameId(), time));
+      tf2::doTransform(gyro, angular_vel_yaw,
+                       robot_state_handle_.lookupTransform(ctrl_yaw_.joint_urdf_->child_link_name,
+                                                           imu_sensor_handle_.getFrameId(), time));
+    }
+    catch (tf2::TransformException& ex)
+    {
+      ROS_WARN("%s", ex.what());
+      return;
+    }
+  }
+  else
+  {
+    angular_vel_yaw.z = ctrl_yaw_.joint_.getVelocity();
+    angular_vel_pitch.y = ctrl_pitch_.joint_.getVelocity();
+  }
   geometry_msgs::TransformStamped base_frame2des;
-  try
-  {
-    base_frame2des =
-        robot_state_handle_.lookupTransform(ctrl_yaw_.joint_urdf_->parent_link_name, gimbal_des_frame_id_, time);
-    tf2::doTransform(gyro, angular_vel_pitch,
-                     robot_state_handle_.lookupTransform(ctrl_pitch_.joint_urdf_->child_link_name,
-                                                         imu_sensor_handle_.getFrameId(), time));
-    tf2::doTransform(gyro, angular_vel_yaw,
-                     robot_state_handle_.lookupTransform(ctrl_yaw_.joint_urdf_->child_link_name,
-                                                         imu_sensor_handle_.getFrameId(), time));
-  }
-  catch (tf2::TransformException& ex)
-  {
-    ROS_WARN("%s", ex.what());
-    return;
-  }
+  base_frame2des =
+      robot_state_handle_.lookupTransform(ctrl_yaw_.joint_urdf_->parent_link_name, gimbal_des_frame_id_, time);
   double roll_des, pitch_des, yaw_des;  // desired position
   quatToRPY(base_frame2des.transform.rotation, roll_des, pitch_des, yaw_des);
 

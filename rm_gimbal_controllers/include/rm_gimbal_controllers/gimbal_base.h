@@ -77,6 +77,7 @@ private:
 
   rm_control::RobotStateHandle robot_state_handle_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
+  bool has_imu_ = true;
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
   BulletSolver* bullet_solver_{};
