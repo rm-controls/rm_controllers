@@ -42,6 +42,7 @@
 #include <rm_common/hardware_interface/actuator_extra_interface.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <effort_controllers/joint_velocity_controller.h>
+#include <effort_controllers/joint_position_controller.h>
 #include <control_msgs/QueryCalibrationState.h>
 
 namespace rm_calibration_controllers
@@ -102,12 +103,16 @@ private:
   {
     INITIALIZED,
     MOVING,
+    VEL_CALIBRATED,
+    POS_CALIBRATED,
     CALIBRATED
   };
   int state_{}, countdown_{};
-  double vel_search_{}, threshold_{};
+  double vel_search_{}, vel_threshold_{}, pos_threshold_{}, target_position_{};
+  bool is_return_{};
   std::vector<rm_control::ActuatorExtraHandle> actuators_;
   effort_controllers::JointVelocityController velocity_ctrl_;
+  effort_controllers::JointPositionController position_ctrl_;
 };
 
 }  // namespace rm_calibration_controllers
