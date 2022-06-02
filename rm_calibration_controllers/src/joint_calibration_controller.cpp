@@ -146,7 +146,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
     case RETURN:
     {
       position_ctrl_.joint_.setCommand(target_position_);
-      if ((std::abs(velocity_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
+      if ((std::abs(position_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
         countdown_--;
       else
         countdown_ = 100;
