@@ -54,19 +54,19 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
   }
   for (int i = 0; i < actuators.size(); ++i)
     actuators_.push_back(robot_hw->get<rm_control::ActuatorExtraInterface>()->getHandle(actuators[i]));
-  if (!controller_nh.getParam("search_velocity", vel_search_))
+  if (!controller_nh.getParam("search_velocity", velocity_search_))
   {
     ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (!controller_nh.getParam("threshold", vel_threshold_))
+  if (!controller_nh.getParam("threshold", velocity_threshold_))
   {
     ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (vel_threshold_ < 0)
+  if (velocity_threshold_ < 0)
   {
-    vel_threshold_ *= -1.;
+    velocity_threshold_ *= -1.;
     ROS_ERROR("Negative velocity threshold is not supported for joint %s. Making the velocity threshold positive.",
               velocity_ctrl_.getJointName().c_str());
   }
@@ -79,7 +79,7 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
       ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
       return false;
     }
-    if (!controller_nh.getParam("threshold", pos_threshold_))
+    if (!controller_nh.getParam("threshold", position_threshold_))
     {
       ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
       return false;
@@ -110,7 +110,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
   {
     case INITIALIZED:
     {
-      velocity_ctrl_.setCommand(vel_search_);
+      velocity_ctrl_.setCommand(velocity_search_);
       countdown_ = 100;
       state_ = MOVING;
       break;
@@ -122,7 +122,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
       {
         halted |= actuator.getHalted();
       }
-      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < vel_threshold_ && !halted)
+      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < velocity_search_ && !halted)
         countdown_--;
       else
         countdown_ = 100;
@@ -137,15 +137,16 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
         if (!is_return_)
           state_ = CALIBRATED;
         else
-          state_ = VEL_CALIBRATED;
+          state_ = RETURN;
         ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
       }
+      velocity_ctrl_.update(time, period);
       break;
     }
-    case VEL_CALIBRATED:
+    case RETURN:
     {
       position_ctrl_.joint_.setCommand(target_position_);
-      if ((std::abs(velocity_ctrl_.joint_.getPosition()) - target_position_) < pos_threshold_)
+      if ((std::abs(velocity_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
         countdown_--;
       else
         countdown_ = 100;
@@ -160,11 +161,10 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
     case CALIBRATED:
     {
       velocity_ctrl_.joint_.setCommand(0.);
+      velocity_ctrl_.update(time, period);
       break;
     }
   }
-  if (state_ != VEL_CALIBRATED)
-    velocity_ctrl_.update(time, period);
 }
 
 bool JointCalibrationController::isCalibrated(control_msgs::QueryCalibrationState::Request& req,

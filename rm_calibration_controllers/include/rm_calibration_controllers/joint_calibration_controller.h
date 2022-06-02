@@ -103,12 +103,11 @@ private:
   {
     INITIALIZED,
     MOVING,
-    VEL_CALIBRATED,
-    POS_CALIBRATED,
+    RETURN,
     CALIBRATED
   };
   int state_{}, countdown_{};
-  double vel_search_{}, vel_threshold_{}, pos_threshold_{}, target_position_{};
+  double velocity_search_{}, target_position_{}, velocity_threshold_{}, position_threshold_{};
   bool is_return_{};
   std::vector<rm_control::ActuatorExtraHandle> actuators_;
   effort_controllers::JointVelocityController velocity_ctrl_;
