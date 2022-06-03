@@ -44,7 +44,7 @@
 #include <hardware_interface/imu_sensor_interface.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_msgs/GimbalCmd.h>
-#include <rm_msgs/TrackCmd.h>
+#include <rm_msgs/TrackData.h>
 #include <rm_msgs/GimbalDesError.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_gimbal_controllers/bullet_solver.h>
@@ -73,7 +73,7 @@ private:
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   double feedForward(const ros::Time& time);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
-  void trackCB(const rm_msgs::TrackCmdConstPtr& msg);
+  void trackCB(const rm_msgs::TrackDataConstPtr& msg);
 
   rm_control::RobotStateHandle robot_state_handle_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
@@ -85,15 +85,15 @@ private:
   ros::Time last_publish_time_{};
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   ros::Subscriber cmd_gimbal_sub_;
-  ros::Subscriber cmd_track_sub_;
+  ros::Subscriber data_track_sub_;
 
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
-  realtime_tools::RealtimeBuffer<rm_msgs::TrackCmd> track_rt_buffer_;
+  realtime_tools::RealtimeBuffer<rm_msgs::TrackData> track_rt_buffer_;
 
   geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
-  rm_msgs::TrackCmd cmd_track_;
+  rm_msgs::TrackData data_track_;
   std::string gimbal_des_frame_id_{}, imu_name_{};
 
   double publish_rate_{};
