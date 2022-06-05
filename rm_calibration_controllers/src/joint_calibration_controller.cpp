@@ -122,7 +122,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
       {
         halted |= actuator.getHalted();
       }
-      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < velocity_search_ && !halted)
+      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < velocity_threshold_ && !halted)
         countdown_--;
       else
         countdown_ = 100;
