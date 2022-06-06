@@ -102,14 +102,16 @@ private:
   enum
   {
     INITIALIZED,
-    MOVING,
+    MOVING_POSITIVE,
+    MOVING_NEGATIVE,
     RETURN,
     CALIBRATED
   };
   int state_{}, countdown_{};
   double velocity_search_{}, target_position_{}, velocity_threshold_{}, position_threshold_{};
-  bool is_return_{};
-  std::vector<rm_control::ActuatorExtraHandle> actuators_;
+  double left_position_{}, right_position_{};
+  bool is_return_{}, is_center_{};
+  rm_control::ActuatorExtraHandle actuator_;
   effort_controllers::JointVelocityController velocity_ctrl_;
   effort_controllers::JointPositionController position_ctrl_;
 };
