@@ -11,6 +11,7 @@
 
     <depend>rm_msgs</depend>
     <depend>rm_common</depend>
+    <depend>rm_hw</depend>
     <depend>pluginlib</depend>
     <depend>roscpp</depend>
     <depend>roslint</depend>

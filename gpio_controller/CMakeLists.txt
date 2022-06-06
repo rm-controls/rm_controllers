@@ -7,6 +7,7 @@ find_package(catkin REQUIRED COMPONENTS
 
         rm_msgs
         rm_common
+        rm_hw
 
 
         pluginlib
@@ -24,6 +25,7 @@ catkin_package(
 
         rm_msgs
         rm_common
+        rm_hw
 
         pluginlib
         hardware_interface
