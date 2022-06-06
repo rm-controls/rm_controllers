@@ -104,7 +104,6 @@ private:
     INITIALIZED,
     MOVING_POSITIVE,
     MOVING_NEGATIVE,
-    RETURN,
     CALIBRATED
   };
   int state_{}, countdown_{};

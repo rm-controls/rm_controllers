@@ -114,8 +114,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
     }
     case MOVING_POSITIVE:
     {
-      bool halted = false;
-      halted = actuator_.getHalted();
+      bool halted = actuator_.getHalted();
       if (std::abs(velocity_ctrl_.joint_.getVelocity()) < velocity_threshold_ && !halted)
         countdown_--;
       else
@@ -128,19 +127,14 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
           actuator_.setOffset(-actuator_.getPosition() + actuator_.getOffset());
           actuator_.setCalibrated(true);
           ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
-          if (!is_return_)
-          {
-            state_ = CALIBRATED;
-          }
-          else
-            state_ = RETURN;
+          state_ = CALIBRATED;
         }
         else
         {
           positive_position_ = actuator_.getPosition();
-          state_ = MOVING_NEGATIVE;
           countdown_ = 100;
           velocity_ctrl_.setCommand(-velocity_search_);
+          state_ = MOVING_NEGATIVE;
         }
       }
       velocity_ctrl_.update(time, period);
@@ -148,9 +142,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
     }
     case MOVING_NEGATIVE:
     {
-      bool halted = false;
-      halted = actuator_.getHalted();
-      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < velocity_threshold_ && !halted)
+      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < velocity_threshold_)
         countdown_--;
       else
         countdown_ = 100;
@@ -161,30 +153,27 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
         actuator_.setOffset(-(positive_position_ + negative_position_) / 2 + actuator_.getOffset());
         actuator_.setCalibrated(true);
         ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
-        if (!is_return_)
-          state_ = CALIBRATED;
-        else
-          state_ = RETURN;
+        state_ = CALIBRATED;
       }
       velocity_ctrl_.update(time, period);
       break;
     }
-    case RETURN:
-    {
-      position_ctrl_.joint_.setCommand(target_position_);
-      if ((std::abs(position_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
-        countdown_--;
-      else
-        countdown_ = 100;
-      if (countdown_ < 0)
-        state_ = CALIBRATED;
-      position_ctrl_.update(time, period);
-      break;
-    }
     case CALIBRATED:
     {
-      velocity_ctrl_.joint_.setCommand(0.);
-      velocity_ctrl_.update(time, period);
+      if (is_return_)
+      {
+        position_ctrl_.joint_.setCommand(target_position_);
+        if ((std::abs(position_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
+          countdown_--;
+        else
+          countdown_ = 100;
+        position_ctrl_.update(time, period);
+      }
+      else
+      {
+        velocity_ctrl_.joint_.setCommand(0.);
+        velocity_ctrl_.update(time, period);
+      }
       break;
     }
   }
@@ -193,8 +182,8 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
 bool JointCalibrationController::isCalibrated(control_msgs::QueryCalibrationState::Request& req,
                                               control_msgs::QueryCalibrationState::Response& resp)
 {
-  ROS_DEBUG("Is calibrated service %d", state_ == CALIBRATED);
-  resp.is_calibrated = (state_ == CALIBRATED);
+  ROS_DEBUG("Is calibrated service %d", state_ == CALIBRATED && countdown_ < 0);
+  resp.is_calibrated = (state_ == CALIBRATED && countdown_ < 0);
   return true;
 }
 
