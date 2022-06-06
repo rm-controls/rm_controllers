@@ -66,7 +66,7 @@ To build from source, clone the latest version from this repository into your ca
 
 * **`is_calibrated`** ([control_msgs/QueryCalibrationState](http://docs.ros.org/en/api/control_msgs/html/srv/QueryCalibrationState.html))
 
-  When requesting to this server, it will return respond about whether target joints has been calibrated.
+  When response to this server, it will return respond about whether target joint has been calibrated.
 
 
 #### Parameters
