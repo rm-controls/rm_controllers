@@ -9,7 +9,6 @@
 #include <realtime_tools/realtime_publisher.h>
 #include <rm_common/hardware_interface/gpio_interface.h>
 #include <rm_msgs/GpioData.h>
-#include <rm_hw/hardware_interface/gpio_manager.h>
 
 namespace gpio_controller
 {

@@ -20,7 +20,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
       std::string gpioName = it->second["name"];
       rm_control::GpioStateHandle state_handle_ = robot_hw->get<rm_control::GpioStateInterface>()->getHandle(gpioName);
       gpio_state_handles_.push_back(state_handle_);
-      if (state_handle_.getType() == GPIO_OUTPUT)
+      if (state_handle_.getType() == rm_control::OUTPUT)
       {
         rm_control::GpioCommandHandle command_handle_ =
             robot_hw->get<rm_control::GpioCommandInterface>()->getHandle(gpioName);
@@ -37,7 +37,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     ROS_INFO("Got state_gpio %s", gpio_state_handles_[i].getName().c_str());
     gpio_pubs_->msg_.gpio_name.push_back(gpio_state_handles_[i].getName());
     gpio_pubs_->msg_.gpio_state.push_back(gpio_state_handles_[i].getValue());
-    if (gpio_state_handles_[i].getType() == GPIO_OUTPUT)
+    if (gpio_state_handles_[i].getType() == rm_control::OUTPUT)
     {
       gpio_pubs_->msg_.gpio_type.push_back("out");
     }
@@ -61,7 +61,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     {
       gpio_pubs_->msg_.gpio_name[i] = gpio_state_handles_[i].getName();
       gpio_pubs_->msg_.gpio_state[i] = gpio_state_handles_[i].getValue();
-      if (gpio_state_handles_[i].getType() == GPIO_OUTPUT)
+      if (gpio_state_handles_[i].getType() == rm_control::OUTPUT)
       {
         gpio_pubs_->msg_.gpio_type[i] = "out";
       }
