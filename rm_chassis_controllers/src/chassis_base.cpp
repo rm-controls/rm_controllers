@@ -137,6 +137,15 @@ void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& perio
     vel_cmd_.z = cmd_vel.angular.z;
   }
 
+  if (cmd_rt_buffer_.readFromRT()->cmd_chassis_.follow_source_frame.empty())
+    follow_source_frame_ = "yaw";
+  else
+    follow_source_frame_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_.follow_source_frame;
+  if (cmd_rt_buffer_.readFromRT()->cmd_chassis_.command_source_frame.empty())
+    command_source_frame_ = "yaw";
+  else
+    command_source_frame_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_.command_source_frame;
+
   if (state_ != cmd_chassis.mode)
   {
     state_ = cmd_chassis.mode;
@@ -180,15 +189,6 @@ void ChassisBase<T...>::follow(const ros::Time& time, const ros::Duration& perio
     recovery();
     pid_follow_.reset();
   }
-
-  if (cmd_rt_buffer_.readFromRT()->cmd_chassis_.follow_source_frame.empty())
-    follow_source_frame_ = "yaw";
-  else
-    follow_source_frame_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_.follow_source_frame;
-  if (cmd_rt_buffer_.readFromRT()->cmd_chassis_.command_source_frame.empty())
-    command_source_frame_ = "yaw";
-  else
-    command_source_frame_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_.command_source_frame;
 
   tfVelToBase(command_source_frame_);
   try
