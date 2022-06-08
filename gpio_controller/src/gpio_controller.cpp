@@ -12,66 +12,55 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 {
   XmlRpc::XmlRpcValue xml_rpc_value;
   controller_nh.getParam("gpios", xml_rpc_value);
+  ROS_ASSERT(xml_rpc_value.getType() == XmlRpc::XmlRpcValue::TypeArray);
 
-  for (auto it = xml_rpc_value.begin(); it != xml_rpc_value.end(); ++it)
+  for (int i = 0; i < xml_rpc_value.size(); ++i)
   {
-    if (it->second.hasMember("name"))
+    ROS_ASSERT(xml_rpc_value[i].getType() == XmlRpc::XmlRpcValue::TypeString);
+    std::string gpioName = xml_rpc_value[i];
+    rm_control::GpioStateHandle state_handle_ = robot_hw->get<rm_control::GpioStateInterface>()->getHandle(gpioName);
+    gpio_state_handles_.push_back(state_handle_);
+    ROS_INFO("Got state_gpio %s", gpioName.c_str());
+    if (state_handle_.getType() == rm_control::OUTPUT)
     {
-      std::string gpioName = it->second["name"];
-      rm_control::GpioStateHandle state_handle_ = robot_hw->get<rm_control::GpioStateInterface>()->getHandle(gpioName);
-      gpio_state_handles_.push_back(state_handle_);
-      if (state_handle_.getType() == rm_control::OUTPUT)
-      {
-        rm_control::GpioCommandHandle command_handle_ =
-            robot_hw->get<rm_control::GpioCommandInterface>()->getHandle(gpioName);
-        gpio_command_handles_.push_back(command_handle_);
-      }
+      rm_control::GpioCommandHandle command_handle_ =
+          robot_hw->get<rm_control::GpioCommandInterface>()->getHandle(gpioName);
+      gpio_command_handles_.push_back(command_handle_);
+      ROS_INFO("Got command_gpio %s", gpioName.c_str());
     }
   }
 
   // realtime publisher
-  gpio_pubs_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GpioData>(controller_nh, "gpio_state", 100));
+  gpio_state_pubs_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GpioData>(controller_nh, "gpio_states", 100));
 
   for (unsigned i = 0; i < gpio_state_handles_.size(); i++)
   {
-    ROS_INFO("Got state_gpio %s", gpio_state_handles_[i].getName().c_str());
-    gpio_pubs_->msg_.gpio_name.push_back(gpio_state_handles_[i].getName());
-    gpio_pubs_->msg_.gpio_state.push_back(gpio_state_handles_[i].getValue());
+    gpio_state_pubs_->msg_.gpio_name.push_back(gpio_state_handles_[i].getName());
+    gpio_state_pubs_->msg_.gpio_state.push_back(gpio_state_handles_[i].getValue());
     if (gpio_state_handles_[i].getType() == rm_control::OUTPUT)
     {
-      gpio_pubs_->msg_.gpio_type.push_back("out");
+      gpio_state_pubs_->msg_.gpio_type.push_back("out");
     }
     else
     {
-      gpio_pubs_->msg_.gpio_type.push_back("in");
+      gpio_state_pubs_->msg_.gpio_type.push_back("in");
     }
   }
-  for (unsigned i = 0; i < gpio_command_handles_.size(); i++)
-    ROS_INFO("Got command_gpio %s", gpio_command_handles_[i].getName().c_str());
 
-  cmd_subscriber_ = controller_nh.subscribe<rm_msgs::GpioData>("gpio_command", 1, &Controller::setGpioCmd, this);
+  cmd_subscriber_ = controller_nh.subscribe<rm_msgs::GpioData>("command", 1, &Controller::setGpioCmd, this);
   return true;
 }
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
-  if (gpio_pubs_->trylock())
+  if (gpio_state_pubs_->trylock())
   {
     for (unsigned i = 0; i < gpio_state_handles_.size(); i++)
     {
-      gpio_pubs_->msg_.gpio_name[i] = gpio_state_handles_[i].getName();
-      gpio_pubs_->msg_.gpio_state[i] = gpio_state_handles_[i].getValue();
-      if (gpio_state_handles_[i].getType() == rm_control::OUTPUT)
-      {
-        gpio_pubs_->msg_.gpio_type[i] = "out";
-      }
-      else
-      {
-        gpio_pubs_->msg_.gpio_type[i] = "in";
-      }
+      gpio_state_pubs_->msg_.gpio_state[i] = gpio_state_handles_[i].getValue();
     }
-    gpio_pubs_->msg_.header.stamp = time;
-    gpio_pubs_->unlockAndPublish();
+    gpio_state_pubs_->msg_.header.stamp = time;
+    gpio_state_pubs_->unlockAndPublish();
   }
 }
 

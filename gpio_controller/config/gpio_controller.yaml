@@ -1,10 +1,4 @@
 controllers:
   gpio_controller:
     type: gpio_controller/Controller
-    gpios:
-      gpio1:
-        name: "gripper1"
-      gpio2:
-        name: "gripper2"
-      gpio3:
-        name: "gripper3"
+    gpios: [ "gripper1", "gripper2", "gripper3" ]

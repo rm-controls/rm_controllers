@@ -30,7 +30,6 @@ private:
 
   ros::Subscriber cmd_subscriber_;
   typedef std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GpioData>> RtpublisherPtr;
-  RtpublisherPtr gpio_pubs_;
-  std::vector<RtpublisherPtr> realtime_pubs_;
+  RtpublisherPtr gpio_state_pubs_;
 };
 }  // namespace gpio_controller
