@@ -127,6 +127,10 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
           actuator_.setCalibrated(true);
           ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
           state_ = CALIBRATED;
+          if (is_return_)
+            position_ctrl_.joint_.setCommand(target_position_);
+          else
+            velocity_ctrl_.joint_.setCommand(0.);
         }
         else
         {
@@ -153,6 +157,10 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
         actuator_.setCalibrated(true);
         ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
         state_ = CALIBRATED;
+        if (is_return_)
+          position_ctrl_.joint_.setCommand(target_position_);
+        else
+          velocity_ctrl_.joint_.setCommand(0.);
       }
       velocity_ctrl_.update(time, period);
       break;
@@ -161,7 +169,6 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
     {
       if (is_return_)
       {
-        position_ctrl_.joint_.setCommand(target_position_);
         if ((std::abs(position_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
           countdown_--;
         else
@@ -169,10 +176,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
         position_ctrl_.update(time, period);
       }
       else
-      {
-        velocity_ctrl_.joint_.setCommand(0.);
         velocity_ctrl_.update(time, period);
-      }
       break;
     }
   }
