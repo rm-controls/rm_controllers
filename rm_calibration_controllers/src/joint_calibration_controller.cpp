@@ -85,6 +85,7 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
       return false;
     }
     is_return_ = true;
+    returned_ = false;
   }
   // advertise service to check calibration
   is_calibrated_srv_ = controller_nh.advertiseService("is_calibrated", &JointCalibrationController::isCalibrated, this);
@@ -130,7 +131,10 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
           if (is_return_)
             position_ctrl_.joint_.setCommand(target_position_);
           else
+          {
             velocity_ctrl_.joint_.setCommand(0.);
+            returned_ = true;
+          }
         }
         else
         {
@@ -160,7 +164,10 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
         if (is_return_)
           position_ctrl_.joint_.setCommand(target_position_);
         else
+        {
           velocity_ctrl_.joint_.setCommand(0.);
+          returned_ = true;
+        }
       }
       velocity_ctrl_.update(time, period);
       break;
@@ -170,9 +177,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
       if (is_return_)
       {
         if ((std::abs(position_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
-          countdown_--;
-        else
-          countdown_ = 100;
+          returned_ = true;
         position_ctrl_.update(time, period);
       }
       else
@@ -185,8 +190,8 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
 bool JointCalibrationController::isCalibrated(control_msgs::QueryCalibrationState::Request& req,
                                               control_msgs::QueryCalibrationState::Response& resp)
 {
-  ROS_DEBUG("Is calibrated service %d", state_ == CALIBRATED && countdown_ < 0);
-  resp.is_calibrated = (state_ == CALIBRATED && countdown_ < 0);
+  ROS_DEBUG("Is calibrated service %d", state_ == CALIBRATED && returned_);
+  resp.is_calibrated = (state_ == CALIBRATED && returned_);
   return true;
 }
 

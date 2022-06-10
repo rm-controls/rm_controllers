@@ -109,7 +109,7 @@ private:
   int state_{}, countdown_{};
   double velocity_search_{}, target_position_{}, velocity_threshold_{}, position_threshold_{};
   double positive_position_{}, negative_position_{};
-  bool is_return_{}, is_center_{};
+  bool is_return_{}, is_center_{}, returned_{};
   rm_control::ActuatorExtraHandle actuator_;
   effort_controllers::JointVelocityController velocity_ctrl_;
   effort_controllers::JointPositionController position_ctrl_;
