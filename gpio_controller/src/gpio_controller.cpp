@@ -20,6 +20,16 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     std::string gpioName = xml_rpc_value[i];
     rm_control::GpioStateHandle state_handle_ = robot_hw->get<rm_control::GpioStateInterface>()->getHandle(gpioName);
     gpio_state_handles_.push_back(state_handle_);
+    gpio_state_pub_->msg_.gpio_name.push_back(state_handle_.getName());
+    gpio_state_pub_->msg_.gpio_state.push_back(state_handle_.getValue());
+    if (state_handle_.getType() == rm_control::OUTPUT)
+    {
+      gpio_state_pub_->msg_.gpio_type.push_back("out");
+    }
+    else
+    {
+      gpio_state_pub_->msg_.gpio_type.push_back("in");
+    }
     ROS_INFO("Got state_gpio %s", gpioName.c_str());
     if (state_handle_.getType() == rm_control::OUTPUT)
     {
@@ -31,21 +41,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   }
 
   // realtime publisher
-  gpio_state_pubs_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GpioData>(controller_nh, "gpio_states", 100));
-
-  for (unsigned i = 0; i < gpio_state_handles_.size(); i++)
-  {
-    gpio_state_pubs_->msg_.gpio_name.push_back(gpio_state_handles_[i].getName());
-    gpio_state_pubs_->msg_.gpio_state.push_back(gpio_state_handles_[i].getValue());
-    if (gpio_state_handles_[i].getType() == rm_control::OUTPUT)
-    {
-      gpio_state_pubs_->msg_.gpio_type.push_back("out");
-    }
-    else
-    {
-      gpio_state_pubs_->msg_.gpio_type.push_back("in");
-    }
-  }
+  gpio_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GpioData>(controller_nh, "gpio_states", 100));
 
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::GpioData>("command", 1, &Controller::setGpioCmd, this);
   return true;
@@ -53,14 +49,14 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
-  if (gpio_state_pubs_->trylock())
+  if (gpio_state_pub_->trylock())
   {
     for (unsigned i = 0; i < gpio_state_handles_.size(); i++)
     {
-      gpio_state_pubs_->msg_.gpio_state[i] = gpio_state_handles_[i].getValue();
+      gpio_state_pub_->msg_.gpio_state[i] = gpio_state_handles_[i].getValue();
     }
-    gpio_state_pubs_->msg_.header.stamp = time;
-    gpio_state_pubs_->unlockAndPublish();
+    gpio_state_pub_->msg_.header.stamp = time;
+    gpio_state_pub_->unlockAndPublish();
   }
 }
 
