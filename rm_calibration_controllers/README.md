@@ -66,18 +66,19 @@ To build from source, clone the latest version from this repository into your ca
 
 * **`is_calibrated`** ([control_msgs/QueryCalibrationState](http://docs.ros.org/en/api/control_msgs/html/srv/QueryCalibrationState.html))
 
-	 When requesting to this server, it will return respond about whether target motors has been calibrated.
+  When requesting to this server, it will return response about whether target joint has been calibrated.
 
 
 #### Parameters
 
 * **`search_velocity`** (double)
 
-	The joint angular velocity of calibrating.
+  The joint velocity of calibrating.
 
 * **`threshold`** (double)
 
-	This is angular velocity `threshold`. When the real time angular velocity of target motor lower than threshold, and last for a while, it can switch CALIBRATED from MOVING.
+  This is velocity `threshold`. When the real time velocity of target joint lower than threshold, and last for a while,
+  it can switch CALIBRATED from MOVING.
 
 
 ## Bugs & Feature Requests
