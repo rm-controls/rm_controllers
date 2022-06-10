@@ -14,6 +14,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   controller_nh.getParam("gpios", xml_rpc_value);
   ROS_ASSERT(xml_rpc_value.getType() == XmlRpc::XmlRpcValue::TypeArray);
 
+  // realtime publisher
+  gpio_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GpioData>(controller_nh, "gpio_states", 100));
+
   for (int i = 0; i < xml_rpc_value.size(); ++i)
   {
     ROS_ASSERT(xml_rpc_value[i].getType() == XmlRpc::XmlRpcValue::TypeString);
@@ -39,9 +42,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
       ROS_INFO("Got command_gpio %s", gpioName.c_str());
     }
   }
-
-  // realtime publisher
-  gpio_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GpioData>(controller_nh, "gpio_states", 100));
 
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::GpioData>("command", 1, &Controller::setGpioCmd, this);
   return true;
