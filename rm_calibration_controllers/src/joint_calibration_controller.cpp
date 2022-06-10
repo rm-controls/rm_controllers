@@ -46,11 +46,11 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
 {
   velocity_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), controller_nh);
   XmlRpc::XmlRpcValue actuator;
-  is_return_ = false;
+  is_return_ = is_center_ = false;
   controller_nh.getParam("center", is_center_);
   if (!controller_nh.getParam("actuator", actuator))
   {
-    ROS_ERROR("No actuators given (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("No actuator given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
   actuator_ = robot_hw->get<rm_control::ActuatorExtraInterface>()->getHandle(actuator[0]);
