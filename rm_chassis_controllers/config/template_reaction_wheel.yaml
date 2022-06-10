@@ -1,0 +1,18 @@
+controllers:
+  chassis_controller:
+    type: rm_chassis_controllers/ReactionWheelController
+    publish_rate: 100
+    enable_odom_tf: true
+
+    imu_name: "base_imu"
+    joint: "reaction_wheel_joint"
+
+    m_total: 13.489909
+    l: 0.18
+    g: -9.81
+
+    inertia_total: 1.955277
+    inertia_wheel: 1.795e-3
+
+    q: [ 1.5 , 10 , 0.01 ]
+    r: [ 50 ]

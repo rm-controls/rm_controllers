@@ -145,10 +145,11 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PUSH");
   }
-  if (ctrl_friction_l_.joint_.getVelocity() >= push_qd_threshold_ * ctrl_friction_l_.command_ &&
-      ctrl_friction_l_.joint_.getVelocity() > M_PI &&
-      ctrl_friction_r_.joint_.getVelocity() <= push_qd_threshold_ * ctrl_friction_r_.command_ &&
-      ctrl_friction_r_.joint_.getVelocity() < -M_PI && (ros::Time::now() - last_shoot_time_).toSec() >= 1. / cmd_.hz)
+  if ((cmd_.speed == cmd_.SPEED_ZERO_FOR_TEST && (ros::Time::now() - last_shoot_time_).toSec() >= 1. / cmd_.hz) ||
+      (ctrl_friction_l_.joint_.getVelocity() >= push_qd_threshold_ * ctrl_friction_l_.command_ &&
+       ctrl_friction_l_.joint_.getVelocity() > M_PI &&
+       ctrl_friction_r_.joint_.getVelocity() <= push_qd_threshold_ * ctrl_friction_r_.command_ &&
+       ctrl_friction_r_.joint_.getVelocity() < -M_PI && (ros::Time::now() - last_shoot_time_).toSec() >= 1. / cmd_.hz))
   {  // Time to shoot!!!
     ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
                              2. * M_PI / static_cast<double>(push_per_rotation_));

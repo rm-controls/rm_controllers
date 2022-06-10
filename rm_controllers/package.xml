@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>rm_controllers</name>
-  <version>0.1.3</version>
+  <version>0.1.4</version>
   <description>Meta package that contains package for RoboMaster.</description>
   <maintainer email="liaoqiayuan@gmail.com">Qiayuan Liao</maintainer>
 
@@ -13,7 +13,13 @@
   <author email="liaoqiayuan@gmail.com">Qiayuan Liao</author>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <exec_depend>rm_calibration_controllers</exec_depend>
+  <exec_depend>rm_chassis_controllers</exec_depend>
+  <exec_depend>rm_gimbal_controllers</exec_depend>
+  <exec_depend>rm_orientation_controller</exec_depend>
+  <exec_depend>rm_shooter_controllers</exec_depend>
   <exec_depend>robot_state_controller</exec_depend>
+  <exec_depend>tof_sensor_controller</exec_depend>
 
   <export>
     <metapackage/>
