@@ -2,8 +2,8 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.5 (2022-06-10)
+------------------
 * Update frames in update function.
 * Add command_source_frame to follow mode.
 * Merge remote-tracking branch 'origin/master'

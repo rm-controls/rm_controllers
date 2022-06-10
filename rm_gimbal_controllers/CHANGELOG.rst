@@ -2,8 +2,8 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.5 (2022-06-10)
+------------------
 * Merge pull request `#71 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/71>`_ from ye-luo-xi-tui/gimbal/joint_velocity
   Set joint desired velocity according to the target velocity
 * Fix a bug in setting joint desired velocity.

@@ -2,8 +2,8 @@
 Changelog for package rm_orientation_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.5 (2022-06-10)
+------------------
 * Merge remote-tracking branch 'origin/master'
 * Merge pull request `#63 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/63>`_ from ye-luo-xi-tui/master
   Publish tf from odom to base_link use imu data which is got from interface until getting imu data from topic

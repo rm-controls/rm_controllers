@@ -2,8 +2,8 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.5 (2022-06-10)
+------------------
 * Add hz counting in trigger test mode.
 * Merge remote-tracking branch 'origin/master'
 * Add testing option to shooter for testing the trigger without friction wheel
