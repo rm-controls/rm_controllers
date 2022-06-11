@@ -84,28 +84,31 @@ private:
 
   BulletSolver* bullet_solver_{};
 
+  // ROS Interface
   ros::Time last_publish_time_{};
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_track_sub_;
-
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TrackData> track_rt_buffer_;
-
-  geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_;
-
-  geometry_msgs::Twist chassis_vel_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
   rm_msgs::TrackData data_track_;
   std::string gimbal_des_frame_id_{}, imu_name_{};
-
   double publish_rate_{};
   bool state_changed_{};
 
+  // Transform
+  geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_;
+
+  // Gravity Compensation
   geometry_msgs::Vector3 mass_origin_;
   double gravity_;
   bool enable_gravity_compensation_;
+
+  // Chassis
+  double k_chassis_vel_;
+  geometry_msgs::Twist chassis_vel_;
 
   enum
   {
