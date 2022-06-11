@@ -50,6 +50,7 @@
 #include <rm_gimbal_controllers/bullet_solver.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <Eigen/Eigen>
+#include <rm_common/filters/filters.h>
 
 namespace rm_gimbal_controllers
 {
@@ -72,6 +73,7 @@ private:
                        const urdf::JointConstSharedPtr& joint_urdf);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   double feedForward(const ros::Time& time);
+  void updateChassisVel();
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
 
@@ -90,7 +92,9 @@ private:
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TrackData> track_rt_buffer_;
 
-  geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_;
+  geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_;
+
+  geometry_msgs::Twist chassis_vel_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
   rm_msgs::TrackData data_track_;

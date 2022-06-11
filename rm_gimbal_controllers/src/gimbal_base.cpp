@@ -124,6 +124,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     ROS_WARN("%s", ex.what());
     return;
   }
+  updateChassisVel();
   if (state_ != cmd_gimbal_.mode)
   {
     state_ = cmd_gimbal_.mode;
@@ -377,6 +378,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     }
   }
 
+  yaw_vel_des -= 0.1 * chassis_vel_.angular.z;
   ctrl_yaw_.setCommand(yaw_des, yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
   ctrl_pitch_.setCommand(pitch_des, pitch_vel_des + ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
@@ -400,6 +402,19 @@ double Controller::feedForward(const ros::Time& time)
     feedforward -= mass_origin.cross(gravity_compensation).y();
   }
   return feedforward;
+}
+
+void Controller::updateChassisVel()
+{
+  double tf_period = odom2base_.header.stamp.toSec() - last_odom2base_.header.stamp.toSec();
+  if (tf_period > 0.0 && tf_period < 0.1)
+  {
+    chassis_vel_.linear.x = (odom2base_.transform.translation.x - last_odom2base_.transform.translation.x) / tf_period;
+    chassis_vel_.linear.y = (odom2base_.transform.translation.y - last_odom2base_.transform.translation.y) / tf_period;
+    chassis_vel_.angular.z =
+        (yawFromQuat(odom2base_.transform.rotation) - yawFromQuat(last_odom2base_.transform.rotation)) / tf_period;
+  }
+  last_odom2base_ = odom2base_;
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)
