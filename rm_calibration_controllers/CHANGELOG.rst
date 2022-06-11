@@ -2,6 +2,18 @@
 Changelog for package rm_calibration_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.5 (2022-06-10)
+------------------
+* Merge remote-tracking branch 'origin/master'
+* 0.1.4
+* Merge branch 'master' into gimbal_track
+* Merge pull request `#45 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/45>`_ from mlione/master
+  Delete some config files in rm_controllers.
+* Delete some config files in rm_controller.
+* Merge pull request `#46 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/46>`_ from ye-luo-xi-tui/master
+  Deprecated imu_filter_controller
+* Contributors: QiayuanLiao, YuuinIH, mlione, qiayuan, yezi
+
 0.1.3 (2022-03-28)
 ------------------
 * Merge branch 'master' into forward_feed

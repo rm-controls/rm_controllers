@@ -2,6 +2,39 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.5 (2022-06-10)
+------------------
+* Merge pull request `#71 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/71>`_ from ye-luo-xi-tui/gimbal/joint_velocity
+  Set joint desired velocity according to the target velocity
+* Fix a bug in setting joint desired velocity.
+* Set joint desired velocity according to the target velocity.
+* Merge pull request `#69 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/69>`_ from ChenZheng29/master
+  Correct track topic message type:TrackData
+* Merge remote-tracking branch 'origin/master'
+* Merge pull request `#66 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/66>`_ from ye-luo-xi-tui/master
+  Use motors' data in pid controller when imu_name isn't set
+* Use motors' data in pid controller when imu_name isn't set.
+* Correct the message type of gimbal subscription '/track' topic from 'rm_msgs::TrackCmd' to 'rm_msgs::TrackData'
+* Modify the track topic name and message, and unify the track interface
+* Merge remote-tracking branch 'origin/master'
+* 0.1.4
+* Move all computation in gimbal_controller i.r.t. "odom" instead of "map"
+* Merge pull request `#52 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/52>`_ from ye-luo-xi-tui/gimbal_track
+  Update gimbal_controller
+* Modifier TrackCmd.msg format.
+* Improve logic of function Controller::setDes().
+* Fix a frame error in track mode.
+* Merge branch 'master' into gimbal_track
+* Merge pull request `#45 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/45>`_ from mlione/master
+  Delete some config files in rm_controllers.
+* Delete some config files in rm_controller.
+* Merge pull request `#46 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/46>`_ from ye-luo-xi-tui/master
+  Deprecated imu_filter_controller
+* Merge branch 'master' into gimbal_track
+* Rename a msg.
+* Modifier track subscribe topic
+* Contributors: QiayuanLiao, YuuinIH, chenzheng, mlione, qiayuan, yezi
+
 0.1.3 (2022-03-28)
 ------------------
 * Merge pull request `#42 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/42>`_ from ye-luo-xi-tui/fix_gimbal

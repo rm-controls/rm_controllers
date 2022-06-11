@@ -2,6 +2,45 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.5 (2022-06-10)
+------------------
+* Update frames in update function.
+* Add command_source_frame to follow mode.
+* Merge remote-tracking branch 'origin/master'
+* 0.1.4
+* Add damping behavior to ReactionWheelController
+* Add recover behavior to ReactionWheelController
+* Add a low-pass filter to eliminate the constant pitch angle offset to ReactionWheelController
+* Add a naive method for determining orientation of balance chassis
+* Use new reaction wheel state space model
+* Add setZero to Q and R
+* Merge remote-tracking branch 'origin/master'
+* Remove "convert model from continuous to discrete time" from ReactionWheel, the rm_common::Lqr accept continuous model.
+* Merge pull request `#57 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/57>`_ from NaHCO3bc/master
+  Update ReactionWheelController
+* Change the number of joint name reads,change the QR matrix to an array and update the rm_chassis_controllers_plugins.xml.
+* Merge branch 'chassis/reaction_wheel'
+* Merge pull request `#56 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/56>`_ from NaHCO3bc/chassis/reaction_wheel
+  Update ReactionWheelController
+* Update reaction_wheel.cpp and add template_reaction_wheel.yaml
+* Add some comments of ReactionWheelController
+* Remove BalanceController
+* Add ReactionWheelController
+* Merge pull request `#51 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/51>`_ from Edwinlinks/sentry_catapult
+  Complete sentry catapult and delete the redundant code
+* Merge branch 'master' into gimbal_track
+* Complete sentry catapult and delete the redundant code
+* Merge pull request `#45 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/45>`_ from mlione/master
+  Delete some config files in rm_controllers.
+* Merge pull request `#50 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/50>`_ from ye-luo-xi-tui/ori
+  Make rm_orientation_controller publish tf use imu data on the topic
+* Delete some config files in rm_controller.
+* Add a param publish_odom_tf, it decided whether tf would be published.
+* Merge pull request `#46 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/46>`_ from ye-luo-xi-tui/master
+  Deprecated imu_filter_controller
+* Merge branch 'master' into gimbal_track
+* Contributors: Edwinlinks, QiayuanLiao, YuuinIH, mlione, nahco3bc, qiayuan, yezi
+
 0.1.3 (2022-03-28)
 ------------------
 * Merge branch 'master' into forward_feed

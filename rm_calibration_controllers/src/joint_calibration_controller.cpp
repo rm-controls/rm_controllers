@@ -45,29 +45,47 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
                                       ros::NodeHandle& controller_nh)
 {
   velocity_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), controller_nh);
-  XmlRpc::XmlRpcValue actuators;
-  if (!controller_nh.getParam("actuators", actuators))
+  XmlRpc::XmlRpcValue actuator;
+  is_return_ = is_center_ = false;
+  controller_nh.getParam("center", is_center_);
+  if (!controller_nh.getParam("actuator", actuator))
   {
-    ROS_ERROR("No actuators given (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("No actuator given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  for (int i = 0; i < actuators.size(); ++i)
-    actuators_.push_back(robot_hw->get<rm_control::ActuatorExtraInterface>()->getHandle(actuators[i]));
-  if (!controller_nh.getParam("search_velocity", vel_search_))
+  actuator_ = robot_hw->get<rm_control::ActuatorExtraInterface>()->getHandle(actuator[0]);
+  if (!controller_nh.getParam("search_velocity", velocity_search_))
   {
     ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (!controller_nh.getParam("threshold", threshold_))
+  if (!controller_nh.getParam("threshold", velocity_threshold_))
   {
     ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (threshold_ < 0)
+  if (velocity_threshold_ < 0)
   {
-    threshold_ *= -1.;
+    velocity_threshold_ *= -1.;
     ROS_ERROR("Negative velocity threshold is not supported for joint %s. Making the velocity threshold positive.",
               velocity_ctrl_.getJointName().c_str());
+  }
+  if (controller_nh.hasParam("return"))
+  {
+    ros::NodeHandle nh_return(controller_nh, "return");
+    position_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), nh_return);
+    if (!nh_return.getParam("target_position", target_position_))
+    {
+      ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
+      return false;
+    }
+    if (!controller_nh.getParam("threshold", position_threshold_))
+    {
+      ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
+      return false;
+    }
+    is_return_ = true;
+    returned_ = false;
   }
   // advertise service to check calibration
   is_calibrated_srv_ = controller_nh.advertiseService("is_calibrated", &JointCalibrationController::isCalibrated, this);
@@ -76,14 +94,11 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
 
 void JointCalibrationController::starting(const ros::Time& time)
 {
-  for (auto& actuator : actuators_)
-  {
-    actuator.setCalibrated(false);
-    state_ = INITIALIZED;
-    if (actuator.getCalibrated())
-      ROS_INFO("Joint %s will be recalibrated, but was already calibrated at offset %f",
-               velocity_ctrl_.getJointName().c_str(), actuator.getOffset());
-  }
+  actuator_.setCalibrated(false);
+  state_ = INITIALIZED;
+  if (actuator_.getCalibrated())
+    ROS_INFO("Joint %s will be recalibrated, but was already calibrated at offset %f",
+             velocity_ctrl_.getJointName().c_str(), actuator_.getOffset());
 }
 
 void JointCalibrationController::update(const ros::Time& time, const ros::Duration& period)
@@ -93,49 +108,90 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
   {
     case INITIALIZED:
     {
-      velocity_ctrl_.setCommand(vel_search_);
+      velocity_ctrl_.setCommand(velocity_search_);
       countdown_ = 100;
-      state_ = MOVING;
+      state_ = MOVING_POSITIVE;
       break;
     }
-    case MOVING:
+    case MOVING_POSITIVE:
     {
-      bool halted = false;
-      for (const auto& actuator : actuators_)
-      {
-        halted |= actuator.getHalted();
-      }
-      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < threshold_ && !halted)
+      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < velocity_threshold_ && !actuator_.getHalted())
         countdown_--;
       else
         countdown_ = 100;
       if (countdown_ < 0)
       {
         velocity_ctrl_.setCommand(0);
-        for (auto& actuator : actuators_)
+        if (!is_center_)
         {
-          actuator.setOffset(-actuator.getPosition() + actuator.getOffset());
-          actuator.setCalibrated(true);
+          actuator_.setOffset(-actuator_.getPosition() + actuator_.getOffset());
+          actuator_.setCalibrated(true);
+          ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
+          state_ = CALIBRATED;
+          if (is_return_)
+            position_ctrl_.joint_.setCommand(target_position_);
+          else
+          {
+            velocity_ctrl_.joint_.setCommand(0.);
+            returned_ = true;
+          }
         }
-        state_ = CALIBRATED;
-        ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
+        else
+        {
+          positive_position_ = actuator_.getPosition();
+          countdown_ = 100;
+          velocity_ctrl_.setCommand(-velocity_search_);
+          state_ = MOVING_NEGATIVE;
+        }
       }
+      velocity_ctrl_.update(time, period);
+      break;
+    }
+    case MOVING_NEGATIVE:
+    {
+      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < velocity_threshold_)
+        countdown_--;
+      else
+        countdown_ = 100;
+      if (countdown_ < 0)
+      {
+        velocity_ctrl_.setCommand(0);
+        negative_position_ = actuator_.getPosition();
+        actuator_.setOffset(-(positive_position_ + negative_position_) / 2 + actuator_.getOffset());
+        actuator_.setCalibrated(true);
+        ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
+        state_ = CALIBRATED;
+        if (is_return_)
+          position_ctrl_.joint_.setCommand(target_position_);
+        else
+        {
+          velocity_ctrl_.joint_.setCommand(0.);
+          returned_ = true;
+        }
+      }
+      velocity_ctrl_.update(time, period);
       break;
     }
     case CALIBRATED:
     {
-      velocity_ctrl_.joint_.setCommand(0.);
+      if (is_return_)
+      {
+        if ((std::abs(position_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
+          returned_ = true;
+        position_ctrl_.update(time, period);
+      }
+      else
+        velocity_ctrl_.update(time, period);
       break;
     }
   }
-  velocity_ctrl_.update(time, period);
 }
 
 bool JointCalibrationController::isCalibrated(control_msgs::QueryCalibrationState::Request& req,
                                               control_msgs::QueryCalibrationState::Response& resp)
 {
-  ROS_DEBUG("Is calibrated service %d", state_ == CALIBRATED);
-  resp.is_calibrated = (state_ == CALIBRATED);
+  ROS_DEBUG("Is calibrated service %d", state_ == CALIBRATED && returned_);
+  resp.is_calibrated = (state_ == CALIBRATED && returned_);
   return true;
 }
 

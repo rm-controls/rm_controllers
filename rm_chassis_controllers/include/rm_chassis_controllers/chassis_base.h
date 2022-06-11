@@ -163,7 +163,7 @@ protected:
   };
   int state_ = GYRO;
   RampFilter<double>*ramp_x_{}, *ramp_y_{}, *ramp_w_{};
-  std::string follow_source_frame_{};
+  std::string follow_source_frame_{}, command_source_frame_{};
 
   ros::Time last_publish_time_;
   geometry_msgs::TransformStamped odom2base_{};
