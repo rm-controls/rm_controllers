@@ -1,6 +1,6 @@
-<library path="lib/libtf_radar_controller">
+<library path="lib/libtof_radar_controller">
 
-    <class name="tf_radar_controller/Controller" type="tf_radar_controller::Controller"
+    <class name="tof_radar_controller/Controller" type="tof_radar_controller::Controller"
            base_class_type="controller_interface::ControllerBase">
         <description>
         </description>

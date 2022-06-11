@@ -1,7 +1,7 @@
 <launch>
     <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, hero, engineer]"/>
-    <rosparam file="$(find tf_radar_controller)/config/$(arg robot_type).yaml" command="load"/>
+    <rosparam file="$(find tof_radar_controller)/config/$(arg robot_type).yaml" command="load"/>
     <node name="controller_spawner" pkg="controller_manager" type="controller_manager" output="screen"
-          args="load controllers/tf_radar_controller
+          args="load controllers/tof_radar_controller
 "/>
 </launch>

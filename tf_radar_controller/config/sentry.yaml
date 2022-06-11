@@ -1,4 +1,0 @@
-controllers:
-  tf_radar_controller:
-    type: tf_radar_controller/Controller
-    publish_rate: 50
