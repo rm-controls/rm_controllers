@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(tof_sensor_controller)
+project(tof_radar_controller)
 
 find_package(catkin REQUIRED COMPONENTS
         roscpp
@@ -38,7 +38,7 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
-        src/tof_sensor_controller.cpp
+        src/tof_radar_controller.cpp
         )
 
 target_link_libraries(${PROJECT_NAME}
@@ -65,7 +65,7 @@ install(
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 install(
-        FILES tof_sensor_controller_plugins.xml
+        FILES tof_radar_controller_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
