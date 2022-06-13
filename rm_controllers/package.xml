@@ -21,7 +21,7 @@
   <exec_depend>rm_orientation_controller</exec_depend>
   <exec_depend>rm_shooter_controllers</exec_depend>
   <exec_depend>robot_state_controller</exec_depend>
-  <exec_depend>tof_sensor_controller</exec_depend>
+  <exec_depend>tof_radar_controller</exec_depend>
 
   <export>
     <metapackage/>
