@@ -383,7 +383,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   ctrl_pitch_.setCommand(pitch_des, pitch_vel_des + ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
-  ctrl_yaw_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() - k_chassis_vel_ * chassis_vel_.angular.z);
+  ctrl_yaw_.joint_.setCommand(ctrl_yaw_.joint_.getCommand() - k_chassis_vel_ * chassis_vel_.angular.z);
   ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
 }
 
