@@ -2,8 +2,8 @@
 Changelog for package robot_state_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.6 (2022-06-16)
+------------------
 * Merge remote-tracking branch 'origin/master'
 * Contributors: qiayuan
 
