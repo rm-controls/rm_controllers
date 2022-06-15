@@ -2,6 +2,11 @@
 Changelog for package gpio_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge remote-tracking branch 'origin/master'
+* Contributors: qiayuan
+
 0.1.5 (2022-06-10)
 ------------------
 * Merge remote-tracking branch 'origin/master'
