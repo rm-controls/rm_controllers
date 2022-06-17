@@ -87,11 +87,18 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
   cmd_ = *cmd_rt_buffer_.readFromRT();
   config_ = *config_rt_buffer.readFromRT();
-  if (state_ != cmd_.mode && state_ != BLOCK)
+  if (state_ != cmd_.mode)
   {
-    state_ = cmd_.mode;
-    state_changed_ = true;
+    if (state_ != BLOCK)
+      if ((state_ != PUSH || cmd_.mode != READY) ||
+          (state_ == PUSH && cmd_.mode == READY &&
+           std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) < 0.01))
+      {
+        state_ = cmd_.mode;
+        state_changed_ = true;
+      }
   }
+
   if (state_ != STOP)
     setSpeed(cmd_);
   switch (state_)
