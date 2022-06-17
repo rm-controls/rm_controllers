@@ -2,6 +2,11 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.6 (2022-06-16)
+------------------
+* Merge remote-tracking branch 'origin/master'
+* Contributors: qiayuan
+
 0.1.5 (2022-06-10)
 ------------------
 * Update frames in update function.

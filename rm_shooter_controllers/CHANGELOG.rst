@@ -2,6 +2,11 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.6 (2022-06-16)
+------------------
+* Merge remote-tracking branch 'origin/master'
+* Contributors: qiayuan
+
 0.1.5 (2022-06-10)
 ------------------
 * Add hz counting in trigger test mode.

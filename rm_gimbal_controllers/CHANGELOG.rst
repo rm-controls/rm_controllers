@@ -2,6 +2,17 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.6 (2022-06-16)
+------------------
+* Merge branch 'gimbal/chassis_vel'
+* Merge pull request `#77 <https://github.com/rm-controls/rm_controllers/issues/77>`_ from ye-luo-xi-tui/gimbal/chassis_vel
+  Fix a stupid bug
+* Fix a stupid bug.
+* Add chassis_vel as a feedforward to the yaw joint
+* Merge remote-tracking branch 'origin/master'
+* Add chassis_vel to yaw's PID
+* Contributors: QiayuanLiao, qiayuan, yezi
+
 0.1.5 (2022-06-10)
 ------------------
 * Merge pull request `#71 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/71>`_ from ye-luo-xi-tui/gimbal/joint_velocity
