@@ -1,0 +1,8 @@
+<library path="lib/libtof_radar_controller">
+
+    <class name="tof_radar_controller/Controller" type="tof_radar_controller::Controller"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+        </description>
+    </class>
+</library>

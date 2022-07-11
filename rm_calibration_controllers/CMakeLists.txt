@@ -89,10 +89,6 @@ install(
 
 # Mark other files for installation
 install(
-        DIRECTORY config
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
-install(
         FILES rm_calibration_controllers_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
