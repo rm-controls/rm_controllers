@@ -2,7 +2,7 @@
 
 ## Overview
 
-Robot_state_controller uses the URDF specified by the parameter robot_description and the joint positions from the topic joint_states to calculate the forward kinematics of the robot and publish the results via tf, and reading the external incoming tf and manage maintenance.
+The robot_state_controller uses the URDF specified by the parameter robot_description and the joint positions from the `hardware_interface::JointStateInterface` to calculate the forward kinematics of the robot and publish the results via tf, and reads and manages the external incoming tf.
 
 **keywords:** ROS, urdf, transformation, joint
 
@@ -18,8 +18,8 @@ The robot_state_controller package has been tested under [ROS](http://www.ros.or
 
 ### Hardware interface type
 
-+ `JointStateInterface` Used to get the names and data of different joints.
-+ `RobotStateInterface` Used to get tf buffer data of different robot states.
++ `JointStateInterface` Used to get the positions of different joints.
++ `RobotStateInterface` Used to obtain and maintain the transformation relationship of each link of the entire robot.
 
 ## Installation
 
@@ -27,13 +27,13 @@ The robot_state_controller package has been tested under [ROS](http://www.ros.or
 
 To install all packages from this repository as Debian packages use
 
-```
+```shell
 sudo apt-get install ros-noetic-robot-state-controller
 ```
 
 or better use `rosdep`:
 
-```
+```shell
 sudo rosdep install --from-paths src
 ```
 
@@ -57,7 +57,7 @@ sudo rosdep install --from-paths src
 
 To build this package with catkin build. Clone the latest version from this repository into your catkin workspace.
 
-```
+```bash
 catkin_workspace/src
 git clone https://github.com/rm-controls/rm_controllers.git
 rosdep install --from-paths . --ignore-src
@@ -68,7 +68,7 @@ catkin build
 
 Run the controller with mon launch:
 
-```
+```shell
 mon launch robot_state_controller load_controllers.launch
 ```
 
@@ -112,7 +112,7 @@ mon launch robot_state_controller load_controllers.launch
 
 #### Complete description
 
-```
+```yaml
 robot_state_controller:
   type: robot_state_controller/RobotStateController
   publish_rate: 100
