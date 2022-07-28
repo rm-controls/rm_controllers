@@ -3,8 +3,6 @@
 //
 
 #include <rm_chassis_controllers/omni.h>
-#include <rm_common/ros_utilities.h>
-#include <string>
 #include <pluginlib/class_list_macros.hpp>
 
 namespace rm_chassis_controllers
@@ -13,48 +11,59 @@ bool OmniController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
                           ros::NodeHandle& controller_nh)
 {
   ChassisBase::init(robot_hw, root_nh, controller_nh);
-  if (!controller_nh.getParam("chassis_radius", chassis_radius_))
+  XmlRpc::XmlRpcValue modules;
+  controller_nh.getParam("modules", modules);
+  ROS_ASSERT(modules.getType() == XmlRpc::XmlRpcValue::TypeStruct);
+  for (const auto& module : modules)
   {
-    ROS_ERROR("chassis_radius is not set");
-    return false;
+    XmlRpc::XmlRpcValue direction_component, wheel_frame_vel, chassis_frame_vel;
+    controller_nh.getParam("modules/" + module.first + "/direction_component", direction_component);
+    controller_nh.getParam("modules/" + module.first + "/wheel_frame_vel", wheel_frame_vel);
+    controller_nh.getParam("modules/" + module.first + "/chassis_frame_vel", chassis_frame_vel);
+    ROS_ASSERT(module.second.hasMember("wheel_radius") && module.second.hasMember("chassis_frame_vel") &&
+               module.second.hasMember("wheel_frame_vel") && module.second.hasMember("direction_component"));
+    ROS_ASSERT(chassis_frame_vel.getType() == XmlRpc::XmlRpcValue::TypeArray &&
+               wheel_frame_vel.getType() == XmlRpc::XmlRpcValue::TypeArray &&
+               direction_component.getType() == XmlRpc::XmlRpcValue::TypeArray);
+    ROS_ASSERT(chassis_frame_vel.size() == 2 && wheel_frame_vel.size() == 2 && direction_component.size() == 2);
+    Module m;
+    controller_nh.getParam("modules/" + module.first + "/wheel_radius", m.wheel_radius_);
+    m.ctrl_wheel_ = new effort_controllers::JointVelocityController();
+    m.direction_component_.setZero();
+    m.wheel_frame_vel_.setZero();
+    m.chassis_frame_vel_.setZero();
+    m.direction_component_ = Eigen::Matrix<double, 1, 2>(direction_component[0], direction_component[1]);
+    m.chassis_frame_vel_ << chassis_frame_vel[0][0], chassis_frame_vel[0][1], chassis_frame_vel[0][2],
+        chassis_frame_vel[1][0], chassis_frame_vel[1][1], chassis_frame_vel[1][2];
+    m.wheel_frame_vel_ << wheel_frame_vel[0][0], wheel_frame_vel[0][1], wheel_frame_vel[1][0], wheel_frame_vel[1][1];
+    m.h = (1 / m.wheel_radius_) * m.direction_component_ * m.wheel_frame_vel_ * m.chassis_frame_vel_;
+    ros::NodeHandle nh_wheel = ros::NodeHandle(controller_nh, "modules/" + module.first);
+    if (!m.ctrl_wheel_->init(effort_joint_interface_, nh_wheel))
+      return false;
+    joint_handles_.push_back(m.ctrl_wheel_->joint_);
+    modules_.push_back(m);
   }
-  ros::NodeHandle nh_lf = ros::NodeHandle(controller_nh, "left_front");
-  ros::NodeHandle nh_rf = ros::NodeHandle(controller_nh, "right_front");
-  ros::NodeHandle nh_lb = ros::NodeHandle(controller_nh, "left_back");
-  ros::NodeHandle nh_rb = ros::NodeHandle(controller_nh, "right_back");
-  if (!ctrl_lf_.init(effort_joint_interface_, nh_lf) || !ctrl_rf_.init(effort_joint_interface_, nh_rf) ||
-      !ctrl_lb_.init(effort_joint_interface_, nh_lb) || !ctrl_rb_.init(effort_joint_interface_, nh_rb))
-    return false;
-  joint_handles_.push_back(ctrl_lf_.joint_);
-  joint_handles_.push_back(ctrl_rf_.joint_);
-  joint_handles_.push_back(ctrl_lb_.joint_);
-  joint_handles_.push_back(ctrl_rb_.joint_);
   return true;
 }
 
 void OmniController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
-  ctrl_rf_.setCommand(((vel_cmd_.x + vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
-  ctrl_lf_.setCommand(((-vel_cmd_.x + vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
-  ctrl_lb_.setCommand(((-vel_cmd_.x - vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
-  ctrl_rb_.setCommand(((vel_cmd_.x - vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
-  ctrl_lf_.update(time, period);
-  ctrl_rf_.update(time, period);
-  ctrl_lb_.update(time, period);
-  ctrl_rb_.update(time, period);
+  chassis_vel_.setZero();
+  chassis_vel_(0, 0) = vel_cmd_.z;
+  chassis_vel_(1, 0) = vel_cmd_.x;
+  chassis_vel_(2, 0) = vel_cmd_.y;
+  for (auto& module : modules_)
+  {
+    module.ctrl_wheel_->setCommand(module.h * chassis_vel_);
+    module.ctrl_wheel_->update(time, period);
+  }
 }
 
 geometry_msgs::Twist OmniController::forwardKinematics()
 {
-  geometry_msgs::Twist vel_data;
-  double k = wheel_radius_ / 2;
-  double lf_velocity = ctrl_lf_.joint_.getVelocity();
-  double rf_velocity = ctrl_rf_.joint_.getVelocity();
-  double lb_velocity = ctrl_lb_.joint_.getVelocity();
-  double rb_velocity = ctrl_rb_.joint_.getVelocity();
-  vel_data.linear.x = k * (-lf_velocity + rf_velocity - lb_velocity + rb_velocity) / sqrt(2);
-  vel_data.linear.y = k * (lf_velocity + rf_velocity - lb_velocity - rb_velocity) / sqrt(2);
-  vel_data.angular.z = k * (lf_velocity + rf_velocity + lb_velocity + rb_velocity) / (2 * chassis_radius_);
+  geometry_msgs::Twist vel_data{};
+  chassis_vel_.setZero();
+
   return vel_data;
 }
 }  // namespace rm_chassis_controllers
