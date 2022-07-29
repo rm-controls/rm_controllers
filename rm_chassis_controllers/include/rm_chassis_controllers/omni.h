@@ -1,10 +1,12 @@
 //
-// Created by yezi on 2021/12/3.
+// Created by qiayuan on 2022/7/29.
 //
 
 #pragma once
 
-#include <rm_chassis_controllers/chassis_base.h>
+#include <Eigen/Dense>
+
+#include "rm_chassis_controllers/chassis_base.h"
 
 namespace rm_chassis_controllers
 {
@@ -18,7 +20,8 @@ private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   geometry_msgs::Twist forwardKinematics() override;
 
-  double chassis_radius_;
-  effort_controllers::JointVelocityController ctrl_lf_, ctrl_rf_, ctrl_lb_, ctrl_rb_;
+  std::vector<std::shared_ptr<effort_controllers::JointVelocityController>> joints_;
+  Eigen::MatrixXd chassis2joints_;
 };
+
 }  // namespace rm_chassis_controllers
