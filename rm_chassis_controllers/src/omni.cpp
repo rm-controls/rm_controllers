@@ -26,7 +26,7 @@ bool OmniController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
   {
     ROS_ASSERT(wheel.second.hasMember("pose"));
     ROS_ASSERT(wheel.second["pose"].getType() == XmlRpc::XmlRpcValue::TypeArray);
-    ROS_ASSERT(wheel.second["pose"].size() == 2);
+    ROS_ASSERT(wheel.second["pose"].size() == 3);
     ROS_ASSERT(wheel.second.hasMember("roller_angle"));
     ROS_ASSERT(wheel.second.hasMember("radius"));
 
@@ -54,7 +54,7 @@ void OmniController::moveJoint(const ros::Time& time, const ros::Duration& perio
 {
   Eigen::Vector3d vel_chassis;
   vel_chassis << vel_cmd_.z, vel_cmd_.x, vel_cmd_.y;
-  Eigen::Vector3d vel_joints = chassis2joints_ * vel_chassis;
+  Eigen::VectorXd vel_joints = chassis2joints_ * vel_chassis;
   for (size_t i = 0; i < joints_.size(); i++)
   {
     joints_[i]->setCommand(vel_joints(i));
