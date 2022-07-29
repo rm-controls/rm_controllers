@@ -20,13 +20,9 @@ find_package(catkin REQUIRED
 
         nav_msgs
         pluginlib
-        hardware_interface
         controller_interface
-        forward_command_controller
         realtime_tools
-        control_toolbox
         effort_controllers
-        tf2
         tf2_geometry_msgs
         angles
         )
@@ -56,13 +52,9 @@ catkin_package(
 
         nav_msgs
         pluginlib
-        hardware_interface
         controller_interface
-        forward_command_controller
         realtime_tools
-        control_toolbox
         effort_controllers
-        tf2
         tf2_geometry_msgs
         angles
         LIBRARIES ${PROJECT_NAME}
@@ -82,7 +74,6 @@ include_directories(
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
         src/chassis_base.cpp
-        src/mecanum.cpp
         src/omni.cpp
         src/sentry.cpp
         src/swerve.cpp
