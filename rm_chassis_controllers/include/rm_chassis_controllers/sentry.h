@@ -71,7 +71,7 @@ private:
    *
    * @return Calculated vel_data included linear_x.
    */
-  geometry_msgs::Twist forwardKinematics() override;
+  geometry_msgs::Twist odometry() override;
 
   effort_controllers::JointVelocityController ctrl_wheel_;
   effort_controllers::JointPositionController ctrl_catapult_joint_;

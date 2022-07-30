@@ -62,7 +62,7 @@ void OmniController::moveJoint(const ros::Time& time, const ros::Duration& perio
   }
 }
 
-geometry_msgs::Twist OmniController::forwardKinematics()
+geometry_msgs::Twist OmniController::odometry()
 {
   Eigen::VectorXd vel_joints(joints_.size());
   for (size_t i = 0; i < joints_.size(); i++)

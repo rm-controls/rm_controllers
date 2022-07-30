@@ -105,7 +105,7 @@ void SentryController::catapult(const ros::Time& time, const ros::Duration& peri
   }
 }
 
-geometry_msgs::Twist SentryController::forwardKinematics()
+geometry_msgs::Twist SentryController::odometry()
 {
   geometry_msgs::Twist vel_data;
   vel_data.linear.x = ctrl_wheel_.joint_.getVelocity() * wheel_radius_;

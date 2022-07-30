@@ -274,7 +274,7 @@ void ChassisBase<T...>::raw()
 template <typename... T>
 void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& period)
 {
-  geometry_msgs::Twist vel_base = forwardKinematics();  // on base_link frame
+  geometry_msgs::Twist vel_base = odometry();  // on base_link frame
   if (enable_odom_tf_)
   {
     geometry_msgs::Vector3 linear_vel_odom, angular_vel_odom;
