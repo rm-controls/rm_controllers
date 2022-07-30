@@ -37,9 +37,7 @@ or better use `rosdep`:
 sudo rosdep install --from-paths src
 ```
 
-### Building from Source
-
-#### Dependencies
+### Dependencies
 
 * roscpp
 * roslint
@@ -52,29 +50,6 @@ sudo rosdep install --from-paths src
 * kdl_parser
 * realtime_tools
 * pluginlib
-
-#### Building
-
-To build this package with catkin build. Clone the latest version from this repository into your catkin workspace.
-
-```bash
-catkin_workspace/src
-git clone https://github.com/rm-controls/rm_controllers.git
-rosdep install --from-paths . --ignore-src
-catkin build
-```
-
-## Usage
-
-Run the controller with mon launch:
-
-```shell
-mon launch robot_state_controller load_controllers.launch
-```
-
-## Launch files
-
-- **load_controller.launch:** Load the parameters in config files and load the robot_state_controller.
 
 ## ROS API
 
