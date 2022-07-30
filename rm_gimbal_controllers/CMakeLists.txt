@@ -113,7 +113,7 @@ install(
 
 # Mark other files for installation
 install(
-        DIRECTORY config launch
+        DIRECTORY test
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 install(

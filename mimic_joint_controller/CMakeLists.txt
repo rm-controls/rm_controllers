@@ -52,10 +52,6 @@ install(
 
 # Mark other files for installation
 install(
-        DIRECTORY config
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
-install(
         FILES mimic_joint_controller_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

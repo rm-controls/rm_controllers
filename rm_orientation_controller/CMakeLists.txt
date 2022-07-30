@@ -94,8 +94,8 @@ install(
 
 # Mark other files for installation
 install(
-    DIRECTORY config launch
-    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+        DIRECTORY test
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 install(
     FILES rm_orientation_controller_plugin.xml
