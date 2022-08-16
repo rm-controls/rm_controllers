@@ -40,7 +40,7 @@ bool OmniController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
     Eigen::MatrixXd chassis2joint = 1. / (double)wheel.second["radius"] * direction * in_wheel * in_chassis;
     chassis2joints_.block<1, 3>(i, 0) = chassis2joint;
 
-    ros::NodeHandle nh_wheel = ros::NodeHandle(controller_nh, "modules/" + wheel.first);
+    ros::NodeHandle nh_wheel = ros::NodeHandle(controller_nh, "wheels/" + wheel.first);
     joints_.push_back(std::make_shared<effort_controllers::JointVelocityController>());
     if (!joints_.back()->init(effort_joint_interface_, nh_wheel))
       return false;
@@ -67,7 +67,8 @@ geometry_msgs::Twist OmniController::odometry()
   Eigen::VectorXd vel_joints(joints_.size());
   for (size_t i = 0; i < joints_.size(); i++)
     vel_joints[i] = joints_[i]->joint_.getVelocity();
-  Eigen::Vector3d vel_chassis = chassis2joints_.completeOrthogonalDecomposition().pseudoInverse() * vel_joints;
+  Eigen::Vector3d vel_chassis =
+      (chassis2joints_.transpose() * chassis2joints_).inverse() * chassis2joints_.transpose() * vel_joints;
   geometry_msgs::Twist twist;
   twist.angular.z = vel_chassis(0);
   twist.linear.x = vel_chassis(1);
