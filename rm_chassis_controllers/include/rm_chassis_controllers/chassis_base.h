@@ -114,7 +114,7 @@ protected:
    */
   void gyro();
   virtual void moveJoint(const ros::Time& time, const ros::Duration& period) = 0;
-  virtual geometry_msgs::Twist forwardKinematics() = 0;
+  virtual geometry_msgs::Twist odometry() = 0;
   /** @brief Init frame on base_link. Integral vel to pos and angle.
    *
    * @param time The current time.

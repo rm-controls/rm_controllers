@@ -60,7 +60,7 @@ public:
 
 private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
-  geometry_msgs::Twist forwardKinematics() override;
+  geometry_msgs::Twist odometry() override;
   std::vector<Module> modules_;
 };
 

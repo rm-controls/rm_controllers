@@ -20,18 +20,11 @@
 
     <depend>nav_msgs</depend>
     <depend>pluginlib</depend>
-    <depend>hardware_interface</depend>
     <depend>controller_interface</depend>
-    <depend>forward_command_controller</depend>
     <depend>realtime_tools</depend>
-    <depend>control_toolbox</depend>
     <depend>effort_controllers</depend>
-    <depend>tf2</depend>
     <depend>tf2_geometry_msgs</depend>
     <depend>angles</depend>
-
-    <exec_depend>imu_sensor_controller</exec_depend>
-    <exec_depend>robot_localization</exec_depend>
 
     <export>
         <controller_interface plugin="${prefix}/rm_chassis_controllers_plugins.xml"/>

@@ -1,13 +1,5 @@
 <library path="lib/librm_chassis_controllers">
 
-    <class name="rm_chassis_controllers/MecanumController"
-           type="rm_chassis_controllers::MecanumController"
-           base_class_type="controller_interface::ControllerBase">
-        <description>
-            The StandardController is RoboMaster mecanum wheel Chassis controller. It expects a EffortJointInterface
-            type of hardware interface.
-        </description>
-    </class>
     <class name="rm_chassis_controllers/OmniController"
            type="rm_chassis_controllers::OmniController"
            base_class_type="controller_interface::ControllerBase">

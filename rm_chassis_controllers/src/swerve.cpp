@@ -99,7 +99,7 @@ void SwerveController::moveJoint(const ros::Time& time, const ros::Duration& per
   }
 }
 
-geometry_msgs::Twist SwerveController::forwardKinematics()
+geometry_msgs::Twist SwerveController::odometry()
 {
   geometry_msgs::Twist vel_data{};
   geometry_msgs::Twist vel_modules{};
