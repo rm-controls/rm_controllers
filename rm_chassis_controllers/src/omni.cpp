@@ -1,11 +1,14 @@
 //
-// Created by yezi on 2021/12/3.
+// Created by qiayuan on 2022/7/29.
 //
 
-#include <rm_chassis_controllers/omni.h>
-#include <rm_common/ros_utilities.h>
 #include <string>
+#include <Eigen/QR>
+
+#include <rm_common/ros_utilities.h>
 #include <pluginlib/class_list_macros.hpp>
+
+#include "rm_chassis_controllers/omni.h"
 
 namespace rm_chassis_controllers
 {
@@ -13,49 +16,65 @@ bool OmniController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
                           ros::NodeHandle& controller_nh)
 {
   ChassisBase::init(robot_hw, root_nh, controller_nh);
-  if (!controller_nh.getParam("chassis_radius", chassis_radius_))
+
+  XmlRpc::XmlRpcValue wheels;
+  controller_nh.getParam("wheels", wheels);
+  chassis2joints_.resize(wheels.size(), 3);
+
+  size_t i = 0;
+  for (const auto& wheel : wheels)
   {
-    ROS_ERROR("chassis_radius is not set");
-    return false;
+    ROS_ASSERT(wheel.second.hasMember("pose"));
+    ROS_ASSERT(wheel.second["pose"].getType() == XmlRpc::XmlRpcValue::TypeArray);
+    ROS_ASSERT(wheel.second["pose"].size() == 3);
+    ROS_ASSERT(wheel.second.hasMember("roller_angle"));
+    ROS_ASSERT(wheel.second.hasMember("radius"));
+
+    // Ref: Modern Robotics, Chapter 13.2: Omnidirectional Wheeled Mobile Robots
+    Eigen::MatrixXd direction(1, 2), in_wheel(2, 2), in_chassis(2, 3);
+    double beta = (double)wheel.second["pose"][2];
+    double roller_angle = (double)wheel.second["roller_angle"];
+    direction << 1, tan(roller_angle);
+    in_wheel << cos(beta), sin(beta), -sin(beta), cos(beta);
+    in_chassis << -(double)wheel.second["pose"][1], 1., 0., (double)wheel.second["pose"][0], 0., 1.;
+    Eigen::MatrixXd chassis2joint = 1. / (double)wheel.second["radius"] * direction * in_wheel * in_chassis;
+    chassis2joints_.block<1, 3>(i, 0) = chassis2joint;
+
+    ros::NodeHandle nh_wheel = ros::NodeHandle(controller_nh, "wheels/" + wheel.first);
+    joints_.push_back(std::make_shared<effort_controllers::JointVelocityController>());
+    if (!joints_.back()->init(effort_joint_interface_, nh_wheel))
+      return false;
+
+    i++;
   }
-  ros::NodeHandle nh_lf = ros::NodeHandle(controller_nh, "left_front");
-  ros::NodeHandle nh_rf = ros::NodeHandle(controller_nh, "right_front");
-  ros::NodeHandle nh_lb = ros::NodeHandle(controller_nh, "left_back");
-  ros::NodeHandle nh_rb = ros::NodeHandle(controller_nh, "right_back");
-  if (!ctrl_lf_.init(effort_joint_interface_, nh_lf) || !ctrl_rf_.init(effort_joint_interface_, nh_rf) ||
-      !ctrl_lb_.init(effort_joint_interface_, nh_lb) || !ctrl_rb_.init(effort_joint_interface_, nh_rb))
-    return false;
-  joint_handles_.push_back(ctrl_lf_.joint_);
-  joint_handles_.push_back(ctrl_rf_.joint_);
-  joint_handles_.push_back(ctrl_lb_.joint_);
-  joint_handles_.push_back(ctrl_rb_.joint_);
   return true;
 }
 
 void OmniController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
-  ctrl_rf_.setCommand(((vel_cmd_.x + vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
-  ctrl_lf_.setCommand(((-vel_cmd_.x + vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
-  ctrl_lb_.setCommand(((-vel_cmd_.x - vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
-  ctrl_rb_.setCommand(((vel_cmd_.x - vel_cmd_.y + sqrt(2) * vel_cmd_.z * chassis_radius_) / sqrt(2)) / wheel_radius_);
-  ctrl_lf_.update(time, period);
-  ctrl_rf_.update(time, period);
-  ctrl_lb_.update(time, period);
-  ctrl_rb_.update(time, period);
+  Eigen::Vector3d vel_chassis;
+  vel_chassis << vel_cmd_.z, vel_cmd_.x, vel_cmd_.y;
+  Eigen::VectorXd vel_joints = chassis2joints_ * vel_chassis;
+  for (size_t i = 0; i < joints_.size(); i++)
+  {
+    joints_[i]->setCommand(vel_joints(i));
+    joints_[i]->update(time, period);
+  }
 }
 
-geometry_msgs::Twist OmniController::forwardKinematics()
+geometry_msgs::Twist OmniController::odometry()
 {
-  geometry_msgs::Twist vel_data;
-  double k = wheel_radius_ / 2;
-  double lf_velocity = ctrl_lf_.joint_.getVelocity();
-  double rf_velocity = ctrl_rf_.joint_.getVelocity();
-  double lb_velocity = ctrl_lb_.joint_.getVelocity();
-  double rb_velocity = ctrl_rb_.joint_.getVelocity();
-  vel_data.linear.x = k * (-lf_velocity + rf_velocity - lb_velocity + rb_velocity) / sqrt(2);
-  vel_data.linear.y = k * (lf_velocity + rf_velocity - lb_velocity - rb_velocity) / sqrt(2);
-  vel_data.angular.z = k * (lf_velocity + rf_velocity + lb_velocity + rb_velocity) / (2 * chassis_radius_);
-  return vel_data;
+  Eigen::VectorXd vel_joints(joints_.size());
+  for (size_t i = 0; i < joints_.size(); i++)
+    vel_joints[i] = joints_[i]->joint_.getVelocity();
+  Eigen::Vector3d vel_chassis =
+      (chassis2joints_.transpose() * chassis2joints_).inverse() * chassis2joints_.transpose() * vel_joints;
+  geometry_msgs::Twist twist;
+  twist.angular.z = vel_chassis(0);
+  twist.linear.x = vel_chassis(1);
+  twist.linear.y = vel_chassis(2);
+  return twist;
 }
+
 }  // namespace rm_chassis_controllers
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::OmniController, controller_interface::ControllerBase)

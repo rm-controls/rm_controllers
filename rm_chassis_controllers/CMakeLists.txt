@@ -60,7 +60,6 @@ include_directories(
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
         src/chassis_base.cpp
-        src/mecanum.cpp
         src/omni.cpp
         src/sentry.cpp
         src/swerve.cpp
