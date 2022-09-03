@@ -39,17 +39,8 @@ sudo rosdep install --from-paths src
 
 ### Dependencies
 
-- rm_description
 - roscpp
-- roslint
-- rm_msgs
 - rm_common
-- pluginlib
-- controller_interface
-- hardware_interface
-- forward_command_controller
-- realtime_tools
-- control_toolbox
 - effort_controllers
 - dynamic_reconfigure
 

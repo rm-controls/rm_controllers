@@ -37,16 +37,8 @@ Or better, use `rosdep`:
 ### Dependencies
 
 * roscpp
-* roslint
-* rm_msgs
 * rm_common
-* pluginlib
-* hardware_interface
-* controller_interface
-* realtime_tools
 * effort_controllers
-* control_msgs
-
 
 ## ROS API
 

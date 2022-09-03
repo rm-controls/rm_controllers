@@ -3,10 +3,8 @@ project(mimic_joint_controller)
 
 find_package(catkin REQUIRED COMPONENTS
         roscpp
-        roslint
 
         pluginlib
-        hardware_interface
         controller_interface
         )
 
@@ -15,10 +13,8 @@ catkin_package(
         include
         CATKIN_DEPENDS
         roscpp
-        roslint
 
         pluginlib
-        hardware_interface
         controller_interface
         LIBRARIES ${PROJECT_NAME}
 )
@@ -55,6 +51,3 @@ install(
         FILES mimic_joint_controller_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
-
-
-roslint_cpp()

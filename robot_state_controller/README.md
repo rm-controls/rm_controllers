@@ -40,16 +40,11 @@ sudo rosdep install --from-paths src
 ### Dependencies
 
 * roscpp
-* roslint
 * rm_common
-* hardware_interface
 * controller_interface
-* urdf
-* tf2_ros
 * tf2_kdl
 * kdl_parser
 * realtime_tools
-* pluginlib
 
 ## ROS API
 

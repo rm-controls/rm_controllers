@@ -35,19 +35,10 @@ Or better, use `rosdep`:
 
 ### Dependencies
 * roscpp
-* roslint
-* rm_msgs
 * rm_common
-* pluginlib
-* hardware_interface
-* controller_interface
-* forward_command_controller
-* realtime_tools
-* control_toolbox
 * effort_controllers
-* tf2
+* tf2_eigen
 * tf2_geometry_msgs
-* angles
 * visualization_msgs
 * dynamic_reconfigure
 

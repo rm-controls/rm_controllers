@@ -13,16 +13,9 @@ add_definitions(-Wall -Werror)
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
-        roslint
 
-        rm_msgs
         rm_common
-        pluginlib
-        hardware_interface
-        controller_interface
-        realtime_tools
         effort_controllers
-        control_msgs
         )
 
 ###################################
@@ -40,16 +33,9 @@ catkin_package(
         LIBRARIES
         CATKIN_DEPENDS
         roscpp
-        roslint
 
-        rm_msgs
         rm_common
-        pluginlib
-        hardware_interface
-        controller_interface
-        realtime_tools
         effort_controllers
-        control_msgs
         LIBRARIES ${PROJECT_NAME}
 )
 
@@ -105,9 +91,3 @@ install(
 #      test/AlgorithmTest.cpp)
 #  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}_core)
 #endif ()
-
-##########################
-## Static code analysis ##
-##########################
-
-roslint_cpp()

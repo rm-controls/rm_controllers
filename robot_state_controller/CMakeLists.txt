@@ -13,17 +13,12 @@ add_definitions(-Wall -Werror)
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
-        roslint
 
         rm_common
-        hardware_interface
         controller_interface
-        urdf
-        tf2_ros
         tf2_kdl
         kdl_parser
         realtime_tools
-        pluginlib
         )
 
 ###################################
@@ -42,16 +37,11 @@ catkin_package(
         ${PROJECT_NAME}
         CATKIN_DEPENDS
         roscpp
-        roslint
 
         rm_common
-        hardware_interface
         controller_interface
-        urdf
-        tf2_ros
         kdl_parser
         realtime_tools
-        pluginlib
         LIBRARIES ${PROJECT_NAME}
 )
 
@@ -116,9 +106,3 @@ install(
 #      test/AlgorithmTest.cpp)
 #  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}_core)
 #endif ()
-
-##########################
-## Static code analysis ##
-##########################
-
-roslint_cpp()

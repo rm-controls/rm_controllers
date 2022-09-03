@@ -35,20 +35,9 @@ sudo rosdep install --from-paths src
 
 * [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
 * roscpp
-* roslint
-* rm_msgs
 * rm_common
-* pluginlib
-* hardware_interface
-* controller_interface
-* forward_command_controller
-* realtime_tools
-* control_toolbox
 * effort_controllers
-* tf2
 * tf2_geometry_msgs
-* angles
-* imu_sensor_controller
 * robot_localization
 
 ## ROS API
