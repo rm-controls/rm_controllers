@@ -425,6 +425,8 @@ void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)
 
 void Controller::trackCB(const rm_msgs::TrackDataConstPtr& msg)
 {
+  if (msg->id == 0)
+    return;
   track_rt_buffer_.writeFromNonRT(*msg);
 }
 
