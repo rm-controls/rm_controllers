@@ -2,8 +2,8 @@
 Changelog for package rm_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.7 (2022-09-10)
+------------------
 * Merge remote-tracking branch 'origin/master'
 * Contributors: qiayuan
 

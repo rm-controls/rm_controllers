@@ -2,8 +2,8 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.7 (2022-09-10)
+------------------
 * Merge pull request `#83 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/83>`_ from rm-controls/dev
   Merge the new OmniController to master
 * Merge pull request `#82 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/82>`_ from NaHCO3bc/dev
