@@ -63,7 +63,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.);
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
-  bullet_solver_ = new BulletSolver(nh_bullet_solver);
+  bullet_solver_ = std::make_shared<BulletSolver>(nh_bullet_solver);
 
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
@@ -425,6 +425,8 @@ void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)
 
 void Controller::trackCB(const rm_msgs::TrackDataConstPtr& msg)
 {
+  if (msg->id == 0)
+    return;
   track_rt_buffer_.writeFromNonRT(*msg);
 }
 

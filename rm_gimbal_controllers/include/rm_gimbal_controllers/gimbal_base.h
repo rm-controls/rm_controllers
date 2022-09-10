@@ -82,7 +82,7 @@ private:
   bool has_imu_ = true;
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
-  BulletSolver* bullet_solver_{};
+  std::shared_ptr<BulletSolver> bullet_solver_;
 
   // ROS Interface
   ros::Time last_publish_time_{};

@@ -72,19 +72,17 @@ public:
   {
     return -output_pitch_;
   }
-  void bulletModelPub(const geometry_msgs::TransformStamped& map2pitch, const ros::Time& time);
+  void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
   ~BulletSolver() = default;
 
 private:
-  ros::Time last_publish_time_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>* d_srv_{};
   Config config_{};
   bool dynamic_reconfig_initialized_{};
-  double publish_rate_{};
   double output_yaw_{}, output_pitch_{};
   double bullet_speed_{}, resistance_coff_{};
 

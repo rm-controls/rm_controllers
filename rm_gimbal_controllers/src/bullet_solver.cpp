@@ -44,8 +44,6 @@ namespace rm_gimbal_controllers
 {
 BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
 {
-  publish_rate_ = getParam(controller_nh, "publish_rate", 50);
-
   config_ = { .resistance_coff_qd_10 = getParam(controller_nh, "resistance_coff_qd_10", 0.),
               .resistance_coff_qd_15 = getParam(controller_nh, "resistance_coff_qd_15", 0.),
               .resistance_coff_qd_16 = getParam(controller_nh, "resistance_coff_qd_16", 0.),
@@ -57,7 +55,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .timeout = getParam(controller_nh, "timeout", 0.) };
   config_rt_buffer_.initRT(config_);
 
-  marker_desire_.header.frame_id = "map";
+  marker_desire_.header.frame_id = "odom";
   marker_desire_.ns = "model";
   marker_desire_.action = visualization_msgs::Marker::ADD;
   marker_desire_.type = visualization_msgs::Marker::POINTS;
@@ -139,12 +137,12 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   return true;
 }
 
-void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped& map2pitch, const ros::Time& time)
+void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time)
 {
   marker_desire_.points.clear();
   marker_real_.points.clear();
   double roll{}, pitch{}, yaw{};
-  quatToRPY(map2pitch.transform.rotation, roll, pitch, yaw);
+  quatToRPY(odom2pitch.transform.rotation, roll, pitch, yaw);
   geometry_msgs::Point point_desire{}, point_real{};
   double target_rho = std::sqrt(std::pow(target_pos_.x, 2) + std::pow(target_pos_.y, 2));
   int point_num = int(target_rho * 20);
@@ -156,9 +154,9 @@ void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped& map2pit
     double rt_bullet_z = (bullet_speed_ * std::sin(output_pitch_) + (config_.g / resistance_coff_)) *
                              (1 - std::exp(-resistance_coff_ * fly_time)) / resistance_coff_ -
                          config_.g * fly_time / resistance_coff_;
-    point_desire.x = rt_bullet_rho * std::cos(output_yaw_) + map2pitch.transform.translation.x;
-    point_desire.y = rt_bullet_rho * std::sin(output_yaw_) + map2pitch.transform.translation.y;
-    point_desire.z = rt_bullet_z + map2pitch.transform.translation.z;
+    point_desire.x = rt_bullet_rho * std::cos(output_yaw_) + odom2pitch.transform.translation.x;
+    point_desire.y = rt_bullet_rho * std::sin(output_yaw_) + odom2pitch.transform.translation.y;
+    point_desire.z = rt_bullet_z + odom2pitch.transform.translation.z;
     marker_desire_.points.push_back(point_desire);
   }
   for (int i = 0; i <= point_num; i++)
@@ -169,9 +167,9 @@ void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped& map2pit
     double rt_bullet_z = (bullet_speed_ * std::sin(-pitch) + (config_.g / resistance_coff_)) *
                              (1 - std::exp(-resistance_coff_ * fly_time)) / resistance_coff_ -
                          config_.g * fly_time / resistance_coff_;
-    point_real.x = rt_bullet_rho * std::cos(yaw) + map2pitch.transform.translation.x;
-    point_real.y = rt_bullet_rho * std::sin(yaw) + map2pitch.transform.translation.y;
-    point_real.z = rt_bullet_z + map2pitch.transform.translation.z;
+    point_real.x = rt_bullet_rho * std::cos(yaw) + odom2pitch.transform.translation.x;
+    point_real.y = rt_bullet_rho * std::sin(yaw) + odom2pitch.transform.translation.y;
+    point_real.z = rt_bullet_z + odom2pitch.transform.translation.z;
     marker_real_.points.push_back(point_real);
   }
   marker_desire_.header.stamp = time;

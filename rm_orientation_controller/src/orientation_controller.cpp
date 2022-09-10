@@ -81,9 +81,9 @@ void Controller::imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg)
     receive_imu_msg_ = true;
   geometry_msgs::TransformStamped source2target;
   source2target.header.stamp = msg->header.stamp;
-  if (getTransform(ros::Time(0), source2target, msg->orientation.x, msg->orientation.y, msg->orientation.z,
-                   msg->orientation.w))
-    tf_broadcaster_.sendTransform(source2target);
+  getTransform(ros::Time(0), source2target, msg->orientation.x, msg->orientation.y, msg->orientation.z,
+               msg->orientation.w);
+  tf_broadcaster_.sendTransform(source2target);
 }
 
 }  // namespace rm_orientation_controller
