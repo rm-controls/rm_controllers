@@ -2,6 +2,13 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.7 (2022-09-10)
+------------------
+* Optimize TRACK mode of rm_gimbal_controller.
+* Change frame "map" to "odom".
+* Merge remote-tracking branch 'origin/master'
+* Contributors: qiayuan, yezi
+
 0.1.6 (2022-06-16)
 ------------------
 * Merge branch 'gimbal/chassis_vel'
