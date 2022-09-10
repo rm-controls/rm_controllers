@@ -58,25 +58,12 @@ Or better, use `rosdep`:
 
 	sudo rosdep install --from-paths src
 
-### Building from Source
-
-#### Dependencies
+### Dependencies
 
 - [Robot Operating System (ROS)](http://wiki.ros.org) (middleware for robotics),
 - [Eigen] (linear algebra library)
 
   sudo rosdep install --from-paths src
-
-#### Building
-
-To build from source, clone the latest version from this repository into your catkin workspace and compile the package
-using
-
-	cd catkin_workspace/src
-	git clone https://github.com/ethz-asl/ros_best_practices.git
-	cd ../
-	rosdep install --from-paths . --ignore-src
-	catkin_make
 
 ### Running in Docker
 
@@ -113,14 +100,6 @@ Run the static code analysis with
 
 	catkin_make roslint_ros_package_template
 
-## Usage
-
-Describe the quickest way to run this software, for example:
-
-Run the main node with
-
-	roslaunch ros_package_template ros_package_template.launch
-
 ## Config files
 
 Config file folder/set 1
@@ -128,20 +107,6 @@ Config file folder/set 1
 * **config_file_1.yaml** Shortly explain the content of this config file
 
 Config file folder/set 2
-
-* **...**
-
-## Launch files
-
-* **launch_file_1.launch:** shortly explain what is launched (e.g standard simulation, simulation with gdb,...)
-
-  Argument set 1
-
-    - **`argument_1`** Short description (e.g. as commented in launch file). Default: `default_value`.
-
-  Argument set 2
-
-    - **`...`**
 
 * **...**
 
@@ -182,6 +147,17 @@ Reads temperature measurements and computed the average.
 ### NODE_B_NAME
 
 ...
+
+#### Complete description
+
+```yaml
+orientation_controller:
+  type: rm_orientation_controller/Controller
+  publish_rate: 100
+  name: "gimbal_imu"
+  frame_source: "odom"
+  frame_target: "base_link"
+```
 
 ## Bugs & Feature Requests
 

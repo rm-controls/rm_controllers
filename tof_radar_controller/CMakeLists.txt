@@ -3,14 +3,11 @@ project(tof_radar_controller)
 
 find_package(catkin REQUIRED COMPONENTS
         roscpp
-        roslint
 
-        rm_msgs
         rm_common
 
 
         pluginlib
-        hardware_interface
         controller_interface
         realtime_tools
         )
@@ -20,13 +17,10 @@ catkin_package(
         include
         CATKIN_DEPENDS
         roscpp
-        roslint
 
-        rm_msgs
         rm_common
 
         pluginlib
-        hardware_interface
         controller_interface
         realtime_tools
         LIBRARIES ${PROJECT_NAME}
@@ -61,13 +55,10 @@ install(
 
 # Mark other files for installation
 install(
-        DIRECTORY config launch
+        DIRECTORY test
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 install(
         FILES tof_radar_controller_plugins.xml
         DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
-
-
-roslint_cpp()

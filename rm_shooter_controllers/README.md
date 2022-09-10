@@ -37,50 +37,16 @@ or better use `rosdep`:
 sudo rosdep install --from-paths src
 ```
 
-### Building from Source
+### Dependencies
 
-#### Dependencies
-
-- rm_description
 - roscpp
-- roslint
-- rm_msgs
 - rm_common
-- pluginlib
-- controller_interface
-- hardware_interface
-- forward_command_controller
-- realtime_tools
-- control_toolbox
 - effort_controllers
 - dynamic_reconfigure
-
-#### Building
-
-To build this package with catkin build. Clone the latest version from this repository into your catkin workspace.
-
-```
-catkin_workspace/src
-git clone https://github.com/rm-controls/rm_controllers.git
-rosdep install --from-paths . --ignore-src
-catkin build
-```
-
-## Usage
-
-Run the controller with mon launch:
-
-```
-mon launch rm_shooter_controllers load_controllers.launch
-```
 
 ## Cfg
 
 + **shooter.cfg:** Add parameters related to friction wheel's angular velocity corresponding to each bullet speed and trigger block detection parameters.
-
-## Launch files
-
-- **load_controller.launch:** Load the parameters in config files and load the shooter controller.
 
 ## ROS API
 

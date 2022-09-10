@@ -34,31 +34,11 @@ Or better, use `rosdep`:
 
 	sudo rosdep install --from-paths src
 
-### Building from Source
+### Dependencies
 
-#### Dependencies
 * roscpp
-* roslint
-* rm_msgs
 * rm_common
-* pluginlib
-* hardware_interface
-* controller_interface
-* realtime_tools
 * effort_controllers
-* control_msgs
-
-
-#### Building
-
-To build from source, clone the latest version from this repository into your catkin workspace and compile the package using
-
-	cd catkin_workspace/src
-	git clone https://github.com/rm-controls/rm_controllers.git
-	cd ../
-	rosdep install --from-paths . --ignore-src
-	catkin_make
-
 
 ## ROS API
 
@@ -79,6 +59,15 @@ To build from source, clone the latest version from this repository into your ca
 
   This is velocity `threshold`. When the real time velocity of target joint lower than threshold, and last for a while,
   it can switch CALIBRATED from MOVING.
+
+#### Complete description
+
+```yaml
+cover_controller:
+  type: effort_controllers/JointPositionController
+  joint: "cover_joint"
+  pid: { p: 15.0, i: 0.0, d: 1.2, i_clamp_max: 0.0, i_clamp_min: 0.0, antiwindup: true, publish_state: true }
+```
 
 
 ## Bugs & Feature Requests

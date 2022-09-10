@@ -11,9 +11,7 @@
 
   <depend>pluginlib</depend>
   <depend>roscpp</depend>
-  <depend>roslint</depend>
   <depend>controller_interface</depend>
-  <depend>hardware_interface</depend>
 
   <export>
     <controller_interface plugin="${prefix}/mimic_joint_controller_plugins.xml"/>

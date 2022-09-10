@@ -33,45 +33,14 @@ Or better, use `rosdep`:
 
     sudo rosdep install --from-paths src
 
-### Building from Source
-#### Dependencies
+### Dependencies
 * roscpp
-* roslint
-* rm_msgs
 * rm_common
-* pluginlib
-* hardware_interface
-* controller_interface
-* forward_command_controller
-* realtime_tools
-* control_toolbox
 * effort_controllers
-* tf2
+* tf2_eigen
 * tf2_geometry_msgs
-* angles
 * visualization_msgs
 * dynamic_reconfigure
-
-#### Building
-
-To build from source, clone the latest version from this repository into your catkin workspace and compile the package using
-
-	cd catkin_workspace/src
-	git clone https://github.com/rm-controls/rm_controllers.git
-	cd ../
-	rosdep install --from-paths . --ignore-src
-	catkin build
-
-
-## Usage
-
-Run the controller with mon launch:
-
-      mon launch rm_gimbal_controller load_controllers.launch
-
-## Launch files
-
-* **load_controllers.launch**: Load the parameters in config files and load tf and robot_state_controller, joint_state_controller, gimbal_controller.
 
 ## ROS API
 

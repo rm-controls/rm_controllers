@@ -31,50 +31,14 @@ Or better, use `rosdep`:
 sudo rosdep install --from-paths src
 ```
 
-### Building from Source
-
-#### Dependencies
+### Dependencies
 
 * [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
 * roscpp
-* roslint
-* rm_msgs
 * rm_common
-* pluginlib
-* hardware_interface
-* controller_interface
-* forward_command_controller
-* realtime_tools
-* control_toolbox
 * effort_controllers
-* tf2
 * tf2_geometry_msgs
-* angles
-* imu_sensor_controller
 * robot_localization
-
-#### Building
-
-* Build this package with catkin build. Clone the latest version from this repository into your catkin workspace.
-
-```
-catkin_workspace/src
-git clone https://github.com/rm-controls/rm_controllers.git
-rosdep install --from-paths . --ignore-src
-catkin build
-```
-
-## Usage
-
-Run the controller with mon launch:
-
-```
-mon launch rm_chassis_controllers load_controllers.launch
-```
-
-## Launch files
-
-* **load_controllers.launch:** It loads tf, robot_localization and some controllers, robot_state_controller, joint_state_controller and chassis controller are included.
 
 ## ROS API
 
