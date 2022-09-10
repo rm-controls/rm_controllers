@@ -16,6 +16,7 @@ find_package(catkin REQUIRED
 
         rm_common
 
+        controller_interface
         effort_controllers
         tf2_geometry_msgs
         )

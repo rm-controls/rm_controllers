@@ -18,6 +18,7 @@ find_package(catkin REQUIRED
         rm_common
 
         pluginlib
+        controller_interface
         forward_command_controller
         tf2_geometry_msgs
         angles
