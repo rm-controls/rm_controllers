@@ -2,6 +2,21 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#83 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/83>`_ from rm-controls/dev
+  Merge the new OmniController to master
+* Merge pull request `#82 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/82>`_ from NaHCO3bc/dev
+  Fix some bugs in the new OmniController.
+* Compute the params and fix some bugs.
+* Rename the function forwardKinematics to odometry.
+* Merge pull request `#80 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/80>`_ from qiayuanliao/master
+  New and elegant OmniController
+* Fix bug in the new OmniController
+* Add a new and elegant OmniController
+* Merge remote-tracking branch 'origin/master'
+* Contributors: NaHCO3bc, QiayuanLiao, qiayuan
+
 0.1.6 (2022-06-16)
 ------------------
 * Merge remote-tracking branch 'origin/master'

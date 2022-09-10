@@ -2,6 +2,11 @@
 Changelog for package tof_radar_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge remote-tracking branch 'origin/master'
+* Contributors: qiayuan
+
 0.1.6 (2022-06-16)
 ------------------
 * Merge pull request `#76 <https://github.com/rm-controls/rm_controllers/issues/76>`_ from Edwinlinks/tof-radar-controller

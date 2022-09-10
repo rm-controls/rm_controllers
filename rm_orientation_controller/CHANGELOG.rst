@@ -2,6 +2,12 @@
 Changelog for package rm_orientation_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Optimize rm_orientation_controller.
+* Merge remote-tracking branch 'origin/master'
+* Contributors: qiayuan, yezi
+
 0.1.6 (2022-06-16)
 ------------------
 * Merge remote-tracking branch 'origin/master'

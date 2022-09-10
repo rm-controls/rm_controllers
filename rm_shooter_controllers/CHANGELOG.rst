@@ -2,6 +2,13 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Try two fix double shoot
+* Merge remote-tracking branch 'origin/master'
+* Fix bug of shooting if statement
+* Contributors: qiayuan
+
 0.1.6 (2022-06-16)
 ------------------
 * Merge remote-tracking branch 'origin/master'
