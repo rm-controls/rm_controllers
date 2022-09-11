@@ -1,9 +1,9 @@
 <launch>
-    <arg name="chassis_type" default="mecanum"/>
+    <arg name="chassis_type" default="omni"/>
     <arg name="ekf" default="false"/>
     <arg name="odom_tf" default="true"/>
 
-    <rosparam file="$(find rm_chassis_controllers)/config/template_$(arg chassis_type).yaml" command="load"/>
+    <rosparam file="$(find rm_chassis_controllers)/test/template_$(arg chassis_type).yaml" command="load"/>
     <rosparam if="$(arg ekf)" param="controllers/chassis_controller/enable_odom_tf">false</rosparam>
 
     <node name="controller_loader" pkg="controller_manager" type="controller_manager" output="screen"
