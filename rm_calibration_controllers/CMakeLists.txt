@@ -15,6 +15,7 @@ find_package(catkin REQUIRED
         roscpp
 
         rm_common
+        controller_interface
         effort_controllers
         )
 
