@@ -240,9 +240,12 @@ void Controller::track(const ros::Time& time)
   {
     ROS_WARN("%s", ex.what());
   }
-  target_pos.x = target_pos.x - odom2pitch_.transform.translation.x;
-  target_pos.y = target_pos.y - odom2pitch_.transform.translation.y;
-  target_pos.z = target_pos.z - odom2pitch_.transform.translation.z;
+  target_pos.x -= odom2pitch_.transform.translation.x;
+  target_pos.y -= odom2pitch_.transform.translation.y;
+  target_pos.z -= odom2pitch_.transform.translation.z;
+  target_vel.x -= chassis_vel_->linear_->x();
+  target_vel.y -= chassis_vel_->linear_->y();
+  target_vel.z -= chassis_vel_->linear_->z();
 
   bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed);
 
