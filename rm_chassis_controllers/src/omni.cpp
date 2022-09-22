@@ -44,6 +44,7 @@ bool OmniController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
     joints_.push_back(std::make_shared<effort_controllers::JointVelocityController>());
     if (!joints_.back()->init(effort_joint_interface_, nh_wheel))
       return false;
+    joint_handles_.push_back(joints_[i]->joint_);
 
     i++;
   }
