@@ -31,19 +31,29 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
-  geometry_msgs::TransformStamped source2target;
-  source2target.header.stamp = time;
-  source2target.header.stamp.nsec += 1;  // Avoid redundant timestamp
-  source2target_msg_.header.stamp = time;
-  source2target_msg_.header.stamp.nsec += 1;
-  source2target_msg_ =
-      getTransform(ros::Time(0), source2target, imu_sensor_.getOrientation()[0], imu_sensor_.getOrientation()[1],
-                   imu_sensor_.getOrientation()[2], imu_sensor_.getOrientation()[3]) ?
-          source2target :
-          source2target_msg_;
-  robot_state_.setTransform(source2target_msg_, "rm_orientation_controller");
-  if (!receive_imu_msg_)
-    tf_broadcaster_.sendTransform(source2target_msg_);
+  if (last_imu_data_.x() != imu_sensor_.getOrientation()[0] || last_imu_data_.y() != imu_sensor_.getOrientation()[1] ||
+      last_imu_data_.z() != imu_sensor_.getOrientation()[2] || last_imu_data_.w() != imu_sensor_.getOrientation()[3])
+  {
+    last_imu_update_time_ = time;
+    last_imu_data_.setValue(imu_sensor_.getOrientation()[0], imu_sensor_.getOrientation()[1],
+                            imu_sensor_.getOrientation()[2], imu_sensor_.getOrientation()[3]);
+  }
+  if ((time - last_imu_update_time_).toSec() < 0.01)
+  {
+    geometry_msgs::TransformStamped source2target;
+    source2target.header.stamp = time;
+    source2target.header.stamp.nsec += 1;  // Avoid redundant timestamp
+    source2target_msg_.header.stamp = time;
+    source2target_msg_.header.stamp.nsec += 1;
+    source2target_msg_ =
+        getTransform(ros::Time(0), source2target, imu_sensor_.getOrientation()[0], imu_sensor_.getOrientation()[1],
+                     imu_sensor_.getOrientation()[2], imu_sensor_.getOrientation()[3]) ?
+            source2target :
+            source2target_msg_;
+    robot_state_.setTransform(source2target_msg_, "rm_orientation_controller");
+    if (!receive_imu_msg_)
+      tf_broadcaster_.sendTransform(source2target_msg_);
+  }
 }
 
 bool Controller::getTransform(const ros::Time& time, geometry_msgs::TransformStamped& source2target, const double x,

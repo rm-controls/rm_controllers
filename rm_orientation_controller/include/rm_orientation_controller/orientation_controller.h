@@ -27,6 +27,8 @@ private:
   void imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg);
 
   hardware_interface::ImuSensorHandle imu_sensor_;
+  tf2::Quaternion last_imu_data_;
+  ros::Time last_imu_update_time_;
   rm_control::RobotStateHandle robot_state_;
 
   rm_common::TfRtBroadcaster tf_broadcaster_{};
