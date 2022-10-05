@@ -6,14 +6,14 @@
 
 #include <controller_interface/controller.h>
 #include <controller_interface/multi_interface_controller.h>
-#include <hardware_interface/imu_sensor_interface.h>
+#include <rm_common/hardware_interface/rm_imu_sensor_interface.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <sensor_msgs/Imu.h>
 
 namespace rm_orientation_controller
 {
-class Controller : public controller_interface::MultiInterfaceController<hardware_interface::ImuSensorInterface,
+class Controller : public controller_interface::MultiInterfaceController<rm_control::RmImuSensorInterface,
                                                                          rm_control::RobotStateInterface>
 {
 public:
@@ -26,8 +26,10 @@ private:
                     const double y, const double z, const double w);
   void imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg);
 
-  hardware_interface::ImuSensorHandle imu_sensor_;
+  rm_control::RmImuSensorHandle imu_sensor_;
   rm_control::RobotStateHandle robot_state_;
+
+  ros::Time last_imu_update_time_;
 
   rm_common::TfRtBroadcaster tf_broadcaster_{};
   geometry_msgs::TransformStamped source2target_msg_;
