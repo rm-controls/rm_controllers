@@ -116,19 +116,23 @@ public:
       if (real_pub_->trylock())
       {
         real_pub_->msg_.linear.x = linear_vel[0];
-        filtered_pub_->msg_.linear.x = linear_->x();
         real_pub_->msg_.linear.y = linear_vel[1];
-        filtered_pub_->msg_.linear.y = linear_->y();
         real_pub_->msg_.linear.z = linear_vel[2];
-        filtered_pub_->msg_.linear.z = linear_->z();
         real_pub_->msg_.angular.x = angular_vel[0];
-        filtered_pub_->msg_.angular.x = angular_->x();
         real_pub_->msg_.angular.y = angular_vel[1];
-        filtered_pub_->msg_.angular.y = angular_->y();
         real_pub_->msg_.angular.z = angular_vel[2];
-        filtered_pub_->msg_.angular.z = angular_->z();
 
         real_pub_->unlockAndPublish();
+      }
+      if (filtered_pub_->trylock())
+      {
+        filtered_pub_->msg_.linear.x = linear_->x();
+        filtered_pub_->msg_.linear.y = linear_->y();
+        filtered_pub_->msg_.linear.z = linear_->z();
+        filtered_pub_->msg_.angular.x = angular_->x();
+        filtered_pub_->msg_.angular.y = angular_->y();
+        filtered_pub_->msg_.angular.z = angular_->z();
+
         filtered_pub_->unlockAndPublish();
       }
     }
