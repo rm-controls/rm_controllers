@@ -72,9 +72,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle nh_friction_r = ros::NodeHandle(controller_nh, "friction_right");
   ros::NodeHandle nh_trigger = ros::NodeHandle(controller_nh, "trigger");
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
-  return !(!ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) ||
-           !ctrl_friction_r_.init(effort_joint_interface_, nh_friction_r) ||
-           !ctrl_trigger_.init(effort_joint_interface_, nh_trigger));
+  return ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) &&
+         ctrl_friction_r_.init(effort_joint_interface_, nh_friction_r) &&
+         ctrl_trigger_.init(effort_joint_interface_, nh_trigger);
 }
 
 void Controller::starting(const ros::Time& /*time*/)
@@ -91,7 +91,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   {
     if (state_ != BLOCK)
       if ((state_ != PUSH || cmd_.mode != READY) ||
-          (state_ == PUSH && cmd_.mode == READY &&
+          (cmd_.mode == READY &&
            std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) < 0.01))
       {
         state_ = cmd_.mode;
@@ -159,9 +159,12 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
         ctrl_friction_r_.joint_.getVelocity() < -M_PI)) &&
       (time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
   {  // Time to shoot!!!
-    ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
-                             2. * M_PI / static_cast<double>(push_per_rotation_));
-    last_shoot_time_ = time;
+    if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) < 0.01)
+    {
+      ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
+                               2. * M_PI / static_cast<double>(push_per_rotation_));
+      last_shoot_time_ = time;
+    }
   }
   else
     ROS_DEBUG("[Shooter] Wait for friction wheel");
