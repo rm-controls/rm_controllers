@@ -50,6 +50,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
               .block_overtime = getParam(controller_nh, "block_overtime", 0.),
               .anti_block_angle = getParam(controller_nh, "anti_block_angle", 0.),
               .anti_block_threshold = getParam(controller_nh, "anti_block_threshold", 0.),
+              .pos_diff = getParam(controller_nh, "pos_diff", 0.),
               .qd_10 = getParam(controller_nh, "qd_10", 0.),
               .qd_15 = getParam(controller_nh, "qd_15", 0.),
               .qd_16 = getParam(controller_nh, "qd_16", 0.),
@@ -159,7 +160,8 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
         ctrl_friction_r_.joint_.getVelocity() < -M_PI)) &&
       (time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
   {  // Time to shoot!!!
-    if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) < 0.01)
+    if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
+        config_.pos_diff)
     {
       ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
                                2. * M_PI / static_cast<double>(push_per_rotation_));
@@ -247,6 +249,7 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint3
     config.block_overtime = init_config.block_overtime;
     config.anti_block_angle = init_config.anti_block_angle;
     config.anti_block_threshold = init_config.anti_block_threshold;
+    config.pos_diff = init_config.pos_diff;
     config.qd_10 = init_config.qd_10;
     config.qd_15 = init_config.qd_15;
     config.qd_16 = init_config.qd_16;
@@ -261,6 +264,7 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint3
                         .block_overtime = config.block_overtime,
                         .anti_block_angle = config.anti_block_angle,
                         .anti_block_threshold = config.anti_block_threshold,
+                        .pos_diff = config.pos_diff,
                         .qd_10 = config.qd_10,
                         .qd_15 = config.qd_15,
                         .qd_16 = config.qd_16,
