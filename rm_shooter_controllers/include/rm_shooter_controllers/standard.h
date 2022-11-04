@@ -55,7 +55,7 @@ namespace rm_shooter_controllers
 struct Config
 {
   double block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold,
-      enter_pos_threshold, exit_pos_threshold;
+      enter_push_threshold, exit_push_threshold;
   double qd_10, qd_15, qd_16, qd_18, qd_30, lf_extra_rotat_speed;
 };
 
