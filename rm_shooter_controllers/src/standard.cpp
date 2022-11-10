@@ -174,8 +174,9 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
     ROS_DEBUG("[Shooter] Wait for friction wheel");
 
   // Check block
-  if (ctrl_trigger_.joint_.getEffort() < -config_.block_effort &&
-      std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed)
+  if ((ctrl_trigger_.joint_.getEffort() < -config_.block_effort &&
+       std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed) ||
+      (time - last_shoot_time_).toSec() > 1 / cmd_.hz)
   {
     if (!maybe_block_)
     {
