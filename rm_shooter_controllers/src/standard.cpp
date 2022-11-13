@@ -176,7 +176,8 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
   // Check block
   if ((ctrl_trigger_.joint_.getEffort() < -config_.block_effort &&
        std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed) ||
-      (time - last_shoot_time_).toSec() > 1 / cmd_.hz)
+      ((time - last_shoot_time_).toSec() > 1 / cmd_.hz &&
+       std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed))
   {
     if (!maybe_block_)
     {
