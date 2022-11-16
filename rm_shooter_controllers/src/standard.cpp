@@ -50,7 +50,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
               .block_overtime = getParam(controller_nh, "block_overtime", 0.),
               .anti_block_angle = getParam(controller_nh, "anti_block_angle", 0.),
               .anti_block_threshold = getParam(controller_nh, "anti_block_threshold", 0.),
-              .enter_push_threshold = getParam(controller_nh, "enter_push_threshold", 0.),
+              .forward_push_threshold = getParam(controller_nh, "forward_push_threshold", 0.),
               .exit_push_threshold = getParam(controller_nh, "exit_push_threshold", 0.),
               .qd_10 = getParam(controller_nh, "qd_10", 0.),
               .qd_15 = getParam(controller_nh, "qd_15", 0.),
@@ -163,7 +163,7 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
       (time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
   {  // Time to shoot!!!
     if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
-        config_.enter_push_threshold)
+        config_.forward_push_threshold)
     {
       ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
                                2. * M_PI / static_cast<double>(push_per_rotation_));
@@ -253,7 +253,7 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint3
     config.block_overtime = init_config.block_overtime;
     config.anti_block_angle = init_config.anti_block_angle;
     config.anti_block_threshold = init_config.anti_block_threshold;
-    config.enter_push_threshold = init_config.enter_push_threshold;
+    config.forward_push_threshold = init_config.forward_push_threshold;
     config.exit_push_threshold = init_config.exit_push_threshold;
     config.qd_10 = init_config.qd_10;
     config.qd_15 = init_config.qd_15;
@@ -269,7 +269,7 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint3
                         .block_overtime = config.block_overtime,
                         .anti_block_angle = config.anti_block_angle,
                         .anti_block_threshold = config.anti_block_threshold,
-                        .enter_push_threshold = config.enter_push_threshold,
+                        .forward_push_threshold = config.forward_push_threshold,
                         .exit_push_threshold = config.exit_push_threshold,
                         .qd_10 = config.qd_10,
                         .qd_15 = config.qd_15,
