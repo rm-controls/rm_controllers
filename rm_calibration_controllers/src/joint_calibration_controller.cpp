@@ -79,6 +79,11 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
       ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
       return false;
     }
+    if (!nh_return.getParam("target_position", target_velocity_))
+    {
+        ROS_ERROR("Velocity value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
+        return false;
+    }
     if (!controller_nh.getParam("threshold", position_threshold_))
     {
       ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
@@ -162,7 +167,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
         ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
         state_ = CALIBRATED;
         if (is_return_)
-          position_ctrl_.joint_.setCommand(target_position_);
+          position_ctrl_.setCommand(target_position_);
         else
         {
           velocity_ctrl_.joint_.setCommand(0.);
@@ -178,6 +183,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
       {
         if ((std::abs(position_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
           returned_ = true;
+        position_ctrl_.setCommand(target_position_,target_velocity_);
         position_ctrl_.update(time, period);
       }
       else
