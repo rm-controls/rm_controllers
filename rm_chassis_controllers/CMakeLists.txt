@@ -19,6 +19,7 @@ find_package(catkin REQUIRED
         controller_interface
         effort_controllers
         tf2_geometry_msgs
+        gazebo_msgs
         )
 
 find_package(Eigen3 REQUIRED)
@@ -44,6 +45,7 @@ catkin_package(
 
         effort_controllers
         tf2_geometry_msgs
+        gazebo_msgs
         LIBRARIES ${PROJECT_NAME}
 )
 
@@ -64,7 +66,7 @@ add_library(${PROJECT_NAME}
         src/omni.cpp
         src/sentry.cpp
         src/swerve.cpp
-        src/reaction_wheel.cpp
+        src/balance.cpp
         )
 
 ## Specify libraries to link executable targets against
