@@ -2,8 +2,8 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.8 (2022-11-24)
+------------------
 * Merge pull request `#93 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/93>`_ from NaHCO3bc/master
   Fix the bug that the shooter cannot be turned from push to ready
 * Modify the name and the description of the params about push forward threshold.

@@ -2,8 +2,8 @@
 Changelog for package rm_calibration_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.8 (2022-11-24)
+------------------
 * Merge branch 'master' into target_velocity_correction
 * Merge pull request `#87 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/87>`_ from NaHCO3bc/Readme
   Fix the dependence bug in rm_calibration_controllers.

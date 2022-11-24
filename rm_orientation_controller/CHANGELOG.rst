@@ -2,8 +2,8 @@
 Changelog for package rm_orientation_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.8 (2022-11-24)
+------------------
 * Merge pull request `#91 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/91>`_ from ye-luo-xi-tui/imu_offline
   Dealing with the situation of imu offline.
 * Dealing with the situation of imu offline.

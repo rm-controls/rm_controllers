@@ -2,8 +2,8 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.8 (2022-11-24)
+------------------
 * Merge pull request `#92 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/92>`_ from ye-luo-xi-tui/target_velocity_correction
   Estimate chassis vel with moving average and subtract chassis_vel from target_vel
 * Fix trylock bug.

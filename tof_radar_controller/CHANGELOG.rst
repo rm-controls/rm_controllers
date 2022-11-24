@@ -2,8 +2,8 @@
 Changelog for package tof_radar_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.8 (2022-11-24)
+------------------
 * Merge pull request `#86 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/86>`_ from NaHCO3bc/Readme
   Fix the dependence part bug.
 * Modify the test file folder.
