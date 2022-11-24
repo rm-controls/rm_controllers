@@ -25,7 +25,7 @@ public:
 private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   geometry_msgs::Twist odometry() override;
-  static const int STATE_DIM = 5;
+  static const int STATE_DIM = 6;
   static const int CONTROL_DIM = 2;
   Eigen::Matrix<double, CONTROL_DIM, STATE_DIM> k_{};
   Eigen::Matrix<double, STATE_DIM, STATE_DIM> a_{}, q_{};
@@ -33,10 +33,12 @@ private:
   Eigen::Matrix<double, CONTROL_DIM, CONTROL_DIM> r_{};
   Eigen::Matrix<double, STATE_DIM, 1> x_;
   double wheel_radius_;
+  double position_des_ = 0;
 
   hardware_interface::ImuSensorHandle imu_handle_;
   hardware_interface::JointHandle left_wheel_joint_handle_, right_wheel_joint_handle_, momentum_block_joint_handle_;
   ros::Subscriber model_states_sub_;
+  ros::Publisher state_pub_;
   void modelStatesCallBack(const gazebo_msgs::ModelStates::ConstPtr& msg);
 };
 

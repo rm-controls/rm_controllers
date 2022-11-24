@@ -8,6 +8,7 @@
 #include <rm_common/ori_tool.h>
 #include <geometry_msgs/Quaternion.h>
 #include <pluginlib/class_list_macros.hpp>
+#include <std_msgs/Float64MultiArray.h>
 
 namespace rm_chassis_controllers
 {
@@ -108,9 +109,9 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   //  double b_4_0 = (l_b - l_p) / (l_p * m_c);
   //  double b_4_1 =
   //      l_b * l_b / (l_p * l_p * m_p) + l_b * l_b / (l_p * l_p * m_c) - 2.0 * l_b / (l_p * m_c) + 1 / m_c + 1 / m_b;
-  a_ << 0., 0., 0., 1., 0., 0., 0., 0., 0., 1., -1.6066, -2.4065, 0., 0., 0., 25.0596, 106.6442, 0., 0., 0., 7.9258,
-      -12.4064, 0., 0., 0.;
-  b_ << 0., 0., 0., 0., 0.6148, -0.0419, -6.9291, -0.6828, 0.3477, 0.6761;
+  a_ << 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 1., 0., -1.6066, -2.4065, 0., 0., 0., 0.,
+      25.0596, 106.6442, 0., 0., 0., 0., 7.9258, -12.4064, 0., 0., 0.;
+  b_ << 0., 0., 0., 0., 0., 0., 0.6148, -0.0419, -6.9291, -0.6828, 0.3477, 0.6761;
 
   Lqr<double> lqr(a_, b_, q_, r_);
   if (!lqr.computeK())
@@ -124,16 +125,40 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
 
   model_states_sub_ = root_nh.subscribe<gazebo_msgs::ModelStates>("/gazebo/model_states", 1,
                                                                   &BalanceController::modelStatesCallBack, this);
+  state_pub_ = root_nh.advertise<std_msgs::Float64MultiArray>("/state", 10);
   return true;
 }
 
 void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
-  x_[1] = momentum_block_joint_handle_.getPosition();
-  x_[2] -= vel_cmd_.x;
-  x_[4] = momentum_block_joint_handle_.getVelocity();
+  position_des_ += vel_cmd_.x * period.toSec();
+  geometry_msgs::Quaternion quaternion;
+  quaternion.x = imu_handle_.getOrientation()[0];
+  quaternion.y = imu_handle_.getOrientation()[1];
+  quaternion.z = imu_handle_.getOrientation()[2];
+  quaternion.w = imu_handle_.getOrientation()[3];
+  double roll, pitch, yaw;
+  quatToRPY(quaternion, roll, pitch, yaw);
+  x_[0] += x_[3] * period.toSec();
+  x_[1] = pitch;
+  x_[2] = momentum_block_joint_handle_.getPosition();
+  x_[4] = imu_handle_.getAngularVelocity()[1];
+  x_[5] = momentum_block_joint_handle_.getVelocity();
   Eigen::Matrix<double, CONTROL_DIM, 1> u;
-  u = k_ * (-x_);
+  auto x = x_;
+  x(0) -= position_des_;
+  x(3) -= vel_cmd_.x;
+  if (x(0) > 1)
+    x(0) = 1;
+  u = k_ * (-x);
+  std_msgs::Float64MultiArray state;
+  for (int i = 0; i < 6; i++)
+  {
+    state.data.push_back(x(i));
+  }
+  state.data.push_back(u(0));
+  state.data.push_back(u(1));
+  state_pub_.publish(state);
 
   right_wheel_joint_handle_.setCommand(u(0) / 2);
   left_wheel_joint_handle_.setCommand(u(0) / 2);
@@ -142,12 +167,8 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
 
 void BalanceController::modelStatesCallBack(const gazebo_msgs::ModelStates::ConstPtr& msg)
 {
-  double roll, pitch, yaw;
-  quatToRPY(msg->pose[1].orientation, roll, pitch, yaw);
-  x_[0] = pitch;
-  x_[2] = ((left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) / 2 > 0 ? 1 : -1) *
+  x_[3] = ((left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) / 2 > 0 ? 1 : -1) *
           sqrt(pow(msg->twist[1].linear.x, 2) + pow(msg->twist[1].linear.y, 2));
-  x_[3] = msg->twist[1].angular.y;
 }
 geometry_msgs::Twist BalanceController::odometry()
 {
