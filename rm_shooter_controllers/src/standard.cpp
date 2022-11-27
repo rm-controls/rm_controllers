@@ -50,6 +50,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
               .block_overtime = getParam(controller_nh, "block_overtime", 0.),
               .anti_block_angle = getParam(controller_nh, "anti_block_angle", 0.),
               .anti_block_threshold = getParam(controller_nh, "anti_block_threshold", 0.),
+              .forward_push_threshold = getParam(controller_nh, "forward_push_threshold", 0.),
+              .exit_push_threshold = getParam(controller_nh, "exit_push_threshold", 0.),
               .qd_10 = getParam(controller_nh, "qd_10", 0.),
               .qd_15 = getParam(controller_nh, "qd_15", 0.),
               .qd_16 = getParam(controller_nh, "qd_16", 0.),
@@ -72,9 +74,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle nh_friction_r = ros::NodeHandle(controller_nh, "friction_right");
   ros::NodeHandle nh_trigger = ros::NodeHandle(controller_nh, "trigger");
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
-  return !(!ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) ||
-           !ctrl_friction_r_.init(effort_joint_interface_, nh_friction_r) ||
-           !ctrl_trigger_.init(effort_joint_interface_, nh_trigger));
+  return ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) &&
+         ctrl_friction_r_.init(effort_joint_interface_, nh_friction_r) &&
+         ctrl_trigger_.init(effort_joint_interface_, nh_trigger);
 }
 
 void Controller::starting(const ros::Time& /*time*/)
@@ -91,8 +93,9 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   {
     if (state_ != BLOCK)
       if ((state_ != PUSH || cmd_.mode != READY) ||
-          (state_ == PUSH && cmd_.mode == READY &&
-           std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) < 0.01))
+          (cmd_.mode == READY &&
+           std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
+               config_.exit_push_threshold))
       {
         state_ = cmd_.mode;
         state_changed_ = true;
@@ -159,16 +162,22 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
         ctrl_friction_r_.joint_.getVelocity() < -M_PI)) &&
       (time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
   {  // Time to shoot!!!
-    ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
-                             2. * M_PI / static_cast<double>(push_per_rotation_));
-    last_shoot_time_ = time;
+    if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
+        config_.forward_push_threshold)
+    {
+      ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
+                               2. * M_PI / static_cast<double>(push_per_rotation_));
+      last_shoot_time_ = time;
+    }
   }
   else
     ROS_DEBUG("[Shooter] Wait for friction wheel");
 
   // Check block
-  if (ctrl_trigger_.joint_.getEffort() < -config_.block_effort &&
-      std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed)
+  if ((ctrl_trigger_.joint_.getEffort() < -config_.block_effort &&
+       std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed) ||
+      ((time - last_shoot_time_).toSec() > 1 / cmd_.hz &&
+       std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed))
   {
     if (!maybe_block_)
     {
@@ -244,6 +253,8 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint3
     config.block_overtime = init_config.block_overtime;
     config.anti_block_angle = init_config.anti_block_angle;
     config.anti_block_threshold = init_config.anti_block_threshold;
+    config.forward_push_threshold = init_config.forward_push_threshold;
+    config.exit_push_threshold = init_config.exit_push_threshold;
     config.qd_10 = init_config.qd_10;
     config.qd_15 = init_config.qd_15;
     config.qd_16 = init_config.qd_16;
@@ -258,6 +269,8 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint3
                         .block_overtime = config.block_overtime,
                         .anti_block_angle = config.anti_block_angle,
                         .anti_block_threshold = config.anti_block_threshold,
+                        .forward_push_threshold = config.forward_push_threshold,
+                        .exit_push_threshold = config.exit_push_threshold,
                         .qd_10 = config.qd_10,
                         .qd_15 = config.qd_15,
                         .qd_16 = config.qd_16,
