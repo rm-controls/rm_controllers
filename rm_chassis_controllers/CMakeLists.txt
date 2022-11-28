@@ -20,6 +20,7 @@ find_package(catkin REQUIRED
         effort_controllers
         tf2_geometry_msgs
         gazebo_msgs
+        angles
         )
 
 find_package(Eigen3 REQUIRED)

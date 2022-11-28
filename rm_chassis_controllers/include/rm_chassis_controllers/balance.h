@@ -8,7 +8,6 @@
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/imu_sensor_interface.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <gazebo_msgs/ModelStates.h>
 
 #include "rm_chassis_controllers/chassis_base.h"
 
@@ -25,8 +24,8 @@ public:
 private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   geometry_msgs::Twist odometry() override;
-  static const int STATE_DIM = 6;
-  static const int CONTROL_DIM = 2;
+  static const int STATE_DIM = 8;
+  static const int CONTROL_DIM = 3;
   Eigen::Matrix<double, CONTROL_DIM, STATE_DIM> k_{};
   Eigen::Matrix<double, STATE_DIM, STATE_DIM> a_{}, q_{};
   Eigen::Matrix<double, STATE_DIM, CONTROL_DIM> b_{};
@@ -34,12 +33,11 @@ private:
   Eigen::Matrix<double, STATE_DIM, 1> x_;
   double wheel_radius_;
   double position_des_ = 0;
+  double yaw_des_ = 0;
 
   hardware_interface::ImuSensorHandle imu_handle_;
   hardware_interface::JointHandle left_wheel_joint_handle_, right_wheel_joint_handle_, momentum_block_joint_handle_;
-  ros::Subscriber model_states_sub_;
   ros::Publisher state_pub_;
-  void modelStatesCallBack(const gazebo_msgs::ModelStates::ConstPtr& msg);
 };
 
 }  // namespace rm_chassis_controllers
