@@ -22,9 +22,13 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
       getParam(controller_nh, "imu_name", std::string("base_imu")));
   left_wheel_joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("left_wheel_joint");
   right_wheel_joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("right_wheel_joint");
-  momentum_block_joint_handle_ =
-      robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("momentum_block_joint");
+  left_momentum_block_joint_handle_ =
+      robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("left_momentum_block_joint");
+  right_momentum_block_joint_handle_ =
+      robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("right_momentum_block_joint");
 
+  if (!pid_controller_.init(ros::NodeHandle(controller_nh, "pid_block_error")))
+    return false;
   // i_b is moment of inertia of the pendulum body around the pivot point,
   // i_w is the moment of inertia of the wheel around the rotational axis of the motor
   // l is the distance between the motor axis and the pivot point
@@ -147,10 +151,10 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   x_[0] += x_[4] * period.toSec();
   x_[1] = yaw;
   x_[2] = pitch;
-  x_[3] = momentum_block_joint_handle_.getPosition();
+  x_[3] = left_momentum_block_joint_handle_.getPosition();
   x_[5] = imu_handle_.getAngularVelocity()[2];
   x_[6] = imu_handle_.getAngularVelocity()[1];
-  x_[7] = momentum_block_joint_handle_.getVelocity();
+  x_[7] = left_momentum_block_joint_handle_.getVelocity();
   if (vel_cmd_.z != 0.)
     yaw_des_ = x_[1] + vel_cmd_.z * period.toSec();
   if (vel_cmd_.x != 0.)
@@ -175,7 +179,10 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
 
   left_wheel_joint_handle_.setCommand(u(0));
   right_wheel_joint_handle_.setCommand(u(1));
-  momentum_block_joint_handle_.setCommand(u(2));
+  left_momentum_block_joint_handle_.setCommand(u(2) / 2);
+  double error = left_momentum_block_joint_handle_.getPosition() - right_momentum_block_joint_handle_.getPosition();
+  double commanded_effort = pid_controller_.computeCommand(error, period);
+  right_momentum_block_joint_handle_.setCommand(u(2) / 2 + commanded_effort);
 }
 
 geometry_msgs::Twist BalanceController::odometry()

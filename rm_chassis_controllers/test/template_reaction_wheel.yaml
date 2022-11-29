@@ -10,6 +10,7 @@ controllers:
     twist_angular: 0.5233
     timeout: 0.1
     pid_follow: { p: 8, i: 0, d: 4.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    pid_block_error: { p: 0, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
 
     imu_name: "base_imu"

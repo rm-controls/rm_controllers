@@ -8,6 +8,7 @@
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/imu_sensor_interface.h>
 #include <hardware_interface/joint_command_interface.h>
+#include <control_toolbox/pid.h>
 
 #include "rm_chassis_controllers/chassis_base.h"
 
@@ -36,7 +37,9 @@ private:
   double yaw_des_ = 0;
 
   hardware_interface::ImuSensorHandle imu_handle_;
-  hardware_interface::JointHandle left_wheel_joint_handle_, right_wheel_joint_handle_, momentum_block_joint_handle_;
+  hardware_interface::JointHandle left_wheel_joint_handle_, right_wheel_joint_handle_,
+      left_momentum_block_joint_handle_, right_momentum_block_joint_handle_;
+  control_toolbox::Pid pid_controller_;
   ros::Publisher state_pub_;
 };
 
