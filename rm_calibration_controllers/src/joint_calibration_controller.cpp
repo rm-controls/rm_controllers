@@ -178,7 +178,6 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
       {
         if ((std::abs(position_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
           returned_ = true;
-        position_ctrl_.setCommand(target_position_);
         position_ctrl_.update(time, period);
       }
       else
