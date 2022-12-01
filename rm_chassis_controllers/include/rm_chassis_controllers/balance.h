@@ -32,7 +32,7 @@ private:
   Eigen::Matrix<double, STATE_DIM, CONTROL_DIM> b_{};
   Eigen::Matrix<double, CONTROL_DIM, CONTROL_DIM> r_{};
   Eigen::Matrix<double, STATE_DIM, 1> x_;
-  double wheel_radius_;
+  double wheel_radius_, wheel_base_;
   double position_des_ = 0;
   double yaw_des_ = 0;
 

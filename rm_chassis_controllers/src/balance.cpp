@@ -69,6 +69,12 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   if (!controller_nh.getParam("wheel_radius", wheel_radius_))
   {
     ROS_ERROR("Params wheel_radius doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("wheel_base", wheel_base_))
+  {
+    ROS_ERROR("Params wheel_base doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
   }
 
   q_.setZero();
@@ -219,6 +225,10 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
 geometry_msgs::Twist BalanceController::odometry()
 {
   geometry_msgs::Twist twist;
+  twist.linear.x =
+      (left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) * wheel_radius_ / 2;
+  twist.angular.z =
+      (right_wheel_joint_handle_.getVelocity() - left_wheel_joint_handle_.getVelocity()) * wheel_radius_ / wheel_base_;
   return twist;
 }
 }  // namespace rm_chassis_controllers
