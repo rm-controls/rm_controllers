@@ -7,6 +7,7 @@
 #include <rm_common/ros_utilities.h>
 #include <rm_common/ori_tool.h>
 #include <geometry_msgs/Quaternion.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <pluginlib/class_list_macros.hpp>
 #include <std_msgs/Float64MultiArray.h>
 #include <angles/angles.h>
@@ -138,13 +139,43 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
 
 void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
-  geometry_msgs::Quaternion quaternion;
-  quaternion.x = imu_handle_.getOrientation()[0];
-  quaternion.y = imu_handle_.getOrientation()[1];
-  quaternion.z = imu_handle_.getOrientation()[2];
-  quaternion.w = imu_handle_.getOrientation()[3];
+  geometry_msgs::Vector3 gyro, angular_vel_base;
+  gyro.x = imu_handle_.getAngularVelocity()[0];
+  gyro.y = imu_handle_.getAngularVelocity()[1];
+  gyro.z = imu_handle_.getAngularVelocity()[2];
+  try
+  {
+    tf2::doTransform(gyro, angular_vel_base,
+                     robot_state_handle_.lookupTransform("base_link", imu_handle_.getFrameId(), time));
+  }
+  catch (tf2::TransformException& ex)
+  {
+    ROS_WARN("%s", ex.what());
+    return;
+  }
+  tf2::Transform odom2imu, imu2base, odom2base;
+  try
+  {
+    geometry_msgs::TransformStamped tf_msg;
+    tf_msg = robot_state_handle_.lookupTransform(imu_handle_.getFrameId(), "base_link", time);
+    tf2::fromMsg(tf_msg.transform, imu2base);
+  }
+  catch (tf2::TransformException& ex)
+  {
+    ROS_WARN("%s", ex.what());
+    left_wheel_joint_handle_.setCommand(0.);
+    right_wheel_joint_handle_.setCommand(0.);
+    left_momentum_block_joint_handle_.setCommand(0.);
+    right_momentum_block_joint_handle_.setCommand(0.);
+    return;
+  }
+  tf2::Quaternion odom2imu_quaternion;
+  odom2imu_quaternion.setValue(imu_handle_.getOrientation()[0], imu_handle_.getOrientation()[1],
+                               imu_handle_.getOrientation()[2], imu_handle_.getOrientation()[3]);
+  odom2imu.setRotation(odom2imu_quaternion);
+  odom2base = odom2imu * imu2base;
   double roll, pitch, yaw;
-  quatToRPY(quaternion, roll, pitch, yaw);
+  quatToRPY(toMsg(odom2base).rotation, roll, pitch, yaw);
   x_[4] = ((left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) / 2 -
            imu_handle_.getAngularVelocity()[1]) *
           0.125;
@@ -152,8 +183,8 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   x_[1] = yaw;
   x_[2] = pitch;
   x_[3] = left_momentum_block_joint_handle_.getPosition();
-  x_[5] = imu_handle_.getAngularVelocity()[2];
-  x_[6] = imu_handle_.getAngularVelocity()[1];
+  x_[5] = angular_vel_base.z;
+  x_[6] = angular_vel_base.y;
   x_[7] = left_momentum_block_joint_handle_.getVelocity();
   if (vel_cmd_.z != 0.)
     yaw_des_ = x_[1] + vel_cmd_.z * period.toSec();
