@@ -19,7 +19,6 @@ find_package(catkin REQUIRED
         controller_interface
         effort_controllers
         tf2_geometry_msgs
-        gazebo_msgs
         angles
         )
 
@@ -46,7 +45,6 @@ catkin_package(
 
         effort_controllers
         tf2_geometry_msgs
-        gazebo_msgs
         LIBRARIES ${PROJECT_NAME}
 )
 

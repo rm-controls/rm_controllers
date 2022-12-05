@@ -9,7 +9,7 @@
 #include <geometry_msgs/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <pluginlib/class_list_macros.hpp>
-#include <std_msgs/Float64MultiArray.h>
+#include <rm_msgs/BalanceState.h>
 #include <angles/angles.h>
 
 namespace rm_chassis_controllers
@@ -28,42 +28,55 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   right_momentum_block_joint_handle_ =
       robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("right_momentum_block_joint");
 
-  if (!pid_controller_.init(ros::NodeHandle(controller_nh, "pid_block_error")))
-    return false;
   // i_b is moment of inertia of the pendulum body around the pivot point,
   // i_w is the moment of inertia of the wheel around the rotational axis of the motor
   // l is the distance between the motor axis and the pivot point
   // l_b is the distance between the center of mass of the pendulum body and the pivot point
-  double m_b, m_p, m_c, l_p, l_b, g;
+  double m_w, m, m_b, i_w, l, y_b, z_b, g, i_m;
 
+  if (!controller_nh.getParam("m_w", m_w))
+  {
+    ROS_ERROR("Params m_w doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("m", m))
+  {
+    ROS_ERROR("Params m doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
   if (!controller_nh.getParam("m_b", m_b))
   {
     ROS_ERROR("Params m_b doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (!controller_nh.getParam("m_p", m_p))
-  {
-    ROS_ERROR("Params m_w doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
-    return false;
-  }
-  if (!controller_nh.getParam("m_c", m_c))
-  {
-    ROS_ERROR("Params i_b doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
-    return false;
-  }
-  if (!controller_nh.getParam("l_p", l_p))
+  if (!controller_nh.getParam("i_w", i_w))
   {
     ROS_ERROR("Params i_w doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (!controller_nh.getParam("l_b", l_b))
+  if (!controller_nh.getParam("l", l))
   {
-    ROS_ERROR("Params l_b doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("Params l doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("y_b", y_b))
+  {
+    ROS_ERROR("Params y_b doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("z_b", z_b))
+  {
+    ROS_ERROR("Params z_b doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
   if (!controller_nh.getParam("g", g))
   {
     ROS_ERROR("Params g doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("i_m", i_m))
+  {
+    ROS_ERROR("Params i_m doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
   if (!controller_nh.getParam("wheel_radius", wheel_radius_))
@@ -73,7 +86,7 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   }
   if (!controller_nh.getParam("wheel_base", wheel_base_))
   {
-    ROS_ERROR("Params wheel_base doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("Params wheel_base_ doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
 
@@ -106,29 +119,135 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   }
 
   // Continuous model \dot{x} = A x + B u
-  //  double m = m_b + m_c + m_p;
-  //  double a_2_0 = -g * (m_b + m_p) / m_c;
-  //  double a_2_1 = -g * m_b / (l_p * m_c);
-  //  double a_3_0 = m * g / (l_p * m_c);
-  //  double a_3_1 = m_b * g * (m_c + m_p) / (l_p * l_p * m_c * m_p);
-  //  double a_4_0 = m * g * (l_p - l_b) / (m_c * l_p);
-  //  double a_4_1 = g * m_b * (-l_b * m_c - l_b * m_p + l_p * m_p) / (l_p * l_p * m_c * m_p);
-  //
-  //  double b_2_0 = 1 / m_c;
-  //  double b_2_1 = (l_b - l_p) / (l_p * m_c);
-  //  double b_3_0 = -1 / (l_p * m_c);
-  //  double b_3_1 = (-l_b * m_c - l_b * m_p + l_p * m_p) / (l_p * l_p * m_c * m_p);
-  //  double b_4_0 = (l_b - l_p) / (l_p * m_c);
-  //  double b_4_1 =
-  //      l_b * l_b / (l_p * l_p * m_p) + l_b * l_b / (l_p * l_p * m_c) - 2.0 * l_b / (l_p * m_c) + 1 / m_c + 1 / m_b;
-  a_ << 0., 0., 0., 0., 1.0, 0., 0., 0., 0., 0., 0., 0., 0., 1.0, 0., 0., 0., 0., 0., 0., 0., 0., 1.0, 0., 0., 0., 0.,
-      0., 0., 0., 0., 1.0, 0., 0., -1.60656831231196, -2.40650017923402, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-      0., 0., 25.0595846927374, 106.644165861824, 0., 0., 0., 0., 0., 0., 7.92579199849074, -12.4063744589733, 0., 0.,
-      0., 0.;
-  b_ << 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.614753821325744, 0.614753821325744, 0.0132316980332364,
-      -1.65961661528494, 1.65961661528494, 0., -6.929097995272, -6.929097995272, -0.586363305461782, 0.347697890217537,
-      0.347697890217537, 0.607588490877498;
+  double a_5_2 = -(pow(wheel_radius_, 2) * g * (pow(l, 2) * pow(m, 2) + 2 * m_b * pow(l, 2) * m + 2 * i_m * m_b)) /
+                 (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+                  2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w);
+  double a_5_3 = -(pow(wheel_radius_, 2) * g * l * m * m_b) /
+                 (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+                  2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w);
+  double a_5_4 = a_5_3;
+  double a_7_2 =
+      (g * l * m *
+       (2 * i_w + pow(wheel_radius_, 2) * m + 2 * pow(wheel_radius_, 2) * m_b + 2 * pow(wheel_radius_, 2) * m_w)) /
+      (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+       2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w);
+  double a_7_3 = (g * m_b * (2 * i_w + pow(wheel_radius_, 2) * m + 2 * pow(wheel_radius_, 2) * m_w)) /
+                 (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+                  2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w);
+  double a_7_4 = a_7_3;
+  double a_8_2 =
+      (g * (i_m - l * m * z_b) *
+       (2 * i_w + pow(wheel_radius_, 2) * m + 2 * pow(wheel_radius_, 2) * m_b + 2 * pow(wheel_radius_, 2) * m_w)) /
+      (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+       2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w);
+  double a_8_3 = -(g * m_b *
+                   (2 * i_w * l + 2 * i_w * z_b + 2 * pow(wheel_radius_, 2) * l * m_w +
+                    pow(wheel_radius_, 2) * m * z_b + 2 * pow(wheel_radius_, 2) * m_w * z_b)) /
+                 (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+                  2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w);
+  double a_8_4 = a_8_3;
+  double a_9_2 = a_8_2;
+  double a_9_3 = a_8_3;
+  double a_9_4 = a_8_4;
 
+  double b_5_0 = (wheel_radius_ * (m * pow(l, 2) + wheel_radius_ * m * l + i_m)) /
+                 (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+                  2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w);
+  double b_5_1 = b_5_0;
+  double b_5_2 = (pow(wheel_radius_, 2) * l * m * z_b) /
+                 (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+                  2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w);
+  double b_5_3 = b_5_2;
+  double b_6_0 = -wheel_radius_ / (wheel_base_ * (4 * m_w * pow(wheel_radius_, 2) + i_w));
+  double b_6_1 = -b_6_0;
+  double b_6_2 = (2 * pow(wheel_radius_, 2) * y_b) / (pow(wheel_base_, 2) * (4 * m_w * pow(wheel_radius_, 2) + i_w));
+  double b_6_3 = -b_6_2;
+  double b_7_0 = -(2 * i_w + pow(wheel_radius_, 2) * m + 2 * pow(wheel_radius_, 2) * m_w + wheel_radius_ * l * m) /
+                 (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+                  2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w);
+  double b_7_1 = b_7_0;
+  double b_7_2 = -(z_b * (2 * i_w + pow(wheel_radius_, 2) * m + 2 * pow(wheel_radius_, 2) * m_w)) /
+                 (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+                  2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w);
+  double b_7_3 = b_7_2;
+  double b_9_0 =
+      (2 * pow(i_w, 2) * l * wheel_base_ + 2 * pow(i_w, 2) * wheel_base_ * z_b -
+       4 * pow(wheel_radius_, 3) * i_m * m_w * wheel_base_ + pow(wheel_radius_, 3) * i_m * m * y_b +
+       2 * pow(wheel_radius_, 3) * i_m * m_w * y_b + 8 * pow(wheel_radius_, 4) * l * pow(m_w, 2) * wheel_base_ +
+       8 * pow(wheel_radius_, 4) * pow(m_w, 2) * wheel_base_ * z_b - wheel_radius_ * i_m * i_w * wheel_base_ +
+       2 * wheel_radius_ * i_m * i_w * y_b + 2 * pow(wheel_radius_, 3) * pow(l, 2) * m * m_w * y_b +
+       10 * pow(wheel_radius_, 2) * i_w * l * m_w * wheel_base_ + 2 * wheel_radius_ * i_w * pow(l, 2) * m * y_b +
+       pow(wheel_radius_, 2) * i_w * m * wheel_base_ * z_b + 10 * pow(wheel_radius_, 2) * i_w * m_w * wheel_base_ * z_b +
+       4 * pow(wheel_radius_, 4) * m * m_w * wheel_base_ * z_b +
+       4 * pow(wheel_radius_, 3) * l * m * m_w * wheel_base_ * z_b + wheel_radius_ * i_w * l * m * wheel_base_ * z_b) /
+      (wheel_base_ * (4 * m_w * pow(wheel_radius_, 2) + i_w) *
+       (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+        2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w));
+  double b_9_1 =
+      (2 * pow(i_w, 2) * l * wheel_base_ + 2 * pow(i_w, 2) * wheel_base_ * z_b -
+       4 * pow(wheel_radius_, 3) * i_m * m_w * wheel_base_ - pow(wheel_radius_, 3) * i_m * m * y_b -
+       2 * pow(wheel_radius_, 3) * i_m * m_w * y_b + 8 * pow(wheel_radius_, 4) * l * pow(m_w, 2) * wheel_base_ +
+       8 * pow(wheel_radius_, 4) * pow(m_w, 2) * wheel_base_ * z_b - wheel_radius_ * i_m * i_w * wheel_base_ -
+       2 * wheel_radius_ * i_m * i_w * y_b - 2 * pow(wheel_radius_, 3) * pow(l, 2) * m * m_w * y_b +
+       10 * pow(wheel_radius_, 2) * i_w * l * m_w * wheel_base_ - 2 * wheel_radius_ * i_w * pow(l, 2) * m * y_b +
+       pow(wheel_radius_, 2) * i_w * m * wheel_base_ * z_b + 10 * pow(wheel_radius_, 2) * i_w * m_w * wheel_base_ * z_b +
+       4 * pow(wheel_radius_, 4) * m * m_w * wheel_base_ * z_b +
+       4 * pow(wheel_radius_, 3) * l * m * m_w * wheel_base_ * z_b + wheel_radius_ * i_w * l * m * wheel_base_ * z_b) /
+      (wheel_base_ * (4 * m_w * pow(wheel_radius_, 2) + i_w) *
+       (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+        2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w));
+  double b_9_2 =
+      (-4 * m * pow(wheel_radius_, 4) * pow(l, 2) * m_w * pow(y_b, 2) +
+       8 * pow(wheel_radius_, 4) * l * pow(m_w, 2) * pow(wheel_base_, 2) * z_b +
+       8 * pow(wheel_radius_, 4) * pow(m_w, 2) * pow(wheel_base_, 2) * pow(z_b, 2) +
+       4 * m * pow(wheel_radius_, 4) * m_w * pow(wheel_base_, 2) * pow(z_b, 2) -
+       4 * i_m * pow(wheel_radius_, 4) * m_w * pow(y_b, 2) - 2 * i_m * m * pow(wheel_radius_, 4) * pow(y_b, 2) -
+       4 * m * pow(wheel_radius_, 2) * i_w * pow(l, 2) * pow(y_b, 2) +
+       10 * pow(wheel_radius_, 2) * i_w * l * m_w * pow(wheel_base_, 2) * z_b +
+       10 * pow(wheel_radius_, 2) * i_w * m_w * pow(wheel_base_, 2) * pow(z_b, 2) +
+       m * pow(wheel_radius_, 2) * i_w * pow(wheel_base_, 2) * pow(z_b, 2) -
+       4 * i_m * pow(wheel_radius_, 2) * i_w * pow(y_b, 2) + 2 * pow(i_w, 2) * l * pow(wheel_base_, 2) * z_b +
+       2 * pow(i_w, 2) * pow(wheel_base_, 2) * pow(z_b, 2)) /
+      (pow(wheel_base_, 2) * (4 * m_w * pow(wheel_radius_, 2) + i_w) *
+       (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+        2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w));
+  double b_9_3 =
+      (8 * m * pow(wheel_radius_, 4) * pow(l, 2) * pow(m_w, 2) * pow(wheel_base_, 2) +
+       4 * m * m_b * pow(wheel_radius_, 4) * pow(l, 2) * m_w * pow(y_b, 2) +
+       8 * m_b * pow(wheel_radius_, 4) * l * pow(m_w, 2) * pow(wheel_base_, 2) * z_b +
+       8 * m_b * pow(wheel_radius_, 4) * pow(m_w, 2) * pow(wheel_base_, 2) * pow(z_b, 2) +
+       8 * i_m * pow(wheel_radius_, 4) * pow(m_w, 2) * pow(wheel_base_, 2) +
+       4 * m * m_b * pow(wheel_radius_, 4) * m_w * pow(wheel_base_, 2) * pow(z_b, 2) +
+       4 * i_m * m * pow(wheel_radius_, 4) * m_w * pow(wheel_base_, 2) +
+       4 * i_m * m_b * pow(wheel_radius_, 4) * m_w * pow(y_b, 2) +
+       2 * i_m * m * m_b * pow(wheel_radius_, 4) * pow(y_b, 2) +
+       10 * m * pow(wheel_radius_, 2) * i_w * pow(l, 2) * m_w * pow(wheel_base_, 2) +
+       4 * m * m_b * pow(wheel_radius_, 2) * i_w * pow(l, 2) * pow(y_b, 2) +
+       10 * m_b * pow(wheel_radius_, 2) * i_w * l * m_w * pow(wheel_base_, 2) * z_b +
+       10 * m_b * pow(wheel_radius_, 2) * i_w * m_w * pow(wheel_base_, 2) * pow(z_b, 2) +
+       10 * i_m * pow(wheel_radius_, 2) * i_w * m_w * pow(wheel_base_, 2) +
+       m * m_b * pow(wheel_radius_, 2) * i_w * pow(wheel_base_, 2) * pow(z_b, 2) +
+       i_m * m * pow(wheel_radius_, 2) * i_w * pow(wheel_base_, 2) +
+       4 * i_m * m_b * pow(wheel_radius_, 2) * i_w * pow(y_b, 2) +
+       2 * m * pow(i_w, 2) * pow(l, 2) * pow(wheel_base_, 2) + 2 * m_b * pow(i_w, 2) * l * pow(wheel_base_, 2) * z_b +
+       2 * m_b * pow(i_w, 2) * pow(wheel_base_, 2) * pow(z_b, 2) + 2 * i_m * pow(i_w, 2) * pow(wheel_base_, 2)) /
+      (m_b * pow(wheel_base_, 2) * (4 * m_w * pow(wheel_radius_, 2) + i_w) *
+       (2 * i_m * i_w + 2 * i_w * pow(l, 2) * m + pow(wheel_radius_, 2) * i_m * m +
+        2 * pow(wheel_radius_, 2) * i_m * m_w + 2 * pow(wheel_radius_, 2) * pow(l, 2) * m * m_w));
+  double b_8_0 = b_9_1;
+  double b_8_1 = b_9_0;
+  double b_8_2 = b_9_3;
+  double b_8_3 = b_9_2;
+
+  a_ << 0., 0., 0., 0., 0., 1.0, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+      1.0, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0, 0., 0., a_5_2,
+      a_5_3, a_5_4, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., a_7_2, a_7_3, a_7_4, 0., 0., 0.,
+      0., 0., 0., 0., a_8_2, a_8_3, a_8_4, 0., 0., 0., 0., 0., 0., 0., a_9_2, a_9_3, a_9_4, 0., 0., 0., 0., 0.;
+  b_ << 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., b_5_0, b_5_1, b_5_2, b_5_3,
+      b_6_0, b_6_1, b_6_2, b_6_3, b_7_0, b_7_1, b_7_2, b_7_3, b_8_0, b_8_1, b_8_2, b_8_3, b_9_0, b_9_1, b_9_2, b_9_3;
+
+  ROS_INFO_STREAM("A:" << a_);
+  ROS_INFO_STREAM("B:" << b_);
   Lqr<double> lqr(a_, b_, q_, r_);
   if (!lqr.computeK())
   {
@@ -139,7 +258,7 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   k_ = lqr.getK();
   ROS_INFO_STREAM("K of LQR:" << k_);
 
-  state_pub_ = root_nh.advertise<std_msgs::Float64MultiArray>("/state", 10);
+  state_pub_ = root_nh.advertise<rm_msgs::BalanceState>("/state", 10);
   return true;
 }
 
@@ -182,16 +301,18 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   odom2base = odom2imu * imu2base;
   double roll, pitch, yaw;
   quatToRPY(toMsg(odom2base).rotation, roll, pitch, yaw);
-  x_[4] = ((left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) / 2 -
+  x_[5] = ((left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) / 2 -
            imu_handle_.getAngularVelocity()[1]) *
-          0.125;
-  x_[0] += x_[4] * period.toSec();
+          wheel_radius_;
+  x_[0] += x_[5] * period.toSec();
   x_[1] = yaw;
   x_[2] = pitch;
   x_[3] = left_momentum_block_joint_handle_.getPosition();
-  x_[5] = angular_vel_base.z;
-  x_[6] = angular_vel_base.y;
-  x_[7] = left_momentum_block_joint_handle_.getVelocity();
+  x_[4] = right_momentum_block_joint_handle_.getPosition();
+  x_[6] = angular_vel_base.z;
+  x_[7] = angular_vel_base.y;
+  x_[8] = left_momentum_block_joint_handle_.getVelocity();
+  x_[9] = right_momentum_block_joint_handle_.getVelocity();
   if (vel_cmd_.z != 0.)
     yaw_des_ = x_[1] + vel_cmd_.z * period.toSec();
   if (vel_cmd_.x != 0.)
@@ -200,35 +321,38 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   auto x = x_;
   x(0) -= position_des_;
   x(1) = angles::shortest_angular_distance(yaw_des_, x_(1));
-  x(4) -= vel_cmd_.x;
-  x(5) -= vel_cmd_.z;
+  x(5) -= vel_cmd_.x;
+  x(6) -= vel_cmd_.z;
   u = k_ * (-x);
-  std_msgs::Float64MultiArray state;
-  for (int i = 0; i < 8; i++)
-  {
-    state.data.push_back(x(i));
-  }
-  for (int i = 0; i < 3; i++)
-  {
-    state.data.push_back(u(i));
-  }
+  rm_msgs::BalanceState state;
+  state.header.stamp = time;
+  state.x = x(0);
+  state.phi = x(1);
+  state.theta = x(2);
+  state.x_b_l = x(3);
+  state.x_b_r = x(4);
+  state.x_dot = x(5);
+  state.phi_dot = x(6);
+  state.theta_dot = x(7);
+  state.x_b_l_dot = x(8);
+  state.x_b_r_dot = x(9);
+  state.T_l = u(0);
+  state.T_r = u(1);
+  state.f_b_l = u(2);
+  state.f_b_r = u(3);
   state_pub_.publish(state);
 
   left_wheel_joint_handle_.setCommand(u(0));
   right_wheel_joint_handle_.setCommand(u(1));
-  left_momentum_block_joint_handle_.setCommand(u(2) / 2);
-  double error = left_momentum_block_joint_handle_.getPosition() - right_momentum_block_joint_handle_.getPosition();
-  double commanded_effort = pid_controller_.computeCommand(error, period);
-  right_momentum_block_joint_handle_.setCommand(u(2) / 2 + commanded_effort);
+  left_momentum_block_joint_handle_.setCommand(u(2));
+  right_momentum_block_joint_handle_.setCommand(u(3));
 }
 
 geometry_msgs::Twist BalanceController::odometry()
 {
   geometry_msgs::Twist twist;
-  twist.linear.x =
-      (left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) * wheel_radius_ / 2;
-  twist.angular.z =
-      (right_wheel_joint_handle_.getVelocity() - left_wheel_joint_handle_.getVelocity()) * wheel_radius_ / wheel_base_;
+  twist.linear.x = x_[5];
+  twist.angular.z = x_[6];
   return twist;
 }
 }  // namespace rm_chassis_controllers

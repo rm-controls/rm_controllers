@@ -8,7 +8,6 @@
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/imu_sensor_interface.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <control_toolbox/pid.h>
 
 #include "rm_chassis_controllers/chassis_base.h"
 
@@ -25,8 +24,8 @@ public:
 private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   geometry_msgs::Twist odometry() override;
-  static const int STATE_DIM = 8;
-  static const int CONTROL_DIM = 3;
+  static const int STATE_DIM = 10;
+  static const int CONTROL_DIM = 4;
   Eigen::Matrix<double, CONTROL_DIM, STATE_DIM> k_{};
   Eigen::Matrix<double, STATE_DIM, STATE_DIM> a_{}, q_{};
   Eigen::Matrix<double, STATE_DIM, CONTROL_DIM> b_{};
@@ -39,7 +38,6 @@ private:
   hardware_interface::ImuSensorHandle imu_handle_;
   hardware_interface::JointHandle left_wheel_joint_handle_, right_wheel_joint_handle_,
       left_momentum_block_joint_handle_, right_momentum_block_joint_handle_;
-  control_toolbox::Pid pid_controller_;
   ros::Publisher state_pub_;
 };
 
