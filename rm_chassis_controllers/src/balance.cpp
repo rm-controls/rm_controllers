@@ -23,6 +23,8 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
       getParam(controller_nh, "imu_name", std::string("base_imu")));
   left_wheel_joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("left_wheel_joint");
   right_wheel_joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("right_wheel_joint");
+  joint_handles_.push_back(left_wheel_joint_handle_);
+  joint_handles_.push_back(right_wheel_joint_handle_);
   left_momentum_block_joint_handle_ =
       robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("left_momentum_block_joint");
   right_momentum_block_joint_handle_ =
