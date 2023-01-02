@@ -297,8 +297,11 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
     return;
   }
   tf2::Quaternion odom2imu_quaternion;
+  tf2::Vector3 odom2imu_origin;
   odom2imu_quaternion.setValue(imu_handle_.getOrientation()[0], imu_handle_.getOrientation()[1],
                                imu_handle_.getOrientation()[2], imu_handle_.getOrientation()[3]);
+  odom2imu_origin.setValue(0, 0, 0);
+  odom2imu.setOrigin(odom2imu_origin);
   odom2imu.setRotation(odom2imu_quaternion);
   odom2base = odom2imu * imu2base;
   double roll, pitch, yaw;
