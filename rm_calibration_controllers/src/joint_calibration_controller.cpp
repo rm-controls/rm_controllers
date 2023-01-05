@@ -129,7 +129,10 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
           ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
           state_ = CALIBRATED;
           if (is_return_)
-            position_ctrl_.joint_.setCommand(target_position_);
+          {
+              position_ctrl_.setCommand(target_position_);
+              returned_ = true;
+          }
           else
           {
             velocity_ctrl_.joint_.setCommand(0.);
