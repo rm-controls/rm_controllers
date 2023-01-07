@@ -21,14 +21,23 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
 
   imu_handle_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(
       getParam(controller_nh, "imu_name", std::string("base_imu")));
-  left_wheel_joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("left_wheel_joint");
-  right_wheel_joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("right_wheel_joint");
+  std::string left_wheel_joint, right_wheel_joint, left_momentum_block_joint, right_momentum_block_joint;
+  if (!controller_nh.getParam("left/wheel_joint", left_wheel_joint) ||
+      !controller_nh.getParam("left/block_joint", left_momentum_block_joint) ||
+      !controller_nh.getParam("right/wheel_joint", right_wheel_joint) ||
+      !controller_nh.getParam("right/block_joint", right_momentum_block_joint))
+  {
+    ROS_ERROR("Some Joints' name doesn't given. (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  left_wheel_joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(left_wheel_joint);
+  right_wheel_joint_handle_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(right_wheel_joint);
   joint_handles_.push_back(left_wheel_joint_handle_);
   joint_handles_.push_back(right_wheel_joint_handle_);
   left_momentum_block_joint_handle_ =
-      robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("left_momentum_block_joint");
+      robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(left_momentum_block_joint);
   right_momentum_block_joint_handle_ =
-      robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle("right_momentum_block_joint");
+      robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(right_momentum_block_joint);
 
   // i_b is moment of inertia of the pendulum body around the pivot point,
   // i_w is the moment of inertia of the wheel around the rotational axis of the motor
