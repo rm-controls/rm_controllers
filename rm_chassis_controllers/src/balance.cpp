@@ -327,10 +327,8 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   x_[7] = angular_vel_base.y;
   x_[8] = left_momentum_block_joint_handle_.getVelocity();
   x_[9] = right_momentum_block_joint_handle_.getVelocity();
-  if (vel_cmd_.z != 0.)
-    yaw_des_ = x_[1] + vel_cmd_.z * period.toSec();
-  if (vel_cmd_.x != 0.)
-    position_des_ = x_[0] + vel_cmd_.x * period.toSec();
+  yaw_des_ += vel_cmd_.z * period.toSec();
+  position_des_ += vel_cmd_.x * period.toSec();
   Eigen::Matrix<double, CONTROL_DIM, 1> u;
   auto x = x_;
   x(0) -= position_des_;
