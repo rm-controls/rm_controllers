@@ -354,7 +354,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     yaw_vel_des = cmd_gimbal_.rate_yaw;
     pitch_vel_des = cmd_gimbal_.rate_pitch;
   }
-  else
+  else if (state_ == TRACK)
   {
     geometry_msgs::Point target_pos = data_track_.target_pos;
     geometry_msgs::Vector3 target_vel = data_track_.target_vel;
