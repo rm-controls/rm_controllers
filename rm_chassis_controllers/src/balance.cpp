@@ -39,10 +39,14 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   right_momentum_block_joint_handle_ =
       robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(right_momentum_block_joint);
 
-  // i_b is moment of inertia of the pendulum body around the pivot point,
+  // m_w is mass of single wheel
+  // m is mass of the robot except wheels and momentum_blocks
+  // m_b is mass of single momentum_block
   // i_w is the moment of inertia of the wheel around the rotational axis of the motor
-  // l is the distance between the motor axis and the pivot point
-  // l_b is the distance between the center of mass of the pendulum body and the pivot point
+  // l is the vertical component of the distance between the wheel center and the center of mass of robot
+  // y_b is the y-axis component of the coordinates of the momentum block in the base_link coordinate system
+  // z_b is the vertical component of the distance between the momentum block and the center of mass of robot
+  // i_m is the moment of inertia of the robot around the y-axis of base_link coordinate.
   double m_w, m, m_b, i_w, l, y_b, z_b, g, i_m;
 
   if (!controller_nh.getParam("m_w", m_w))
