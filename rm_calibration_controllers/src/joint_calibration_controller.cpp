@@ -130,8 +130,8 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
           state_ = CALIBRATED;
           if (is_return_)
           {
-              position_ctrl_.setCommand(target_position_);
-              returned_ = true;
+            position_ctrl_.setCommand(target_position_);
+            returned_ = true;
           }
           else
           {
