@@ -131,7 +131,6 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
           if (is_return_)
           {
             position_ctrl_.setCommand(target_position_);
-            returned_ = true;
           }
           else
           {
@@ -179,7 +178,7 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
     {
       if (is_return_)
       {
-        if ((std::abs(position_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
+        if ((std::abs(position_ctrl_.joint_.getPosition() - target_position_)) < position_threshold_)
           returned_ = true;
         position_ctrl_.update(time, period);
       }
