@@ -26,6 +26,8 @@ jobs:
           sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
           sudo apt-get -q update
           sudo apt-get -q install python3-rosdep
+          rm -f /etc/ros/rosdep/sources.list.d/*.list
+          sudo rosdep init
           rosdep update
           sudo apt-get -q install catkin-lint
           export ROS_DISTRO=noetic
