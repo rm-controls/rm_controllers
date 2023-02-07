@@ -42,6 +42,7 @@
 #include <rm_common/ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf/transform_datatypes.h>
 
 namespace rm_gimbal_controllers
 {
