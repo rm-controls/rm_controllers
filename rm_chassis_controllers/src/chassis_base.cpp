@@ -269,7 +269,6 @@ void ChassisBase<T...>::raw()
 
     recovery();
   }
-  tfVelToBase(command_source_frame_);
 }
 
 template <typename... T>
