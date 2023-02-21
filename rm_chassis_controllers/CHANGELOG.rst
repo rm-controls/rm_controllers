@@ -2,6 +2,33 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.9 (2023-02-21)
+------------------
+* Merge pull request `#105 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/105>`_ from ljq-lv/gimbal_toward
+  Add follow gimbal's chassis control
+* Add follow gimbal's chassis control
+* Add follow gimbal's chassis control
+* Merge pull request `#100 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/100>`_ from ye-luo-xi-tui/balance_standard
+  Add balance chassis controller
+* Update note.
+* Update test.
+* Update controller description.
+* Merge branch 'master' into balance_standard
+* Modify the expected location update policy.
+* Take some joints' name as params.
+* Fix warning.
+* Add power limit.
+* Compute state matrix and control matrix with given params.
+* Add balance_chassis's odometry.
+* Transform IMU's data to base_link.
+* Try to use PID controller to fix the problem that one block's position is differ from another.
+* Revised dynamics model and remove gazebo dependency.
+* Merge pull request `#97 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/97>`_ from ye-luo-xi-tui/master
+  0.1.8
+* Fix mistake of orientation data.
+* Add some test codes for balance chassis.
+* Contributors: ljq-lv, ye-luo-xi-tui, yezi
+
 0.1.8 (2022-11-24)
 ------------------
 * Merge branch 'master' into target_velocity_correction

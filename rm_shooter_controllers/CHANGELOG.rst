@@ -2,6 +2,15 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.9 (2023-02-21)
+------------------
+* Merge branch 'master' into balance_standard
+* Merge remote-tracking branch 'origin/fix_return' into fix_return
+* Merge pull request `#97 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/97>`_ from ye-luo-xi-tui/master
+  0.1.8
+* Merge branch 'rm-controls:master' into fix_return
+* Contributors: L-SY, lsy, ye-luo-xi-tui, yezi
+
 0.1.8 (2022-11-24)
 ------------------
 * Merge pull request `#93 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/93>`_ from NaHCO3bc/master

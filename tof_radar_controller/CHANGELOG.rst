@@ -2,6 +2,13 @@
 Changelog for package tof_radar_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.9 (2023-02-21)
+------------------
+* Merge branch 'master' into balance_standard
+* Merge pull request `#97 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/97>`_ from ye-luo-xi-tui/master
+  0.1.8
+* Contributors: ye-luo-xi-tui, yezi
+
 0.1.8 (2022-11-24)
 ------------------
 * Merge pull request `#86 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/86>`_ from NaHCO3bc/Readme

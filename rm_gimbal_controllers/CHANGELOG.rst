@@ -2,6 +2,20 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.9 (2023-02-21)
+------------------
+* Merge pull request `#104 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/104>`_ from ye-luo-xi-tui/balance_standard
+  Fix bug.
+* Fix bug.
+* Merge pull request `#102 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/102>`_ from ljq-lv/fix_warning
+  Fixed the bug of gimbal warning
+* Add the else to judge mode TRACK
+* Fixed the bug of gimbal warning
+* Merge branch 'master' into balance_standard
+* Merge pull request `#97 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/97>`_ from ye-luo-xi-tui/master
+  0.1.8
+* Contributors: ljq-lv, ye-luo-xi-tui, yezi
+
 0.1.8 (2022-11-24)
 ------------------
 * Merge pull request `#92 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/92>`_ from ye-luo-xi-tui/target_velocity_correction

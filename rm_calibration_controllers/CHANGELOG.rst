@@ -2,6 +2,24 @@
 Changelog for package rm_calibration_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.9 (2023-02-21)
+------------------
+* Merge pull request `#103 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/103>`_ from L-SY/fix_return
+  Fix calibration controller no return true.
+* Fix bug.
+* Run pre-commit.
+* Merge branch 'master' into balance_standard
+* Add engineer trigger ui .
+* Merge pull request `#96 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/96>`_ from L-SY/fix_return
+  Fix joint_calibration_controller
+* Delete repetitive set.
+* delete useless target_velocity\_.
+* Merge pull request `#97 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/97>`_ from ye-luo-xi-tui/master
+  0.1.8
+* eyes is lost.
+* Update fix can not return .
+* Contributors: lsy, ye-luo-xi-tui, yezi
+
 0.1.8 (2022-11-24)
 ------------------
 * Merge branch 'master' into target_velocity_correction
