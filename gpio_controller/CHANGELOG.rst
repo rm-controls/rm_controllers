@@ -2,8 +2,8 @@
 Changelog for package gpio_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.9 (2023-02-21)
+------------------
 * Merge branch 'master' into balance_standard
 * Merge pull request `#97 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/97>`_ from ye-luo-xi-tui/master
   0.1.8

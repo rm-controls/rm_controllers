@@ -2,8 +2,8 @@
 Changelog for package rm_calibration_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.9 (2023-02-21)
+------------------
 * Merge pull request `#103 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/103>`_ from L-SY/fix_return
   Fix calibration controller no return true.
 * Fix bug.

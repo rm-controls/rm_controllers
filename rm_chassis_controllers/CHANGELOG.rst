@@ -2,8 +2,8 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.9 (2023-02-21)
+------------------
 * Merge pull request `#105 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/105>`_ from ljq-lv/gimbal_toward
   Add follow gimbal's chassis control
 * Add follow gimbal's chassis control

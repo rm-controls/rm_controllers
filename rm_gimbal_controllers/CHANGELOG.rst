@@ -2,8 +2,8 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.9 (2023-02-21)
+------------------
 * Merge pull request `#104 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/104>`_ from ye-luo-xi-tui/balance_standard
   Fix bug.
 * Fix bug.
