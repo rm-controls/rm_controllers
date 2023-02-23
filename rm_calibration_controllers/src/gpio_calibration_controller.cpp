@@ -12,7 +12,7 @@ bool GpioCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros:
 {
   velocity_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), controller_nh);
   gpio_sub_ =
-      controller_nh.subscribe<rm_msgs::GpioData>("gpio_states", 1, &GpioCalibrationController::gpioStateCB, this);
+      controller_nh.subscribe<rm_msgs::GpioData>("gpio_states", 100, &GpioCalibrationController::gpioStateCB, this);
   XmlRpc::XmlRpcValue actuator;
   if (!controller_nh.getParam("actuator", actuator))
   {
@@ -67,6 +67,8 @@ void GpioCalibrationController::update(const ros::Time& time, const ros::Duratio
         {
           velocity_ctrl_.setCommand(-velocity_search_ * vel_gain_);
         }
+        else
+          velocity_ctrl_.setCommand(velocity_search_);
       }
       if (gpio_state_change_)
       {
