@@ -16,6 +16,7 @@ find_package(catkin REQUIRED
 
         rm_common
 
+        dynamic_reconfigure
         controller_interface
         effort_controllers
         tf2_geometry_msgs
@@ -23,6 +24,10 @@ find_package(catkin REQUIRED
         )
 
 find_package(Eigen3 REQUIRED)
+
+generate_dynamic_reconfigure_options(
+        cfg/QR.cfg
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -45,6 +50,7 @@ catkin_package(
 
         effort_controllers
         tf2_geometry_msgs
+        dynamic_reconfigure
         LIBRARIES ${PROJECT_NAME}
 )
 

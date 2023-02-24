@@ -273,6 +273,9 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   k_ = lqr.getK();
   ROS_INFO_STREAM("K of LQR:" << k_);
 
+  ros::NodeHandle linear_kf_nh = ros::NodeHandle(controller_nh, "linear_kf");
+  initStaticConfig(linear_kf_nh);
+
   state_pub_ = root_nh.advertise<rm_msgs::BalanceState>("/state", 10);
   return true;
 }
@@ -371,5 +374,30 @@ geometry_msgs::Twist BalanceController::odometry()
   twist.angular.z = x_[6];
   return twist;
 }
+
+void BalanceController::initStaticConfig(ros::NodeHandle& nh)
+{
+  // Init dynamic reconfigure
+  reconf_server_ = new dynamic_reconfigure::Server<rm_chassis_controllers::QRConfig>(ros::NodeHandle("~/qr"));
+  dynamic_reconfigure::Server<rm_chassis_controllers::QRConfig>::CallbackType cb =
+      boost::bind(&BalanceController::reconfigCB, this, _1);
+  reconf_server_->setCallback(cb);
+}
+
+void BalanceController::reconfigCB(rm_chassis_controllers::QRConfig& config)
+{
+  ROS_INFO("Dynamic configure QR changed.");
+  if (!dynamic_reconfig_initialized_)
+  {
+    config.q_element = 0;
+    config.q_value = q_dynamic_[0];
+    config.r_element = 0;
+    config.r_value = r_dynamic_[0];
+    dynamic_reconfig_initialized_ = true;
+  }
+  q_dynamic_[config.q_element] = config.q_value;
+  r_dynamic_[config.r_element] = config.r_value;
+}
+
 }  // namespace rm_chassis_controllers
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::BalanceController, controller_interface::ControllerBase)
