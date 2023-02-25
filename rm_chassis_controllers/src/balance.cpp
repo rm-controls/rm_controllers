@@ -117,9 +117,15 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   {
     ROS_ASSERT(q[i].getType() == XmlRpc::XmlRpcValue::TypeDouble || q[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
     if (q[i].getType() == XmlRpc::XmlRpcValue::TypeDouble)
+    {
       q_(i, i) = static_cast<double>(q[i]);
+      q_config_[i] = static_cast<double>(q[i]);
+    }
     else if (q[i].getType() == XmlRpc::XmlRpcValue::TypeInt)
+    {
       q_(i, i) = static_cast<int>(q[i]);
+      q_config_[i] = static_cast<int>(q[i]);
+    }
   }
   // Check and get R
   ROS_ASSERT(r.getType() == XmlRpc::XmlRpcValue::TypeArray);
@@ -128,9 +134,15 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   {
     ROS_ASSERT(r[i].getType() == XmlRpc::XmlRpcValue::TypeDouble || r[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
     if (r[i].getType() == XmlRpc::XmlRpcValue::TypeDouble)
+    {
       r_(i, i) = static_cast<double>(r[i]);
+      r_config_[i] = static_cast<double>(r[i]);
+    }
     else if (r[i].getType() == XmlRpc::XmlRpcValue::TypeInt)
+    {
       r_(i, i) = static_cast<int>(r[i]);
+      r_config_[i] = static_cast<int>(r[i]);
+    }
   }
 
   // Continuous model \dot{x} = A x + B u
@@ -273,8 +285,12 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   k_ = lqr.getK();
   ROS_INFO_STREAM("K of LQR:" << k_);
 
-  ros::NodeHandle linear_kf_nh = ros::NodeHandle(controller_nh, "linear_kf");
-  initStaticConfig(linear_kf_nh);
+  // Init dynamic reconfigure
+  reconf_server_ = new dynamic_reconfigure::Server<rm_chassis_controllers::QRConfig>(controller_nh);
+  dynamic_reconfigure::Server<rm_chassis_controllers::QRConfig>::CallbackType cb = [this](auto&& PH1, auto&& PH2) {
+    reconfigCB(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
+  };
+  reconf_server_->setCallback(cb);
 
   state_pub_ = root_nh.advertise<rm_msgs::BalanceState>("/state", 10);
   return true;
@@ -375,28 +391,42 @@ geometry_msgs::Twist BalanceController::odometry()
   return twist;
 }
 
-void BalanceController::initStaticConfig(ros::NodeHandle& nh)
+void BalanceController::reconfigCB(rm_chassis_controllers::QRConfig& config, uint32_t /*level*/)
 {
-  // Init dynamic reconfigure
-  reconf_server_ = new dynamic_reconfigure::Server<rm_chassis_controllers::QRConfig>(ros::NodeHandle("~/qr"));
-  dynamic_reconfigure::Server<rm_chassis_controllers::QRConfig>::CallbackType cb =
-      boost::bind(&BalanceController::reconfigCB, this, _1);
-  reconf_server_->setCallback(cb);
-}
-
-void BalanceController::reconfigCB(rm_chassis_controllers::QRConfig& config)
-{
-  ROS_INFO("[QR] Dynamic params change");
   if (!dynamic_reconfig_initialized_)
   {
-    config.q_element = 0;
-    config.q_value = q_dynamic_[0];
-    config.r_element = 0;
-    config.r_value = r_dynamic_[0];
+    config.q_1 = q_config_[0];
+    config.q_2 = q_config_[1];
+    config.q_3 = q_config_[2];
+    config.q_4 = q_config_[3];
+    config.q_5 = q_config_[4];
+    config.q_6 = q_config_[5];
+    config.q_7 = q_config_[6];
+    config.q_8 = q_config_[7];
+    config.q_9 = q_config_[8];
+    config.q_10 = q_config_[9];
+    config.r_1 = r_config_[0];
+    config.r_2 = r_config_[1];
+    config.r_3 = r_config_[2];
+    config.r_4 = r_config_[3];
     dynamic_reconfig_initialized_ = true;
+    return;
   }
-  q_dynamic_[config.q_element] = config.q_value;
-  r_dynamic_[config.r_element] = config.r_value;
+  ROS_INFO("[QR] Dynamic params change");
+  q_dynamic_[0] = config.q_1;
+  q_dynamic_[1] = config.q_2;
+  q_dynamic_[2] = config.q_3;
+  q_dynamic_[3] = config.q_4;
+  q_dynamic_[4] = config.q_5;
+  q_dynamic_[5] = config.q_6;
+  q_dynamic_[6] = config.q_7;
+  q_dynamic_[7] = config.q_8;
+  q_dynamic_[8] = config.q_9;
+  q_dynamic_[9] = config.q_10;
+  r_dynamic_[0] = config.r_1;
+  r_dynamic_[1] = config.r_2;
+  r_dynamic_[2] = config.r_3;
+  r_dynamic_[3] = config.r_4;
 
   // Update Q
   for (int i = 0; i < STATE_DIM; ++i)

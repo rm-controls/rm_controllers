@@ -24,8 +24,7 @@ public:
 
 private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
-  void reconfigCB(rm_chassis_controllers::QRConfig& config);
-  void initStaticConfig(ros::NodeHandle& nh);
+  void reconfigCB(rm_chassis_controllers::QRConfig& config, uint32_t /*level*/);
   geometry_msgs::Twist odometry() override;
   static const int STATE_DIM = 10;
   static const int CONTROL_DIM = 4;
@@ -39,9 +38,9 @@ private:
   double yaw_des_ = 0;
 
   // dynamic reconfigure
-  static double q_dynamic_[STATE_DIM], r_dynamic_[CONTROL_DIM];
+  double q_dynamic_[STATE_DIM], r_dynamic_[CONTROL_DIM], q_config_[STATE_DIM], r_config_[CONTROL_DIM];
   bool dynamic_reconfig_initialized_ = false;
-  static dynamic_reconfigure::Server<rm_chassis_controllers::QRConfig>* reconf_server_;
+  dynamic_reconfigure::Server<rm_chassis_controllers::QRConfig>* reconf_server_;
 
   hardware_interface::ImuSensorHandle imu_handle_;
   hardware_interface::JointHandle left_wheel_joint_handle_, right_wheel_joint_handle_,
