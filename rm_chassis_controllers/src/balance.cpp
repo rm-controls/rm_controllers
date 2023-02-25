@@ -386,7 +386,7 @@ void BalanceController::initStaticConfig(ros::NodeHandle& nh)
 
 void BalanceController::reconfigCB(rm_chassis_controllers::QRConfig& config)
 {
-  ROS_INFO("Dynamic configure QR changed.");
+  ROS_INFO("[QR] Dynamic params change");
   if (!dynamic_reconfig_initialized_)
   {
     config.q_element = 0;
@@ -397,6 +397,26 @@ void BalanceController::reconfigCB(rm_chassis_controllers::QRConfig& config)
   }
   q_dynamic_[config.q_element] = config.q_value;
   r_dynamic_[config.r_element] = config.r_value;
+
+  // Update Q
+  for (int i = 0; i < STATE_DIM; ++i)
+  {
+    q_(i, i) = static_cast<double>(q_dynamic_[i]);
+  }
+  // Update R
+  for (int i = 0; i < CONTROL_DIM; ++i)
+  {
+    r_(i, i) = static_cast<double>(r_dynamic_[i]);
+  }
+
+  Lqr<double> lqr(a_, b_, q_, r_);
+  if (!lqr.computeK())
+  {
+    ROS_ERROR("Failed to compute K of LQR.");
+  }
+
+  k_ = lqr.getK();
+  ROS_INFO_STREAM("K of LQR:" << k_);
 }
 
 }  // namespace rm_chassis_controllers
