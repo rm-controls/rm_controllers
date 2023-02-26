@@ -42,6 +42,7 @@
 #include <rm_common/ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf/transform_datatypes.h>
 
 namespace rm_gimbal_controllers
 {
@@ -62,6 +63,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   enable_gravity_compensation_ = enable_feedforward && (bool)xml_rpc_value["enable_gravity_compensation"];
 
   k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.);
+  ros::NodeHandle chassis_vel_nh(controller_nh, "chassis_vel");
+  chassis_vel_ = std::make_shared<ChassisVel>(chassis_vel_nh);
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   bullet_solver_ = std::make_shared<BulletSolver>(nh_bullet_solver);
 
@@ -238,9 +241,12 @@ void Controller::track(const ros::Time& time)
   {
     ROS_WARN("%s", ex.what());
   }
-  target_pos.x = target_pos.x - odom2pitch_.transform.translation.x;
-  target_pos.y = target_pos.y - odom2pitch_.transform.translation.y;
-  target_pos.z = target_pos.z - odom2pitch_.transform.translation.z;
+  target_pos.x -= odom2pitch_.transform.translation.x;
+  target_pos.y -= odom2pitch_.transform.translation.y;
+  target_pos.z -= odom2pitch_.transform.translation.z;
+  target_vel.x -= chassis_vel_->linear_->x();
+  target_vel.y -= chassis_vel_->linear_->y();
+  target_vel.z -= chassis_vel_->linear_->z();
 
   bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed);
 
@@ -349,7 +355,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     yaw_vel_des = cmd_gimbal_.rate_yaw;
     pitch_vel_des = cmd_gimbal_.rate_pitch;
   }
-  else
+  else if (state_ == TRACK)
   {
     geometry_msgs::Point target_pos = data_track_.target_pos;
     geometry_msgs::Vector3 target_vel = data_track_.target_vel;
@@ -383,7 +389,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   ctrl_pitch_.setCommand(pitch_des, pitch_vel_des + ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
-  ctrl_yaw_.joint_.setCommand(ctrl_yaw_.joint_.getCommand() - k_chassis_vel_ * chassis_vel_.angular.z);
+  ctrl_yaw_.joint_.setCommand(ctrl_yaw_.joint_.getCommand() - k_chassis_vel_ * chassis_vel_->angular_->z());
   ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
 }
 
@@ -408,13 +414,20 @@ double Controller::feedForward(const ros::Time& time)
 void Controller::updateChassisVel()
 {
   double tf_period = odom2base_.header.stamp.toSec() - last_odom2base_.header.stamp.toSec();
-  if (tf_period > 0.0 && tf_period < 0.1)
-  {
-    chassis_vel_.linear.x = (odom2base_.transform.translation.x - last_odom2base_.transform.translation.x) / tf_period;
-    chassis_vel_.linear.y = (odom2base_.transform.translation.y - last_odom2base_.transform.translation.y) / tf_period;
-    chassis_vel_.angular.z =
-        (yawFromQuat(odom2base_.transform.rotation) - yawFromQuat(last_odom2base_.transform.rotation)) / tf_period;
-  }
+  double linear_x = (odom2base_.transform.translation.x - last_odom2base_.transform.translation.x) / tf_period;
+  double linear_y = (odom2base_.transform.translation.y - last_odom2base_.transform.translation.y) / tf_period;
+  double linear_z = (odom2base_.transform.translation.z - last_odom2base_.transform.translation.z) / tf_period;
+  double last_angular_position_x, last_angular_position_y, last_angular_position_z, angular_position_x,
+      angular_position_y, angular_position_z;
+  quatToRPY(odom2base_.transform.rotation, angular_position_x, angular_position_y, angular_position_z);
+  quatToRPY(last_odom2base_.transform.rotation, last_angular_position_x, last_angular_position_y,
+            last_angular_position_z);
+  double angular_x = angles::shortest_angular_distance(last_angular_position_x, angular_position_x) / tf_period;
+  double angular_y = angles::shortest_angular_distance(last_angular_position_y, angular_position_y) / tf_period;
+  double angular_z = angles::shortest_angular_distance(last_angular_position_z, angular_position_z) / tf_period;
+  double linear_vel[3]{ linear_x, linear_y, linear_z };
+  double angular_vel[3]{ angular_x, angular_y, angular_z };
+  chassis_vel_->update(linear_vel, angular_vel, tf_period);
   last_odom2base_ = odom2base_;
 }
 

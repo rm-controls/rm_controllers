@@ -2,6 +2,34 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.9 (2023-02-21)
+------------------
+* Merge branch 'master' into balance_standard
+* Merge remote-tracking branch 'origin/fix_return' into fix_return
+* Merge pull request `#97 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/97>`_ from ye-luo-xi-tui/master
+  0.1.8
+* Merge branch 'rm-controls:master' into fix_return
+* Contributors: L-SY, lsy, ye-luo-xi-tui, yezi
+
+0.1.8 (2022-11-24)
+------------------
+* Merge pull request `#93 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/93>`_ from NaHCO3bc/master
+  Fix the bug that the shooter cannot be turned from push to ready
+* Modify the name and the description of the params about push forward threshold.
+* Optimize the logic of entering the block mode.
+* Fix the bug that shooter cannot push or enter block when the position error is too big.
+* Modify the params name.
+* Modify the params about enter and exit push mode.
+* Parametric position difference of trigger.
+* Fix the bug that the shooter cannot be turned from push to ready.
+* Merge pull request `#86 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/86>`_ from NaHCO3bc/Readme
+  Fix the dependence part bug.
+* Modify the test file folder.
+* Fix the dependence part bug.
+* Merge pull request `#85 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/85>`_ from ye-luo-xi-tui/master
+  0.1.7
+* Contributors: NaHCO3bc, ye-luo-xi-tui
+
 0.1.7 (2022-09-10)
 ------------------
 * Try two fix double shoot

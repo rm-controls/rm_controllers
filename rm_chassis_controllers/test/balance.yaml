@@ -1,0 +1,38 @@
+controllers:
+  chassis_controller:
+    type: rm_chassis_controllers/BalanceController
+    # ChassisBase
+    publish_rate: 100
+    enable_odom_tf: true
+    publish_odom_tf: false
+    power:
+      effort_coeff: 12.0
+      vel_coeff: 0.0048
+      power_offset: 0
+    twist_angular: 0.5233
+    timeout: 0.1
+    pid_follow: { p: 8, i: 0, d: 4.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
+
+    # BalanceController
+    imu_name: "base_imu"
+    m_w: 0.72
+    m: 11.48
+    m_b: 1.29
+    i_w: 0.01683
+    l: 0.0587
+    y_b: 0.16
+    z_b: 0.0468
+    g: 9.8
+    i_m: 0.1982
+    wheel_radius: 0.125
+    wheel_base: 0.42
+    left:
+      wheel_joint: "left_wheel_joint"
+      block_joint: "left_momentum_block_joint"
+    right:
+      wheel_joint: "right_wheel_joint"
+      block_joint: "right_momentum_block_joint"
+
+    q: [ 0.5, 0.5, 40, 51, 51, 10, 0.2, 0.1, 1, 1 ]
+    r: [ 0.5, 0.5, 0.002, 0.002 ]

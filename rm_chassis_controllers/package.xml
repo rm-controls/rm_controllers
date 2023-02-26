@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
     <name>rm_chassis_controllers</name>
-    <version>0.1.7</version>
+    <version>0.1.9</version>
     <description>RoboMaster standard robot Chassis controller</description>
     <maintainer email="liaoqiayuan@gmail.com">Qiayuan Liao</maintainer>
     <license>BSD</license>
@@ -19,6 +19,7 @@
     <depend>controller_interface</depend>
     <depend>effort_controllers</depend>
     <depend>tf2_geometry_msgs</depend>
+    <depend>angles</depend>
 
     <exec_depend>robot_localization</exec_depend>
 

@@ -217,12 +217,12 @@ void ChassisBase<T...>::twist(const ros::Time& time, const ros::Duration& period
     recovery();
     pid_follow_.reset();
   }
-  tfVelToBase("yaw");
+  tfVelToBase(command_source_frame_);
   try
   {
     double roll{}, pitch{}, yaw{};
-    quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", ros::Time(0)).transform.rotation, roll, pitch,
-              yaw);
+    quatToRPY(robot_state_handle_.lookupTransform("base_link", command_source_frame_, ros::Time(0)).transform.rotation,
+              roll, pitch, yaw);
 
     double angle[4] = { -0.785, 0.785, 2.355, -2.355 };
     double off_set = 0.0;
@@ -256,7 +256,7 @@ void ChassisBase<T...>::gyro()
 
     recovery();
   }
-  tfVelToBase(follow_source_frame_);
+  tfVelToBase(command_source_frame_);
 }
 
 template <typename... T>

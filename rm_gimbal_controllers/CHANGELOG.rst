@@ -2,6 +2,35 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.9 (2023-02-21)
+------------------
+* Merge pull request `#104 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/104>`_ from ye-luo-xi-tui/balance_standard
+  Fix bug.
+* Fix bug.
+* Merge pull request `#102 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/102>`_ from ljq-lv/fix_warning
+  Fixed the bug of gimbal warning
+* Add the else to judge mode TRACK
+* Fixed the bug of gimbal warning
+* Merge branch 'master' into balance_standard
+* Merge pull request `#97 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/97>`_ from ye-luo-xi-tui/master
+  0.1.8
+* Contributors: ljq-lv, ye-luo-xi-tui, yezi
+
+0.1.8 (2022-11-24)
+------------------
+* Merge pull request `#92 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/92>`_ from ye-luo-xi-tui/target_velocity_correction
+  Estimate chassis vel with moving average and subtract chassis_vel from target_vel
+* Fix trylock bug.
+* Subtract chassis_vel from target_vel.
+* Estimate chassis vel with moving average.
+* Merge pull request `#86 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/86>`_ from NaHCO3bc/Readme
+  Fix the dependence part bug.
+* Modify the test file folder.
+* Fix the dependence part bug.
+* Merge pull request `#85 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/85>`_ from ye-luo-xi-tui/master
+  0.1.7
+* Contributors: NaHCO3bc, ye-luo-xi-tui, yezi
+
 0.1.7 (2022-09-10)
 ------------------
 * Optimize TRACK mode of rm_gimbal_controller.

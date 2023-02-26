@@ -54,6 +54,97 @@
 
 namespace rm_gimbal_controllers
 {
+class Vector3WithFilter
+{
+public:
+  Vector3WithFilter(int num_data)
+  {
+    for (int i = 0; i < 3; i++)
+      filter_vector_.push_back(std::make_shared<MovingAverageFilter<double>>(num_data));
+  }
+  void input(double vector[3], double period)
+  {
+    for (int i = 0; i < 3; i++)
+    {
+      if (period < 0)
+        return;
+      if (period > 0.1)
+        filter_vector_[i]->clear();
+      filter_vector_[i]->input(vector[i]);
+    }
+  }
+  double x()
+  {
+    return filter_vector_[0]->output();
+  }
+  double y()
+  {
+    return filter_vector_[1]->output();
+  }
+  double z()
+  {
+    return filter_vector_[2]->output();
+  }
+
+private:
+  std::vector<std::shared_ptr<MovingAverageFilter<double>>> filter_vector_;
+};
+class ChassisVel
+{
+public:
+  ChassisVel(const ros::NodeHandle& nh)
+  {
+    double num_data;
+    nh.param("num_data", num_data, 20.0);
+    nh.param("debug", is_debug_, true);
+    linear_ = std::make_shared<Vector3WithFilter>(num_data);
+    angular_ = std::make_shared<Vector3WithFilter>(num_data);
+    if (is_debug_)
+    {
+      real_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::Twist>(nh, "real", 1));
+      filtered_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::Twist>(nh, "filtered", 1));
+    }
+  }
+  std::shared_ptr<Vector3WithFilter> linear_;
+  std::shared_ptr<Vector3WithFilter> angular_;
+  void update(double linear_vel[3], double angular_vel[3], double period)
+  {
+    linear_->input(linear_vel, period);
+    angular_->input(angular_vel, period);
+    if (is_debug_ && loop_count_ % 10 == 0)
+    {
+      if (real_pub_->trylock())
+      {
+        real_pub_->msg_.linear.x = linear_vel[0];
+        real_pub_->msg_.linear.y = linear_vel[1];
+        real_pub_->msg_.linear.z = linear_vel[2];
+        real_pub_->msg_.angular.x = angular_vel[0];
+        real_pub_->msg_.angular.y = angular_vel[1];
+        real_pub_->msg_.angular.z = angular_vel[2];
+
+        real_pub_->unlockAndPublish();
+      }
+      if (filtered_pub_->trylock())
+      {
+        filtered_pub_->msg_.linear.x = linear_->x();
+        filtered_pub_->msg_.linear.y = linear_->y();
+        filtered_pub_->msg_.linear.z = linear_->z();
+        filtered_pub_->msg_.angular.x = angular_->x();
+        filtered_pub_->msg_.angular.y = angular_->y();
+        filtered_pub_->msg_.angular.z = angular_->z();
+
+        filtered_pub_->unlockAndPublish();
+      }
+    }
+    loop_count_++;
+  }
+
+private:
+  bool is_debug_;
+  int loop_count_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::Twist>> real_pub_{}, filtered_pub_{};
+};
+
 class Controller : public controller_interface::MultiInterfaceController<rm_control::RobotStateInterface,
                                                                          hardware_interface::ImuSensorInterface,
                                                                          hardware_interface::EffortJointInterface>
@@ -108,7 +199,7 @@ private:
 
   // Chassis
   double k_chassis_vel_;
-  geometry_msgs::Twist chassis_vel_;
+  std::shared_ptr<ChassisVel> chassis_vel_;
 
   enum
   {
