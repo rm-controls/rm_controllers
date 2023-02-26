@@ -36,8 +36,10 @@ sudo rosdep install --from-paths src
 * [Robot Operating System (ROS)](http://wiki.ros.org/) (middleware for robotics),
 * roscpp
 * rm_common
+* controller_interface
 * effort_controllers
 * tf2_geometry_msgs
+* angles
 * robot_localization
 
 ## ROS API
@@ -57,9 +59,15 @@ sudo rosdep install --from-paths src
   Set the speed of the chassis.
 
 #### Published Topics
+
 * **`odom`**([nav_msgs/Odometry](http://docs.ros.org/en/api/nav_msgs/html/msg/Odometry.html))
 
   Chassis odometer information (speed, position, covariance).
+
+* **`state`**([rm_msgs::BalanceState](http://docs.ros.org/en/api/rm_msgs/html/msg/BalanceState.html))
+
+  Contains information about the Balance at a certain point in time, stores the vector of joint position, and optional
+  speed and acceleration.
 
 #### Parameters
 
@@ -83,7 +91,11 @@ sudo rosdep install --from-paths src
 
 * **`enable_odom_tf`** (bool, default: true)
 
-  Option.If set this param true, it will send Transform from odom to base.
+  Option.If it is set to true, publish_odom_tf is also true, it will send Transform from odom to base.
+
+* **`publish_odom_tf_`** (bool, default: false)
+
+  Option.If it is set to true, enable_odom_tf is also true, it will send Transform from odom to base.
 
 * **`twist_covariance_diagonal`** (double[6])
 
@@ -105,27 +117,67 @@ sudo rosdep install --from-paths src
 
   Allowed period (in s) between two commands. If the time is exceed this period, the speed of chassis will be set 0.
 
+* **`power_offset`** (double)
+
+  Difference between actual power and set power.
+
 ##### Balance
 
-* **`joint_left_name`** (string, default: "joint_left")
+* **`imu_name`** (string, default: "base_imu")
 
-  Left wheel joint name or list of joint names.
+  imu joint name or list of joint names.
 
-* **`joint_right_name`** (string, default: "joint_right")
+* **`left/wheel_joint`** (string, default: "left_wheel_joint")
 
-  Right wheel joint name or list of joint names.
+  left wheel joint name or list of joint names.
 
-* **`com_pitch_offset`** (double, default: 0)
+* **`left/block_joint`** (string, default: "left_momentum_block_joint")
 
-  The reduction ratio of pitch.
+  left momentum block joint name or list of joint names.
 
-* **`a`** (double[16])
+* **`right/wheel_joint`** (string, default: "right_wheel_joint")
 
-  State space expression.
+  right wheel joint name or list of joint names.
 
-* **`b`** (double[8])
+* **`right/block_joint`** (string, default: "right_momentum_block_joint")
 
-  State space expression.
+  right momentum block joint name or list of joint names.
+
+* **`m_w`** (double, default: 0.72)
+
+  m_w is mass of single wheel.
+
+* **`m`** (double, default: 11.48)
+
+  m is mass of the robot except wheels and momentum_blocks.
+
+* **`m_b`** (double, default: 1.13)
+
+  m_b is mass of single momentum_block.
+
+* **`i_w`** (double, default: 0.01683)
+
+  i_w is the moment of inertia of the wheel around the rotational axis of the motor.
+
+* **`l`** (double, default: 0.0587)
+
+  l is the vertical component of the distance between the wheel center and the center of mass of robot.
+
+* **`y_b`** (double, default: 0.16)
+
+  y_b is the y-axis component of the coordinates of the momentum block in the base_link coordinate system.
+
+* **`z_b`** (double[4], default: 0.0468)
+
+  z_b is the vertical component of the distance between the momentum block and the center of mass of robot.
+
+* **`g`** (double, default: 9.8)
+
+  Gravity constant.
+
+* **`i_m`** (double, default: 0.1982)
+
+  i_m is the moment of inertia of the robot around the y-axis of base_link coordinate.
 
 * **`q`** (double[16])
 
