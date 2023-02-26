@@ -35,6 +35,11 @@ bool GpioCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros:
     ROS_ERROR("Velocity threshold was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+  if (!controller_nh.getParam("initial_gpio_state", initial_gpio_state_))
+  {
+    ROS_ERROR("Initial gpio state was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
   // advertise service to check calibration
   is_calibrated_srv_ = controller_nh.advertiseService("is_calibrated", &GpioCalibrationController::isCalibrated, this);
   return true;
@@ -56,26 +61,34 @@ void GpioCalibrationController::update(const ros::Time& time, const ros::Duratio
     case INITIALIZED:
     {
       velocity_ctrl_.setCommand(velocity_search_);
+      velocity_ctrl_.update(time, period);
+      countdown_ = 100;
       state_ = MOVING_TO_CENTER;
       break;
     }
     case MOVING_TO_CENTER:
     {
-      while (std::abs(velocity_ctrl_.joint_.getVelocity()) > vel_threshold_)
+      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < vel_threshold_)
+        countdown_--;
+      else
+        countdown_ = 100;
+      if (countdown_ != 0)
       {
         if (gpio_state_change_)
         {
-          velocity_ctrl_.setCommand(-velocity_search_ * vel_gain_);
+          velocity_ctrl_.setCommand(velocity_ctrl_.command_ * vel_gain_ * -1.);
+          velocity_ctrl_.update(time, period);
         }
         else
-          velocity_ctrl_.setCommand(velocity_search_);
+          velocity_ctrl_.update(time, period);
       }
-      if (gpio_state_change_)
+      if (countdown_ < 0)
       {
         velocity_ctrl_.setCommand(0.);
         actuator_.setOffset(-actuator_.getPosition() + actuator_.getOffset());
         actuator_.setCalibrated(true);
         ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
+        velocity_ctrl_.update(time, period);
         state_ = CALIBRATED;
       }
       break;
@@ -86,7 +99,6 @@ void GpioCalibrationController::update(const ros::Time& time, const ros::Duratio
       break;
     }
   }
-  velocity_ctrl_.update(time, period);
 }
 
 bool GpioCalibrationController::isCalibrated(control_msgs::QueryCalibrationState::Request& req,
@@ -99,8 +111,7 @@ bool GpioCalibrationController::isCalibrated(control_msgs::QueryCalibrationState
 
 void GpioCalibrationController::gpioStateCB(const rm_msgs::GpioDataConstPtr& msg)
 {
-  gpio_data_ = *msg;
-  if (gpio_data_.gpio_state[0] != initial_gpio_state_)
+  if (msg->gpio_state[0] != initial_gpio_state_)
     gpio_state_change_ = true;
 }
 }  // namespace rm_calibration_controllers

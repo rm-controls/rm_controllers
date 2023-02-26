@@ -33,14 +33,13 @@ private:
     MOVING_TO_CENTER,
     CALIBRATED
   };
-  int state_{};
+  int state_{}, countdown_{};
   double velocity_search_{}, vel_gain_{}, vel_threshold_{};
-  bool on_center_, gpio_state_change_, initial_gpio_state_ = false;
+  bool on_center_ = false, gpio_state_change_ = false, initial_gpio_state_ = false;
   rm_control::ActuatorExtraHandle actuator_;
   effort_controllers::JointVelocityController velocity_ctrl_;
 
   ros::ServiceServer is_calibrated_srv_;
   ros::Subscriber gpio_sub_;
-  rm_msgs::GpioData gpio_data_{};
 };
 }  // namespace rm_calibration_controllers
