@@ -66,8 +66,7 @@ sudo rosdep install --from-paths src
 
 * **`state`**([rm_msgs::BalanceState](http://docs.ros.org/en/api/rm_msgs/html/msg/BalanceState.html))
 
-  Contains information about the Balance at a certain point in time, stores the vector of joint position, and optional
-  speed and acceleration.
+  Contains quantities of state and control about the Balance.
 
 #### Parameters
 
@@ -91,7 +90,7 @@ sudo rosdep install --from-paths src
 
 * **`enable_odom_tf`** (bool, default: true)
 
-  Option.If it is set to true, publish_odom_tf is also true, it will send Transform from odom to base.
+  Option.If it is set to true, it will not send Transform, but will store Transform in tf_buffer.
 
 * **`publish_odom_tf_`** (bool, default: false)
 
@@ -119,57 +118,57 @@ sudo rosdep install --from-paths src
 
 * **`power_offset`** (double)
 
-  Difference between actual power and set power.
+  Fix the difference between theoretical power and actual power.
 
 ##### Balance
 
 * **`imu_name`** (string, default: "base_imu")
 
-  imu joint name or list of joint names.
+  Chassis imu name.
 
 * **`left/wheel_joint`** (string, default: "left_wheel_joint")
 
-  left wheel joint name or list of joint names.
+  left wheel joint name.
 
 * **`left/block_joint`** (string, default: "left_momentum_block_joint")
 
-  left momentum block joint name or list of joint names.
+  left momentum block joint name.
 
 * **`right/wheel_joint`** (string, default: "right_wheel_joint")
 
-  right wheel joint name or list of joint names.
+  right wheel joint name.
 
 * **`right/block_joint`** (string, default: "right_momentum_block_joint")
 
-  right momentum block joint name or list of joint names.
+  right momentum block joint name.
 
 * **`m_w`** (double, default: 0.72)
 
-  m_w is mass of single wheel.
+  mass of single wheel.
 
 * **`m`** (double, default: 11.48)
 
-  m is mass of the robot except wheels and momentum_blocks.
+  mass of the robot except wheels and momentum_blocks.
 
 * **`m_b`** (double, default: 1.13)
 
-  m_b is mass of single momentum_block.
+  mass of single momentum_block.
 
 * **`i_w`** (double, default: 0.01683)
 
-  i_w is the moment of inertia of the wheel around the rotational axis of the motor.
+  The moment of inertia of the wheel around the rotational axis of the motor.
 
 * **`l`** (double, default: 0.0587)
 
-  l is the vertical component of the distance between the wheel center and the center of mass of robot.
+  The vertical component of the distance between the wheel center and the center of mass of robot.
 
 * **`y_b`** (double, default: 0.16)
 
-  y_b is the y-axis component of the coordinates of the momentum block in the base_link coordinate system.
+  The y-axis component of the coordinates of the momentum block in the base_link coordinate system.
 
 * **`z_b`** (double[4], default: 0.0468)
 
-  z_b is the vertical component of the distance between the momentum block and the center of mass of robot.
+  The vertical component of the distance between the momentum block and the center of mass of robot.
 
 * **`g`** (double, default: 9.8)
 
@@ -177,7 +176,7 @@ sudo rosdep install --from-paths src
 
 * **`i_m`** (double, default: 0.1982)
 
-  i_m is the moment of inertia of the robot around the y-axis of base_link coordinate.
+  The moment of inertia of the robot around the y-axis of base_link coordinate.
 
 * **`q`** (double[16])
 
@@ -209,37 +208,57 @@ sudo rosdep install --from-paths src
 
   The radius of wheel.
 
+##### Omni
+
+* **`/wheels/<wheels_name>/pose`** (double[3])
+
+  The pose of wheel.
+
+* **`/wheels/<wheels_name>/joint`** (string)
+
+  wheel joint name.
+
+* **`/wheels/left_front/roller_angle`** (double)
+
+  The roller angle of wheel.
+
+* **`/wheels/left_front/radius`** (double)
+
+  The radius of wheel.
+
 ## Controller configuration examples
 
 ### Complete description
 
 ```
-chassis_controller:
-    type: rm_chassis_controllers/MecanumController
+  chassis_controller:
+    type: rm_chassis_controllers/OmniController
     publish_rate: 100
     enable_odom_tf: true
+    publish_odom_tf: false
+    power:
+      effort_coeff: 10.0
+      vel_coeff: 0.0060
+      power_offset: -8.41
+    twist_angular: 0.5233
+    timeout: 0.1
+    pid_follow: { p: 5.0, i: 0, d: 0.3, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
+
+    chassis_radius: 0.208
     wheel_radius: 0.07625
     left_front:
       joint: "left_front_wheel_joint"
-      pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+      pid: { p: 0.6, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     right_front:
       joint: "right_front_wheel_joint"
-      pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+      pid: { p: 0.6, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     left_back:
       joint: "left_back_wheel_joint"
-      pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+      pid: { p: 0.6, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     right_back:
       joint: "right_back_wheel_joint"
-      pid: { p: 0.8, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
-    twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
-    wheel_base: 0.395
-    wheel_track: 0.374
-    power:
-      coeff: 0.535
-      min_vel: 4.4
-    twist_angular: 0.5233
-    timeout: 0.1
-    pid_follow: { p: 5, i: 0, d: 0.8, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+      pid: { p: 0.6, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
 ```
 
 ## Bugs & Feature Requests
