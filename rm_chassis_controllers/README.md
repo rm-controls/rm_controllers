@@ -90,7 +90,7 @@ sudo rosdep install --from-paths src
 
 * **`enable_odom_tf`** (bool, default: true)
 
-  Option.If it is set to true, it will not send Transform, but will store Transform in tf_buffer.
+  Option.If it is set to true, it will store Transform in tf_buffer.
 
 * **`publish_odom_tf_`** (bool, default: false)
 
@@ -238,27 +238,33 @@ sudo rosdep install --from-paths src
     publish_odom_tf: false
     power:
       effort_coeff: 10.0
-      vel_coeff: 0.0060
+      vel_coeff: 0.003
       power_offset: -8.41
     twist_angular: 0.5233
     timeout: 0.1
     pid_follow: { p: 5.0, i: 0, d: 0.3, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
 
-    chassis_radius: 0.208
-    wheel_radius: 0.07625
-    left_front:
-      joint: "left_front_wheel_joint"
-      pid: { p: 0.6, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
-    right_front:
-      joint: "right_front_wheel_joint"
-      pid: { p: 0.6, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
-    left_back:
-      joint: "left_back_wheel_joint"
-      pid: { p: 0.6, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
-    right_back:
-      joint: "right_back_wheel_joint"
-      pid: { p: 0.6, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+    wheels:
+      left_front:
+        pose: [ 0.147, 0.147, 2.356 ]
+        joint: left_front_wheel_joint
+        <<: &wheel_setting
+          roller_angle: 0.
+          radius: 0.07625
+          pid: { p: 0.41, i: 0, d: 0.0, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
+      right_front:
+        pose: [ 0.147, -0.147, 0.785 ]
+        joint: right_front_wheel_joint
+        <<: *wheel_setting
+      left_back:
+        pose: [ -0.147, 0.147, -2.356 ]
+        joint: left_back_wheel_joint
+        <<: *wheel_setting
+      right_back:
+        pose: [ -0.147, -0.147, -0.785 ]
+        joint: right_back_wheel_joint
+        <<: *wheel_setting
 ```
 
 ## Bugs & Feature Requests
