@@ -162,9 +162,6 @@ void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& perio
     case FOLLOW:
       follow(time, period);
       break;
-    case GYRO:
-      gyro();
-      break;
     case TWIST:
       twist(time, period);
       break;
@@ -247,19 +244,6 @@ void ChassisBase<T...>::twist(const ros::Time& time, const ros::Duration& period
 }
 
 template <typename... T>
-void ChassisBase<T...>::gyro()
-{
-  if (state_changed_)
-  {
-    state_changed_ = false;
-    ROS_INFO("[Chassis] Enter GYRO");
-
-    recovery();
-  }
-  tfVelToBase(command_source_frame_);
-}
-
-template <typename... T>
 void ChassisBase<T...>::raw()
 {
   if (state_changed_)
@@ -269,6 +253,7 @@ void ChassisBase<T...>::raw()
 
     recovery();
   }
+  tfVelToBase(command_source_frame_);
 }
 
 template <typename... T>
