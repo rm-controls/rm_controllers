@@ -54,41 +54,6 @@
 
 namespace rm_gimbal_controllers
 {
-class Vector3WithFilter
-{
-public:
-  Vector3WithFilter(int num_data)
-  {
-    for (int i = 0; i < 3; i++)
-      filter_vector_.push_back(std::make_shared<MovingAverageFilter<double>>(num_data));
-  }
-  void input(double vector[3], double period)
-  {
-    for (int i = 0; i < 3; i++)
-    {
-      if (period < 0)
-        return;
-      if (period > 0.1)
-        filter_vector_[i]->clear();
-      filter_vector_[i]->input(vector[i]);
-    }
-  }
-  double x()
-  {
-    return filter_vector_[0]->output();
-  }
-  double y()
-  {
-    return filter_vector_[1]->output();
-  }
-  double z()
-  {
-    return filter_vector_[2]->output();
-  }
-
-private:
-  std::vector<std::shared_ptr<MovingAverageFilter<double>>> filter_vector_;
-};
 class ChassisVel
 {
 public:
@@ -97,20 +62,27 @@ public:
     double num_data;
     nh.param("num_data", num_data, 20.0);
     nh.param("debug", is_debug_, true);
-    linear_ = std::make_shared<Vector3WithFilter>(num_data);
-    angular_ = std::make_shared<Vector3WithFilter>(num_data);
+    linear_ = std::make_shared<Vector3WithFilter<double>>(num_data);
+    angular_ = std::make_shared<Vector3WithFilter<double>>(num_data);
     if (is_debug_)
     {
       real_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::Twist>(nh, "real", 1));
       filtered_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::Twist>(nh, "filtered", 1));
     }
   }
-  std::shared_ptr<Vector3WithFilter> linear_;
-  std::shared_ptr<Vector3WithFilter> angular_;
+  std::shared_ptr<Vector3WithFilter<double>> linear_;
+  std::shared_ptr<Vector3WithFilter<double>> angular_;
   void update(double linear_vel[3], double angular_vel[3], double period)
   {
-    linear_->input(linear_vel, period);
-    angular_->input(angular_vel, period);
+    if (period < 0)
+      return;
+    if (period > 0.1)
+    {
+      linear_->clear();
+      angular_->clear();
+    }
+    linear_->input(linear_vel);
+    angular_->input(angular_vel);
     if (is_debug_ && loop_count_ % 10 == 0)
     {
       if (real_pub_->trylock())
