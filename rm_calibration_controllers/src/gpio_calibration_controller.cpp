@@ -10,9 +10,12 @@ namespace rm_calibration_controllers
 bool GpioCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
                                      ros::NodeHandle& controller_nh)
 {
-  velocity_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), controller_nh);
-  gpio_sub_ =
-      controller_nh.subscribe<rm_msgs::GpioData>("gpio_states", 100, &GpioCalibrationController::gpioStateCB, this);
+  ros::NodeHandle vel_nh(controller_nh, "velocity");
+  ros::NodeHandle pos_nh(controller_nh, "position");
+  velocity_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), vel_nh);
+  position_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), pos_nh);
+  gpio_sub_ = controller_nh.subscribe<rm_msgs::GpioData>("/controllers/gpio_controller/gpio_states", 100,
+                                                         &GpioCalibrationController::gpioStateCB, this);
   XmlRpc::XmlRpcValue actuator;
   if (!controller_nh.getParam("actuator", actuator))
   {
@@ -62,41 +65,57 @@ void GpioCalibrationController::update(const ros::Time& time, const ros::Duratio
     {
       velocity_ctrl_.setCommand(velocity_search_);
       velocity_ctrl_.update(time, period);
-      countdown_ = 100;
-      state_ = MOVING_TO_CENTER;
+      state_ = MOVING_AROUND;
       break;
     }
-    case MOVING_TO_CENTER:
+    case MOVING_AROUND:
     {
-      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < vel_threshold_)
-        countdown_--;
-      else
-        countdown_ = 100;
-      if (countdown_ != 0)
+      if (enter_flag_)
       {
-        if (gpio_state_change_)
-        {
-          velocity_ctrl_.setCommand(velocity_ctrl_.command_ * vel_gain_ * -1.);
-          velocity_ctrl_.update(time, period);
-        }
-        else
-          velocity_ctrl_.update(time, period);
+        enter_flag_ = false;
+        enter_pos_ = velocity_ctrl_.joint_.getPosition();
       }
-      if (countdown_ < 0)
+      if (exit_flag_)
+      {
+        exit_flag_ = false;
+        exit_pos_ = velocity_ctrl_.joint_.getPosition();
+      }
+      if (enter_pos_ != 0. && exit_pos_ != 0.)
       {
         velocity_ctrl_.setCommand(0.);
+        can_returned_ = true;
+      }
+      if (can_returned_)
+      {
+        position_ctrl_.setCommand((enter_pos_ + exit_pos_) / 2);
+        enter_pos_ = 0;
+        exit_pos_ = 0;
+        can_returned_ = false;
+        state_ = RETURN;
+      }
+      velocity_ctrl_.update(time, period);
+      break;
+    }
+    case RETURN:
+    {
+      is_returned_ = true;
+      position_ctrl_.update(time, period);
+      if (((std::abs(position_ctrl_.joint_.getPosition() - position_ctrl_.command_struct_.position_)) <
+           position_threshold_) &&
+          (position_ctrl_.joint_.getVelocity() < vel_threshold_))
+      {
         actuator_.setOffset(-actuator_.getPosition() + actuator_.getOffset());
         actuator_.setCalibrated(true);
         ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
-        velocity_ctrl_.update(time, period);
         state_ = CALIBRATED;
       }
       break;
     }
     case CALIBRATED:
     {
-      velocity_ctrl_.update(time, period);
-      break;
+      is_returned_ = false;
+      position_ctrl_.setCommand(position_ctrl_.joint_.getPosition());
+      position_ctrl_.update(time, period);
     }
   }
 }
@@ -104,15 +123,24 @@ void GpioCalibrationController::update(const ros::Time& time, const ros::Duratio
 bool GpioCalibrationController::isCalibrated(control_msgs::QueryCalibrationState::Request& req,
                                              control_msgs::QueryCalibrationState::Response& resp)
 {
-  ROS_DEBUG("Is calibrated service %d", state_ == CALIBRATED && on_center_);
-  resp.is_calibrated = (state_ == CALIBRATED && on_center_);
+  ROS_DEBUG("Is calibrated service %d", state_ == CALIBRATED);
+  resp.is_calibrated = (state_ == CALIBRATED);
   return true;
 }
 
 void GpioCalibrationController::gpioStateCB(const rm_msgs::GpioDataConstPtr& msg)
 {
   if (msg->gpio_state[0] != initial_gpio_state_)
-    gpio_state_change_ = true;
+  {
+    if (!initial_gpio_state_ && !is_returned_)
+    {
+      enter_flag_ = true;
+    }
+
+    if (initial_gpio_state_ && enter_pos_ != 0)
+      exit_flag_ = true;
+    initial_gpio_state_ = !initial_gpio_state_;
+  }
 }
 }  // namespace rm_calibration_controllers
 
