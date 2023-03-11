@@ -12,11 +12,13 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <control_msgs/QueryCalibrationState.h>
 #include <rm_msgs/GpioData.h>
+#include <rm_common/hardware_interface/gpio_interface.h>
+
 namespace rm_calibration_controllers
 {
 class GpioCalibrationController
-  : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                          rm_control::ActuatorExtraInterface>
+  : public controller_interface::MultiInterfaceController<
+        hardware_interface::EffortJointInterface, rm_control::ActuatorExtraInterface, rm_control::GpioStateInterface>
 {
 public:
   GpioCalibrationController() = default;
@@ -36,11 +38,12 @@ private:
     CALIBRATED
   };
   int state_{};
-  double velocity_search_{}, vel_gain_{}, vel_threshold_{}, enter_pos_{}, exit_pos_{};
-  double position_threshold_ = 0.01;
+  double velocity_search_{}, vel_gain_{}, vel_threshold_{}, position_threshold_{}, enter_pos_{}, exit_pos_{};
   bool initial_gpio_state_ = false, enter_flag_ = false, exit_flag_ = false, can_returned_ = false,
-       is_returned_ = false;
+       is_returned_ = false, skip_ = false;
   rm_control::ActuatorExtraHandle actuator_;
+  rm_control::GpioStateHandle gpio_state_handle_;
+
   effort_controllers::JointVelocityController velocity_ctrl_;
   effort_controllers::JointPositionController position_ctrl_;
 

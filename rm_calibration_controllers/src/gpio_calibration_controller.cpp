@@ -14,6 +14,7 @@ bool GpioCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros:
   ros::NodeHandle pos_nh(controller_nh, "position");
   velocity_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), vel_nh);
   position_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), pos_nh);
+  gpio_state_handle_ = robot_hw->get<rm_control::GpioStateInterface>()->getHandle("calibration");
   gpio_sub_ = controller_nh.subscribe<rm_msgs::GpioData>("/controllers/gpio_controller/gpio_states", 100,
                                                          &GpioCalibrationController::gpioStateCB, this);
   XmlRpc::XmlRpcValue actuator;
@@ -36,6 +37,11 @@ bool GpioCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros:
   if (!controller_nh.getParam("vel_threshold", vel_threshold_))
   {
     ROS_ERROR("Velocity threshold was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("pos_threshold", position_threshold_))
+  {
+    ROS_ERROR("Position threshold was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
   if (!controller_nh.getParam("initial_gpio_state", initial_gpio_state_))
@@ -65,7 +71,16 @@ void GpioCalibrationController::update(const ros::Time& time, const ros::Duratio
     {
       velocity_ctrl_.setCommand(velocity_search_);
       velocity_ctrl_.update(time, period);
-      state_ = MOVING_AROUND;
+      if (gpio_state_handle_.getValue())
+      {
+        velocity_ctrl_.update(time, period);
+        skip_ = true;
+      }
+      else
+      {
+        state_ = MOVING_AROUND;
+        skip_ = false;
+      }
       break;
     }
     case MOVING_AROUND:
@@ -132,11 +147,8 @@ void GpioCalibrationController::gpioStateCB(const rm_msgs::GpioDataConstPtr& msg
 {
   if (msg->gpio_state[0] != initial_gpio_state_)
   {
-    if (!initial_gpio_state_ && !is_returned_)
-    {
+    if (!initial_gpio_state_ && !is_returned_ && !skip_)
       enter_flag_ = true;
-    }
-
     if (initial_gpio_state_ && enter_pos_ != 0)
       exit_flag_ = true;
     initial_gpio_state_ = !initial_gpio_state_;
