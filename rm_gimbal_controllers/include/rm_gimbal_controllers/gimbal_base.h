@@ -169,6 +169,10 @@ private:
   double gravity_;
   bool enable_gravity_compensation_;
 
+  // Resistance compensation
+  double yaw_resistance_;
+  double yaw_error_tolerance_;
+
   // Chassis
   double k_chassis_vel_;
   std::shared_ptr<ChassisVel> chassis_vel_;
