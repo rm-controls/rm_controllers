@@ -39,8 +39,8 @@ private:
   };
   int state_{};
   double velocity_search_{}, vel_gain_{}, vel_threshold_{}, position_threshold_{}, enter_pos_{}, exit_pos_{};
-  bool initial_gpio_state_ = false, enter_flag_ = false, exit_flag_ = false, can_returned_ = false,
-       is_returned_ = false, skip_ = false;
+  bool initial_gpio_state_ = false, can_returned_ = false, is_returned_ = false, skip_ = false,
+       last_gpio_state_ = false;
   rm_control::ActuatorExtraHandle actuator_;
   rm_control::GpioStateHandle gpio_state_handle_;
 
@@ -48,6 +48,5 @@ private:
   effort_controllers::JointPositionController position_ctrl_;
 
   ros::ServiceServer is_calibrated_srv_;
-  ros::Subscriber gpio_sub_;
 };
 }  // namespace rm_calibration_controllers
