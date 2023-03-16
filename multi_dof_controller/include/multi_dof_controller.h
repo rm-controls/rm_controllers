@@ -5,6 +5,7 @@
 #pragma once
 
 #include <effort_controllers/joint_position_controller.h>
+#include <effort_controllers/joint_velocity_controller.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
@@ -14,6 +15,24 @@
 
 namespace multi_dof_controller
 {
+struct Joint
+{
+    std::string joint_name_;
+    effort_controllers::JointPositionController* ctrl_position_;
+    effort_controllers::JointVelocityController* ctrl_velocity_;
+};
+struct Motion
+{
+    std::string motion_name_;
+    std::vector<std::string> joints_;
+    double velocity_max_speed;
+    double position_per_step;
+    std::vector<double> velocity_config_;
+    std::vector<double> position_config_;
+    std::vector<double> position_need_reverse;
+    std::vector<double> velocity_need_reverse;
+};
+
 class Controller : public  controller_interface::MultiInterfaceController<rm_control::RobotStateInterface,hardware_interface::EffortJointInterface>
 {
 public:
@@ -32,12 +51,10 @@ private:
     effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
     // ROS Interface
-    ros::Time last_publish_time_{};
     ros::Subscriber cmd_multi_dof_sub_;
     realtime_tools::RealtimeBuffer<rm_msgs::MultiDofCmd> cmd_rt_buffer_;
 
     rm_msgs::MultiDofCmd cmd_multi_dof_;
-    double publish_rate_{};
     bool state_changed_{};
 
     enum
