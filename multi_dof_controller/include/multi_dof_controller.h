@@ -28,8 +28,8 @@ struct Motion
     double velocity_max_speed_;
     std::vector<double> position_config_;
     std::vector<double> velocity_config_;
-    std::vector<bool> position_need_reverse;
-    std::vector<bool> velocity_need_reverse;
+    std::vector<bool> is_position_need_reverse_;
+    std::vector<bool> is_velocity_need_reverse_;
 };
 
 class Controller : public  controller_interface::MultiInterfaceController<rm_control::RobotStateInterface,hardware_interface::EffortJointInterface>

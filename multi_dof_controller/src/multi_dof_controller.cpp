@@ -93,7 +93,7 @@ void Controller::velocity(const ros::Time &time,const ros::Duration& period)
 
             for (int j = 0; (int)j < motions_.size(); ++j) {
                 if (motions_[j].motion_name_ == cmd_multi_dof_.motion_name) {
-                    results[i] = judgeReverse(getDirectionValue(cmd_multi_dof_), motions_[j].velocity_need_reverse[i]) *
+                    results[i] = judgeReverse(getDirectionValue(), motions_[j].is_velocity_need_reverse_[i]) *
                                  motions_[j].velocity_max_speed_ * motions_[j].velocity_config_[i];
                 }
             }
@@ -115,7 +115,7 @@ void Controller::position(const ros::Time &time,const ros::Duration& period)
         for (int j = 0; (int)j < motions_.size(); ++j) {
             if (motions_[j].motion_name_ == cmd_multi_dof_.motion_name)
             {
-                double total_step_value = judgeReverse(getDirectionValue(cmd_multi_dof_),motions_[j].position_need_reverse[i]);
+                double total_step_value = judgeReverse(getDirectionValue(),motions_[j].is_position_need_reverse_[i]);
                 double step_num = total_step_value / motions_[j].position_per_step_;
                 results[i] = step_num * motions_[j].position_config_[i];
             }
