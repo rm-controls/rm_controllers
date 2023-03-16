@@ -24,7 +24,6 @@ struct Joint
 struct Motion
 {
     std::string motion_name_;
-    std::vector<std::string> joints_;
     double velocity_max_speed;
     double position_per_step;
     std::vector<double> velocity_config_;
