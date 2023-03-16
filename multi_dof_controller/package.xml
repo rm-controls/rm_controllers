@@ -12,6 +12,7 @@
   <depend>roscpp</depend>
 
   <depend>rm_common</depend>
+  <depend>geometry_msgs</depend>
 
   <depend>controller_interface</depend>
   <depend>effort_controllers</depend>

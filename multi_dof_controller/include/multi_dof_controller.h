@@ -9,6 +9,8 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <realtime_tools/realtime_publisher.h>
+#include <geometry_msgs/Twist.h>
+#include <rm_msgs/MultiDofCmd.h>
 
 namespace multi_dof_controller
 {
@@ -19,12 +21,22 @@ public:
     bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
     void starting(const ros::Time& time) override;
     void update(const ros::Time& time, const ros::Duration& period) override;
+
 private:
-    void position(const ros::Time& time, const ros::Duration& period);
+    void position(const ros::Time& time);
     void velocity(const ros::Time& time, const ros::Duration& period);
+    void moveJoint(const ros::Time& time, const ros::Duration& period);
+    void commandCB(const rm_msgs::MultiDofCmdPtr& msg);
+
     rm_control::RobotStateHandle robot_state_handle_;
     effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
+    // ROS Interface
+    ros::Time last_publish_time_{};
+    ros::Subscriber cmd_multi_dof_sub_;
+    realtime_tools::RealtimeBuffer<rm_msgs::MultiDofCmd> cmd_rt_buffer_;
+
+    rm_msgs::MultiDofCmd cmd_multi_dof_;
     double publish_rate_{};
     bool state_changed_{};
 
@@ -35,6 +47,5 @@ private:
     };
     int state_ = VELOCITY;
 };
-}
 
-// namespace multi_dof_controller
+}// namespace multi_dof_controller

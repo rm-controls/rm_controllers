@@ -1,4 +1,4 @@
-<library path="lib/librm_multi_dof_controller">
+<library path="lib/libmulti_dof_controller">
 
     <class name="multi_dof_controller/Controller" type="multi_dof_controller::Controller"
            base_class_type="controller_interface::ControllerBase">

@@ -13,6 +13,7 @@ add_definitions(-Wall -Werror)
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
+        geometry_msgs
 
         rm_common
 
@@ -32,6 +33,7 @@ catkin_package(
         LIBRARIES
         CATKIN_DEPENDS
         roscpp
+        geometry_msgs
 
         rm_common
 
