@@ -88,7 +88,6 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
             position(time);
             break;
     }
-    moveJoint(time, period);
 }
 
 void Controller::velocity(const ros::Time &time, const ros::Duration &period)
@@ -98,6 +97,19 @@ void Controller::velocity(const ros::Time &time, const ros::Duration &period)
         state_changed_ = false;
         ROS_INFO("[Multi_Fof] VELOCITY");
     }
+    std::vector<double> results{(double)joints_.size()};
+    for (int i = 0; (int)i < joints_.size(); ++i) {
+
+            for (int j = 0; (int)j < motions_.size(); ++j) {
+                if (motions_[j].motion_name_ == cmd_multi_dof_.motion_name) {
+                    results[i] = judgeReverse(getDirectionValue(cmd_multi_dof_), motions_[j].velocity_need_reverse[i]) *
+                                 motions_[j].velocity_max_speed_ * motions_[j].velocity_config_[i];
+                }
+            }
+    }
+    for (int i = 0; (int)i < joints_.size(); ++i) {
+        joints_[i].ctrl_velocity_->setCommand(results[i]);
+    }
 }
 void Controller::position(const ros::Time &time)
 {
@@ -106,13 +118,49 @@ void Controller::position(const ros::Time &time)
         state_changed_ = false;
         ROS_INFO("[Multi_Fof] POSITION");
     }
+    std::vector<double> results{(double)joints_.size()};
+    for (int i = 0; (int)i < joints_.size(); ++i) {
+        for (int j = 0; (int)j < motions_.size(); ++j) {
+            if (motions_[j].motion_name_ == cmd_multi_dof_.motion_name)
+            {
+                double total_step_value = judgeReverse(getDirectionValue(cmd_multi_dof_),motions_[j].position_need_reverse[i]);
+                double step_num = total_step_value / motions_[j].position_per_step_;
+                results[i] = step_num * motions_[j].position_config_[i];
+            }
+        }
+    }
+    for (int i = 0; (int)i < joints_.size(); ++i) {
+        joints_[i].ctrl_position_->setCommand(joints_[i].ctrl_position_->getPosition()+results[i]);
+    }
 }
 
-void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
+
+double Controller::getDirectionValue(const rm_msgs::MultiDofCmd msg)
 {
-
+    double direction_value;
+    if (cmd_multi_dof_.motion_name == "x")
+        direction_value = cmd_multi_dof_.values.linear.x;
+    else if (cmd_multi_dof_.motion_name == "y")
+        direction_value = cmd_multi_dof_.values.linear.y;
+    else if (cmd_multi_dof_.motion_name == "z")
+        direction_value = cmd_multi_dof_.values.linear.z;
+    else if (cmd_multi_dof_.motion_name == "roll")
+        direction_value = cmd_multi_dof_.values.angular.x;
+    else if (cmd_multi_dof_.motion_name == "pitch")
+        direction_value = cmd_multi_dof_.values.angular.y;
+    else if (cmd_multi_dof_.motion_name == "yaw")
+        direction_value = cmd_multi_dof_.values.linear.z;
+    else
+        direction_value = 0;
+    return direction_value;
 }
 
+double Controller::judgeReverse(double value, bool is_need_reverse)
+{
+    if (!is_need_reverse)
+        value = abs(value);
+    return value;
+}
 void Controller::commandCB(const rm_msgs::MultiDofCmdPtr &msg)
 {
     cmd_rt_buffer_.writeFromNonRT(*msg);

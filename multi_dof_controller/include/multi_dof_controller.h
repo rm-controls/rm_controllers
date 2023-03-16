@@ -28,8 +28,8 @@ struct Motion
     double velocity_max_speed_;
     std::vector<double> position_config_;
     std::vector<double> velocity_config_;
-    std::vector<double> position_need_reverse;
-    std::vector<double> velocity_need_reverse;
+    std::vector<bool> position_need_reverse;
+    std::vector<bool> velocity_need_reverse;
 };
 
 class Controller : public  controller_interface::MultiInterfaceController<rm_control::RobotStateInterface,hardware_interface::EffortJointInterface>
@@ -45,7 +45,8 @@ private:
     void velocity(const ros::Time& time, const ros::Duration& period);
     void moveJoint(const ros::Time& time, const ros::Duration& period);
     void commandCB(const rm_msgs::MultiDofCmdPtr& msg);
-
+    double getDirectionValue(const rm_msgs::MultiDofCmd msg);
+    double judgeReverse(double value,bool is_need_reverse);
     rm_control::RobotStateHandle robot_state_handle_;
     effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
