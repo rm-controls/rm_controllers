@@ -37,7 +37,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     Motion m{ .motion_name_ = motion.first,
               .position_per_step_ = motion.second["position_per_step"],
               .velocity_max_speed_ = motion.second["velocity_max_speed"] };
-    for (int i = 0; i < motion.second["position_config"].size(); ++i)
+    for (int i = 0; i < (int)motion.second["position_config"].size(); ++i)
     {
       ROS_ASSERT(motion.second["position_config"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
       ROS_ASSERT(motion.second["velocity_config_"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
@@ -88,9 +88,9 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
     ROS_INFO("[Multi_Fof] VELOCITY");
   }
   std::vector<double> results{ (double)joints_.size() };
-  for (int i = 0; (int)i < joints_.size(); ++i)
+  for (int i = 0; i < (int)joints_.size(); ++i)
   {
-    for (int j = 0; (int)j < motions_.size(); ++j)
+    for (int j = 0; j < (int)motions_.size(); ++j)
     {
       if (motions_[j].motion_name_ == cmd_multi_dof_.motion_name)
       {
@@ -99,7 +99,7 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
       }
     }
   }
-  for (int i = 0; (int)i < joints_.size(); ++i)
+  for (int i = 0; i < (int)joints_.size(); ++i)
   {
     joints_[i].ctrl_velocity_->setCommand(results[i]);
     joints_[i].ctrl_velocity_->update(time, period);
@@ -113,9 +113,9 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
     ROS_INFO("[Multi_Fof] POSITION");
   }
   std::vector<double> results{ (double)joints_.size() };
-  for (int i = 0; (int)i < joints_.size(); ++i)
+  for (int i = 0; i < (int)joints_.size(); ++i)
   {
-    for (int j = 0; (int)j < motions_.size(); ++j)
+    for (int j = 0; j < (int)motions_.size(); ++j)
     {
       if (motions_[j].motion_name_ == cmd_multi_dof_.motion_name)
       {
@@ -125,7 +125,7 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
       }
     }
   }
-  for (int i = 0; (int)i < joints_.size(); ++i)
+  for (int i = 0; i < (int)joints_.size(); ++i)
   {
     joints_[i].ctrl_position_->setCommand(joints_[i].ctrl_position_->getPosition() + results[i]);
     joints_[i].ctrl_position_->update(time, period);
