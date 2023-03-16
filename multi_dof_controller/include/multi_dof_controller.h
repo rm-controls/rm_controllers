@@ -24,10 +24,10 @@ struct Joint
 struct Motion
 {
     std::string motion_name_;
-    double velocity_max_speed;
-    double position_per_step;
-    std::vector<double> velocity_config_;
+    double position_per_step_;
+    double velocity_max_speed_;
     std::vector<double> position_config_;
+    std::vector<double> velocity_config_;
     std::vector<double> position_need_reverse;
     std::vector<double> velocity_need_reverse;
 };
@@ -52,6 +52,8 @@ private:
     // ROS Interface
     ros::Subscriber cmd_multi_dof_sub_;
     realtime_tools::RealtimeBuffer<rm_msgs::MultiDofCmd> cmd_rt_buffer_;
+    hardware_interface::EffortJointInterface* effort_joint_interface_{};
+    std::vector<hardware_interface::JointHandle> joint_handles_{};
 
     rm_msgs::MultiDofCmd cmd_multi_dof_;
     bool state_changed_{};
@@ -62,6 +64,8 @@ private:
         POSITION
     };
     int state_ = VELOCITY;
+    std::vector<Joint> joints_;
+    std::vector<Motion> motions_;
 };
 
 }// namespace multi_dof_controller
