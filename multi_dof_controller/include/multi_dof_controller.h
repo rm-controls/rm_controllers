@@ -47,6 +47,7 @@ private:
   void commandCB(const rm_msgs::MultiDofCmdPtr& msg);
   double getDirectionValue();
   double judgeReverse(double value, bool is_need_reverse);
+  void judgeMotionGroup(rm_msgs::MultiDofCmd);
   rm_control::RobotStateHandle robot_state_handle_;
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
@@ -67,6 +68,8 @@ private:
   int state_ = VELOCITY;
   std::vector<Joint> joints_;
   std::vector<Motion> motions_;
+  std::vector<std::string> motion_group_;
+  std::vector<double> motion_group_values_;
 };
 
 }  // namespace multi_dof_controller

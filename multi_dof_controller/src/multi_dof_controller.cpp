@@ -98,17 +98,16 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
     ROS_INFO("[Multi_Fof] VELOCITY");
   }
   std::vector<double> results{ (double)joints_.size() };
+  judgeMotionGroup(cmd_multi_dof_);
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
-    for (int j = 0; j < (int)motions_.size(); ++j)
-    {
-      if (motions_[j].motion_name_ == cmd_multi_dof_.motion_name)
-      {
-        results[i] = judgeReverse(getDirectionValue(), motions_[j].is_velocity_need_reverse_[i]) *
-                     motions_[j].velocity_max_speed_ * motions_[j].velocity_config_[i];
-        ROS_INFO_STREAM(results[i]);
+      for (int j = 0; j < (int)motion_group_.size(); ++j) {
+          for (int k = 0; k < (int)motions_.size(); ++k) {
+              if (motions_[k].motion_name_ == motion_group_[j])
+                  results[i] += judgeReverse(motion_group_values_[j], motions_[k].is_velocity_need_reverse_[i]) *
+                                motions_[k].velocity_max_speed_ * motions_[k].velocity_config_[i];
+          }
       }
-    }
   }
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
@@ -116,6 +115,9 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
     ROS_INFO_STREAM("pub");
     joints_[i].ctrl_velocity_->update(time, period);
   }
+  results.clear();
+  motion_group_.clear();
+  motion_group_values_.clear();
 }
 void Controller::position(const ros::Time& time, const ros::Duration& period)
 {
@@ -175,10 +177,42 @@ double Controller::judgeReverse(double value, bool is_need_reverse)
   ROS_INFO_STREAM(value);
   return value;
 }
+void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd msg)
+{
+    if (abs(msg.values.linear.x))
+    {
+        motion_group_.push_back("x");
+        motion_group_values_.push_back(msg.values.linear.x);
+    }
+    if (abs(msg.values.linear.y))
+    {
+        motion_group_.push_back("y");
+        motion_group_values_.push_back(msg.values.linear.y);
+    }
+    if (abs(msg.values.linear.z))
+    {
+        motion_group_.push_back("z");
+        motion_group_values_.push_back(msg.values.linear.z);
+    }
+    if (abs(msg.values.angular.x))
+    {
+        motion_group_.push_back("roll");
+        motion_group_values_.push_back(msg.values.angular.x);
+    }
+    if (abs(msg.values.angular.y))
+    {
+        motion_group_.push_back("pitch");
+        motion_group_values_.push_back(msg.values.angular.y);
+    }
+    if (abs(msg.values.angular.z))
+    {
+        motion_group_.push_back("yaw");
+        motion_group_values_.push_back(msg.values.angular.y);
+    }
+}
 void Controller::commandCB(const rm_msgs::MultiDofCmdPtr& msg)
 {
-  cmd_rt_buffer_.writeFromNonRT(*msg);
+    cmd_rt_buffer_.writeFromNonRT(*msg);
 }
 }  // namespace multi_dof_controller
-
 PLUGINLIB_EXPORT_CLASS(multi_dof_controller::Controller, controller_interface::ControllerBase)
