@@ -128,7 +128,7 @@ void Controller::position(const ros::Time &time,const ros::Duration& period)
 }
 
 
-double Controller::getDirectionValue(const rm_msgs::MultiDofCmd msg)
+double Controller::getDirectionValue()
 {
     double direction_value;
     if (cmd_multi_dof_.motion_name == "x")
