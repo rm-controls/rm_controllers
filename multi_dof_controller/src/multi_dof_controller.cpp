@@ -41,21 +41,12 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
         for (int i = 0; i < motion.second["position_config"].size(); ++i)
         {
             ROS_ASSERT(motion.second["position_config"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-            m.position_config_.push_back(motion.second["position_config"][i]);
-        }
-        for (int i = 0; i < motion.second["velocity_config_"].size(); ++i)
-        {
             ROS_ASSERT(motion.second["velocity_config_"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-            m.velocity_config_.push_back(motion.second["velocity_config_"][i]);
-        }
-        for (int i = 0; i < motion.second["position_need_reverse"].size(); ++i)
-        {
             ROS_ASSERT(motion.second["position_need_reverse"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-            m.position_need_reverse.push_back(motion.second["position_need_reverse"][i]);
-        }
-        for (int i = 0; i < motion.second["velocity_need_reverse"].size(); ++i)
-        {
             ROS_ASSERT(motion.second["velocity_need_reverse"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
+            m.position_config_.push_back(motion.second["position_config"][i]);
+            m.velocity_config_.push_back(motion.second["velocity_config_"][i]);
+            m.position_need_reverse.push_back(motion.second["position_need_reverse"][i]);
             m.velocity_need_reverse.push_back(motion.second["velocity_need_reverse"][i]);
         }
         motions_.push_back(m);
@@ -85,12 +76,12 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
             velocity(time,period);
             break;
         case POSITION:
-            position(time);
+            position(time,period);
             break;
     }
 }
 
-void Controller::velocity(const ros::Time &time, const ros::Duration &period)
+void Controller::velocity(const ros::Time &time,const ros::Duration& period)
 {
     if (state_changed_)
     {  // on enter
@@ -109,9 +100,10 @@ void Controller::velocity(const ros::Time &time, const ros::Duration &period)
     }
     for (int i = 0; (int)i < joints_.size(); ++i) {
         joints_[i].ctrl_velocity_->setCommand(results[i]);
+        joints_[i].ctrl_velocity_->update(time,period);
     }
 }
-void Controller::position(const ros::Time &time)
+void Controller::position(const ros::Time &time,const ros::Duration& period)
 {
     if (state_changed_)
     {  // on enter
@@ -131,6 +123,7 @@ void Controller::position(const ros::Time &time)
     }
     for (int i = 0; (int)i < joints_.size(); ++i) {
         joints_[i].ctrl_position_->setCommand(joints_[i].ctrl_position_->getPosition()+results[i]);
+        joints_[i].ctrl_position_->update(time,period);
     }
 }
 

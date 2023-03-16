@@ -41,9 +41,8 @@ public:
     void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-    void position(const ros::Time& time);
-    void velocity(const ros::Time& time, const ros::Duration& period);
-    void moveJoint(const ros::Time& time, const ros::Duration& period);
+    void position(const ros::Time& time,const ros::Duration& period);
+    void velocity(const ros::Time& time,const ros::Duration& period);
     void commandCB(const rm_msgs::MultiDofCmdPtr& msg);
     double getDirectionValue(const rm_msgs::MultiDofCmd msg);
     double judgeReverse(double value,bool is_need_reverse);
