@@ -77,6 +77,15 @@ target_link_libraries(${PROJECT_NAME}
 ## Install ##
 #############
 
+# Create include directory
+install(DIRECTORY include/
+        DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+        )
+# Install plugin file
+install(FILES multi_dof_controller_plugins.xml
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+        )
+
 # Mark executables and/or libraries for installation
 install(
         TARGETS ${PROJECT_NAME}
@@ -93,14 +102,6 @@ install(
 )
 
 # Mark other files for installation
-install(
-        DIRECTORY test
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
-install(
-        FILES rm_chassis_controllers_plugins.xml
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
 
 #############
 ## Testing ##

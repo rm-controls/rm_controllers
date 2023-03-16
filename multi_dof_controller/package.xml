@@ -4,7 +4,7 @@
   <version>0.0.0</version>
   <description>The multi_dof_controller package</description>
   <license>BSD</license>
-  <maintainer email="lsy@todo.todo">lsy</maintainer>
+  <maintainer email="2028238109@qq.com">lsy</maintainer>
 
   <!-- buildtool_depend: dependencies of the build process -->
   <buildtool_depend>catkin</buildtool_depend>
