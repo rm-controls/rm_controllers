@@ -131,45 +131,32 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
   {
     for (int j = 0; j < (int)motions_.size(); ++j)
     {
-      if (motions_[j].motion_name_ == cmd_multi_dof_.motion_name)
-      {
-          ROS_INFO_STREAM("into");
-        double total_step_value = judgeReverse(getDirectionValue(), motions_[j].is_position_need_reverse_[i]);
-        double step_num = total_step_value / motions_[j].position_per_step_;
-        results[i] = step_num * motions_[j].position_config_[i];
-        ROS_INFO_STREAM(results[i]);
-      }
+        for (int k = 0; k < (int)motion_group_.size(); ++k) {
+            if (motions_[j].motion_name_ == motion_group_[k])
+            {
+                ROS_INFO_STREAM("into");
+                double total_step_value = judgeReverse(motion_group_values_[k], motions_[j].is_position_need_reverse_[i]);
+                double step_num = total_step_value / motions_[j].position_per_step_;
+                results[i] += step_num * motions_[j].position_config_[i];
+                ROS_INFO_STREAM(results[i]);
+            }
+        }
     }
   }
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
     joints_[i].ctrl_position_->setCommand(joints_[i].ctrl_position_->getPosition() + results[i]);
-      ROS_INFO_STREAM("pub");
+    ROS_INFO_STREAM("pub");
     joints_[i].ctrl_position_->update(time, period);
   }
+  results.clear();
+  motion_group_.clear();
+  motion_group_values_.clear();
 }
 
-double Controller::getDirectionValue()
-{
-  double direction_value;
-  if (cmd_multi_dof_.motion_name == "x")
-    direction_value = cmd_multi_dof_.values.linear.x;
-  else if (cmd_multi_dof_.motion_name == "y")
-    direction_value = cmd_multi_dof_.values.linear.y;
-  else if (cmd_multi_dof_.motion_name == "z")
-    direction_value = cmd_multi_dof_.values.linear.z;
-  else if (cmd_multi_dof_.motion_name == "roll")
-    direction_value = cmd_multi_dof_.values.angular.x;
-  else if (cmd_multi_dof_.motion_name == "pitch")
-    direction_value = cmd_multi_dof_.values.angular.y;
-  else if (cmd_multi_dof_.motion_name == "yaw")
-    direction_value = cmd_multi_dof_.values.linear.z;
-  else
-    direction_value = 0;
-  ROS_INFO_STREAM(direction_value);
-  return direction_value;
-}
 
+void Controller::moveJoint() {
+}
 double Controller::judgeReverse(double value, bool is_need_reverse)
 {
   if (!is_need_reverse)
@@ -207,7 +194,7 @@ void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd msg)
     if (abs(msg.values.angular.z))
     {
         motion_group_.push_back("yaw");
-        motion_group_values_.push_back(msg.values.angular.y);
+        motion_group_values_.push_back(msg.values.angular.z);
     }
 }
 void Controller::commandCB(const rm_msgs::MultiDofCmdPtr& msg)

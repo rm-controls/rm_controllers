@@ -45,9 +45,9 @@ private:
   void position(const ros::Time& time, const ros::Duration& period);
   void velocity(const ros::Time& time, const ros::Duration& period);
   void commandCB(const rm_msgs::MultiDofCmdPtr& msg);
-  double getDirectionValue();
   double judgeReverse(double value, bool is_need_reverse);
   void judgeMotionGroup(rm_msgs::MultiDofCmd);
+  void moveJoint();
   rm_control::RobotStateHandle robot_state_handle_;
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
