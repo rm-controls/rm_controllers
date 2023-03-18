@@ -95,7 +95,7 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
   if (state_changed_)
   {  // on enter
     state_changed_ = false;
-    ROS_INFO("[Multi_Fof] VELOCITY");
+    ROS_INFO("[Multi_Dof] VELOCITY");
   }
   std::vector<double> results{ (double)joints_.size() };
   judgeMotionGroup(cmd_multi_dof_);
@@ -124,7 +124,7 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
   if (state_changed_)
   {  // on enter
     state_changed_ = false;
-    ROS_INFO("[Multi_Fof] POSITION");
+    ROS_INFO("[Multi_Dof] POSITION");
   }
   std::vector<double> results{ (double)joints_.size() };
   for (int i = 0; i < (int)joints_.size(); ++i)
