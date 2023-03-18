@@ -106,7 +106,7 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   world2odom_.setRotation(tf2::Quaternion::getIdentity());
 
   outside_odom_sub_ =
-      controller_nh.subscribe<nav_msgs::Odometry>("/Odometry", 10, &ChassisBase::outsideOdomCallback, this);
+      controller_nh.subscribe<nav_msgs::Odometry>("/odometry", 10, &ChassisBase::outsideOdomCallback, this);
   cmd_chassis_sub_ = controller_nh.subscribe<rm_msgs::ChassisCmd>("command", 1, &ChassisBase::cmdChassisCallback, this);
   cmd_vel_sub_ = root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisBase::cmdVelCallback, this);
 
@@ -323,7 +323,7 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
     world2sensor.setRotation(tf2::Quaternion(odom_msg->pose.pose.orientation.x, odom_msg->pose.pose.orientation.y,
                                              odom_msg->pose.pose.orientation.z, odom_msg->pose.pose.orientation.w));
 
-    if (world2odom_.getRotation() == tf2::Quaternion::getIdentity())
+    if (world2odom_.getRotation() == tf2::Quaternion::getIdentity())  // First received
     {
       tf2::Transform odom2sensor;
       try
