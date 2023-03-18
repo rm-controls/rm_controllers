@@ -3,7 +3,7 @@
     <class name="rm_calibration_controllers/JointCalibrationController"
            type="rm_calibration_controllers::JointCalibrationController"
            base_class_type="controller_interface::ControllerBase"/>
-    <class name="rm_calibration_controllers/GpioCalibrationController"
-           type="rm_calibration_controllers::GpioCalibrationController"
+    <class name="rm_calibration_controllers/HallSwitchCalibrationController"
+           type="rm_calibration_controllers::HallSwitchCalibrationController"
            base_class_type="controller_interface::ControllerBase"/>
 </library>

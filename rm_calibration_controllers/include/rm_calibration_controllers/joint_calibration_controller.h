@@ -37,19 +37,13 @@
 
 #pragma once
 
-#include <ros/ros.h>
-#include <controller_interface/multi_interface_controller.h>
-#include <rm_common/hardware_interface/actuator_extra_interface.h>
-#include <hardware_interface/joint_command_interface.h>
-#include <effort_controllers/joint_velocity_controller.h>
 #include <effort_controllers/joint_position_controller.h>
-#include <control_msgs/QueryCalibrationState.h>
+#include "rm_calibration_controllers/calibration_base.h"
 
 namespace rm_calibration_controllers
 {
 class JointCalibrationController
-  : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
-                                                          rm_control::ActuatorExtraInterface>
+  : public CalibrationBase<rm_control::RobotStateInterface, hardware_interface::EffortJointInterface>
 {
 public:
   JointCalibrationController() = default;
@@ -83,7 +77,6 @@ public:
    *
    * @param time The current time.
    */
-  void starting(const ros::Time& time) override;
 
 private:
   /** @brief Provide a service to know the state of target actuators.
@@ -94,24 +87,15 @@ private:
    * @param resp The respond included the state of target actuators.
    * @return True if get respond successfully, false when failed.
    */
-  bool isCalibrated(control_msgs::QueryCalibrationState::Request& req,
-                    control_msgs::QueryCalibrationState::Response& resp);
-  ros::Time last_publish_time_;
-  ros::ServiceServer is_calibrated_srv_;
-  //  enum { INITIALIZED, BEGINNING, MOVING_TO_LOW, MOVING_TO_HIGH, CALIBRATED }; for GPIO switch
-  enum
+  enum state
   {
-    INITIALIZED,
-    MOVING_POSITIVE,
+    MOVING_POSITIVE = 3,
     MOVING_NEGATIVE,
-    CALIBRATED
   };
   int state_{}, countdown_{};
   double velocity_search_{}, target_position_{}, velocity_threshold_{}, position_threshold_{};
   double positive_position_{}, negative_position_{};
-  bool is_return_{}, is_center_{}, returned_{};
-  rm_control::ActuatorExtraHandle actuator_;
-  effort_controllers::JointVelocityController velocity_ctrl_;
+  bool is_return_{}, is_center_{};
   effort_controllers::JointPositionController position_ctrl_;
 };
 
