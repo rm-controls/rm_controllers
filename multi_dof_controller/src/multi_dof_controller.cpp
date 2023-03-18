@@ -70,8 +70,6 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
   cmd_last_ = cmd_multi_dof_;
   cmd_multi_dof_ = *cmd_rt_buffer_.readFromRT();
-  if (cmd_last_.values != cmd_multi_dof_.values)
-      position_change_ = 1;
   if (state_ != cmd_multi_dof_.mode)
   {
     state_ = cmd_multi_dof_.mode;
@@ -140,9 +138,16 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
     if (position_change_)
     {
         current_positions[i] = (joints_[i].ctrl_position_->getPosition());
-        position_change_ = 0;
+        position_change_ = false;
     }
-    joints_[i].ctrl_velocity_->setCommand(current_positions[i] + results[i]);
+    double delta_pos = 0.1;
+    if (joints_[i].ctrl_position_->getPosition() != current_positions[i]+results[i] && results[i] != 0)
+        joints_[i].ctrl_velocity_->setCommand(current_positions[i] + delta_pos * abs(results[i])/results[i]);
+    else
+    {
+        joints_[i].ctrl_velocity_->setCommand(joints_[i].ctrl_position_->getPosition());
+        position_change_ = 1;
+    }
     joints_[i].ctrl_position_->update(time, period);
   }
   motion_group_.clear();
