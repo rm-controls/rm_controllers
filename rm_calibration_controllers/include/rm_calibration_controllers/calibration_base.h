@@ -33,17 +33,6 @@ public:
    * @return True if init successful, false when failed.
    */
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
-  /** @brief Execute corresponding action according to current calibration controller state.
-   *
-   * Execute corresponding action according to current joint state. If INITIALIZED, target joint will be set
-   * a vel_search_ and countdown_ to move, and switch state to MOVING. If MOVING, target joint will move until
-   * current velocity lower than threshold last for a while, and switch state to CALIBRATED. If CALIBRATED,
-   * target joint velocity will be set to zero and wait for next command.
-   *
-   * @param time The current time.
-   * @param period The time passed since the last call to update.
-   */
-  void update(const ros::Time& time, const ros::Duration& period) override;
   /** @brief Switch all of the actuators state to INITIALIZED.
    *
    * Switch all of the actuator state to INITIALIZED in order to restart the calibration.
