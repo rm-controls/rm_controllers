@@ -53,11 +53,11 @@ private:
 
   // ROS Interface
   ros::Subscriber cmd_multi_dof_sub_;
-  realtime_tools::RealtimeBuffer<rm_msgs::MultiDofCmd> cmd_rt_buffer_;
+  realtime_tools::RealtimeBuffer<rm_msgs::MultiDofCmd> cmd_rt_buffer_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   std::vector<hardware_interface::JointHandle> joint_handles_{};
 
-  rm_msgs::MultiDofCmd cmd_multi_dof_;
+  rm_msgs::MultiDofCmd cmd_multi_dof_{};
   bool state_changed_{};
 
   enum
@@ -66,10 +66,12 @@ private:
     POSITION
   };
   int state_ = VELOCITY;
-  std::vector<Joint> joints_;
-  std::vector<Motion> motions_;
-  std::vector<std::string> motion_group_;
-  std::vector<double> motion_group_values_;
+  std::vector<Joint> joints_{};
+  std::vector<Motion> motions_{};
+  std::vector<std::string> motion_group_{};
+  std::vector<double> motion_group_values_{};
+  bool position_change_ = 1;
+  rm_msgs::MultiDofCmd cmd_last_{};
 };
 
 }  // namespace multi_dof_controller
