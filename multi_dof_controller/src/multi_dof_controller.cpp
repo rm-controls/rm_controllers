@@ -44,15 +44,10 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
       ROS_INFO_STREAM(motion.second);
     for (int i = 0; i < (int)motion.second["position_config"].size(); ++i)
     {
-        ROS_INFO_STREAM("Start");
       ROS_ASSERT(motion.second["position_config"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-        ROS_INFO_STREAM("1");
       ROS_ASSERT(motion.second["velocity_config"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-        ROS_INFO_STREAM("2");
       ROS_ASSERT(motion.second["is_position_need_reverse"][i].getType() == XmlRpc::XmlRpcValue::TypeInt);
-        ROS_INFO_STREAM("3");
       ROS_ASSERT(motion.second["is_velocity_need_reverse"][i].getType() == XmlRpc::XmlRpcValue::TypeInt);
-        ROS_INFO_STREAM("4");
       m.position_config_.push_back(xmlRpcGetDouble(motion.second["position_config"][i]));
       m.velocity_config_.push_back(xmlRpcGetDouble(motion.second["velocity_config"][i]));
       m.is_position_need_reverse_.push_back(xmlRpcGetDouble(motion.second["is_position_need_reverse"][i]));
@@ -112,7 +107,6 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
     joints_[i].ctrl_velocity_->setCommand(results[i]);
-    ROS_INFO_STREAM("pub");
     joints_[i].ctrl_velocity_->update(time, period);
   }
   results.clear();
@@ -134,11 +128,9 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
         for (int k = 0; k < (int)motion_group_.size(); ++k) {
             if (motions_[j].motion_name_ == motion_group_[k])
             {
-                ROS_INFO_STREAM("into");
                 double total_step_value = judgeReverse(motion_group_values_[k], motions_[j].is_position_need_reverse_[i]);
                 double step_num = total_step_value / motions_[j].position_per_step_;
                 results[i] += step_num * motions_[j].position_config_[i];
-                ROS_INFO_STREAM(results[i]);
             }
         }
     }
@@ -146,7 +138,6 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
     joints_[i].ctrl_position_->setCommand(joints_[i].ctrl_position_->getPosition() + results[i]);
-    ROS_INFO_STREAM("pub");
     joints_[i].ctrl_position_->update(time, period);
   }
   results.clear();
@@ -161,7 +152,6 @@ double Controller::judgeReverse(double value, bool is_need_reverse)
 {
   if (!is_need_reverse)
     value = abs(value);
-  ROS_INFO_STREAM(value);
   return value;
 }
 void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd msg)
