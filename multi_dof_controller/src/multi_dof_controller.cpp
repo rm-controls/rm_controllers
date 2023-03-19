@@ -2,10 +2,9 @@
 // Created by lsy on 23-3-15.
 //
 
-#include "multi_dof_controller.h"
+#include "multi_dof_controller/multi_dof_controller.h"
 
 #include <string>
-#include <rm_common/ros_utilities.h>
 #include <rm_common/ros_utilities.h>
 #include <pluginlib/class_list_macros.hpp>
 
@@ -24,7 +23,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
              .ctrl_velocity_ = new effort_controllers::JointVelocityController() };
     ros::NodeHandle nh_position = ros::NodeHandle(controller_nh, "joints/" + joint.first + "/position");
     ros::NodeHandle nh_velocity = ros::NodeHandle(controller_nh, "joints/" + joint.first + "/velocity");
-    ROS_INFO_STREAM(j.joint_name_);
     if (!j.ctrl_position_->init(effort_joint_interface_, nh_position) ||
         !j.ctrl_velocity_->init(effort_joint_interface_, nh_velocity))
       return false;
@@ -36,12 +34,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   controller_nh.getParam("motions", motions);
   for (const auto& motion : motions)
   {
-    ROS_INFO_STREAM("START");
     Motion m{ .motion_name_ = motion.first,
               .position_per_step_ = xmlRpcGetDouble(motion.second["position_per_step"]),
               .velocity_max_speed_ = xmlRpcGetDouble(motion.second["velocity_max_speed"]) };
-    ROS_INFO_STREAM(motion.first);
-    ROS_INFO_STREAM(motion.second);
     for (int i = 0; i < (int)motion.second["position_config"].size(); ++i)
     {
       ROS_ASSERT(motion.second["position_config"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
@@ -88,6 +83,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
 
 void Controller::velocity(const ros::Time& time, const ros::Duration& period)
 {
+  position_change_ = true;
   if (state_changed_)
   {  // on enter
     state_changed_ = false;
@@ -123,39 +119,47 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
     ROS_INFO("[Multi_Dof] POSITION");
   }
   std::vector<double> current_positions((double)joints_.size(), 0);
-  judgeMotionGroup(cmd_multi_dof_);
   std::vector<double> results((double)joints_.size(), 0);
-  for (int i = 0; i < (int)joints_.size(); ++i)
+  std::vector<double> targets((double)joints_.size(), 0);
+  judgeMotionGroup(cmd_multi_dof_);
+  if (position_change_)
   {
-    for (int j = 0; j < (int)motion_group_.size(); ++j)
+    for (int i = 0; i < (int)joints_.size(); ++i)
     {
-      for (int k = 0; k < (int)motions_.size(); ++k)
+      current_positions[i] = (joints_[i].ctrl_position_->getPosition());
+      for (int j = 0; j < (int)motion_group_.size(); ++j)
       {
-        if (motions_[k].motion_name_ == motion_group_[j])
-          results[i] += judgeReverse(motion_group_values_[j], motions_[k].is_velocity_need_reverse_[i]) /
-                        motions_[k].position_per_step_ * motions_[k].position_config_[i];
+        for (int k = 0; k < (int)motions_.size(); ++k)
+        {
+          if (motions_[k].motion_name_ == motion_group_[j])
+            results[i] += judgeReverse(motion_group_values_[j], motions_[k].is_velocity_need_reverse_[i]) /
+                          motions_[k].position_per_step_ * motions_[k].position_config_[i];
+        }
       }
+      position_change_ = false;
+      targets[i] = results[i] + current_positions[i];
+      ROS_INFO_STREAM(targets[i]);
     }
   }
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
-    if (position_change_)
+    // joints_[i].ctrl_position_->setCommand(targets[i]);
+
+    if ((targets[i]) == joints_[i].ctrl_position_->getPosition())
     {
-      current_positions[i] = (joints_[i].ctrl_position_->getPosition());
-      position_change_ = false;
+      joints_[i].ctrl_position_->setCommand(joints_[i].ctrl_position_->getPosition());
+      position_change_ = 1;
+      motion_group_.clear();
+      motion_group_values_.clear();
     }
-    double delta_pos = 0.1;
-    if (joints_[i].ctrl_position_->getPosition() != current_positions[i] + results[i] && results[i] != 0)
-      joints_[i].ctrl_velocity_->setCommand(current_positions[i] + delta_pos * abs(results[i]) / results[i]);
     else
     {
-      joints_[i].ctrl_velocity_->setCommand(joints_[i].ctrl_position_->getPosition());
-      position_change_ = 1;
+      joints_[i].ctrl_position_->setCommand(current_positions[i] +
+                                            targets[i] * (1 - (joints_[i].ctrl_position_->getPosition()) / targets[i]));
     }
     joints_[i].ctrl_position_->update(time, period);
   }
-  motion_group_.clear();
-  motion_group_values_.clear();
+  // ROS_INFO_STREAM(position_change_);
 }
 
 void Controller::moveJoint()
