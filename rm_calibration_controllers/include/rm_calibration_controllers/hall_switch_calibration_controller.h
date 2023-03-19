@@ -17,7 +17,7 @@ public:
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-  enum state
+  enum state_
   {
     MOVING_AROUND = 3,
     RETURN
