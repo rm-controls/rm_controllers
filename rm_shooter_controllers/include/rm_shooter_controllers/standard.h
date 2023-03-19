@@ -47,6 +47,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <rm_shooter_controllers/ShooterConfig.h>
 #include <rm_msgs/ShootCmd.h>
+#include <rm_msgs/ShootState.h>
 
 #include <utility>
 
@@ -103,6 +104,7 @@ private:
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer;
   realtime_tools::RealtimeBuffer<rm_msgs::ShootCmd> cmd_rt_buffer_;
   rm_msgs::ShootCmd cmd_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootState>> shoot_state_pub_;
   ros::Subscriber cmd_subscriber_;
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>* d_srv_{};
 };

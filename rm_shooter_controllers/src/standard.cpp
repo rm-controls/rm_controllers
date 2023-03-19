@@ -63,6 +63,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   push_qd_threshold_ = getParam(controller_nh, "push_qd_threshold", 0.);
 
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::ShootCmd>("command", 1, &Controller::commandCB, this);
+  shoot_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::ShootState>(controller_nh, "state", 10));
   // Init dynamic reconfigure
   d_srv_ = new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>::CallbackType cb = [this](auto&& PH1, auto&& PH2) {
@@ -118,6 +119,12 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     case BLOCK:
       block(time, period);
       break;
+  }
+  if (shoot_state_pub_->trylock())
+  {
+    shoot_state_pub_->msg_.stamp = time;
+    shoot_state_pub_->msg_.state = state_;
+    shoot_state_pub_->unlockAndPublish();
   }
   ctrl_friction_l_.update(time, period);
   ctrl_friction_r_.update(time, period);
