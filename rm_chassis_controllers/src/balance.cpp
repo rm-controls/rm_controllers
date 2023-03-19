@@ -104,6 +104,8 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     ROS_ERROR("Params wheel_base_ doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+  controller_nh.getParam("position_offset", position_offset_);
+  controller_nh.getParam("position_clear_threshold", position_clear_threshold_);
 
   q_.setZero();
   r_.setZero();
@@ -339,6 +341,11 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   x(1) = angles::shortest_angular_distance(yaw_des_, x_(1));
   x(5) -= vel_cmd_.x;
   x(6) -= vel_cmd_.z;
+  if (std::abs(x(0) + position_offset_) > position_clear_threshold_)
+  {
+    x_[0] = 0.;
+    position_des_ = position_offset_;
+  }
   u = k_ * (-x);
   rm_msgs::BalanceState state;
   state.header.stamp = time;
