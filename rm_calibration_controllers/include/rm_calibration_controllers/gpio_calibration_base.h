@@ -10,7 +10,7 @@
 
 namespace rm_calibration_controllers
 {
-class GpioCalibrationBase : public CalibrationBase<rm_control::RobotStateInterface, rm_control::GpioStateInterface,
+class GpioCalibrationBase : public CalibrationBase<rm_control::ActuatorExtraInterface, rm_control::GpioStateInterface,
                                                    hardware_interface::EffortJointInterface>
 {
 public:

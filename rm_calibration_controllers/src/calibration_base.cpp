@@ -6,8 +6,8 @@
 
 namespace rm_calibration_controllers
 {
-template class CalibrationBase<rm_control::RobotStateInterface, hardware_interface::EffortJointInterface>;
-template class CalibrationBase<rm_control::RobotStateInterface, rm_control::GpioStateInterface,
+template class CalibrationBase<rm_control::ActuatorExtraInterface, hardware_interface::EffortJointInterface>;
+template class CalibrationBase<rm_control::ActuatorExtraInterface, rm_control::GpioStateInterface,
                                hardware_interface::EffortJointInterface>;
 
 template <typename... T>
