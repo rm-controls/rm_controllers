@@ -27,9 +27,9 @@ bool GpioCalibrationBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeH
     ROS_ERROR("Velocity threshold was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  for (int i = 0; i < gpios.size(); ++i)
+  for (int i = 0; i < gpios.size(); i++)
   {
-    ROS_ASSERT(initial_gpio_states[i].getType() == XmlRpc::XmlRpcValue::TypeString);
+    ROS_ASSERT(initial_gpio_states[i].getType() == XmlRpc::XmlRpcValue::TypeBoolean);
     ROS_ASSERT(gpios[i].getType() == XmlRpc::XmlRpcValue::TypeString);
     std::string gpio_name = gpios[i];
     rm_control::GpioStateHandle state_handle_ = robot_hw->get<rm_control::GpioStateInterface>()->getHandle(gpio_name);

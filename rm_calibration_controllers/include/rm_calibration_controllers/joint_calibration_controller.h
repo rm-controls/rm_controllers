@@ -71,22 +71,8 @@ public:
    * @param period The time passed since the last call to update.
    */
   void update(const ros::Time& time, const ros::Duration& period) override;
-  /** @brief Switch all of the actuators state to INITIALIZED.
-   *
-   * Switch all of the actuator state to INITIALIZED in order to restart the calibration.
-   *
-   * @param time The current time.
-   */
 
 private:
-  /** @brief Provide a service to know the state of target actuators.
-   *
-   * When requesting to this server, it will return respond about whether target actuators has been calibrated.
-   *
-   * @param req The request of knowing the state of target actuators.
-   * @param resp The respond included the state of target actuators.
-   * @return True if get respond successfully, false when failed.
-   */
   enum state
   {
     MOVING_POSITIVE = 3,
