@@ -72,6 +72,8 @@ private:
   std::vector<double> motion_group_values_{};
   bool position_change_ = 1;
   rm_msgs::MultiDofCmd cmd_last_{};
+  std::vector<double> targets_{};
+  double tolerance_ = 0.5;
 };
 
 }  // namespace multi_dof_controller
