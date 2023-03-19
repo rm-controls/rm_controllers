@@ -32,8 +32,8 @@ bool GpioCalibrationBase::init(hardware_interface::RobotHW* robot_hw, ros::NodeH
     ROS_ASSERT(initial_gpio_states[i].getType() == XmlRpc::XmlRpcValue::TypeBoolean);
     ROS_ASSERT(gpios[i].getType() == XmlRpc::XmlRpcValue::TypeString);
     std::string gpio_name = gpios[i];
-    rm_control::GpioStateHandle state_handle_ = robot_hw->get<rm_control::GpioStateInterface>()->getHandle(gpio_name);
-    gpio_state_handles_.push_back(state_handle_);
+    rm_control::GpioStateHandle state_handle = robot_hw->get<rm_control::GpioStateInterface>()->getHandle(gpio_name);
+    gpio_state_handles_.push_back(state_handle);
     initial_gpio_states_.push_back(initial_gpio_states[i]);
   }
   return true;
