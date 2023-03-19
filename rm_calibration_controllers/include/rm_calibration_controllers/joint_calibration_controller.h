@@ -73,7 +73,7 @@ public:
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-  enum state_
+  enum State
   {
     MOVING_POSITIVE = 3,
     MOVING_NEGATIVE,

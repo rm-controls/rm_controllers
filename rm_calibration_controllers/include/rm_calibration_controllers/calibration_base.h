@@ -53,7 +53,7 @@ protected:
   bool isCalibrated(control_msgs::QueryCalibrationState::Request& req,
                     control_msgs::QueryCalibrationState::Response& resp);
   ros::ServiceServer is_calibrated_srv_;
-  enum state_
+  enum State
   {
     INITIALIZED,
     CALIBRATED
