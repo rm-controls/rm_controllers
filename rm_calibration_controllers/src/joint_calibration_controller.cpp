@@ -47,12 +47,6 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
   CalibrationBase::init(robot_hw, root_nh, controller_nh);
   is_return_ = is_center_ = false;
   controller_nh.getParam("center", is_center_);
-  if (velocity_threshold_ < 0)
-  {
-    velocity_threshold_ *= -1.;
-    ROS_ERROR("Negative velocity threshold is not supported for joint %s. Making the velocity threshold positive.",
-              velocity_ctrl_.getJointName().c_str());
-  }
   if (controller_nh.hasParam("return"))
   {
     ros::NodeHandle nh_return(controller_nh, "return");
@@ -62,7 +56,7 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
       ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
       return false;
     }
-    if (!controller_nh.getParam("threshold", position_threshold_))
+    if (!controller_nh.getParam("pos_threshold", position_threshold_))
     {
       ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
       return false;

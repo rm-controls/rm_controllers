@@ -18,7 +18,6 @@ public:
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
 
 protected:
-  double vel_threshold_{};
   bool last_gpio_state_ = false;
   std::vector<rm_control::GpioStateHandle> gpio_state_handles_;
   std::vector<bool> initial_gpio_states_;

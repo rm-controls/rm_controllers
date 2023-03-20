@@ -73,7 +73,7 @@ void HallSwitchCalibrationController::update(const ros::Time& time, const ros::D
       position_ctrl_.update(time, period);
       if (((std::abs(position_ctrl_.joint_.getPosition() - position_ctrl_.command_struct_.position_)) <
            position_threshold_) &&
-          (position_ctrl_.joint_.getVelocity() < vel_threshold_))
+          (position_ctrl_.joint_.getVelocity() < velocity_threshold_))
       {
         actuator_.setOffset(-actuator_.getPosition() + actuator_.getOffset());
         actuator_.setCalibrated(true);

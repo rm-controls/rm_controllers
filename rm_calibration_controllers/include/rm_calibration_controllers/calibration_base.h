@@ -59,7 +59,7 @@ protected:
     CALIBRATED
   };
   int state_{};
-  double velocity_search_{};
+  double velocity_search_{}, velocity_threshold_{};
   bool calibration_success_ = false;
   rm_control::ActuatorExtraHandle actuator_;
   effort_controllers::JointVelocityController velocity_ctrl_;

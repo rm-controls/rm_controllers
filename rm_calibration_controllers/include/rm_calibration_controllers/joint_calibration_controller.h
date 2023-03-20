@@ -79,7 +79,7 @@ private:
     MOVING_NEGATIVE,
   };
   int state_{}, countdown_{};
-  double target_position_{}, velocity_threshold_{}, position_threshold_{};
+  double target_position_{}, position_threshold_{};
   double positive_position_{}, negative_position_{};
   bool is_return_{}, is_center_{};
   effort_controllers::JointPositionController position_ctrl_;
