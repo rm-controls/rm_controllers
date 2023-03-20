@@ -104,6 +104,31 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     ROS_ERROR("Params wheel_base_ doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+  if (!controller_nh.getParam("block_duration", block_duration_))
+  {
+    ROS_ERROR("Params block_duration doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("block_effort", block_effort_))
+  {
+    ROS_ERROR("Params block_speed doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("block_angle", block_angle_))
+  {
+    ROS_ERROR("Params block_effort doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("anti_block_effort", anti_block_effort_))
+  {
+    ROS_ERROR("Params anti_block_effort doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (!controller_nh.getParam("block_overtime", block_overtime_))
+  {
+    ROS_ERROR("Params block_overtime doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
   controller_nh.getParam("position_offset", position_offset_);
   controller_nh.getParam("position_clear_threshold", position_clear_threshold_);
 
@@ -119,9 +144,13 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   {
     ROS_ASSERT(q[i].getType() == XmlRpc::XmlRpcValue::TypeDouble || q[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
     if (q[i].getType() == XmlRpc::XmlRpcValue::TypeDouble)
+    {
       q_(i, i) = static_cast<double>(q[i]);
+    }
     else if (q[i].getType() == XmlRpc::XmlRpcValue::TypeInt)
+    {
       q_(i, i) = static_cast<int>(q[i]);
+    }
   }
   // Check and get R
   ROS_ASSERT(r.getType() == XmlRpc::XmlRpcValue::TypeArray);
@@ -130,9 +159,13 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   {
     ROS_ASSERT(r[i].getType() == XmlRpc::XmlRpcValue::TypeDouble || r[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
     if (r[i].getType() == XmlRpc::XmlRpcValue::TypeDouble)
+    {
       r_(i, i) = static_cast<double>(r[i]);
+    }
     else if (r[i].getType() == XmlRpc::XmlRpcValue::TypeInt)
+    {
       r_(i, i) = static_cast<int>(r[i]);
+    }
   }
 
   // Continuous model \dot{x} = A x + B u
@@ -276,6 +309,8 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   ROS_INFO_STREAM("K of LQR:" << k_);
 
   state_pub_ = root_nh.advertise<rm_msgs::BalanceState>("/state", 10);
+  balance_state_ = balanceState::NORMAL;
+
   return true;
 }
 
@@ -319,56 +354,119 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   odom2imu.setOrigin(odom2imu_origin);
   odom2imu.setRotation(odom2imu_quaternion);
   odom2base = odom2imu * imu2base;
+
   double roll, pitch, yaw;
   quatToRPY(toMsg(odom2base).rotation, roll, pitch, yaw);
-  x_[5] = ((left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) / 2 -
-           imu_handle_.getAngularVelocity()[1]) *
-          wheel_radius_;
-  x_[0] += x_[5] * period.toSec();
-  x_[1] = yaw;
-  x_[2] = pitch;
-  x_[3] = left_momentum_block_joint_handle_.getPosition();
-  x_[4] = right_momentum_block_joint_handle_.getPosition();
-  x_[6] = angular_vel_base.z;
-  x_[7] = angular_vel_base.y;
-  x_[8] = left_momentum_block_joint_handle_.getVelocity();
-  x_[9] = right_momentum_block_joint_handle_.getVelocity();
-  yaw_des_ += vel_cmd_.z * period.toSec();
-  position_des_ += vel_cmd_.x * period.toSec();
-  Eigen::Matrix<double, CONTROL_DIM, 1> u;
-  auto x = x_;
-  x(0) -= position_des_;
-  x(1) = angles::shortest_angular_distance(yaw_des_, x_(1));
-  x(5) -= vel_cmd_.x;
-  x(6) -= vel_cmd_.z;
-  if (std::abs(x(0) + position_offset_) > position_clear_threshold_)
-  {
-    x_[0] = 0.;
-    position_des_ = position_offset_;
-  }
-  u = k_ * (-x);
-  rm_msgs::BalanceState state;
-  state.header.stamp = time;
-  state.x = x(0);
-  state.phi = x(1);
-  state.theta = x(2);
-  state.x_b_l = x(3);
-  state.x_b_r = x(4);
-  state.x_dot = x(5);
-  state.phi_dot = x(6);
-  state.theta_dot = x(7);
-  state.x_b_l_dot = x(8);
-  state.x_b_r_dot = x(9);
-  state.T_l = u(0);
-  state.T_r = u(1);
-  state.f_b_l = u(2);
-  state.f_b_r = u(3);
-  state_pub_.publish(state);
 
-  left_wheel_joint_handle_.setCommand(u(0));
-  right_wheel_joint_handle_.setCommand(u(1));
-  left_momentum_block_joint_handle_.setCommand(u(2));
-  right_momentum_block_joint_handle_.setCommand(u(3));
+  // Check block
+  if (balance_state_ != balanceState::BLOCK)
+  {
+    if ((std::abs(left_wheel_joint_handle_.getEffort()) + std::abs(right_wheel_joint_handle_.getEffort())) / 2. >
+            block_effort_ &&
+        (left_wheel_joint_handle_.getVelocity() < 0.5 || right_wheel_joint_handle_.getVelocity() < 0.5))
+    {
+      if (!maybe_block_)
+      {
+        block_time_ = time;
+        maybe_block_ = true;
+      }
+      if ((time - block_time_).toSec() >= block_duration_)
+      {
+        balance_state_ = balanceState::BLOCK;
+        balance_state_changed_ = true;
+        ROS_INFO("[balance] Exit NOMAl");
+      }
+    }
+    else
+    {
+      maybe_block_ = false;
+    }
+  }
+
+  switch (balance_state_)
+  {
+    case balanceState::NORMAL:
+    {
+      if (balance_state_changed_)
+      {
+        ROS_INFO("[balance] Enter NOMAl");
+        balance_state_changed_ = false;
+      }
+      x_[5] = ((left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) / 2 -
+               imu_handle_.getAngularVelocity()[1]) *
+              wheel_radius_;
+      x_[0] += x_[5] * period.toSec();
+      x_[1] = yaw;
+      x_[2] = pitch;
+      x_[3] = left_momentum_block_joint_handle_.getPosition();
+      x_[4] = right_momentum_block_joint_handle_.getPosition();
+      x_[6] = angular_vel_base.z;
+      x_[7] = angular_vel_base.y;
+      x_[8] = left_momentum_block_joint_handle_.getVelocity();
+      x_[9] = right_momentum_block_joint_handle_.getVelocity();
+      yaw_des_ += vel_cmd_.z * period.toSec();
+      position_des_ += vel_cmd_.x * period.toSec();
+      Eigen::Matrix<double, CONTROL_DIM, 1> u;
+      auto x = x_;
+      x(0) -= position_des_;
+      x(1) = angles::shortest_angular_distance(yaw_des_, x_(1));
+      x(5) -= vel_cmd_.x;
+      x(6) -= vel_cmd_.z;
+      if (std::abs(x(0) + position_offset_) > position_clear_threshold_)
+      {
+        x_[0] = 0.;
+        position_des_ = position_offset_;
+      }
+      u = k_ * (-x);
+      rm_msgs::BalanceState state;
+      state.header.stamp = time;
+      state.x = x(0);
+      state.phi = x(1);
+      state.theta = x(2);
+      state.x_b_l = x(3);
+      state.x_b_r = x(4);
+      state.x_dot = x(5);
+      state.phi_dot = x(6);
+      state.theta_dot = x(7);
+      state.x_b_l_dot = x(8);
+      state.x_b_r_dot = x(9);
+      state.T_l = u(0);
+      state.T_r = u(1);
+      state.f_b_l = u(2);
+      state.f_b_r = u(3);
+      state_pub_.publish(state);
+
+      left_wheel_joint_handle_.setCommand(u(0));
+      right_wheel_joint_handle_.setCommand(u(1));
+      left_momentum_block_joint_handle_.setCommand(u(2));
+      right_momentum_block_joint_handle_.setCommand(u(3));
+      break;
+    }
+    case balanceState::BLOCK:
+    {
+      if (balance_state_changed_)
+      {
+        ROS_INFO("[balance] Enter BLOCK");
+        balance_state_changed_ = false;
+
+        last_block_time_ = ros::Time::now();
+      }
+      if ((ros::Time::now() - last_block_time_).toSec() > block_overtime_)
+      {
+        balance_state_ = balanceState::NORMAL;
+        balance_state_changed_ = true;
+        ROS_INFO("[balance] Exit BLOCK");
+      }
+      else
+      {
+        left_momentum_block_joint_handle_.setCommand(pitch > 0 ? -80 : 80);
+        right_momentum_block_joint_handle_.setCommand(pitch > 0 ? -80 : 80);
+        left_wheel_joint_handle_.setCommand(pitch > 0 ? -anti_block_effort_ : anti_block_effort_);
+        right_wheel_joint_handle_.setCommand(pitch > 0 ? -anti_block_effort_ : anti_block_effort_);
+      }
+      break;
+    }
+  }
 }
 
 geometry_msgs::Twist BalanceController::odometry()
