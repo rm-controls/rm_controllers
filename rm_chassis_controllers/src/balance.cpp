@@ -114,9 +114,9 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     ROS_ERROR("Params block_speed doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (!controller_nh.getParam("block_angle", block_angle_))
+  if (!controller_nh.getParam("block_velocity", block_velocity_))
   {
-    ROS_ERROR("Params block_effort doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("Params block_velocity doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
   if (!controller_nh.getParam("anti_block_effort", anti_block_effort_))
@@ -363,7 +363,8 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   {
     if ((std::abs(left_wheel_joint_handle_.getEffort()) + std::abs(right_wheel_joint_handle_.getEffort())) / 2. >
             block_effort_ &&
-        (left_wheel_joint_handle_.getVelocity() < 0.5 || right_wheel_joint_handle_.getVelocity() < 0.5))
+        (left_wheel_joint_handle_.getVelocity() < block_velocity_ ||
+         right_wheel_joint_handle_.getVelocity() < block_velocity_))
     {
       if (!maybe_block_)
       {
@@ -410,7 +411,8 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
       auto x = x_;
       x(0) -= position_des_;
       x(1) = angles::shortest_angular_distance(yaw_des_, x_(1));
-      x(5) -= vel_cmd_.x;
+      if (state_ != GYRO)
+        x(5) -= vel_cmd_.x;
       x(6) -= vel_cmd_.z;
       if (std::abs(x(0) + position_offset_) > position_clear_threshold_)
       {

@@ -45,7 +45,7 @@ private:
 
   int balance_state_;
   ros::Time block_time_, last_block_time_;
-  double block_duration_, block_angle_, block_effort_, anti_block_effort_, block_overtime_;
+  double block_duration_, block_velocity_, block_effort_, anti_block_effort_, block_overtime_;
   bool balance_state_changed_ = false, maybe_block_ = false;
 
   hardware_interface::ImuSensorHandle imu_handle_;
