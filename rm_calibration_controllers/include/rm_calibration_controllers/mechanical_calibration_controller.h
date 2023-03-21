@@ -42,11 +42,11 @@
 
 namespace rm_calibration_controllers
 {
-class JointCalibrationController
+class MechanicalCalibrationController
   : public CalibrationBase<rm_control::ActuatorExtraInterface, hardware_interface::EffortJointInterface>
 {
 public:
-  JointCalibrationController() = default;
+  MechanicalCalibrationController() = default;
   /** @brief Get necessary params from param server. Init joint_calibration_controller.
    *
    * Get params from param server and check whether these params are set.Init JointVelocityController.Check

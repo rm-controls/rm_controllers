@@ -41,8 +41,8 @@
 
 namespace rm_calibration_controllers
 {
-bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
-                                      ros::NodeHandle& controller_nh)
+bool MechanicalCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
+                                           ros::NodeHandle& controller_nh)
 {
   CalibrationBase::init(robot_hw, root_nh, controller_nh);
   is_return_ = is_center_ = false;
@@ -67,7 +67,7 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
   return true;
 }
 
-void JointCalibrationController::update(const ros::Time& time, const ros::Duration& period)
+void MechanicalCalibrationController::update(const ros::Time& time, const ros::Duration& period)
 {
   // TODO: Add GPIO switch support
   switch (state_)
@@ -156,4 +156,4 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
 }
 }  // namespace rm_calibration_controllers
 
-PLUGINLIB_EXPORT_CLASS(rm_calibration_controllers::JointCalibrationController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(rm_calibration_controllers::MechanicalCalibrationController, controller_interface::ControllerBase)
