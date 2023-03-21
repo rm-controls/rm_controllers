@@ -35,7 +35,7 @@
 // Created by qiayuan on 5/16/21.
 //
 
-#include "rm_calibration_controllers/joint_calibration_controller.h"
+#include "rm_calibration_controllers/mechanical_calibration_controller.h"
 
 #include <pluginlib/class_list_macros.hpp>
 

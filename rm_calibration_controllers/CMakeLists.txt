@@ -52,7 +52,7 @@ include_directories(
 
 ## Declare a cpp library
 add_library(${PROJECT_NAME}
-        src/joint_calibration_controller.cpp
+        src/mechanical_calibration_controller.cpp
         src/hall_switch_calibration_controller.cpp
         src/calibration_base.cpp
         src/gpio_calibration_base.cpp)
