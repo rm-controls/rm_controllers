@@ -79,7 +79,7 @@ public:
    *
    * Receive real_time command from manual and check whether it is normally, if can not receive command from manual
    * for a while, chassis's velocity will be set zero to avoid out of control. Execute different action according
-   * to current mode such as RAW, FOLLOW, GYRO, TWIST.(Their specific usage will be explain in the next). UpdateOdom,Set
+   * to current mode such as RAW, FOLLOW, TWIST.(Their specific usage will be explain in the next). UpdateOdom,Set
    * necessary params such as Acc and vel_tfed. Execute moving action and powerlimit.
    *
    * @param time The current time.
@@ -109,11 +109,6 @@ protected:
    * @param period The time passed since the last call to update.
    */
   void twist(const ros::Time& time, const ros::Duration& period);
-  /** @brief The mode GYRO: Moving like a top.
-   *
-   * The mode GYRO: Chassis will rotate around itself.
-   */
-  void gyro();
   virtual void moveJoint(const ros::Time& time, const ros::Duration& period) = 0;
   virtual geometry_msgs::Twist odometry() = 0;
   /** @brief Init frame on base_link. Integral vel to pos and angle.
@@ -161,10 +156,9 @@ protected:
   {
     RAW,
     FOLLOW,
-    GYRO,
     TWIST
   };
-  int state_ = GYRO;
+  int state_ = RAW;
   RampFilter<double>*ramp_x_{}, *ramp_y_{}, *ramp_w_{};
   std::string follow_source_frame_{}, command_source_frame_{};
 
