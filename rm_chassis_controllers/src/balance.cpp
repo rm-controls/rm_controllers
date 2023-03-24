@@ -314,7 +314,7 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   ROS_INFO_STREAM("K of LQR:" << k_);
 
   state_pub_ = root_nh.advertise<rm_msgs::BalanceState>("/state", 10);
-  balance_state_ = balanceState::NORMAL;
+  balance_state_ = BalanceState::NORMAL;
 
   return true;
 }
@@ -364,7 +364,7 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   quatToRPY(toMsg(odom2base).rotation, roll, pitch, yaw);
 
   // Check block
-  if (balance_state_ != balanceState::BLOCK)
+  if (balance_state_ != BalanceState::BLOCK)
   {
     if (std::abs(pitch) > block_angle_ &&
         (std::abs(left_wheel_joint_handle_.getEffort()) + std::abs(right_wheel_joint_handle_.getEffort())) / 2. >
@@ -379,7 +379,7 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
       }
       if ((time - block_time_).toSec() >= block_duration_)
       {
-        balance_state_ = balanceState::BLOCK;
+        balance_state_ = BalanceState::BLOCK;
         balance_state_changed_ = true;
         ROS_INFO("[balance] Exit NOMAl");
       }
@@ -392,7 +392,7 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
 
   switch (balance_state_)
   {
-    case balanceState::NORMAL:
+    case BalanceState::NORMAL:
     {
       if (balance_state_changed_)
       {
@@ -417,7 +417,7 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
       auto x = x_;
       x(0) -= position_des_;
       x(1) = angles::shortest_angular_distance(yaw_des_, x_(1));
-      if (state_ != GYRO)
+      if (state_ != RAW)
         x(5) -= vel_cmd_.x;
       x(6) -= vel_cmd_.z;
       if (std::abs(x(0) + position_offset_) > position_clear_threshold_)
@@ -450,7 +450,7 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
       right_momentum_block_joint_handle_.setCommand(u(3));
       break;
     }
-    case balanceState::BLOCK:
+    case BalanceState::BLOCK:
     {
       if (balance_state_changed_)
       {
@@ -461,7 +461,7 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
       }
       if ((ros::Time::now() - last_block_time_).toSec() > block_overtime_)
       {
-        balance_state_ = balanceState::NORMAL;
+        balance_state_ = BalanceState::NORMAL;
         balance_state_changed_ = true;
         ROS_INFO("[balance] Exit BLOCK");
       }
