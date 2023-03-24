@@ -47,6 +47,7 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace rm_chassis_controllers
 {
@@ -78,7 +79,7 @@ public:
    *
    * Receive real_time command from manual and check whether it is normally, if can not receive command from manual
    * for a while, chassis's velocity will be set zero to avoid out of control. Execute different action according
-   * to current mode such as RAW, FOLLOW, GYRO, TWIST.(Their specific usage will be explain in the next). UpdateOdom,Set
+   * to current mode such as RAW, FOLLOW, TWIST.(Their specific usage will be explain in the next). UpdateOdom,Set
    * necessary params such as Acc and vel_tfed. Execute moving action and powerlimit.
    *
    * @param time The current time.
@@ -108,11 +109,6 @@ protected:
    * @param period The time passed since the last call to update.
    */
   void twist(const ros::Time& time, const ros::Duration& period);
-  /** @brief The mode GYRO: Moving like a top.
-   *
-   * The mode GYRO: Chassis will rotate around itself.
-   */
-  void gyro();
   virtual void moveJoint(const ros::Time& time, const ros::Duration& period) = 0;
   virtual geometry_msgs::Twist odometry() = 0;
   /** @brief Init frame on base_link. Integral vel to pos and angle.
@@ -144,6 +140,7 @@ protected:
    * @param msg This expresses velocity in free space broken into its linear and angular parts.
    */
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
+  void outsideOdomCallback(const nav_msgs::Odometry::ConstPtr& msg);
 
   rm_control::RobotStateHandle robot_state_handle_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
@@ -152,30 +149,33 @@ protected:
   double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, timeout_{}, effort_coeff_{},
       velocity_coeff_{}, power_offset_{};
   bool enable_odom_tf_ = false;
+  bool topic_update_ = false;
   bool publish_odom_tf_ = false;
   bool state_changed_ = true;
   enum
   {
     RAW,
     FOLLOW,
-    GYRO,
     TWIST
   };
-  int state_ = GYRO;
+  int state_ = RAW;
   RampFilter<double>*ramp_x_{}, *ramp_y_{}, *ramp_w_{};
   std::string follow_source_frame_{}, command_source_frame_{};
 
   ros::Time last_publish_time_;
   geometry_msgs::TransformStamped odom2base_{};
+  tf2::Transform world2odom_;
   geometry_msgs::Vector3 vel_cmd_{};  // x, y
   control_toolbox::Pid pid_follow_;
 
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
   rm_common::TfRtBroadcaster tf_broadcaster_{};
+  ros::Subscriber outside_odom_sub_;
   ros::Subscriber cmd_chassis_sub_;
   ros::Subscriber cmd_vel_sub_;
   Command cmd_struct_;
   realtime_tools::RealtimeBuffer<Command> cmd_rt_buffer_;
+  realtime_tools::RealtimeBuffer<nav_msgs::Odometry> odom_buffer_;
 };
 
 }  // namespace rm_chassis_controllers

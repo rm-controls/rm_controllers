@@ -2,7 +2,10 @@
 
 ## Overview
 
-There are four states: raw, follow, gyro and twist. The output torque and speed of each motor of the chassis can be calculated according to the current state of the control, the received speed and pose of the pan/tilt, and the speed and acceleration commands, and the data is returned by the motor to calculate The speed and posture of the chassis are released. The control algorithm involved in the chassis controller is PID algorithm.
+There are three states: raw, follow and twist. The output torque and speed of each motor of the chassis can be
+calculated according to the current state of the control, the received speed and pose of the pan/tilt, and the speed and
+acceleration commands, and the data is returned by the motor to calculate The speed and posture of the chassis are
+released. The control algorithm involved in the chassis controller is PID algorithm.
 
 **Keywords:** mecanum, swerve, balance, chassis, ROS, RoboMaster
 

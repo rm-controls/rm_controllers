@@ -103,7 +103,10 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     tf_broadcaster_.init(root_nh);
     tf_broadcaster_.sendTransform(odom2base_);
   }
+  world2odom_.setRotation(tf2::Quaternion::getIdentity());
 
+  outside_odom_sub_ =
+      controller_nh.subscribe<nav_msgs::Odometry>("/odometry", 10, &ChassisBase::outsideOdomCallback, this);
   cmd_chassis_sub_ = controller_nh.subscribe<rm_msgs::ChassisCmd>("command", 1, &ChassisBase::cmdChassisCallback, this);
   cmd_vel_sub_ = root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisBase::cmdVelCallback, this);
 
@@ -161,9 +164,6 @@ void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& perio
       break;
     case FOLLOW:
       follow(time, period);
-      break;
-    case GYRO:
-      gyro();
       break;
     case TWIST:
       twist(time, period);
@@ -247,19 +247,6 @@ void ChassisBase<T...>::twist(const ros::Time& time, const ros::Duration& period
 }
 
 template <typename... T>
-void ChassisBase<T...>::gyro()
-{
-  if (state_changed_)
-  {
-    state_changed_ = false;
-    ROS_INFO("[Chassis] Enter GYRO");
-
-    recovery();
-  }
-  tfVelToBase(command_source_frame_);
-}
-
-template <typename... T>
 void ChassisBase<T...>::raw()
 {
   if (state_changed_)
@@ -269,6 +256,7 @@ void ChassisBase<T...>::raw()
 
     recovery();
   }
+  tfVelToBase(command_source_frame_);
 }
 
 template <typename... T>
@@ -308,8 +296,54 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
       odom2base_quat.normalize();
       odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
     }
-    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
   }
+
+  if (topic_update_)
+  {
+    auto* odom_msg = odom_buffer_.readFromRT();
+
+    tf2::Transform world2sensor;
+    world2sensor.setOrigin(
+        tf2::Vector3(odom_msg->pose.pose.position.x, odom_msg->pose.pose.position.y, odom_msg->pose.pose.position.z));
+    world2sensor.setRotation(tf2::Quaternion(odom_msg->pose.pose.orientation.x, odom_msg->pose.pose.orientation.y,
+                                             odom_msg->pose.pose.orientation.z, odom_msg->pose.pose.orientation.w));
+
+    if (world2odom_.getRotation() == tf2::Quaternion::getIdentity())  // First received
+    {
+      tf2::Transform odom2sensor;
+      try
+      {
+        geometry_msgs::TransformStamped tf_msg =
+            robot_state_handle_.lookupTransform("odom", "livox_frame", odom_msg->header.stamp);
+        tf2::fromMsg(tf_msg.transform, odom2sensor);
+      }
+      catch (tf2::TransformException& ex)
+      {
+        ROS_WARN("%s", ex.what());
+        return;
+      }
+      world2odom_ = world2sensor * odom2sensor.inverse();
+    }
+    tf2::Transform base2sensor;
+    try
+    {
+      geometry_msgs::TransformStamped tf_msg =
+          robot_state_handle_.lookupTransform("base_link", "livox_frame", odom_msg->header.stamp);
+      tf2::fromMsg(tf_msg.transform, base2sensor);
+    }
+    catch (tf2::TransformException& ex)
+    {
+      ROS_WARN("%s", ex.what());
+      return;
+    }
+    tf2::Transform odom2base = world2odom_.inverse() * world2sensor * base2sensor.inverse();
+    odom2base_.transform.translation.x = odom2base.getOrigin().x();
+    odom2base_.transform.translation.y = odom2base.getOrigin().y();
+    odom2base_.transform.translation.z = odom2base.getOrigin().z();
+    topic_update_ = false;
+  }
+
+  robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
@@ -389,6 +423,13 @@ void ChassisBase<T...>::cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg
   cmd_struct_.cmd_vel_ = *msg;
   cmd_struct_.stamp_ = ros::Time::now();
   cmd_rt_buffer_.writeFromNonRT(cmd_struct_);
+}
+
+template <typename... T>
+void ChassisBase<T...>::outsideOdomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+{
+  odom_buffer_.writeFromNonRT(*msg);
+  topic_update_ = true;
 }
 
 }  // namespace rm_chassis_controllers
