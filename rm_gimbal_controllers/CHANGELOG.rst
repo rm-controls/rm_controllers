@@ -2,6 +2,19 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.10 (2023-03-25)
+-------------------
+* Merge branch 'rm-controls:master' into master
+* Merge pull request `#114 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/114>`_ from ye-luo-xi-tui/resistance_compensation
+  Add resistance compensation on yaw
+* Add resistance compensation on yaw.
+* Merge pull request `#113 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/113>`_ from ye-luo-xi-tui/master
+  Use Vector3WithFilter in rm_common instead
+* Use Vector3WithFilter in rm_common instead.
+* Merge pull request `#106 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/106>`_ from ye-luo-xi-tui/master
+  0.1.9
+* Contributors: ye-luo-xi-tui, yezi
+
 0.1.9 (2023-02-21)
 ------------------
 * Merge pull request `#104 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/104>`_ from ye-luo-xi-tui/balance_standard
