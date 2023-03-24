@@ -109,6 +109,11 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     ROS_ERROR("Params block_duration doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+  if (!controller_nh.getParam("block_angle", block_angle_))
+  {
+    ROS_ERROR("Params block_angle doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
   if (!controller_nh.getParam("block_effort", block_effort_))
   {
     ROS_ERROR("Params block_speed doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
@@ -361,7 +366,8 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   // Check block
   if (balance_state_ != balanceState::BLOCK)
   {
-    if ((std::abs(left_wheel_joint_handle_.getEffort()) + std::abs(right_wheel_joint_handle_.getEffort())) / 2. >
+    if (std::abs(pitch) > block_angle_ &&
+        (std::abs(left_wheel_joint_handle_.getEffort()) + std::abs(right_wheel_joint_handle_.getEffort())) / 2. >
             block_effort_ &&
         (left_wheel_joint_handle_.getVelocity() < block_velocity_ ||
          right_wheel_joint_handle_.getVelocity() < block_velocity_))
