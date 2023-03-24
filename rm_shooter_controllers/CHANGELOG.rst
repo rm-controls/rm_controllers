@@ -2,8 +2,8 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.10 (2023-03-25)
+-------------------
 * Merge pull request `#118 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/118>`_ from ye-luo-xi-tui/master
   Publish shoot state
 * Publish shoot state.

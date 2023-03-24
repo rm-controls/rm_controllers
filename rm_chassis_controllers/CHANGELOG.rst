@@ -2,8 +2,8 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.10 (2023-03-25)
+-------------------
 * Merge pull request `#112 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/112>`_ from ljq-lv/Delete
   Delete the chassis mode "GYRO"
 * Merge pull request `#115 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/115>`_ from Edwinlinks/fix-odom

@@ -2,8 +2,8 @@
 Changelog for package tof_radar_controller
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.10 (2023-03-25)
+-------------------
 * Merge pull request `#106 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/106>`_ from ye-luo-xi-tui/master
   0.1.9
 * Contributors: ye-luo-xi-tui

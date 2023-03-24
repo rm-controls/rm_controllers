@@ -2,8 +2,8 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.10 (2023-03-25)
+-------------------
 * Merge branch 'rm-controls:master' into master
 * Merge pull request `#114 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/114>`_ from ye-luo-xi-tui/resistance_compensation
   Add resistance compensation on yaw
