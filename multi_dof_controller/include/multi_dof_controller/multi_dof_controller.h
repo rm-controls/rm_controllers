@@ -75,7 +75,7 @@ private:
   std::vector<double> targets_{};
   double tolerance_ = 0.01;
   ros::Time start_time_;
-  double time_out_ = 1 ;
+  double time_out_ = 1;
 };
 
 }  // namespace multi_dof_controller
