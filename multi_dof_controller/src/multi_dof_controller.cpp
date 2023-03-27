@@ -67,6 +67,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   motion_group_.clear();
   motion_group_values_.clear();
   cmd_multi_dof_ = *cmd_rt_buffer_.readFromRT();
+  judgeMotionGroup(cmd_multi_dof_);
   if (state_ != cmd_multi_dof_.mode)
   {
     state_ = cmd_multi_dof_.mode;
@@ -92,7 +93,6 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
     ROS_INFO("[Multi_Dof] VELOCITY");
   }
   std::vector<double> results((double)joints_.size(), 0);
-  judgeMotionGroup(cmd_multi_dof_);
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
     for (int j = 0; j < (int)motion_group_.size(); ++j)
@@ -118,9 +118,9 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
     state_changed_ = false;
     ROS_INFO("[Multi_Dof] POSITION");
   }
-  judgeMotionGroup(cmd_multi_dof_);
   if (position_change_)
   {
+    start_time_ = ros::Time::now();
     std::vector<double> current_positions((double)joints_.size(), 0);
     std::vector<double> results((double)joints_.size(), 0);
     targets_ = results;
@@ -155,7 +155,7 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
     joints_[i].ctrl_position_->setCommand(targets_[i]);
     joints_[i].ctrl_position_->update(time, period);
   }
-  if (get == joints_.size())
+  if (get == joints_.size() || (ros::Time::now() - start_time_).toSec() >= time_out_)
     position_change_ = true;
 }
 

@@ -73,7 +73,9 @@ private:
   bool position_change_ = 1;
   rm_msgs::MultiDofCmd cmd_last_{};
   std::vector<double> targets_{};
-  double tolerance_ = 0.5;
+  double tolerance_ = 0.01;
+  ros::Time start_time_;
+  double time_out_ = 1 ;
 };
 
 }  // namespace multi_dof_controller
