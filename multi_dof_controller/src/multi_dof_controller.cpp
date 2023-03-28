@@ -142,19 +142,19 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
       targets_[i] = results[i] + current_positions[i];
     }
   }
-  double get = 0;
+  double arrived_joint_num = 0;
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
     if (targets_[i] - tolerance_ <= joints_[i].ctrl_position_->getPosition() &&
         targets_[i] + tolerance_ >= joints_[i].ctrl_position_->getPosition())
     {
-      get++;
+      arrived_joint_num++;
       targets_[i] = joints_[i].ctrl_position_->getPosition();
     }
     joints_[i].ctrl_position_->setCommand(targets_[i]);
     joints_[i].ctrl_position_->update(time, period);
   }
-  if (get == joints_.size() || (ros::Time::now() - start_time_).toSec() >= time_out_)
+  if (arrived_joint_num == (int)joints_.size() || (ros::Time::now() - start_time_).toSec() >= time_out_)
     position_change_ = true;
 }
 
@@ -166,35 +166,17 @@ double Controller::judgeReverse(double value, bool is_need_reverse)
 }
 void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd msg)
 {
-  if (abs(msg.values.linear.x))
+  std::vector<std::string> motion_names = { "x", "y", "z", "roll", "pitch", "yaw" };
+  std::vector<double> motion_values = { msg.values.linear.x,  msg.values.linear.y,  msg.values.linear.z,
+                                        msg.values.angular.x, msg.values.angular.y, msg.values.angular.z };
+
+  for (int i = 0; (int)i < motion_names.size(); i++)
   {
-    motion_group_.push_back("x");
-    motion_group_values_.push_back(msg.values.linear.x);
-  }
-  if (abs(msg.values.linear.y))
-  {
-    motion_group_.push_back("y");
-    motion_group_values_.push_back(msg.values.linear.y);
-  }
-  if (abs(msg.values.linear.z))
-  {
-    motion_group_.push_back("z");
-    motion_group_values_.push_back(msg.values.linear.z);
-  }
-  if (abs(msg.values.angular.x))
-  {
-    motion_group_.push_back("roll");
-    motion_group_values_.push_back(msg.values.angular.x);
-  }
-  if (abs(msg.values.angular.y))
-  {
-    motion_group_.push_back("pitch");
-    motion_group_values_.push_back(msg.values.angular.y);
-  }
-  if (abs(msg.values.angular.z))
-  {
-    motion_group_.push_back("yaw");
-    motion_group_values_.push_back(msg.values.angular.z);
+    if (abs(motion_values[i]))
+    {
+      motion_group_.push_back(motion_names[i]);
+      motion_group_values_.push_back(motion_values[i]);
+    }
   }
 }
 
