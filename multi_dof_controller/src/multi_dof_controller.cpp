@@ -86,7 +86,7 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
 {
   position_change_ = true;
   if (state_changed_)
-  {  // on enter
+  {
     state_changed_ = false;
     ROS_INFO("[Multi_Dof] VELOCITY");
   }
@@ -112,7 +112,7 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
 void Controller::position(const ros::Time& time, const ros::Duration& period)
 {
   if (state_changed_)
-  {  // on enter
+  {
     state_changed_ = false;
     ROS_INFO("[Multi_Dof] POSITION");
   }
@@ -133,7 +133,6 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
           {
             results[i] += judgeReverse(motion_group_values_[j], motions_[k].is_need_reverse_[i]) /
                           motions_[k].position_per_step_ * motions_[k].position_config_[i];
-            ROS_INFO_STREAM(results[i]);
           }
         }
       }
