@@ -63,7 +63,6 @@ void Controller::starting(const ros::Time& /*unused*/)
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
-  cmd_last_ = cmd_multi_dof_;
   motion_group_.clear();
   motion_group_values_.clear();
   cmd_multi_dof_ = *cmd_rt_buffer_.readFromRT();
@@ -159,9 +158,6 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
     position_change_ = true;
 }
 
-void Controller::moveJoint()
-{
-}
 double Controller::judgeReverse(double value, bool is_need_reverse)
 {
   if (!is_need_reverse)

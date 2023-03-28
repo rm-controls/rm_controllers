@@ -36,46 +36,43 @@ class Controller : public controller_interface::MultiInterfaceController<rm_cont
                                                                          hardware_interface::EffortJointInterface>
 {
 public:
+  enum
+  {
+    VELOCITY,
+    POSITION
+  };
   Controller() = default;
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
   void starting(const ros::Time& time) override;
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-  void position(const ros::Time& time, const ros::Duration& period);
-  void velocity(const ros::Time& time, const ros::Duration& period);
+  void judgeMotionGroup(rm_msgs::MultiDofCmd);
   void commandCB(const rm_msgs::MultiDofCmdPtr& msg);
   double judgeReverse(double value, bool is_need_reverse);
-  void judgeMotionGroup(rm_msgs::MultiDofCmd);
-  void moveJoint();
-  rm_control::RobotStateHandle robot_state_handle_;
-  effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
+  void position(const ros::Time& time, const ros::Duration& period);
+  void velocity(const ros::Time& time, const ros::Duration& period);
 
-  // ROS Interface
-  ros::Subscriber cmd_multi_dof_sub_;
-  realtime_tools::RealtimeBuffer<rm_msgs::MultiDofCmd> cmd_rt_buffer_{};
-  hardware_interface::EffortJointInterface* effort_joint_interface_{};
-  std::vector<hardware_interface::JointHandle> joint_handles_{};
-
-  rm_msgs::MultiDofCmd cmd_multi_dof_{};
-  bool state_changed_{};
-
-  enum
-  {
-    VELOCITY,
-    POSITION
-  };
   int state_ = VELOCITY;
+  bool state_changed_{};
+  bool position_change_ = 1;
+  double time_out_ = 1;
+  double tolerance_ = 0.01;
   std::vector<Joint> joints_{};
+  std::vector<double> targets_{};
   std::vector<Motion> motions_{};
   std::vector<std::string> motion_group_{};
   std::vector<double> motion_group_values_{};
-  bool position_change_ = 1;
-  rm_msgs::MultiDofCmd cmd_last_{};
-  std::vector<double> targets_{};
-  double tolerance_ = 0.01;
+  std::vector<hardware_interface::JointHandle> joint_handles_{};
+
   ros::Time start_time_;
-  double time_out_ = 1;
+  ros::Subscriber cmd_multi_dof_sub_;
+  realtime_tools::RealtimeBuffer<rm_msgs::MultiDofCmd> cmd_rt_buffer_{};
+  hardware_interface::EffortJointInterface* effort_joint_interface_{};
+  effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
+
+  rm_msgs::MultiDofCmd cmd_multi_dof_{};
+  rm_control::RobotStateHandle robot_state_handle_;
 };
 
 }  // namespace multi_dof_controller
