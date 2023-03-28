@@ -45,8 +45,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
       ROS_ASSERT(motion.second["is_velocity_need_reverse"][i].getType() == XmlRpc::XmlRpcValue::TypeInt);
       m.position_config_.push_back(xmlRpcGetDouble(motion.second["position_config"][i]));
       m.velocity_config_.push_back(xmlRpcGetDouble(motion.second["velocity_config"][i]));
-      m.is_position_need_reverse_.push_back(xmlRpcGetDouble(motion.second["is_position_need_reverse"][i]));
-      m.is_velocity_need_reverse_.push_back(xmlRpcGetDouble(motion.second["is_velocity_need_reverse"][i]));
+      m.is_need_reverse_.push_back(xmlRpcGetDouble(motion.second["is_need_reverse"][i]));
     }
     motions_.push_back(m);
   }
@@ -99,7 +98,7 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
       for (int k = 0; k < (int)motions_.size(); ++k)
       {
         if (motions_[k].motion_name_ == motion_group_[j])
-          results[i] += judgeReverse(motion_group_values_[j], motions_[k].is_velocity_need_reverse_[i]) *
+          results[i] += judgeReverse(motion_group_values_[j], motions_[k].is_need_reverse_[i]) *
                         motions_[k].velocity_max_speed_ * motions_[k].velocity_config_[i];
       }
     }
@@ -132,7 +131,7 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
         {
           if (motions_[k].motion_name_ == motion_group_[j])
           {
-            results[i] += judgeReverse(motion_group_values_[j], motions_[k].is_velocity_need_reverse_[i]) /
+            results[i] += judgeReverse(motion_group_values_[j], motions_[k].is_need_reverse_[i]) /
                           motions_[k].position_per_step_ * motions_[k].position_config_[i];
             ROS_INFO_STREAM(results[i]);
           }
