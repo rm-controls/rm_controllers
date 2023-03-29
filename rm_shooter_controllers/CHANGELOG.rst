@@ -2,6 +2,18 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.10 (2023-03-25)
+-------------------
+* Merge pull request `#118 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/118>`_ from ye-luo-xi-tui/master
+  Publish shoot state
+* Publish shoot state.
+* Merge pull request `#109 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/109>`_ from ye-luo-xi-tui/master
+  Modifier default value of forward_push_threshold and exit_push_threshold
+* Modifier default value of forward_push_threshold and exit_push_threshold.
+* Merge pull request `#106 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/106>`_ from ye-luo-xi-tui/master
+  0.1.9
+* Contributors: ye-luo-xi-tui, yezi
+
 0.1.9 (2023-02-21)
 ------------------
 * Merge branch 'master' into balance_standard

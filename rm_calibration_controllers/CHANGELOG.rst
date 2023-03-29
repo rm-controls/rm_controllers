@@ -2,6 +2,12 @@
 Changelog for package rm_calibration_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.10 (2023-03-25)
+-------------------
+* Merge pull request `#106 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/106>`_ from ye-luo-xi-tui/master
+  0.1.9
+* Contributors: ye-luo-xi-tui
+
 0.1.9 (2023-02-21)
 ------------------
 * Merge pull request `#103 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/103>`_ from L-SY/fix_return
