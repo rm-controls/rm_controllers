@@ -14,6 +14,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 {
   XmlRpc::XmlRpcValue joints;
   controller_nh.getParam("joints", joints);
+  position_tolerance_ = getParam(controller_nh, "position_tolerance", 0.01);
+  time_out_ = getParam(controller_nh, "time_out", 1);
   ROS_ASSERT(joints.getType() == XmlRpc::XmlRpcValue::TypeStruct);
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   for (const auto& joint : joints)
@@ -143,8 +145,8 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
   double arrived_joint_num = 0;
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
-    if (targets_[i] - tolerance_ <= joints_[i].ctrl_position_->getPosition() &&
-        targets_[i] + tolerance_ >= joints_[i].ctrl_position_->getPosition())
+    if (targets_[i] - position_tolerance_ <= joints_[i].ctrl_position_->getPosition() &&
+        targets_[i] + position_tolerance_ >= joints_[i].ctrl_position_->getPosition())
     {
       arrived_joint_num++;
       targets_[i] = joints_[i].ctrl_position_->getPosition();

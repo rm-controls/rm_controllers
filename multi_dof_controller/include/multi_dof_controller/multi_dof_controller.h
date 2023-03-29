@@ -55,8 +55,8 @@ private:
   int state_ = VELOCITY;
   bool state_changed_{};
   bool position_change_ = 1;
-  double time_out_ = 1;
-  double tolerance_ = 0.01;
+  double time_out_;
+  double position_tolerance_;
   std::vector<Joint> joints_{};
   std::vector<double> targets_{};
   std::vector<Motion> motions_{};
