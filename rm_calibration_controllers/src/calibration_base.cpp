@@ -23,12 +23,12 @@ bool CalibrationBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::Nod
     return false;
   }
   actuator_ = robot_hw->get<rm_control::ActuatorExtraInterface>()->getHandle(actuator[0]);
-  if (!controller_nh.getParam("search_velocity", velocity_search_))
+  if (!vel_nh.getParam("search_velocity", velocity_search_))
   {
     ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (!controller_nh.getParam("vel_threshold", velocity_threshold_))
+  if (!vel_nh.getParam("vel_threshold", velocity_threshold_))
   {
     ROS_ERROR("Position value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
