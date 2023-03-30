@@ -30,6 +30,8 @@ public:
 
 private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
+  void normal(const ros::Time& time, const ros::Duration& period);
+  void block(const ros::Time& time, const ros::Duration& period);
   geometry_msgs::Twist odometry() override;
   static const int STATE_DIM = 10;
   static const int CONTROL_DIM = 4;
@@ -52,8 +54,11 @@ private:
   hardware_interface::ImuSensorHandle imu_handle_;
   hardware_interface::JointHandle left_wheel_joint_handle_, right_wheel_joint_handle_,
       left_momentum_block_joint_handle_, right_momentum_block_joint_handle_;
+
   typedef std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::BalanceState>> RtpublisherPtr;
   RtpublisherPtr state_pub_;
+  geometry_msgs::Vector3 angular_vel_base_;
+  double roll_, pitch_, yaw_;
 };
 
 }  // namespace rm_chassis_controllers
