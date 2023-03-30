@@ -313,7 +313,7 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   k_ = lqr.getK();
   ROS_INFO_STREAM("K of LQR:" << k_);
 
-  state_pub_ = root_nh.advertise<rm_msgs::BalanceState>("/state", 10);
+  state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::BalanceState>(root_nh, "/state", 100));
   balance_state_ = BalanceState::NORMAL;
 
   return true;
@@ -426,23 +426,25 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
         position_des_ = position_offset_;
       }
       u = k_ * (-x);
-      rm_msgs::BalanceState state;
-      state.header.stamp = time;
-      state.x = x(0);
-      state.phi = x(1);
-      state.theta = x(2);
-      state.x_b_l = x(3);
-      state.x_b_r = x(4);
-      state.x_dot = x(5);
-      state.phi_dot = x(6);
-      state.theta_dot = x(7);
-      state.x_b_l_dot = x(8);
-      state.x_b_r_dot = x(9);
-      state.T_l = u(0);
-      state.T_r = u(1);
-      state.f_b_l = u(2);
-      state.f_b_r = u(3);
-      state_pub_.publish(state);
+      if (state_pub_->trylock())
+      {
+        state_pub_->msg_.header.stamp = time;
+        state_pub_->msg_.x = x(0);
+        state_pub_->msg_.phi = x(1);
+        state_pub_->msg_.theta = x(2);
+        state_pub_->msg_.x_b_l = x(3);
+        state_pub_->msg_.x_b_r = x(4);
+        state_pub_->msg_.x_dot = x(5);
+        state_pub_->msg_.phi_dot = x(6);
+        state_pub_->msg_.theta_dot = x(7);
+        state_pub_->msg_.x_b_l_dot = x(8);
+        state_pub_->msg_.x_b_r_dot = x(9);
+        state_pub_->msg_.T_l = u(0);
+        state_pub_->msg_.T_r = u(1);
+        state_pub_->msg_.f_b_l = u(2);
+        state_pub_->msg_.f_b_r = u(3);
+        state_pub_->unlockAndPublish();
+      }
 
       left_wheel_joint_handle_.setCommand(u(0));
       right_wheel_joint_handle_.setCommand(u(1));

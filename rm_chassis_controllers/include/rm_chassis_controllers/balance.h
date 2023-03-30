@@ -8,6 +8,7 @@
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/imu_sensor_interface.h>
 #include <hardware_interface/joint_command_interface.h>
+#include <rm_msgs/BalanceState.h>
 
 #include "rm_chassis_controllers/chassis_base.h"
 
@@ -51,7 +52,8 @@ private:
   hardware_interface::ImuSensorHandle imu_handle_;
   hardware_interface::JointHandle left_wheel_joint_handle_, right_wheel_joint_handle_,
       left_momentum_block_joint_handle_, right_momentum_block_joint_handle_;
-  ros::Publisher state_pub_;
+  typedef std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::BalanceState>> RtpublisherPtr;
+  RtpublisherPtr state_pub_;
 };
 
 }  // namespace rm_chassis_controllers
