@@ -43,8 +43,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     {
       ROS_ASSERT(motion.second["position_config"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
       ROS_ASSERT(motion.second["velocity_config"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-      ROS_ASSERT(motion.second["is_position_need_reverse"][i].getType() == XmlRpc::XmlRpcValue::TypeInt);
-      ROS_ASSERT(motion.second["is_velocity_need_reverse"][i].getType() == XmlRpc::XmlRpcValue::TypeInt);
+      ROS_ASSERT(motion.second["is_need_reverse"][i].getType() == XmlRpc::XmlRpcValue::TypeInt);
       m.position_config_.push_back(xmlRpcGetDouble(motion.second["position_config"][i]));
       m.velocity_config_.push_back(xmlRpcGetDouble(motion.second["velocity_config"][i]));
       m.is_need_reverse_.push_back(xmlRpcGetDouble(motion.second["is_need_reverse"][i]));
@@ -170,7 +169,7 @@ void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd msg)
   std::vector<double> motion_values = { msg.values.linear.x,  msg.values.linear.y,  msg.values.linear.z,
                                         msg.values.angular.x, msg.values.angular.y, msg.values.angular.z };
 
-  for (int i = 0; (int)i < motion_names.size(); i++)
+  for (int i = 0; i < (int)motion_names.size(); i++)
   {
     if (abs(motion_values[i]))
     {
