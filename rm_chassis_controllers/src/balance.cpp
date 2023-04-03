@@ -314,7 +314,7 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   ROS_INFO_STREAM("K of LQR:" << k_);
 
   state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::BalanceState>(root_nh, "/state", 100));
-  balance_state_ = BalanceMode::NORMAL;
+  balance_mode_ = BalanceMode::NORMAL;
 
   return true;
 }
@@ -363,7 +363,7 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   quatToRPY(toMsg(odom2base).rotation, roll_, pitch_, yaw_);
 
   // Check block
-  if (balance_state_ != BalanceMode::BLOCK)
+  if (balance_mode_ != BalanceMode::BLOCK)
   {
     if (std::abs(pitch_) > block_angle_ &&
         (std::abs(left_wheel_joint_handle_.getEffort()) + std::abs(right_wheel_joint_handle_.getEffort())) / 2. >
@@ -378,7 +378,7 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
       }
       if ((time - block_time_).toSec() >= block_duration_)
       {
-        balance_state_ = BalanceMode::BLOCK;
+        balance_mode_ = BalanceMode::BLOCK;
         balance_state_changed_ = true;
         ROS_INFO("[balance] Exit NOMAl");
       }
@@ -389,7 +389,7 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
     }
   }
 
-  switch (balance_state_)
+  switch (balance_mode_)
   {
     case BalanceMode::NORMAL:
     {
@@ -476,7 +476,7 @@ void BalanceController::block(const ros::Time& time, const ros::Duration& period
   }
   if ((ros::Time::now() - last_block_time_).toSec() > block_overtime_)
   {
-    balance_state_ = BalanceMode::NORMAL;
+    balance_mode_ = BalanceMode::NORMAL;
     balance_state_changed_ = true;
     ROS_INFO("[balance] Exit BLOCK");
   }

@@ -46,7 +46,7 @@ private:
   double position_clear_threshold_ = 0.;
   double yaw_des_ = 0;
 
-  int balance_state_;
+  int balance_mode_;
   ros::Time block_time_, last_block_time_;
   double block_angle_, block_duration_, block_velocity_, block_effort_, anti_block_effort_, block_overtime_;
   bool balance_state_changed_ = false, maybe_block_ = false;
