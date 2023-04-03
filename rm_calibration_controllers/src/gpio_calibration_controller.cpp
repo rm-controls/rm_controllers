@@ -31,7 +31,7 @@ bool GpioCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros:
   std::string gpio{};
   if (!controller_nh.getParam("gpio", gpio))
   {
-    ROS_ERROR("No gpios given (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("No gpio given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
   if (!controller_nh.getParam("initial_gpio_state", initial_gpio_state_))
