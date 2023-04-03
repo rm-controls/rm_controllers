@@ -18,7 +18,7 @@ using Eigen::Matrix;
 class BalanceController : public ChassisBase<rm_control::RobotStateInterface, hardware_interface::ImuSensorInterface,
                                              hardware_interface::EffortJointInterface>
 {
-  enum BalanceState
+  enum BalanceMode
   {
     NORMAL,
     BLOCK
