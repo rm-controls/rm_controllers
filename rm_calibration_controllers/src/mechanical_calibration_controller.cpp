@@ -47,6 +47,17 @@ bool MechanicalCalibrationController::init(hardware_interface::RobotHW* robot_hw
   CalibrationBase::init(robot_hw, root_nh, controller_nh);
   is_return_ = is_center_ = false;
   controller_nh.getParam("center", is_center_);
+  if (!controller_nh.getParam("velocity/vel_threshold", velocity_threshold_))
+  {
+    ROS_ERROR("Velocity threshold was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  if (velocity_threshold_ < 0)
+  {
+    velocity_threshold_ *= -1.;
+    ROS_ERROR("Negative velocity threshold is not supported for joint %s. Making the velocity threshold positive.",
+              velocity_ctrl_.getJointName().c_str());
+  }
   if (controller_nh.hasParam("return"))
   {
     ros::NodeHandle nh_return(controller_nh, "return");

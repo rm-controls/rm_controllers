@@ -21,13 +21,12 @@ public:
 private:
   enum State
   {
-    RETREAT = 3,
-    FORWARD
+    FAST_FORWARD = 3,
+    RETREAT,
+    SLOW_FORWARD
   };
-  double position_threshold_{}, backward_radius, start_retreat_pos_{}, forward_velocity_{};
-  std::vector<rm_control::GpioStateHandle> gpio_state_handles_;
-  std::vector<bool> initial_gpio_states_;
-
-  effort_controllers::JointPositionController position_ctrl_;
+  double position_threshold_{}, backward_angle_, start_retreat_position_{}, slow_forward_velocity_{};
+  rm_control::GpioStateHandle gpio_state_handle_;
+  bool initial_gpio_state_;
 };
 }  // namespace rm_calibration_controllers

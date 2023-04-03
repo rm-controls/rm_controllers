@@ -11,6 +11,7 @@
 #include <rm_common/hardware_interface/gpio_interface.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <effort_controllers/joint_velocity_controller.h>
+#include <effort_controllers/joint_position_controller.h>
 #include <control_msgs/QueryCalibrationState.h>
 
 namespace rm_calibration_controllers
@@ -59,10 +60,11 @@ protected:
     CALIBRATED
   };
   int state_{};
-  double velocity_search_{}, velocity_threshold_{};
+  double velocity_search_{};
   bool calibration_success_ = false;
   rm_control::ActuatorExtraHandle actuator_;
   effort_controllers::JointVelocityController velocity_ctrl_;
+  effort_controllers::JointPositionController position_ctrl_;
 };
 
 }  // namespace rm_calibration_controllers

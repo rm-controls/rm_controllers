@@ -25,19 +25,8 @@ bool CalibrationBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::Nod
   actuator_ = robot_hw->get<rm_control::ActuatorExtraInterface>()->getHandle(actuator[0]);
   if (!vel_nh.getParam("search_velocity", velocity_search_))
   {
-    ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("Search velocity was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
-  }
-  if (!vel_nh.getParam("vel_threshold", velocity_threshold_))
-  {
-    ROS_ERROR("Position value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
-    return false;
-  }
-  if (velocity_threshold_ < 0)
-  {
-    velocity_threshold_ *= -1.;
-    ROS_ERROR("Negative velocity threshold is not supported for joint %s. Making the velocity threshold positive.",
-              velocity_ctrl_.getJointName().c_str());
   }
   // advertise service to check calibration
   is_calibrated_srv_ = controller_nh.advertiseService("is_calibrated", &CalibrationBase<T...>::isCalibrated, this);

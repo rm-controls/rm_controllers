@@ -18,36 +18,28 @@ bool GpioCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros:
     ROS_ERROR("Position threshold was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (!pos_nh.getParam("backward_radius", backward_radius))
+  if (!pos_nh.getParam("backward_angle", backward_angle_))
   {
-    ROS_ERROR("Backward radius was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("Backward angle was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (!controller_nh.getParam("velocity/forward_velocity", forward_velocity_))
+  if (!controller_nh.getParam("velocity/slow_forward_velocity", slow_forward_velocity_))
   {
-    ROS_ERROR("Forward velocity was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("Slow forward velocity was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  XmlRpc::XmlRpcValue gpios, initial_gpio_states;
-  if (!controller_nh.getParam("gpios", gpios))
+  std::string gpio{};
+  if (!controller_nh.getParam("gpio", gpio))
   {
     ROS_ERROR("No gpios given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  if (!controller_nh.getParam("initial_gpio_states", initial_gpio_states))
+  if (!controller_nh.getParam("initial_gpio_state", initial_gpio_state_))
   {
     ROS_ERROR("No initial gpio states given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  for (int i = 0; i < gpios.size(); i++)
-  {
-    ROS_ASSERT(initial_gpio_states[i].getType() == XmlRpc::XmlRpcValue::TypeBoolean);
-    ROS_ASSERT(gpios[i].getType() == XmlRpc::XmlRpcValue::TypeString);
-    std::string gpio_name = gpios[i];
-    rm_control::GpioStateHandle state_handle = robot_hw->get<rm_control::GpioStateInterface>()->getHandle(gpio_name);
-    gpio_state_handles_.push_back(state_handle);
-    initial_gpio_states_.push_back(initial_gpio_states[i]);
-  }
+  gpio_state_handle_ = robot_hw->get<rm_control::GpioStateInterface>()->getHandle(gpio);
   return true;
 }
 
@@ -58,9 +50,14 @@ void GpioCalibrationController::update(const ros::Time& time, const ros::Duratio
     case INITIALIZED:
     {
       velocity_ctrl_.setCommand(velocity_search_);
-      if (gpio_state_handles_[0].getValue() != initial_gpio_states_[0])
+      state_ = FAST_FORWARD;
+      break;
+    }
+    case FAST_FORWARD:
+    {
+      if (gpio_state_handle_.getValue() != initial_gpio_state_)
       {
-        start_retreat_pos_ = velocity_ctrl_.joint_.getPosition();
+        start_retreat_position_ = velocity_ctrl_.joint_.getPosition();
         velocity_ctrl_.setCommand(0);
         state_ = RETREAT;
       }
@@ -70,22 +67,18 @@ void GpioCalibrationController::update(const ros::Time& time, const ros::Duratio
     }
     case RETREAT:
     {
-      position_ctrl_.setCommand(start_retreat_pos_ - backward_radius);
+      position_ctrl_.setCommand(start_retreat_position_ - backward_angle_);
       position_ctrl_.update(time, period);
       if (std::abs(position_ctrl_.command_struct_.position_ - position_ctrl_.joint_.getPosition()) < position_threshold_)
-      {
-        state_ = FORWARD;
-        position_ctrl_.stopping(time);
-      }
+        state_ = SLOW_FORWARD;
       break;
     }
-    case FORWARD:
+    case SLOW_FORWARD:
     {
-      velocity_ctrl_.setCommand(forward_velocity_);
-      if (gpio_state_handles_[0].getValue() != initial_gpio_states_[0])
-        velocity_ctrl_.setCommand(0);
-      if (std::abs(velocity_ctrl_.joint_.getVelocity()) < velocity_threshold_)
+      velocity_ctrl_.setCommand(slow_forward_velocity_);
+      if (gpio_state_handle_.getValue() != initial_gpio_state_)
       {
+        velocity_ctrl_.setCommand(0);
         actuator_.setOffset(-actuator_.getPosition() + actuator_.getOffset());
         actuator_.setCalibrated(true);
         ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
