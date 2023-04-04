@@ -44,6 +44,7 @@
 #include <rm_common/filters/filters.h>
 #include <effort_controllers/joint_velocity_controller.h>
 #include <rm_msgs/ChassisCmd.h>
+#include <std_msgs/UInt8.h>
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
@@ -132,9 +133,14 @@ protected:
   void powerLimit();
   /** @brief Write current command from rm_msgs::ChassisCmd.
    *
-   * @param msg This message contains various state parameter settings for basic chassis control
+   * @param msg This message contains various state parameter settings for basic chassis control.
    */
   void cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr& msg);
+  /** @brief Write current command from  std_msgs::UInt8.
+   *
+   * @param msg This message contains mode parameter settings for special functions.
+   */
+  void cmdModeCallback(const std_msgs::UInt8ConstPtr& msg);
   /** @brief Write current command from  geometry_msgs::Twist.
    *
    * @param msg This expresses velocity in free space broken into its linear and angular parts.
@@ -173,8 +179,10 @@ protected:
   ros::Subscriber outside_odom_sub_;
   ros::Subscriber cmd_chassis_sub_;
   ros::Subscriber cmd_vel_sub_;
+  ros::Subscriber cmd_mode_sub_;
   Command cmd_struct_;
   realtime_tools::RealtimeBuffer<Command> cmd_rt_buffer_;
+  realtime_tools::RealtimeBuffer<std_msgs::UInt8> mode_rt_buffer_;
   realtime_tools::RealtimeBuffer<nav_msgs::Odometry> odom_buffer_;
 };
 

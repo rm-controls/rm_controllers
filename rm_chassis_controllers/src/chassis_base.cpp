@@ -108,6 +108,7 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   outside_odom_sub_ =
       controller_nh.subscribe<nav_msgs::Odometry>("/odometry", 10, &ChassisBase::outsideOdomCallback, this);
   cmd_chassis_sub_ = controller_nh.subscribe<rm_msgs::ChassisCmd>("command", 1, &ChassisBase::cmdChassisCallback, this);
+  cmd_mode_sub_ = controller_nh.subscribe<std_msgs::UInt8>("mode", 1, &ChassisBase::cmdModeCallback, this);
   cmd_vel_sub_ = root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisBase::cmdVelCallback, this);
 
   if (controller_nh.hasParam("pid_follow"))
@@ -415,6 +416,12 @@ void ChassisBase<T...>::cmdChassisCallback(const rm_msgs::ChassisCmdConstPtr& ms
 {
   cmd_struct_.cmd_chassis_ = *msg;
   cmd_rt_buffer_.writeFromNonRT(cmd_struct_);
+}
+
+template <typename... T>
+void ChassisBase<T...>::cmdModeCallback(const std_msgs::UInt8ConstPtr& msg)
+{
+  mode_rt_buffer_.writeFromNonRT(*msg);
 }
 
 template <typename... T>

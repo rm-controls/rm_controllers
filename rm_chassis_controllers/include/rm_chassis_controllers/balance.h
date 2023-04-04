@@ -21,6 +21,7 @@ class BalanceController : public ChassisBase<rm_control::RobotStateInterface, ha
   enum BalanceMode
   {
     NORMAL,
+    FALLEN,
     BLOCK
   };
 
@@ -32,6 +33,8 @@ private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   void normal(const ros::Time& time, const ros::Duration& period);
   void block(const ros::Time& time, const ros::Duration& period);
+  void fallen(const ros::Time& time, const ros::Duration& period);
+  void publishState(const ros::Time& time);
   geometry_msgs::Twist odometry() override;
   static const int STATE_DIM = 10;
   static const int CONTROL_DIM = 4;
@@ -46,9 +49,10 @@ private:
   double position_clear_threshold_ = 0.;
   double yaw_des_ = 0;
 
-  int balance_mode_;
+  int balance_mode_, last_balance_mode_;
   ros::Time block_time_, last_block_time_;
-  double block_angle_, block_duration_, block_velocity_, block_effort_, anti_block_effort_, block_overtime_;
+  double fallen_angle_, block_angle_, block_duration_, block_velocity_, block_effort_, anti_block_effort_,
+      block_overtime_;
   bool balance_state_changed_ = false, maybe_block_ = false;
 
   hardware_interface::ImuSensorHandle imu_handle_;
