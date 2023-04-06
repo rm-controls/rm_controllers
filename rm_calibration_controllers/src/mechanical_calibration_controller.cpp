@@ -80,7 +80,6 @@ bool MechanicalCalibrationController::init(hardware_interface::RobotHW* robot_hw
 
 void MechanicalCalibrationController::update(const ros::Time& time, const ros::Duration& period)
 {
-  // TODO: Add GPIO switch support
   switch (state_)
   {
     case INITIALIZED:

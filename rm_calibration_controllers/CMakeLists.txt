@@ -52,9 +52,9 @@ include_directories(
 
 ## Declare a cpp library
 add_library(${PROJECT_NAME}
-        src/mechanical_calibration_controller.cpp
-        src/gpio_calibration_controller.cpp
         src/calibration_base.cpp
+        src/gpio_calibration_controller.cpp
+        src/mechanical_calibration_controller.cpp
         )
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})

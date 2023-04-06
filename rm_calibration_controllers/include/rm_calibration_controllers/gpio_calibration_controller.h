@@ -25,7 +25,7 @@ private:
     RETREAT,
     SLOW_FORWARD
   };
-  double position_threshold_{}, backward_angle_, start_retreat_position_{}, slow_forward_velocity_{};
+  double position_threshold_{}, backward_angle_{}, start_retreat_position_{}, slow_forward_velocity_{};
   rm_control::GpioStateHandle gpio_state_handle_;
   bool initial_gpio_state_;
 };
