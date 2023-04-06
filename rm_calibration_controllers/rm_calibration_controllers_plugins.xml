@@ -1,6 +1,9 @@
 <library path="lib/librm_calibration_controllers">
 
-    <class name="rm_calibration_controllers/JointCalibrationController"
-           type="rm_calibration_controllers::JointCalibrationController"
+    <class name="rm_calibration_controllers/MechanicalCalibrationController"
+           type="rm_calibration_controllers::MechanicalCalibrationController"
+           base_class_type="controller_interface::ControllerBase"/>
+    <class name="rm_calibration_controllers/GpioCalibrationController"
+           type="rm_calibration_controllers::GpioCalibrationController"
            base_class_type="controller_interface::ControllerBase"/>
 </library>
