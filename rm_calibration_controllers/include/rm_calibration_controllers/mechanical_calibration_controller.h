@@ -78,7 +78,7 @@ private:
     MOVING_POSITIVE = 3,
     MOVING_NEGATIVE,
   };
-  int state_{}, countdown_{};
+  int countdown_{};
   double velocity_threshold_{}, position_threshold_{};
   double positive_position_{}, negative_position_{}, target_position_{};
   bool is_return_{}, is_center_{};
