@@ -323,14 +323,17 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
 {
   int8_t mode = mode_rt_buffer_.readFromRT()->data;
 
-  if (mode == BalanceMode::NORMAL || mode == BalanceMode::FALLEN)
-    balance_mode_ = mode;
-  else
-    balance_mode_ = BalanceMode::NORMAL;
+  if (balance_mode_ != BalanceMode::BLOCK)
+  {
+    if (mode == BalanceMode::NORMAL || mode == BalanceMode::FALLEN)
+      balance_mode_ = mode;
+    else
+      balance_mode_ = BalanceMode::NORMAL;
 
-  if (balance_mode_ != last_balance_mode_)
-    balance_state_changed_ = true;
-  last_balance_mode_ = mode;
+    if (balance_mode_ != last_balance_mode_)
+      balance_state_changed_ = true;
+    last_balance_mode_ = mode;
+  }
 
   geometry_msgs::Vector3 gyro;
   gyro.x = imu_handle_.getAngularVelocity()[0];
