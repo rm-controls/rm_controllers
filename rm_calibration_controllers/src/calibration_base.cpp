@@ -38,6 +38,7 @@ void CalibrationBase<T...>::starting(const ros::Time& time)
 {
   actuator_.setCalibrated(false);
   state_ = INITIALIZED;
+  calibration_success_ = false;
   if (actuator_.getCalibrated())
     ROS_INFO("Joint %s will be recalibrated, but was already calibrated at offset %f",
              velocity_ctrl_.getJointName().c_str(), actuator_.getOffset());
