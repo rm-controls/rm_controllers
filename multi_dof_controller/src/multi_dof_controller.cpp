@@ -165,9 +165,9 @@ double Controller::judgeReverse(double value, bool is_need_reverse)
 }
 void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd msg)
 {
-  std::vector<std::string> motion_names = { "x", "y", "z", "roll", "pitch", "yaw" };
-  std::vector<double> motion_values = { msg.values.linear.x,  msg.values.linear.y,  msg.values.linear.z,
-                                        msg.values.angular.x, msg.values.angular.y, msg.values.angular.z };
+  std::vector<std::string> motion_names = { "linear_x", "linear_y", "linear_z", "angular_x", "angular_y", "angular_z" };
+  std::vector<double> motion_values = { msg.linear.x,  msg.linear.y,  msg.linear.z,
+                                        msg.angular.x, msg.angular.y, msg.angular.z };
 
   for (int i = 0; i < (int)motion_names.size(); i++)
   {

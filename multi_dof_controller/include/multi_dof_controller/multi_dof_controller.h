@@ -10,7 +10,6 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <realtime_tools/realtime_publisher.h>
-#include <geometry_msgs/Twist.h>
 #include <rm_msgs/MultiDofCmd.h>
 
 namespace multi_dof_controller
