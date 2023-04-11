@@ -50,7 +50,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     }
     motions_.push_back(m);
   }
-  robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
   cmd_multi_dof_sub_ = controller_nh.subscribe("command", 1, &Controller::commandCB, this);
   return true;
 }

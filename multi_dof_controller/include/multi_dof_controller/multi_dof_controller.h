@@ -70,7 +70,6 @@ private:
   effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
   rm_msgs::MultiDofCmd cmd_multi_dof_{};
-  rm_control::RobotStateHandle robot_state_handle_;
 };
 
 }  // namespace multi_dof_controller
