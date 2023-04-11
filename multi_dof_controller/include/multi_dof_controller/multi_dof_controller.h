@@ -53,7 +53,7 @@ private:
 
   int state_ = VELOCITY;
   bool state_changed_{};
-  bool position_change_ = 1;
+  bool position_change_{ 1 };
   double time_out_;
   double position_tolerance_;
   std::vector<Joint> joints_{};

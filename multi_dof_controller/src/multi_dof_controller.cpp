@@ -118,7 +118,7 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
   }
   if (position_change_)
   {
-    start_time_ = ros::Time::now();
+    start_time_ = time;
     std::vector<double> current_positions((double)joints_.size(), 0);
     std::vector<double> results((double)joints_.size(), 0);
     targets_ = results;
@@ -152,7 +152,7 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
     joints_[i].ctrl_position_->setCommand(targets_[i]);
     joints_[i].ctrl_position_->update(time, period);
   }
-  if (arrived_joint_num == (int)joints_.size() || (ros::Time::now() - start_time_).toSec() >= time_out_)
+  if (arrived_joint_num == (int)joints_.size() || (time - start_time_).toSec() >= time_out_)
     position_change_ = true;
 }
 
