@@ -41,6 +41,7 @@ public:
    * @param time The current time.
    */
   void starting(const ros::Time& time) override;
+  void stopping(const ros::Time& time) override;
 
 protected:
   /** @brief Provide a service to know the state of target actuators.
