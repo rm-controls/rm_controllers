@@ -25,9 +25,9 @@ struct Motion
   std::string motion_name_;
   double position_per_step_;
   double velocity_max_speed_;
-  std::vector<bool> is_need_reverse_;
-  std::vector<double> position_config_;
-  std::vector<double> velocity_config_;
+  std::vector<bool> whether_need_reverse_;
+  std::vector<double> position_;
+  std::vector<double> velocity_;
 };
 
 class Controller : public controller_interface::MultiInterfaceController<rm_control::RobotStateInterface,
