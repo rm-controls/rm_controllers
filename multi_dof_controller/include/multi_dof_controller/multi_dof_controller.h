@@ -25,7 +25,7 @@ struct Motion
   std::string motion_name_;
   double position_per_step_;
   double velocity_max_speed_;
-  std::vector<bool> whether_need_reverse_;
+  std::vector<bool> fixed_direction_;
   std::vector<double> position_;
   std::vector<double> velocity_;
 };
@@ -47,7 +47,7 @@ public:
 private:
   void judgeMotionGroup(rm_msgs::MultiDofCmd);
   void commandCB(const rm_msgs::MultiDofCmdPtr& msg);
-  double judgeReverse(double value, bool is_need_reverse);
+  double judgeInputDirection(double value, bool fixed_direction);
   void position(const ros::Time& time, const ros::Duration& period);
   void velocity(const ros::Time& time, const ros::Duration& period);
 
