@@ -33,15 +33,17 @@ private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   void normal(const ros::Time& time, const ros::Duration& period);
   void block(const ros::Time& time, const ros::Duration& period);
-  void fallen(const ros::Time& time, const ros::Duration& period);
+
   void publishState(const ros::Time& time);
   geometry_msgs::Twist odometry() override;
   static const int STATE_DIM = 10;
   static const int CONTROL_DIM = 4;
-  Eigen::Matrix<double, CONTROL_DIM, STATE_DIM> k_{};
-  Eigen::Matrix<double, STATE_DIM, STATE_DIM> a_{}, q_{};
+  void getQ(const XmlRpc::XmlRpcValue& q, Eigen::Matrix<double, STATE_DIM, STATE_DIM>& eigen_q);
+  void getR(const XmlRpc::XmlRpcValue& r, Eigen::Matrix<double, CONTROL_DIM, CONTROL_DIM>& eigen_r);
+  Eigen::Matrix<double, CONTROL_DIM, STATE_DIM> k_mid_{}, k_fallen_{}, k_low_{}, k_high_{};
+  Eigen::Matrix<double, STATE_DIM, STATE_DIM> a_{}, q_mid_{}, q_fallen_{}, q_low_{}, q_high_{};
   Eigen::Matrix<double, STATE_DIM, CONTROL_DIM> b_{};
-  Eigen::Matrix<double, CONTROL_DIM, CONTROL_DIM> r_{};
+  Eigen::Matrix<double, CONTROL_DIM, CONTROL_DIM> r_mid_{}, r_low_{}, r_high_{};
   Eigen::Matrix<double, STATE_DIM, 1> x_;
   double wheel_radius_, wheel_base_;
   double position_des_ = 0;

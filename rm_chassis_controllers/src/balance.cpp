@@ -137,41 +137,28 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   controller_nh.getParam("position_offset", position_offset_);
   controller_nh.getParam("position_clear_threshold", position_clear_threshold_);
 
-  q_.setZero();
-  r_.setZero();
-  XmlRpc::XmlRpcValue q, r;
-  controller_nh.getParam("q", q);
-  controller_nh.getParam("r", r);
-  // Check and get Q
-  ROS_ASSERT(q.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  ROS_ASSERT(q.size() == STATE_DIM);
-  for (int i = 0; i < STATE_DIM; ++i)
-  {
-    ROS_ASSERT(q[i].getType() == XmlRpc::XmlRpcValue::TypeDouble || q[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
-    if (q[i].getType() == XmlRpc::XmlRpcValue::TypeDouble)
-    {
-      q_(i, i) = static_cast<double>(q[i]);
-    }
-    else if (q[i].getType() == XmlRpc::XmlRpcValue::TypeInt)
-    {
-      q_(i, i) = static_cast<int>(q[i]);
-    }
-  }
-  // Check and get R
-  ROS_ASSERT(r.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  ROS_ASSERT(r.size() == CONTROL_DIM);
-  for (int i = 0; i < CONTROL_DIM; ++i)
-  {
-    ROS_ASSERT(r[i].getType() == XmlRpc::XmlRpcValue::TypeDouble || r[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
-    if (r[i].getType() == XmlRpc::XmlRpcValue::TypeDouble)
-    {
-      r_(i, i) = static_cast<double>(r[i]);
-    }
-    else if (r[i].getType() == XmlRpc::XmlRpcValue::TypeInt)
-    {
-      r_(i, i) = static_cast<int>(r[i]);
-    }
-  }
+  q_low_.setZero();
+  q_mid_.setZero();
+  q_high_.setZero();
+  q_fallen_.setZero();
+  r_low_.setZero();
+  r_mid_.setZero();
+  r_high_.setZero();
+
+  XmlRpc::XmlRpcValue q_mid, r_mid, q_low, r_low, q_high, r_high;
+  controller_nh.getParam("q_mid", q_mid);
+  controller_nh.getParam("r_mid", r_mid);
+  controller_nh.getParam("q_low", q_low);
+  controller_nh.getParam("r_low", r_low);
+  controller_nh.getParam("q_high", q_high);
+  controller_nh.getParam("r_high", r_high);
+  getQ(q_low, q_low_);
+  getQ(q_high, q_high_);
+  getQ(q_mid, q_mid_);
+  getQ(q_mid, q_fallen_);
+  getR(r_low, r_low_);
+  getR(r_high, r_high_);
+  getR(r_mid, r_mid_);
 
   // Continuous model \dot{x} = A x + B u
   double a_5_2 = -(pow(wheel_radius_, 2) * g * (pow(l, 2) * pow(m, 2) + 2 * m_b * pow(l, 2) * m + 2 * i_m * m_b)) /
@@ -301,17 +288,43 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   b_ << 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., b_5_0, b_5_1, b_5_2, b_5_3,
       b_6_0, b_6_1, b_6_2, b_6_3, b_7_0, b_7_1, b_7_2, b_7_3, b_8_0, b_8_1, b_8_2, b_8_3, b_9_0, b_9_1, b_9_2, b_9_3;
 
+  q_fallen_(1, 1) = 0;
+  q_fallen_(2, 2) = 0;
   ROS_INFO_STREAM("A:" << a_);
   ROS_INFO_STREAM("B:" << b_);
-  Lqr<double> lqr(a_, b_, q_, r_);
+  Lqr<double> lqr(a_, b_, q_mid_, r_mid_), lqr_fallen(a_, b_, q_fallen_, r_mid_), lqr_low(a_, b_, q_low_, r_low_),
+      lqr_high(a_, b_, q_high_, r_high_);
+  if (!lqr_fallen.computeK())
+  {
+    ROS_ERROR("Failed to compute K_FALLEN of LQR.");
+    return false;
+  }
   if (!lqr.computeK())
   {
     ROS_ERROR("Failed to compute K of LQR.");
     return false;
   }
+  if (!lqr_low.computeK())
+  {
+    ROS_ERROR("Failed to compute K_LOW of LQR.");
+    return false;
+  }
+  if (!lqr_high.computeK())
+  {
+    ROS_ERROR("Failed to compute K_HIGH of LQR.");
+    return false;
+  }
 
-  k_ = lqr.getK();
-  ROS_INFO_STREAM("K of LQR:" << k_);
+  k_mid_ = lqr.getK();
+  k_fallen_ = lqr.getK();
+  for (int i = 0; i < CONTROL_DIM; i++)
+    k_fallen_.row(i)(2) = 0;
+  k_low_ = lqr_low.getK();
+  k_high_ = lqr_high.getK();
+  ROS_INFO_STREAM("K_MID of LQR:" << k_mid_);
+  ROS_INFO_STREAM("K_FALLEN of LQR:" << k_fallen_);
+  ROS_INFO_STREAM("K_LOW of LQR:" << k_low_);
+  ROS_INFO_STREAM("K_HIGH of LQR:" << k_high_);
 
   state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::BalanceState>(root_nh, "/state", 100));
   balance_mode_ = BalanceMode::NORMAL;
@@ -432,10 +445,8 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   switch (balance_mode_)
   {
     case BalanceMode::NORMAL:
-      normal(time, period);
-      break;
     case BalanceMode::FALLEN:
-      fallen(time, period);
+      normal(time, period);
       break;
     case BalanceMode::BLOCK:
       block(time, period);
@@ -468,40 +479,20 @@ void BalanceController::normal(const ros::Time& time, const ros::Duration& perio
     x_[0] = 0.;
     position_des_ = position_offset_;
   }
-  u = k_ * (-x);
-
-  left_wheel_joint_handle_.setCommand(u(0));
-  right_wheel_joint_handle_.setCommand(u(1));
-  left_momentum_block_joint_handle_.setCommand(u(2));
-  right_momentum_block_joint_handle_.setCommand(u(3));
-
-  publishState(time);
-}
-
-void BalanceController::fallen(const ros::Time& time, const ros::Duration& period)
-{
-  if (balance_state_changed_)
+  switch (balance_mode_)
   {
-    ROS_INFO("[balance] Enter FALLEN");
-    balance_state_changed_ = false;
+    case BalanceMode::FALLEN:
+      u = k_fallen_ * (-x);
+      break;
+    case BalanceMode::NORMAL:
+      double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
+      if (power_limit <= 80)
+        u = k_low_ * (-x);
+      else if (power_limit <= 120)
+        u = k_mid_ * (-x);
+      else
+        u = k_high_ * (-x);
   }
-
-  yaw_des_ += vel_cmd_.z * period.toSec();
-  position_des_ += vel_cmd_.x * period.toSec();
-  Eigen::Matrix<double, CONTROL_DIM, 1> u;
-  auto x = x_;
-  x(0) -= position_des_;
-  x(1) = angles::shortest_angular_distance(yaw_des_, x_(1));
-  x(2) = 0.450;
-  if (state_ != RAW)
-    x(5) -= vel_cmd_.x;
-  x(6) -= vel_cmd_.z;
-  if (std::abs(x(0) + position_offset_) > position_clear_threshold_)
-  {
-    x_[0] = 0.;
-    position_des_ = position_offset_;
-  }
-  u = k_ * (-x);
 
   left_wheel_joint_handle_.setCommand(u(0));
   right_wheel_joint_handle_.setCommand(u(1));
@@ -534,6 +525,36 @@ void BalanceController::block(const ros::Time& time, const ros::Duration& period
   }
 
   publishState(time);
+}
+
+void BalanceController::getQ(const XmlRpc::XmlRpcValue& q, Eigen::Matrix<double, STATE_DIM, STATE_DIM>& eigen_q)
+{
+  // Check and get Q
+  ROS_ASSERT(q.getType() == XmlRpc::XmlRpcValue::TypeArray);
+  ROS_ASSERT(q.size() == STATE_DIM);
+  for (int i = 0; i < STATE_DIM; ++i)
+  {
+    ROS_ASSERT(q[i].getType() == XmlRpc::XmlRpcValue::TypeDouble || q[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
+    if (q[i].getType() == XmlRpc::XmlRpcValue::TypeDouble)
+      eigen_q(i, i) = static_cast<double>(q[i]);
+    else if (q[i].getType() == XmlRpc::XmlRpcValue::TypeInt)
+      eigen_q(i, i) = static_cast<int>(q[i]);
+  }
+}
+
+void BalanceController::getR(const XmlRpc::XmlRpcValue& r, Eigen::Matrix<double, CONTROL_DIM, CONTROL_DIM>& eigen_r)
+{
+  // Check and get R
+  ROS_ASSERT(r.getType() == XmlRpc::XmlRpcValue::TypeArray);
+  ROS_ASSERT(r.size() == CONTROL_DIM);
+  for (int i = 0; i < CONTROL_DIM; ++i)
+  {
+    ROS_ASSERT(r[i].getType() == XmlRpc::XmlRpcValue::TypeDouble || r[i].getType() == XmlRpc::XmlRpcValue::TypeInt);
+    if (r[i].getType() == XmlRpc::XmlRpcValue::TypeDouble)
+      eigen_r(i, i) = static_cast<double>(r[i]);
+    else if (r[i].getType() == XmlRpc::XmlRpcValue::TypeInt)
+      eigen_r(i, i) = static_cast<int>(r[i]);
+  }
 }
 
 void BalanceController::publishState(const ros::Time& time)
