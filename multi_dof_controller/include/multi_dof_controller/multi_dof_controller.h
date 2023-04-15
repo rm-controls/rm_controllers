@@ -34,11 +34,6 @@ class Controller : public controller_interface::MultiInterfaceController<rm_cont
                                                                          hardware_interface::EffortJointInterface>
 {
 public:
-  enum
-  {
-    VELOCITY,
-    POSITION
-  };
   Controller() = default;
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
   void starting(const ros::Time& time) override;
@@ -51,7 +46,7 @@ private:
   void position(const ros::Time& time, const ros::Duration& period);
   void velocity(const ros::Time& time, const ros::Duration& period);
 
-  int state_ = VELOCITY;
+  int state_ = rm_msgs::MultiDofCmd::VELOCITY;
   bool state_changed_{};
   bool position_change_{ 1 };
   double time_out_;

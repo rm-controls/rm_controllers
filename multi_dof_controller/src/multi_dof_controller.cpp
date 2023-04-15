@@ -56,7 +56,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
 void Controller::starting(const ros::Time& /*unused*/)
 {
-  state_ = VELOCITY;
+  state_ = rm_msgs::MultiDofCmd::VELOCITY;
   state_changed_ = true;
 }
 
@@ -73,10 +73,10 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   }
   switch (state_)
   {
-    case VELOCITY:
+    case rm_msgs::MultiDofCmd::VELOCITY:
       velocity(time, period);
       break;
-    case POSITION:
+    case rm_msgs::MultiDofCmd::POSITION:
       position(time, period);
       break;
   }
