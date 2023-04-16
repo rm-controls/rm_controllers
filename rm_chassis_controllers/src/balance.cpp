@@ -461,7 +461,10 @@ void BalanceController::normal(const ros::Time& time, const ros::Duration& perio
 {
   if (balance_state_changed_)
   {
-    ROS_INFO("[balance] Enter NOMAl");
+    if (balance_mode_ == BalanceMode::NORMAL)
+      ROS_INFO("[balance] Enter NOMAl");
+    else if (balance_mode_ == BalanceMode::FALLEN)
+      ROS_INFO("[balance] Enter FALLEN");
     balance_state_changed_ = false;
   }
 
