@@ -62,7 +62,6 @@ private:
   ros::Subscriber cmd_multi_dof_sub_;
   realtime_tools::RealtimeBuffer<rm_msgs::MultiDofCmd> cmd_rt_buffer_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
-  effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
 
   rm_msgs::MultiDofCmd cmd_multi_dof_{};
 };

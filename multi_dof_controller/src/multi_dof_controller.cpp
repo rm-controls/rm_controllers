@@ -43,7 +43,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     {
       ROS_ASSERT(motion.second["position"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
       ROS_ASSERT(motion.second["velocity"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-      ROS_ASSERT(motion.second["whether_need_reverse"][i].getType() == XmlRpc::XmlRpcValue::TypeInt);
+      ROS_ASSERT(motion.second["fixed_direction"][i].getType() == XmlRpc::XmlRpcValue::TypeInt);
       m.position_.push_back(xmlRpcGetDouble(motion.second["position"][i]));
       m.velocity_.push_back(xmlRpcGetDouble(motion.second["velocity"][i]));
       m.fixed_direction_.push_back(xmlRpcGetDouble(motion.second["fixed_direction"][i]));
