@@ -47,15 +47,12 @@ private:
   void velocity(const ros::Time& time, const ros::Duration& period);
 
   int state_ = rm_msgs::MultiDofCmd::VELOCITY;
-  bool state_changed_{};
-  bool position_change_{ 1 };
-  double time_out_;
-  double position_tolerance_;
+  bool state_changed_{}, position_change_{ true }, calibrated_{};
+  double time_out_, position_tolerance_;
   std::vector<Joint> joints_{};
-  std::vector<double> targets_{};
   std::vector<Motion> motions_{};
   std::vector<std::string> motion_group_{};
-  std::vector<double> motion_group_values_{};
+  std::vector<double> motion_group_values_{}, targets_{};
   std::vector<hardware_interface::JointHandle> joint_handles_{};
 
   ros::Time start_time_;

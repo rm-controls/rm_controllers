@@ -16,6 +16,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   controller_nh.getParam("joints", joints);
   position_tolerance_ = getParam(controller_nh, "position_tolerance", 0.01);
   time_out_ = getParam(controller_nh, "time_out", 1);
+  calibrated_ = getParam(controller_nh, "calibrated", false);
   ROS_ASSERT(joints.getType() == XmlRpc::XmlRpcValue::TypeStruct);
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   for (const auto& joint : joints)
@@ -116,44 +117,50 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
     state_changed_ = false;
     ROS_INFO("[Multi_Dof] POSITION");
   }
-  if (position_change_)
-  {
-    start_time_ = time;
-    std::vector<double> current_positions((double)joints_.size(), 0);
-    std::vector<double> results((double)joints_.size(), 0);
-    targets_ = results;
+  if (calibrated_)
     for (int i = 0; i < (int)joints_.size(); ++i)
+      targets_[i] = motion_group_values_[i];
+  else
+  {
+    if (position_change_)
     {
-      current_positions[i] = (joints_[i].ctrl_position_->getPosition());
-      for (int j = 0; j < (int)motion_group_.size(); ++j)
+      start_time_ = time;
+      std::vector<double> current_positions((double)joints_.size(), 0);
+      std::vector<double> results((double)joints_.size(), 0);
+      targets_ = results;
+      for (int i = 0; i < (int)joints_.size(); ++i)
       {
-        for (int k = 0; k < (int)motions_.size(); ++k)
+        current_positions[i] = (joints_[i].ctrl_position_->getPosition());
+        for (int j = 0; j < (int)motion_group_.size(); ++j)
         {
-          if (motions_[k].motion_name_ == motion_group_[j])
+          for (int k = 0; k < (int)motions_.size(); ++k)
           {
-            results[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) /
-                          motions_[k].position_per_step_ * motions_[k].position_[i];
+            if (motions_[k].motion_name_ == motion_group_[j])
+            {
+              results[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) /
+                            motions_[k].position_per_step_ * motions_[k].position_[i];
+            }
           }
         }
+        position_change_ = false;
+        targets_[i] = results[i] + current_positions[i];
       }
-      position_change_ = false;
-      targets_[i] = results[i] + current_positions[i];
     }
-  }
-  double arrived_joint_num = 0;
-  for (int i = 0; i < (int)joints_.size(); ++i)
-  {
-    if (targets_[i] - position_tolerance_ <= joints_[i].ctrl_position_->getPosition() &&
-        targets_[i] + position_tolerance_ >= joints_[i].ctrl_position_->getPosition())
+    double arrived_joint_num = 0;
+    for (int i = 0; i < (int)joints_.size(); ++i)
     {
-      arrived_joint_num++;
-      targets_[i] = joints_[i].ctrl_position_->getPosition();
+      if (targets_[i] - position_tolerance_ <= joints_[i].ctrl_position_->getPosition() &&
+          targets_[i] + position_tolerance_ >= joints_[i].ctrl_position_->getPosition())
+      {
+        arrived_joint_num++;
+        targets_[i] = joints_[i].ctrl_position_->getPosition();
+      }
+      joints_[i].ctrl_position_->setCommand(targets_[i]);
+      joints_[i].ctrl_position_->update(time, period);
     }
-    joints_[i].ctrl_position_->setCommand(targets_[i]);
-    joints_[i].ctrl_position_->update(time, period);
+    if (arrived_joint_num == (int)joints_.size() || (time - start_time_).toSec() >= time_out_)
+      position_change_ = true;
   }
-  if (arrived_joint_num == (int)joints_.size() || (time - start_time_).toSec() >= time_out_)
-    position_change_ = true;
 }
 
 double Controller::judgeInputDirection(double value, bool fixed_direction)
