@@ -40,8 +40,7 @@ public:
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-  void computeResult();
-  void judgeMotionGroup();
+  void judgeMotionGroup(rm_msgs::MultiDofCmd);
   void commandCB(const rm_msgs::MultiDofCmdPtr& msg);
   double judgeInputDirection(double value, bool fixed_direction);
   void position(const ros::Time& time, const ros::Duration& period);
@@ -53,7 +52,7 @@ private:
   std::vector<Joint> joints_{};
   std::vector<Motion> motions_{};
   std::vector<std::string> motion_group_{};
-  std::vector<double> motion_group_values_{}, targets_{}, results_{};
+  std::vector<double> motion_group_values_{}, targets_{};
   std::vector<hardware_interface::JointHandle> joint_handles_{};
 
   ros::Time start_time_;

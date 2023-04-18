@@ -151,15 +151,9 @@ void Controller::computeResult()
           if (state_ == rm_msgs::MultiDofCmd::VELOCITY)
             results_[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) *
                            motions_[k].velocity_max_speed_ * motions_[k].velocity_[i];
-          else if (state_ == rm_msgs::MultiDofCmd::POSITION)
-          {
-            if (calibrated_)
-              results_[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) *
-                             motions_[k].position_[i];
-            else
-              results_[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) /
-                             motions_[k].position_per_step_ * motions_[k].position_[i];
-          }
+          else
+            results_[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) /
+                           motions_[k].position_per_step_ * motions_[k].position_[i];
         }
       }
     }
