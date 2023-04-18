@@ -16,7 +16,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   controller_nh.getParam("joints", joints);
   position_tolerance_ = getParam(controller_nh, "position_tolerance", 0.01);
   time_out_ = getParam(controller_nh, "time_out", 1);
-  calibrated_ = getParam(controller_nh, "calibrated", false);
   ROS_ASSERT(joints.getType() == XmlRpc::XmlRpcValue::TypeStruct);
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   for (const auto& joint : joints)
@@ -44,7 +43,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     {
       ROS_ASSERT(motion.second["position"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
       ROS_ASSERT(motion.second["velocity"][i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-      ROS_ASSERT(motion.second["whether_need_reverse"][i].getType() == XmlRpc::XmlRpcValue::TypeInt);
+      ROS_ASSERT(motion.second["fixed_direction"][i].getType() == XmlRpc::XmlRpcValue::TypeInt);
       m.position_.push_back(xmlRpcGetDouble(motion.second["position"][i]));
       m.velocity_.push_back(xmlRpcGetDouble(motion.second["velocity"][i]));
       m.fixed_direction_.push_back(xmlRpcGetDouble(motion.second["fixed_direction"][i]));
@@ -66,7 +65,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   motion_group_.clear();
   motion_group_values_.clear();
   cmd_multi_dof_ = *cmd_rt_buffer_.readFromRT();
-  judgeMotionGroup();
+  judgeMotionGroup(cmd_multi_dof_);
   if (state_ != cmd_multi_dof_.mode)
   {
     state_ = cmd_multi_dof_.mode;
@@ -91,10 +90,22 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
     state_changed_ = false;
     ROS_INFO("[Multi_Dof] VELOCITY");
   }
-  Controller::computeResult();
+  std::vector<double> results((double)joints_.size(), 0);
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
-    joints_[i].ctrl_velocity_->setCommand(results_[i]);
+    for (int j = 0; j < (int)motion_group_.size(); ++j)
+    {
+      for (int k = 0; k < (int)motions_.size(); ++k)
+      {
+        if (motions_[k].motion_name_ == motion_group_[j])
+          results[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) *
+                        motions_[k].velocity_max_speed_ * motions_[k].velocity_[i];
+      }
+    }
+  }
+  for (int i = 0; i < (int)joints_.size(); ++i)
+  {
+    joints_[i].ctrl_velocity_->setCommand(results[i]);
     joints_[i].ctrl_velocity_->update(time, period);
   }
 }
@@ -109,16 +120,24 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
   {
     start_time_ = time;
     std::vector<double> current_positions((double)joints_.size(), 0);
-    targets_ = current_positions;
-    Controller::computeResult();
+    std::vector<double> results((double)joints_.size(), 0);
+    targets_ = results;
     for (int i = 0; i < (int)joints_.size(); ++i)
     {
       current_positions[i] = (joints_[i].ctrl_position_->getPosition());
+      for (int j = 0; j < (int)motion_group_.size(); ++j)
+      {
+        for (int k = 0; k < (int)motions_.size(); ++k)
+        {
+          if (motions_[k].motion_name_ == motion_group_[j])
+          {
+            results[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) /
+                          motions_[k].position_per_step_ * motions_[k].position_[i];
+          }
+        }
+      }
       position_change_ = false;
-      if (calibrated_)
-        targets_[i] = results_[i];
-      else
-        targets_[i] = results_[i] + current_positions[i];
+      targets_[i] = results[i] + current_positions[i];
     }
   }
   double arrived_joint_num = 0;
@@ -137,40 +156,17 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
     position_change_ = true;
 }
 
-void Controller::computeResult()
-{
-  for (int i = 0; i < (int)joints_.size(); ++i)
-  {
-    results_[i] = 0;
-    for (int j = 0; j < (int)motion_group_.size(); ++j)
-    {
-      for (int k = 0; k < (int)motions_.size(); ++k)
-      {
-        if (motions_[k].motion_name_ == motion_group_[j])
-        {
-          if (state_ == rm_msgs::MultiDofCmd::VELOCITY)
-            results_[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) *
-                           motions_[k].velocity_max_speed_ * motions_[k].velocity_[i];
-          else
-            results_[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) /
-                           motions_[k].position_per_step_ * motions_[k].position_[i];
-        }
-      }
-    }
-  }
-}
-
 double Controller::judgeInputDirection(double value, bool fixed_direction)
 {
   if (fixed_direction)
     value = abs(value);
   return value;
 }
-void Controller::judgeMotionGroup()
+void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd msg)
 {
   std::vector<std::string> motion_names = { "linear_x", "linear_y", "linear_z", "angular_x", "angular_y", "angular_z" };
-  std::vector<double> motion_values = { cmd_multi_dof_.linear.x,  cmd_multi_dof_.linear.y,  cmd_multi_dof_.linear.z,
-                                        cmd_multi_dof_.angular.x, cmd_multi_dof_.angular.y, cmd_multi_dof_.angular.z };
+  std::vector<double> motion_values = { msg.linear.x,  msg.linear.y,  msg.linear.z,
+                                        msg.angular.x, msg.angular.y, msg.angular.z };
 
   for (int i = 0; i < (int)motion_names.size(); i++)
   {
