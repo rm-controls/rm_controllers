@@ -66,7 +66,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   motion_group_.clear();
   motion_group_values_.clear();
   cmd_multi_dof_ = *cmd_rt_buffer_.readFromRT();
-  judgeMotionGroup(cmd_multi_dof_);
+  judgeMotionGroup();
   if (state_ != cmd_multi_dof_.mode)
   {
     state_ = cmd_multi_dof_.mode;
@@ -91,22 +91,10 @@ void Controller::velocity(const ros::Time& time, const ros::Duration& period)
     state_changed_ = false;
     ROS_INFO("[Multi_Dof] VELOCITY");
   }
-  std::vector<double> results((double)joints_.size(), 0);
+  Controller::computeResult();
   for (int i = 0; i < (int)joints_.size(); ++i)
   {
-    for (int j = 0; j < (int)motion_group_.size(); ++j)
-    {
-      for (int k = 0; k < (int)motions_.size(); ++k)
-      {
-        if (motions_[k].motion_name_ == motion_group_[j])
-          results[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) *
-                        motions_[k].velocity_max_speed_ * motions_[k].velocity_[i];
-      }
-    }
-  }
-  for (int i = 0; i < (int)joints_.size(); ++i)
-  {
-    joints_[i].ctrl_velocity_->setCommand(results[i]);
+    joints_[i].ctrl_velocity_->setCommand(results_[i]);
     joints_[i].ctrl_velocity_->update(time, period);
   }
 }
@@ -117,49 +105,58 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
     state_changed_ = false;
     ROS_INFO("[Multi_Dof] POSITION");
   }
-  if (calibrated_)
-    for (int i = 0; i < (int)joints_.size(); ++i)
-      targets_[i] = motion_group_values_[i];
-  else
+  if (position_change_)
   {
-    if (position_change_)
-    {
-      start_time_ = time;
-      std::vector<double> current_positions((double)joints_.size(), 0);
-      std::vector<double> results((double)joints_.size(), 0);
-      targets_ = results;
-      for (int i = 0; i < (int)joints_.size(); ++i)
-      {
-        current_positions[i] = (joints_[i].ctrl_position_->getPosition());
-        for (int j = 0; j < (int)motion_group_.size(); ++j)
-        {
-          for (int k = 0; k < (int)motions_.size(); ++k)
-          {
-            if (motions_[k].motion_name_ == motion_group_[j])
-            {
-              results[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) /
-                            motions_[k].position_per_step_ * motions_[k].position_[i];
-            }
-          }
-        }
-        position_change_ = false;
-        targets_[i] = results[i] + current_positions[i];
-      }
-    }
-    double arrived_joint_num = 0;
+    start_time_ = time;
+    std::vector<double> current_positions((double)joints_.size(), 0);
+    targets_ = current_positions;
+    Controller::computeResult();
     for (int i = 0; i < (int)joints_.size(); ++i)
     {
-      if (targets_[i] - position_tolerance_ <= joints_[i].ctrl_position_->getPosition() &&
-          targets_[i] + position_tolerance_ >= joints_[i].ctrl_position_->getPosition())
-      {
-        arrived_joint_num++;
-        targets_[i] = joints_[i].ctrl_position_->getPosition();
-      }
-      joints_[i].ctrl_position_->setCommand(targets_[i]);
-      joints_[i].ctrl_position_->update(time, period);
+      current_positions[i] = (joints_[i].ctrl_position_->getPosition());
+      position_change_ = false;
+      if (calibrated_)
+        targets_[i] = results_[i];
+      else
+        targets_[i] = results_[i] + current_positions[i];
     }
-    if (arrived_joint_num == (int)joints_.size() || (time - start_time_).toSec() >= time_out_)
-      position_change_ = true;
+  }
+  double arrived_joint_num = 0;
+  for (int i = 0; i < (int)joints_.size(); ++i)
+  {
+    if (targets_[i] - position_tolerance_ <= joints_[i].ctrl_position_->getPosition() &&
+        targets_[i] + position_tolerance_ >= joints_[i].ctrl_position_->getPosition())
+    {
+      arrived_joint_num++;
+      targets_[i] = joints_[i].ctrl_position_->getPosition();
+    }
+    joints_[i].ctrl_position_->setCommand(targets_[i]);
+    joints_[i].ctrl_position_->update(time, period);
+  }
+  if (arrived_joint_num == (int)joints_.size() || (time - start_time_).toSec() >= time_out_)
+    position_change_ = true;
+}
+
+void Controller::computeResult()
+{
+  for (int i = 0; i < (int)joints_.size(); ++i)
+  {
+    results_[i] = 0;
+    for (int j = 0; j < (int)motion_group_.size(); ++j)
+    {
+      for (int k = 0; k < (int)motions_.size(); ++k)
+      {
+        if (motions_[k].motion_name_ == motion_group_[j])
+        {
+          if (state_ == rm_msgs::MultiDofCmd::VELOCITY)
+            results_[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) *
+                           motions_[k].velocity_max_speed_ * motions_[k].velocity_[i];
+          else
+            results_[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) /
+                           motions_[k].position_per_step_ * motions_[k].position_[i];
+        }
+      }
+    }
   }
 }
 
@@ -169,11 +166,11 @@ double Controller::judgeInputDirection(double value, bool fixed_direction)
     value = abs(value);
   return value;
 }
-void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd msg)
+void Controller::judgeMotionGroup()
 {
   std::vector<std::string> motion_names = { "linear_x", "linear_y", "linear_z", "angular_x", "angular_y", "angular_z" };
-  std::vector<double> motion_values = { msg.linear.x,  msg.linear.y,  msg.linear.z,
-                                        msg.angular.x, msg.angular.y, msg.angular.z };
+  std::vector<double> motion_values = { cmd_multi_dof_.linear.x,  cmd_multi_dof_.linear.y,  cmd_multi_dof_.linear.z,
+                                        cmd_multi_dof_.angular.x, cmd_multi_dof_.angular.y, cmd_multi_dof_.angular.z };
 
   for (int i = 0; i < (int)motion_names.size(); i++)
   {
