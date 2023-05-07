@@ -47,7 +47,7 @@ private:
   void velocity(const ros::Time& time, const ros::Duration& period);
 
   int state_ = rm_msgs::MultiDofCmd::VELOCITY;
-  bool state_changed_{}, position_change_{ true }, calibrated_{};
+  bool state_changed_{}, position_change_{ true };
   double time_out_, position_tolerance_;
   std::vector<Joint> joints_{};
   std::vector<Motion> motions_{};
