@@ -65,7 +65,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   motion_group_.clear();
   motion_group_values_.clear();
   cmd_multi_dof_ = *cmd_rt_buffer_.readFromRT();
-  judgeMotionGroup(cmd_multi_dof_);
+  judgeMotionGroup();
   if (state_ != cmd_multi_dof_.mode)
   {
     state_ = cmd_multi_dof_.mode;
@@ -162,12 +162,11 @@ double Controller::judgeInputDirection(double value, bool fixed_direction)
     value = abs(value);
   return value;
 }
-void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd msg)
+void Controller::judgeMotionGroup()
 {
   std::vector<std::string> motion_names = { "linear_x", "linear_y", "linear_z", "angular_x", "angular_y", "angular_z" };
-  std::vector<double> motion_values = { msg.linear.x,  msg.linear.y,  msg.linear.z,
-                                        msg.angular.x, msg.angular.y, msg.angular.z };
-
+  std::vector<double> motion_values = { cmd_multi_dof_.linear.x,  cmd_multi_dof_.linear.y,  cmd_multi_dof_.linear.z,
+                                        cmd_multi_dof_.angular.x, cmd_multi_dof_.angular.y, cmd_multi_dof_.angular.z };
   for (int i = 0; i < (int)motion_names.size(); i++)
   {
     if (abs(motion_values[i]))

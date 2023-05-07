@@ -40,7 +40,7 @@ public:
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-  void judgeMotionGroup(rm_msgs::MultiDofCmd);
+  void judgeMotionGroup();
   void commandCB(const rm_msgs::MultiDofCmdPtr& msg);
   double judgeInputDirection(double value, bool fixed_direction);
   void position(const ros::Time& time, const ros::Duration& period);
