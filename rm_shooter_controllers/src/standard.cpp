@@ -244,7 +244,8 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
 void Controller::normalize()
 {
   double push_angle = 2. * M_PI / static_cast<double>(push_per_rotation_);
-  ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01) / push_angle));
+  if(ctrl_trigger_.getPosition() > ctrl_trigger_.command_struct_.position_)
+    ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01) / push_angle));
 }
 
 void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/)
