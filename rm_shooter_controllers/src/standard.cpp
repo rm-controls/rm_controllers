@@ -176,30 +176,29 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
                                2. * M_PI / static_cast<double>(push_per_rotation_));
       last_shoot_time_ = time;
     }
+    // Check block
+    if ((ctrl_trigger_.joint_.getEffort() < -config_.block_effort &&
+         std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed) ||
+        ((time - last_shoot_time_).toSec() > 1 / cmd_.hz &&
+         std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed))
+    {
+      if (!maybe_block_)
+      {
+        block_time_ = time;
+        maybe_block_ = true;
+      }
+      if ((time - block_time_).toSec() >= config_.block_duration)
+      {
+        state_ = BLOCK;
+        state_changed_ = true;
+        ROS_INFO("[Shooter] Exit PUSH");
+      }
+    }
+    else
+      maybe_block_ = false;
   }
   else
     ROS_DEBUG("[Shooter] Wait for friction wheel");
-
-  // Check block
-  if ((ctrl_trigger_.joint_.getEffort() < -config_.block_effort &&
-       std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed) ||
-      ((time - last_shoot_time_).toSec() > 1 / cmd_.hz &&
-       std::abs(ctrl_trigger_.joint_.getVelocity()) < config_.block_speed))
-  {
-    if (!maybe_block_)
-    {
-      block_time_ = time;
-      maybe_block_ = true;
-    }
-    if ((time - block_time_).toSec() >= config_.block_duration)
-    {
-      state_ = BLOCK;
-      state_changed_ = true;
-      ROS_INFO("[Shooter] Exit PUSH");
-    }
-  }
-  else
-    maybe_block_ = false;
 }
 
 void Controller::block(const ros::Time& time, const ros::Duration& period)
