@@ -395,7 +395,7 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
 
   quatToRPY(toMsg(odom2base).rotation, roll_, pitch_, yaw_);
 
-  x_[5] = ((left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) / 2 -
+  x_[5] = ((left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) / 2 +
            imu_handle_.getAngularVelocity()[1]) *
           wheel_radius_;
   x_[0] += x_[5] * period.toSec();
@@ -496,10 +496,20 @@ void BalanceController::normal(const ros::Time& time, const ros::Duration& perio
   else
     u = k_high_ * (-x);
 
-  left_wheel_joint_handle_.setCommand(u(0));
-  right_wheel_joint_handle_.setCommand(u(1));
-  left_momentum_block_joint_handle_.setCommand(u(2));
-  right_momentum_block_joint_handle_.setCommand(u(3));
+  if (state_ == RAW)
+  {
+    left_wheel_joint_handle_.setCommand(u(0));
+    right_wheel_joint_handle_.setCommand(u(1));
+    left_momentum_block_joint_handle_.setCommand(3);
+    right_momentum_block_joint_handle_.setCommand(-3);
+  }
+  else
+  {
+    left_wheel_joint_handle_.setCommand(u(0));
+    right_wheel_joint_handle_.setCommand(u(1));
+    left_momentum_block_joint_handle_.setCommand(u(2));
+    right_momentum_block_joint_handle_.setCommand(u(3));
+  }
 
   publishState(time);
 }
