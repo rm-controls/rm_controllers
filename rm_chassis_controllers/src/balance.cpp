@@ -136,6 +136,12 @@ bool BalanceController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   }
   controller_nh.getParam("position_offset", position_offset_);
   controller_nh.getParam("position_clear_threshold", position_clear_threshold_);
+  if (controller_nh.hasParam("pid_left_wheel"))
+    if (!pid_left_wheel_.init(ros::NodeHandle(controller_nh, "pid_left_wheel")))
+      return false;
+  if (controller_nh.hasParam("pid_right_wheel"))
+    if (!pid_right_wheel_.init(ros::NodeHandle(controller_nh, "pid_right_wheel")))
+      return false;
 
   q_low_.setZero();
   q_mid_.setZero();
@@ -445,8 +451,10 @@ void BalanceController::moveJoint(const ros::Time& time, const ros::Duration& pe
   switch (balance_mode_)
   {
     case BalanceMode::NORMAL:
-    case BalanceMode::FALLEN:
       normal(time, period);
+      break;
+    case BalanceMode::FALLEN:
+      fallen(time, period);
       break;
     case BalanceMode::BLOCK:
       block(time, period);
@@ -461,10 +469,7 @@ void BalanceController::normal(const ros::Time& time, const ros::Duration& perio
 {
   if (balance_state_changed_)
   {
-    if (balance_mode_ == BalanceMode::NORMAL)
-      ROS_INFO("[balance] Enter NOMAl");
-    else if (balance_mode_ == BalanceMode::FALLEN)
-      ROS_INFO("[balance] Enter FALLEN");
+    ROS_INFO("[balance] Enter NOMAl");
     balance_state_changed_ = false;
   }
 
@@ -482,25 +487,43 @@ void BalanceController::normal(const ros::Time& time, const ros::Duration& perio
     x_[0] = 0.;
     position_des_ = position_offset_;
   }
-  switch (balance_mode_)
-  {
-    case BalanceMode::FALLEN:
-      u = k_fallen_ * (-x);
-      break;
-    case BalanceMode::NORMAL:
-      double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
-      if (power_limit <= 80)
-        u = k_low_ * (-x);
-      else if (power_limit <= 120)
-        u = k_mid_ * (-x);
-      else
-        u = k_high_ * (-x);
-  }
+  double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
+
+  if (power_limit <= 80)
+    u = k_low_ * (-x);
+  else if (power_limit <= 120)
+    u = k_mid_ * (-x);
+  else
+    u = k_high_ * (-x);
 
   left_wheel_joint_handle_.setCommand(u(0));
   right_wheel_joint_handle_.setCommand(u(1));
   left_momentum_block_joint_handle_.setCommand(u(2));
   right_momentum_block_joint_handle_.setCommand(u(3));
+
+  publishState(time);
+}
+
+void BalanceController::fallen(const ros::Time& time, const ros::Duration& period)
+{
+  if (balance_state_changed_)
+  {
+    ROS_INFO("[balance] Enter FALLEN");
+    pid_right_wheel_.reset();
+    pid_left_wheel_.reset();
+
+    balance_state_changed_ = false;
+  }
+
+  double left_wheel_cmd = (vel_cmd_.x - vel_cmd_.z * 0.1587) / 0.125;
+  double right_wheel_cmd = (vel_cmd_.x + vel_cmd_.z * 0.1587) / 0.125;
+  pid_left_wheel_.computeCommand(left_wheel_cmd - left_wheel_joint_handle_.getVelocity(), period);
+  pid_right_wheel_.computeCommand(right_wheel_cmd - right_wheel_joint_handle_.getVelocity(), period);
+
+  left_wheel_joint_handle_.setCommand(pid_left_wheel_.getCurrentCmd());
+  right_wheel_joint_handle_.setCommand(pid_right_wheel_.getCurrentCmd());
+  left_momentum_block_joint_handle_.setCommand(0);
+  right_momentum_block_joint_handle_.setCommand(0);
 
   publishState(time);
 }
@@ -576,6 +599,9 @@ void BalanceController::publishState(const ros::Time& time)
     state_pub_->msg_.theta_dot = x_[7];
     state_pub_->msg_.x_b_l_dot = x_[8];
     state_pub_->msg_.x_b_r_dot = x_[9];
+    state_pub_->msg_.acc_x = imu_handle_.getAngularVelocity()[0];
+    state_pub_->msg_.acc_y = imu_handle_.getAngularVelocity()[1];
+    state_pub_->msg_.acc_z = imu_handle_.getAngularVelocity()[2];
     state_pub_->msg_.T_l = left_wheel_joint_handle_.getCommand();
     state_pub_->msg_.T_r = right_wheel_joint_handle_.getCommand();
     state_pub_->msg_.f_b_l = left_momentum_block_joint_handle_.getCommand();

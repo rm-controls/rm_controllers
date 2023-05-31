@@ -32,6 +32,7 @@ public:
 private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   void normal(const ros::Time& time, const ros::Duration& period);
+  void fallen(const ros::Time& time, const ros::Duration& period);
   void block(const ros::Time& time, const ros::Duration& period);
 
   void publishState(const ros::Time& time);
@@ -65,6 +66,8 @@ private:
   RtpublisherPtr state_pub_;
   geometry_msgs::Vector3 angular_vel_base_;
   double roll_, pitch_, yaw_;
+
+  control_toolbox::Pid pid_left_wheel_, pid_right_wheel_;
 };
 
 }  // namespace rm_chassis_controllers
