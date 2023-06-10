@@ -15,6 +15,7 @@
   <buildtool_depend>catkin</buildtool_depend>
   <exec_depend>gpio_controller</exec_depend>
   <exec_depend>mimic_joint_controller</exec_depend>
+  <exec_depend>multi_dof_controller</exec_depend>
   <exec_depend>rm_calibration_controllers</exec_depend>
   <exec_depend>rm_chassis_controllers</exec_depend>
   <exec_depend>rm_gimbal_controllers</exec_depend>

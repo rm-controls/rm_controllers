@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>multi_dof_controller</name>
+  <version>0.0.0</version>
+  <description>The multi_dof_controller package</description>
+  <license>BSD</license>
+  <maintainer email="2028238109@qq.com">lsy</maintainer>
+
+  <!-- buildtool_depend: dependencies of the build process -->
+  <buildtool_depend>catkin</buildtool_depend>
+  <!-- depend: build, export, and execution dependency -->
+  <depend>roscpp</depend>
+
+  <depend>rm_common</depend>
+  <depend>geometry_msgs</depend>
+
+  <depend>controller_interface</depend>
+  <depend>effort_controllers</depend>
+
+
+  <export>
+    <!-- Other tools can request additional information be placed here -->
+    <controller_interface plugin="${prefix}/multi_dof_controller_plugins.xml"/>
+  </export>
+</package>
