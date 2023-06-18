@@ -75,6 +75,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
+  yaw_k_v_ = getParam(nh_yaw, "k_v", 0.);
+  pitch_k_v_ = getParam(nh_pitch, "k_v", 0.);
   hardware_interface::EffortJointInterface* effort_joint_interface =
       robot_hw->get<hardware_interface::EffortJointInterface>();
   if (!ctrl_yaw_.init(effort_joint_interface, nh_yaw) || !ctrl_pitch_.init(effort_joint_interface, nh_pitch))
@@ -375,14 +377,14 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
       tf2::fromMsg(target_pos, target_pos_tf);
       tf2::fromMsg(target_vel, target_vel_tf);
 
-      yaw_vel_des = target_vel_tf.cross(target_pos_tf).z() / std::pow((target_pos_tf.length()), 2);
+      yaw_vel_des = target_pos_tf.cross(target_vel_tf).z() / std::pow((target_pos_tf.length()), 2);
       transform = robot_state_handle_.lookupTransform(ctrl_pitch_.joint_urdf_->parent_link_name,
                                                       data_track_.header.frame_id, data_track_.header.stamp);
       tf2::doTransform(target_pos, target_pos, transform);
       tf2::doTransform(target_vel, target_vel, transform);
       tf2::fromMsg(target_pos, target_pos_tf);
       tf2::fromMsg(target_vel, target_vel_tf);
-      pitch_vel_des = target_vel_tf.cross(target_pos_tf).y() / std::pow((target_pos_tf.length()), 2);
+      pitch_vel_des = target_pos_tf.cross(target_vel_tf).y() / std::pow((target_pos_tf.length()), 2);
     }
     catch (tf2::TransformException& ex)
     {
@@ -400,8 +402,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   else if (std::abs(ctrl_yaw_.joint_.getCommand()) > effort_dead_zone_)
     resistance_compensation = (ctrl_yaw_.joint_.getCommand() > 0 ? 1 : -1) * yaw_resistance_;
   ctrl_yaw_.joint_.setCommand(ctrl_yaw_.joint_.getCommand() - k_chassis_vel_ * chassis_vel_->angular_->z() +
-                              resistance_compensation);
-  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
+                              yaw_k_v_ * yaw_vel_des + resistance_compensation);
+  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time) + pitch_k_v_ * pitch_vel_des);
 }
 
 double Controller::feedForward(const ros::Time& time)
