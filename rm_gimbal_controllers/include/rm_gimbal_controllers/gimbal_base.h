@@ -169,6 +169,10 @@ private:
   double gravity_;
   bool enable_gravity_compensation_;
 
+  // Input feedforward
+  double yaw_k_v_;
+  double pitch_k_v_;
+
   // Resistance compensation
   double yaw_resistance_;
   double velocity_dead_zone_, effort_dead_zone_;
