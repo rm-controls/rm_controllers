@@ -2,6 +2,14 @@
 Changelog for package rm_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge branch 'master' into dev/balance
+* Merge pull request `#120 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/120>`_ from ye-luo-xi-tui/master
+  0.1.10
+* Merge branch 'rm-controls:master' into gpio_calibration_controller
+* Contributors: 1moule, ye-luo-xi-tui, yuchen
+
 0.1.10 (2023-03-25)
 -------------------
 * Merge pull request `#106 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/106>`_ from ye-luo-xi-tui/master

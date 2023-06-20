@@ -2,6 +2,29 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Merge pull request `#132 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/132>`_ from chenhuiYu00/change_chassis_topic
+  Change chassis command topic.
+* Change chassis command topic.
+* Merge branch 'rm-controls:master' into master
+* Merge pull request `#123 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/123>`_ from chenhuiYu00/dev/balance
+  Add balance auto exit block
+* Update balance model value.
+* Rename BalanceMode.
+* Separate balance model into functions.
+* Use realtime pub in balance state.
+* Merge branch 'master' into dev/balance
+* Merge pull request `#120 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/120>`_ from ye-luo-xi-tui/master
+  0.1.10
+* Update GYRO to RAW and enum rename.
+* Merge branch 'master' into dev/balance
+* Balance auto exit block add pitch limit.
+* Update auto exit block.
+* Add balance auto exit block.
+* Merge branch 'rm-controls:master' into gpio_calibration_controller
+* Contributors: 1moule, ye-luo-xi-tui, yuchen
+
 0.1.10 (2023-03-25)
 -------------------
 * Merge pull request `#112 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/112>`_ from ljq-lv/Delete
