@@ -2,6 +2,17 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.11 (2023-06-20)
+-------------------
+* Merge pull request `#129 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/129>`_ from ye-luo-xi-tui/master
+  Shooter_controller would not check block when friction wheel don't rotate
+* Shooter_controller would not check block when friction wheel don't rotate.
+* Merge branch 'master' into dev/balance
+* Merge pull request `#120 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/120>`_ from ye-luo-xi-tui/master
+  0.1.10
+* Merge branch 'rm-controls:master' into gpio_calibration_controller
+* Contributors: 1moule, ye-luo-xi-tui, yezi, yuchen
+
 0.1.10 (2023-03-25)
 -------------------
 * Merge pull request `#118 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/118>`_ from ye-luo-xi-tui/master

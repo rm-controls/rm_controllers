@@ -2,6 +2,44 @@
 Changelog for package rm_calibration_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.11 (2023-06-20)
+-------------------
+* Merge pull request `#127 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/127>`_ from 1moule/gpio_calibration_controller
+  Rewrite the stopping function and set calibration success to false in stopping function
+* Rewrite the stopping function and set calibration success to false in the stopping function.
+* Merge pull request `#126 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/126>`_ from 1moule/master
+  Remove unnecessary variables
+* Remove unnecessary variables.
+* Merge pull request `#125 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/125>`_ from rm-controls/calibration
+  Add gpio calibration controller
+* Merge pull request `#116 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/116>`_ from 1moule/gpio_calibration_controller
+  Split the calibration controller and add a controller that uses gpio calibration
+* Modefy CMakeLists, delete TODO and initialize a variable.
+* Modified to get the error message when gpio is obtained.
+* Delete vector and some unnecessary code.
+* Merge branch 'master' into dev/balance
+* Change gpio calibration controller to the same one and modify gpio calibration logic.
+* Merge pull request `#120 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/120>`_ from ye-luo-xi-tui/master
+  0.1.10
+* Modify the unmodified name in the joint calibration controller.
+* Rename joint calibration controller.
+* Write the velocity threshold in the base class.
+* Modify the name of an enumeration type.
+* Modify the name of an enumeration type.
+* Modify variable name.
+* Delete some comments, modify the initialization function of the gpio calibration controller base class.
+* Modified hardware interface for instantiating template classes.
+* Add a new line at the end and delete update function of calibration_base.h file.
+* Factor out the calibration controller into a form derived from a base class and modify the controller appropriately.
+* Use gpio handle to replace gpio call back function.
+* Solved the problem of not being in the detection range of the hall switch when starting the calibration.
+* Modify gpio calibration controller scheme to first use speed control to find a fixed point, and then use position control to reach.
+* Modify logic and callback function of gpio calibration controller.
+* Modify queue length of gpio subscriber.
+* Merge branch 'rm-controls:master' into gpio_calibration_controller
+* Add gpio calibration controller.
+* Contributors: 1moule, ye-luo-xi-tui, yuchen
+
 0.1.10 (2023-03-25)
 -------------------
 * Merge pull request `#106 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/106>`_ from ye-luo-xi-tui/master
