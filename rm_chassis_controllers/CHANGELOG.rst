@@ -2,8 +2,8 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.11 (2023-06-20)
+-------------------
 * Merge pull request `#132 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/132>`_ from chenhuiYu00/change_chassis_topic
   Change chassis command topic.
 * Change chassis command topic.

@@ -2,8 +2,8 @@
 Changelog for package rm_calibration_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.11 (2023-06-20)
+-------------------
 * Merge pull request `#127 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/127>`_ from 1moule/gpio_calibration_controller
   Rewrite the stopping function and set calibration success to false in stopping function
 * Rewrite the stopping function and set calibration success to false in the stopping function.

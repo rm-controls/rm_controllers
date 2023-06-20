@@ -2,8 +2,8 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.11 (2023-06-20)
+-------------------
 * Merge pull request `#129 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/129>`_ from ye-luo-xi-tui/master
   Shooter_controller would not check block when friction wheel don't rotate
 * Shooter_controller would not check block when friction wheel don't rotate.

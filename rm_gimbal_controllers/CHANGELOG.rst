@@ -2,8 +2,8 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.11 (2023-06-20)
+-------------------
 * Merge pull request `#135 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/135>`_ from ye-luo-xi-tui/feedforward
   Add input feedforward and fix a bug in computing desire vel at TRACK mode
 * Add input feedforward and fix a bug in computing desire vel at TRACK mode.

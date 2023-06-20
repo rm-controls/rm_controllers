@@ -2,8 +2,8 @@
 Changelog for package rm_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.11 (2023-06-20)
+-------------------
 * Merge branch 'master' into dev/balance
 * Merge pull request `#120 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/120>`_ from ye-luo-xi-tui/master
   0.1.10
