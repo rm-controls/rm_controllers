@@ -48,6 +48,7 @@
 #include <rm_shooter_controllers/ShooterConfig.h>
 #include <rm_msgs/ShootCmd.h>
 #include <rm_msgs/ShootState.h>
+#include <rm_msgs/ShooterSpeed.h>
 
 #include <utility>
 
@@ -81,12 +82,14 @@ private:
     cmd_rt_buffer_.writeFromNonRT(*msg);
   }
   void reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/);
+  bool changeStatusCB(rm_msgs::ShooterSpeed::Request& req, rm_msgs::ShooterSpeed::Response& res);
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   effort_controllers::JointVelocityController ctrl_friction_l_, ctrl_friction_r_;
   effort_controllers::JointPositionController ctrl_trigger_;
   int push_per_rotation_{};
   double push_qd_threshold_{};
+  double extra_speed_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool maybe_block_ = false;
@@ -106,6 +109,7 @@ private:
   rm_msgs::ShootCmd cmd_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootState>> shoot_state_pub_;
   ros::Subscriber cmd_subscriber_;
+  ros::ServiceServer shoot_speed_srv_;
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>* d_srv_{};
 };
 
