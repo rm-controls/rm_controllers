@@ -2,6 +2,20 @@
 Changelog for package rm_gimbal_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.11 (2023-06-20)
+-------------------
+* Merge pull request `#135 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/135>`_ from ye-luo-xi-tui/feedforward
+  Add input feedforward and fix a bug in computing desire vel at TRACK mode
+* Add input feedforward and fix a bug in computing desire vel at TRACK mode.
+* Merge pull request `#124 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/124>`_ from ye-luo-xi-tui/resistance_compensation
+  Add velocity_dead_zone and effort_dead_zone
+* Merge branch 'master' into dev/balance
+* Add velocity_dead_zone and effort_dead_zone.
+* Merge pull request `#120 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/120>`_ from ye-luo-xi-tui/master
+  0.1.10
+* Merge branch 'rm-controls:master' into gpio_calibration_controller
+* Contributors: 1moule, ye-luo-xi-tui, yezi, yuchen
+
 0.1.10 (2023-03-25)
 -------------------
 * Merge branch 'rm-controls:master' into master
