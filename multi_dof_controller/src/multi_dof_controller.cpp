@@ -17,7 +17,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   position_tolerance_ = getParam(controller_nh, "position_tolerance", 0.01);
   time_out_ = getParam(controller_nh, "time_out", 1);
   ROS_ASSERT(joints.getType() == XmlRpc::XmlRpcValue::TypeStruct);
-  effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
+  hardware_interface::EffortJointInterface* effort_joint_interface;
+  effort_joint_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
   for (const auto& joint : joints)
   {
     Joint j{ .joint_name_ = joint.first,
@@ -25,11 +26,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
              .ctrl_velocity_ = new effort_controllers::JointVelocityController() };
     ros::NodeHandle nh_position = ros::NodeHandle(controller_nh, "joints/" + joint.first + "/position");
     ros::NodeHandle nh_velocity = ros::NodeHandle(controller_nh, "joints/" + joint.first + "/velocity");
-    if (!j.ctrl_position_->init(effort_joint_interface_, nh_position) ||
-        !j.ctrl_velocity_->init(effort_joint_interface_, nh_velocity))
+    if (!j.ctrl_position_->init(effort_joint_interface, nh_position) ||
+        !j.ctrl_velocity_->init(effort_joint_interface, nh_velocity))
       return false;
-    joint_handles_.push_back(j.ctrl_position_->joint_);
-    joint_handles_.push_back(j.ctrl_velocity_->joint_);
     joints_.push_back(j);
   }
   XmlRpc::XmlRpcValue motions;
@@ -64,11 +63,12 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
   motion_group_.clear();
   motion_group_values_.clear();
-  cmd_multi_dof_ = *cmd_rt_buffer_.readFromRT();
-  judgeMotionGroup();
-  if (state_ != cmd_multi_dof_.mode)
+  rm_msgs::MultiDofCmd cmd_multi_dof;
+  cmd_multi_dof = *cmd_rt_buffer_.readFromRT();
+  judgeMotionGroup(cmd_multi_dof);
+  if (state_ != cmd_multi_dof.mode)
   {
-    state_ = cmd_multi_dof_.mode;
+    state_ = cmd_multi_dof.mode;
     state_changed_ = true;
   }
   switch (state_)
@@ -162,11 +162,11 @@ double Controller::judgeInputDirection(double value, bool fixed_direction)
     value = abs(value);
   return value;
 }
-void Controller::judgeMotionGroup()
+void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd cmd_multi_dof)
 {
   std::vector<std::string> motion_names = { "linear_x", "linear_y", "linear_z", "angular_x", "angular_y", "angular_z" };
-  std::vector<double> motion_values = { cmd_multi_dof_.linear.x,  cmd_multi_dof_.linear.y,  cmd_multi_dof_.linear.z,
-                                        cmd_multi_dof_.angular.x, cmd_multi_dof_.angular.y, cmd_multi_dof_.angular.z };
+  std::vector<double> motion_values = { cmd_multi_dof.linear.x,  cmd_multi_dof.linear.y,  cmd_multi_dof.linear.z,
+                                        cmd_multi_dof.angular.x, cmd_multi_dof.angular.y, cmd_multi_dof.angular.z };
   for (int i = 0; i < (int)motion_names.size(); i++)
   {
     if (abs(motion_values[i]))

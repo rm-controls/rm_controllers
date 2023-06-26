@@ -40,7 +40,7 @@ public:
   void update(const ros::Time& time, const ros::Duration& period) override;
 
 private:
-  void judgeMotionGroup();
+  void judgeMotionGroup(rm_msgs::MultiDofCmd cmd_multi_dof);
   void commandCB(const rm_msgs::MultiDofCmdPtr& msg);
   double judgeInputDirection(double value, bool fixed_direction);
   void position(const ros::Time& time, const ros::Duration& period);
@@ -53,15 +53,10 @@ private:
   std::vector<Motion> motions_{};
   std::vector<std::string> motion_group_{};
   std::vector<double> motion_group_values_{}, targets_{};
-  std::vector<hardware_interface::JointHandle> joint_handles_{};
 
   ros::Time start_time_;
   ros::Subscriber cmd_multi_dof_sub_;
   realtime_tools::RealtimeBuffer<rm_msgs::MultiDofCmd> cmd_rt_buffer_{};
-  hardware_interface::EffortJointInterface* effort_joint_interface_{};
-  effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
-
-  rm_msgs::MultiDofCmd cmd_multi_dof_{};
 };
 
 }  // namespace multi_dof_controller
