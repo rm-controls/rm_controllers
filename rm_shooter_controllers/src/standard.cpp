@@ -62,7 +62,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   push_per_rotation_ = getParam(controller_nh, "push_per_rotation", 0);
   push_qd_threshold_ = getParam(controller_nh, "push_qd_threshold", 0.);
 
-  shoot_speed_srv_ = controller_nh.advertiseService("/shooter_speed", &Controller::changeStatusCB, this);
+  extra_friction_wheel_speed_srv_ = controller_nh.advertiseService("/extra_friction_wheel_speed", &Controller::extraFrictionWheelSpeedCB, this);
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::ShootCmd>("command", 1, &Controller::commandCB, this);
   shoot_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::ShootState>(controller_nh, "state", 10));
   // Init dynamic reconfigure
@@ -238,8 +238,8 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
     qd_des = config_.qd_30;
   else
     qd_des = 0.;
-  ctrl_friction_l_.setCommand(qd_des + config_.lf_extra_rotat_speed + extra_speed_);
-  ctrl_friction_r_.setCommand(-qd_des - extra_speed_);
+  ctrl_friction_l_.setCommand(qd_des + config_.lf_extra_rotat_speed + extra_friction_wheel_speed_);
+  ctrl_friction_r_.setCommand(-qd_des - extra_friction_wheel_speed_);
 }
 
 void Controller::normalize()
@@ -248,9 +248,10 @@ void Controller::normalize()
   ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01) / push_angle));
 }
 
-bool Controller::changeStatusCB(rm_msgs::ShooterSpeed::Request& req, rm_msgs::ShooterSpeed::Response& res)
+bool Controller::extraFrictionWheelSpeedCB(rm_msgs::ExtraFrictionWheelSpeed::Request& req,
+                                rm_msgs::ExtraFrictionWheelSpeed::Response& res)
 {
-  extra_speed_ = req.shooter_speed;
+  extra_friction_wheel_speed_ = req.extra_speed;
   res.is_success = true;
   return true;
 }
