@@ -232,8 +232,8 @@ void Controller::track(const ros::Time& time)
   quatToRPY(odom2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
   double yaw_compute = yaw_real;
   double pitch_compute = -pitch_real;
-  geometry_msgs::Point target_pos = data_track_.target_pos;
-  geometry_msgs::Vector3 target_vel = data_track_.target_vel;
+  geometry_msgs::Point target_pos = data_track_.position;
+  geometry_msgs::Vector3 target_vel = data_track_.velocity;
   try
   {
     if (!data_track_.header.frame_id.empty())
@@ -251,18 +251,20 @@ void Controller::track(const ros::Time& time)
   target_pos.x -= odom2pitch_.transform.translation.x;
   target_pos.y -= odom2pitch_.transform.translation.y;
   target_pos.z -= odom2pitch_.transform.translation.z;
+  double z2 = data_track_.z_2 - odom2pitch_.transform.translation.z;
   target_vel.x -= chassis_vel_->linear_->x();
   target_vel.y -= chassis_vel_->linear_->y();
   target_vel.z -= chassis_vel_->linear_->z();
-
-  bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed);
+  bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, data_track_.yaw,
+                                             data_track_.v_yaw, data_track_.radius_1, data_track_.radius_2, z2);
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
     if (error_pub_->trylock())
     {
-      double error =
-          bullet_solver_->getGimbalError(target_pos, target_vel, yaw_compute, pitch_compute, cmd_gimbal_.bullet_speed);
+      double error = bullet_solver_->getGimbalError(target_pos, target_vel, data_track_.yaw, data_track_.v_yaw,
+                                                    data_track_.radius_1, data_track_.radius_2, z2, yaw_compute,
+                                                    pitch_compute, cmd_gimbal_.bullet_speed);
       error_pub_->msg_.stamp = time;
       error_pub_->msg_.error = solve_success ? error : 1.0;
       error_pub_->unlockAndPublish();
@@ -364,8 +366,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   else if (state_ == TRACK)
   {
-    geometry_msgs::Point target_pos = data_track_.target_pos;
-    geometry_msgs::Vector3 target_vel = data_track_.target_vel;
+    geometry_msgs::Point target_pos = data_track_.position;
+    geometry_msgs::Vector3 target_vel = data_track_.velocity;
     tf2::Vector3 target_pos_tf, target_vel_tf;
 
     try
