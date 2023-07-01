@@ -99,7 +99,7 @@ double BulletSolver::getResistanceCoefficient(double bullet_speed) const
 }
 
 bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw,
-                         double v_yaw, double r1, double r2, double z2)
+                         double v_yaw, double r1, double r2, double dz, int armors_num)
 {
   config_ = *config_rt_buffer_.readFromRT();
   bullet_speed_ = bullet_speed;
@@ -114,22 +114,16 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   selected_armor_ = 0;
   double r = r1;
   double z = pos.z;
-  if ((yaw + v_yaw * rough_fly_time) > output_yaw_ + M_PI_4)
+  if (((yaw + v_yaw * rough_fly_time) > output_yaw_ + M_PI_4) || ((yaw + v_yaw * rough_fly_time) < output_yaw_ - M_PI_4))
   {
-    selected_armor_ = -1;
-    r = r2;
-    z = z2;
-  }
-  else if ((yaw + v_yaw * rough_fly_time) < output_yaw_ - M_PI_4)
-  {
-    selected_armor_ = 1;
-    r = r2;
-    z = z2;
+    selected_armor_ = (yaw + v_yaw * rough_fly_time) > output_yaw_ + M_PI_4 ? -1 : 1;
+    r = armors_num == 4 ? r2 : r1;
+    z = armors_num == 4 ? pos.z + dz : pos.z;
   }
   int count{};
   double error = 999;
-  target_pos_.x = pos.x - r * cos(yaw + selected_armor_ * M_PI_2);
-  target_pos_.y = pos.y - r * sin(yaw + selected_armor_ * M_PI_2);
+  target_pos_.x = pos.x - r * cos(yaw + selected_armor_ * 2 * M_PI / armors_num);
+  target_pos_.y = pos.y - r * sin(yaw + selected_armor_ * 2 * M_PI / armors_num);
   target_pos_.z = z;
   while (error >= 0.001)
   {
@@ -142,8 +136,10 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
                         (1 - std::exp(-resistance_coff_ * fly_time)) / resistance_coff_ -
                     config_.g * fly_time / resistance_coff_;
 
-    target_pos_.x = pos.x + vel.x * fly_time - r * cos(yaw + v_yaw * fly_time + selected_armor_ * M_PI_2);
-    target_pos_.y = pos.y + vel.y * fly_time - r * sin(yaw + v_yaw * fly_time + selected_armor_ * M_PI_2);
+    target_pos_.x =
+        pos.x + vel.x * fly_time - r * cos(yaw + v_yaw * fly_time + selected_armor_ * 2 * M_PI / armors_num);
+    target_pos_.y =
+        pos.y + vel.y * fly_time - r * sin(yaw + v_yaw * fly_time + selected_armor_ * 2 * M_PI / armors_num);
     target_pos_.z = z + vel.z * fly_time;
 
     double target_yaw = std::atan2(target_pos_.y, target_pos_.x);
@@ -209,7 +205,7 @@ void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped& odom2pi
 }
 
 double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
-                                    double r1, double r2, double z2, double yaw_real, double pitch_real,
+                                    double r1, double r2, double dz, int armors_num, double yaw_real, double pitch_real,
                                     double bullet_speed)
 {
   config_ = *config_rt_buffer_.readFromRT();
@@ -218,8 +214,8 @@ double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vec
   double z = pos.z;
   if (selected_armor_ != 0)
   {
-    r = r2;
-    z = z2;
+    r = armors_num == 4 ? r2 : r1;
+    z = armors_num == 4 ? pos.z + dz : pos.z;
   }
   double fly_time = (-std::log(1 - std::sqrt(std::pow(pos.x, 2) + std::pow(pos.y, 2)) * resistance_coff /
                                        (bullet_speed * std::cos(pitch_real)))) /
@@ -230,8 +226,8 @@ double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vec
   while (std::abs(fly_time - last_fly_time) > 0.01)
   {
     last_fly_time = fly_time;
-    target_pos.x = pos.x + vel.x * fly_time - r * cos(yaw + v_yaw * fly_time + selected_armor_ * M_PI_2);
-    target_pos.y = pos.y + vel.y * fly_time - r * sin(yaw + v_yaw * fly_time + selected_armor_ * M_PI_2);
+    target_pos.x = pos.x + vel.x * fly_time - r * cos(yaw + v_yaw * fly_time + selected_armor_ * 2 * M_PI / armors_num);
+    target_pos.y = pos.y + vel.y * fly_time - r * sin(yaw + v_yaw * fly_time + selected_armor_ * 2 * M_PI / armors_num);
     target_pos.z = z + vel.z * fly_time;
     target_rho = std::sqrt(std::pow(target_pos.x, 2) + std::pow(target_pos.y, 2));
     fly_time = (-std::log(1 - target_rho * resistance_coff / (bullet_speed * std::cos(pitch_real)))) / resistance_coff;

@@ -251,20 +251,21 @@ void Controller::track(const ros::Time& time)
   target_pos.x -= odom2pitch_.transform.translation.x;
   target_pos.y -= odom2pitch_.transform.translation.y;
   target_pos.z -= odom2pitch_.transform.translation.z;
-  double z2 = data_track_.z_2 - odom2pitch_.transform.translation.z;
   target_vel.x -= chassis_vel_->linear_->x();
   target_vel.y -= chassis_vel_->linear_->y();
   target_vel.z -= chassis_vel_->linear_->z();
-  bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, data_track_.yaw,
-                                             data_track_.v_yaw, data_track_.radius_1, data_track_.radius_2, z2);
+  bool solve_success =
+      bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, data_track_.yaw, data_track_.v_yaw,
+                            data_track_.radius_1, data_track_.radius_2, data_track_.dz, data_track_.armors_num);
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
     if (error_pub_->trylock())
     {
-      double error = bullet_solver_->getGimbalError(target_pos, target_vel, data_track_.yaw, data_track_.v_yaw,
-                                                    data_track_.radius_1, data_track_.radius_2, z2, yaw_compute,
-                                                    pitch_compute, cmd_gimbal_.bullet_speed);
+      double error =
+          bullet_solver_->getGimbalError(target_pos, target_vel, data_track_.yaw, data_track_.v_yaw,
+                                         data_track_.radius_1, data_track_.radius_2, data_track_.dz,
+                                         data_track_.armors_num, yaw_compute, pitch_compute, cmd_gimbal_.bullet_speed);
       error_pub_->msg_.stamp = time;
       error_pub_->msg_.error = solve_success ? error : 1.0;
       error_pub_->unlockAndPublish();
