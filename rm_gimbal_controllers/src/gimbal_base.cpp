@@ -367,8 +367,11 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   else if (state_ == TRACK)
   {
-    geometry_msgs::Point target_pos = data_track_.position;
-    geometry_msgs::Vector3 target_vel = data_track_.velocity;
+    geometry_msgs::Point target_pos;
+    geometry_msgs::Vector3 target_vel;
+    bullet_solver_->getSelectedArmorPosAndVel(target_pos, target_vel, data_track_.position, data_track_.velocity,
+                                              data_track_.yaw, data_track_.v_yaw, data_track_.radius_1,
+                                              data_track_.radius_2, data_track_.dz, data_track_.armors_num);
     tf2::Vector3 target_pos_tf, target_vel_tf;
 
     try

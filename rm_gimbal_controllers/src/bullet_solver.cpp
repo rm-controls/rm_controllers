@@ -155,6 +155,24 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   return true;
 }
 
+void BulletSolver::getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
+                                             geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw,
+                                             double v_yaw, double r1, double r2, double dz, int armors_num)
+{
+  double r = r1, z = pos.z;
+  if (armors_num == 4 && selected_armor_ != 0)
+  {
+    r = r2;
+    z = pos.z + dz;
+  }
+  armor_pos.x = pos.x - r * cos(yaw + selected_armor_ * 2 * M_PI / armors_num);
+  armor_pos.y = pos.y - r * sin(yaw + selected_armor_ * 2 * M_PI / armors_num);
+  armor_pos.z = z;
+  armor_vel.x = vel.x + v_yaw * r * sin(yaw + selected_armor_ * 2 * M_PI / armors_num);
+  armor_vel.y = vel.y - v_yaw * r * cos(yaw + selected_armor_ * 2 * M_PI / armors_num);
+  armor_vel.z = vel.z;
+}
+
 void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time)
 {
   marker_desire_.points.clear();
