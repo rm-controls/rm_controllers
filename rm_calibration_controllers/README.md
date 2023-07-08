@@ -2,7 +2,7 @@
 
 ## Overview
 
-Since the zero point of some motors will change after power off, rm_calibration_controller will move after it is started until motors reach the position we wanted,and motors position will be reset to zero,which can come true by two ways.One is that mechanical_calibration_controller stop moving after it reaches the mechanical limit.Another one is that gpio_calibration_controller moves at a fast speed before it detects a gpio which differs from the origin one.When the state of gpio changes,it will rotate at a small angle,then restore origin gpio,finally move at a small speed until the state of gpio changes again.
+Since the zero point of some motors will change after power off, rm_calibration_controllers will move after it is started until motors reach the position we wanted,and motors position will be reset to zero,which can come true by two ways.One is that mechanical_calibration_controller stops moving after it reaches the mechanical limit.Another one is that gpio_calibration_controller moves at a fast speed until gpio changes to be different from initial gpio.Then it will retreat at a small angle and restore initial gpio.Finally it moves at a small speed until the state of gpio changes again.
 
 **Keywords:** calibration, ROS, position.
 
