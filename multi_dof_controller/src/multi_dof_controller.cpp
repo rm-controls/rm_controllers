@@ -36,7 +36,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   for (const auto& motion : motions)
   {
     Motion m{ .motion_name_ = motion.first,
-              .position_per_step_ = xmlRpcGetDouble(motion.second["position_per_step"]),
               .velocity_max_speed_ = xmlRpcGetDouble(motion.second["velocity_max_speed"]) };
     for (int i = 0; i < (int)motion.second["position"].size(); ++i)
     {
@@ -131,8 +130,8 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
         {
           if (motions_[k].motion_name_ == motion_group_[j])
           {
-            results[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) /
-                          motions_[k].position_per_step_ * motions_[k].position_[i];
+            results[i] += judgeInputDirection(motion_group_values_[j], motions_[k].fixed_direction_[i]) *
+                          motions_[k].position_[i];
           }
         }
       }
@@ -158,9 +157,7 @@ void Controller::position(const ros::Time& time, const ros::Duration& period)
 
 double Controller::judgeInputDirection(double value, bool fixed_direction)
 {
-  if (fixed_direction)
-    value = abs(value);
-  return value;
+  return fixed_direction ? abs(value) : value;
 }
 void Controller::judgeMotionGroup(rm_msgs::MultiDofCmd cmd_multi_dof)
 {
