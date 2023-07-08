@@ -2,7 +2,7 @@
 
 ## Overview
 
-Since the zero point of some motors will change after power off, rm_calibration_controllers will move after it is started until motors reach the position we wanted,and motors position will be reset to zero,which can come true by two ways.One is that mechanical_calibration_controller stops moving after it reaches the mechanical limit.Another one is that gpio_calibration_controller moves at a fast speed until gpio changes to be different from initial gpio.Then it will retreat at a small angle and restore initial gpio.Finally it moves at a small speed until the state of gpio changes again.
+Since the zero point of some motors will change after power off, rm_calibration_controllers will move after it is started until motors reach the position we wanted,and motors position will be reset to zero,which can come true by two ways.One is that mechanical_calibration_controller stops moving after it reaches the mechanical limit.Another one is that gpio_calibration_controller moves at a fast speed until gpio changes to be different from initial gpio.Then it will retreat at a small angle and restore initial gpio.Finally it moves at a slow speed until the state of gpio changes to be different from initial gpio again.
 
 **Keywords:** calibration, ROS, position.
 
@@ -68,9 +68,17 @@ Or better, use `rosdep`:
 
 #### gpio_calibration_controller
 
-* **`gpio_state_handle_`** (double)
+* **`backward_angle`** (double)
 
-  The state of gpio.
+  The angle of retreat when gpio changes to be different form initial gpio for the first time.
+
+* **`slow_forward_velocity`** (double)
+
+  The velocity of second forward movement for reaching a more accurate calibration-position.
+
+* **`pos_threshold`** (double)
+
+  The threshold for the difference between the command position and the current position.
 
 ### Complete description
 
