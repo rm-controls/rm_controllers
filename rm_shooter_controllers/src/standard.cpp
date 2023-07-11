@@ -62,7 +62,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   push_per_rotation_ = getParam(controller_nh, "push_per_rotation", 0);
   push_qd_threshold_ = getParam(controller_nh, "push_qd_threshold", 0.);
 
-  extra_friction_wheel_speed_srv_ = controller_nh.advertiseService("extra_friction_wheel_speed", &Controller::extraFrictionWheelSpeedCB, this);
+  extra_friction_wheel_speed_srv_ =
+      controller_nh.advertiseService("extra_friction_wheel_speed", &Controller::extraFrictionWheelSpeedCB, this);
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::ShootCmd>("command", 1, &Controller::commandCB, this);
   shoot_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::ShootState>(controller_nh, "state", 10));
   // Init dynamic reconfigure
@@ -249,7 +250,7 @@ void Controller::normalize()
 }
 
 bool Controller::extraFrictionWheelSpeedCB(rm_msgs::ExtraFrictionWheelSpeed::Request& req,
-                                rm_msgs::ExtraFrictionWheelSpeed::Response& res)
+                                           rm_msgs::ExtraFrictionWheelSpeed::Response& res)
 {
   extra_friction_wheel_speed_ = req.extra_speed;
   res.is_success = true;

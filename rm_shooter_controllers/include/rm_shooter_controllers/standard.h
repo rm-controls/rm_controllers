@@ -82,7 +82,8 @@ private:
     cmd_rt_buffer_.writeFromNonRT(*msg);
   }
   void reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/);
-  bool extraFrictionWheelSpeedCB(rm_msgs::ExtraFrictionWheelSpeed::Request& req, rm_msgs::ExtraFrictionWheelSpeed::Response& res);
+  bool extraFrictionWheelSpeedCB(rm_msgs::ExtraFrictionWheelSpeed::Request& req,
+                                 rm_msgs::ExtraFrictionWheelSpeed::Response& res);
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   effort_controllers::JointVelocityController ctrl_friction_l_, ctrl_friction_r_;
