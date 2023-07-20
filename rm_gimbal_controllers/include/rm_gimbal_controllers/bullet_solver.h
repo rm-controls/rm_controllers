@@ -86,10 +86,12 @@ private:
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>* d_srv_{};
   Config config_{};
+  double max_track_target_vel_;
   bool dynamic_reconfig_initialized_{};
   double output_yaw_{}, output_pitch_{};
   double bullet_speed_{}, resistance_coff_{};
   int selected_armor_;
+  bool track_target_;
 
   geometry_msgs::Point target_pos_{};
   visualization_msgs::Marker marker_desire_;
