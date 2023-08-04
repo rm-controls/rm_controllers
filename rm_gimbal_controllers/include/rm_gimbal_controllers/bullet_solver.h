@@ -94,6 +94,7 @@ private:
   bool track_target_;
 
   geometry_msgs::Point target_pos_{};
+  double fly_time_;
   visualization_msgs::Marker marker_desire_;
   visualization_msgs::Marker marker_real_;
 };
