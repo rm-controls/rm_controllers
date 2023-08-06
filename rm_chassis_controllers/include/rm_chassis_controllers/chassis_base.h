@@ -146,8 +146,9 @@ protected:
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   std::vector<hardware_interface::JointHandle> joint_handles_{};
 
-  double wheel_base_{}, wheel_track_{}, wheel_radius_{}, publish_rate_{}, twist_angular_{}, timeout_{}, effort_coeff_{},
+  double wheel_radius_{}, publish_rate_{}, twist_angular_{}, timeout_{}, effort_coeff_{},
       velocity_coeff_{}, power_offset_{};
+  double max_odom_vel_;
   bool enable_odom_tf_ = false;
   bool topic_update_ = false;
   bool publish_odom_tf_ = false;
