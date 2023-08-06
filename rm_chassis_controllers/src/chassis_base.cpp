@@ -61,9 +61,8 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     return false;
   }
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.02);
-  wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
-  wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
+  max_odom_vel_ = getParam(controller_nh, "max_odom_vel", 0);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
   publish_odom_tf_ = getParam(controller_nh, "publish_odom_tf", false);
 
@@ -281,10 +280,16 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
     // integral vel to pos and angle
     tf2::doTransform(vel_base.linear, linear_vel_odom, odom2base_);
     tf2::doTransform(vel_base.angular, angular_vel_odom, odom2base_);
-    odom2base_.transform.translation.x += linear_vel_odom.x * period.toSec();
-    odom2base_.transform.translation.y += linear_vel_odom.y * period.toSec();
-    odom2base_.transform.translation.z += linear_vel_odom.z * period.toSec();
     double length =
+        std::sqrt(std::pow(linear_vel_odom.x, 2) + std::pow(linear_vel_odom.y, 2) + std::pow(linear_vel_odom.z, 2));
+    if (length < max_odom_vel_)
+    {
+      // avoid nan vel
+      odom2base_.transform.translation.x += linear_vel_odom.x * period.toSec();
+      odom2base_.transform.translation.y += linear_vel_odom.y * period.toSec();
+      odom2base_.transform.translation.z += linear_vel_odom.z * period.toSec();
+    }
+    length =
         std::sqrt(std::pow(angular_vel_odom.x, 2) + std::pow(angular_vel_odom.y, 2) + std::pow(angular_vel_odom.z, 2));
     if (length > 0.001)
     {  // avoid nan quat
