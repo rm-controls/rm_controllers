@@ -116,10 +116,10 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   double r = r1;
   double z = pos.z;
   track_target_ = std::abs(v_yaw) < max_track_target_vel_;
-  double switch_armor_angle =
-      track_target_ ?
-          acos(r / target_rho) - M_PI / 12 + (-acos(r / target_rho) + M_PI / 6) * std::abs(v_yaw) / max_track_target_vel_ :
-          M_PI / 12;
+  double switch_armor_angle = track_target_ ?
+                                  acos(r / target_rho) - M_PI / 12 +
+                                      (-acos(r / target_rho) + M_PI / 6) * std::abs(v_yaw) / max_track_target_vel_ :
+                                  M_PI / 12;
   if ((((yaw + v_yaw * rough_fly_time) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
       (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.))
   {
@@ -287,13 +287,16 @@ double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vec
   else
   {
     geometry_msgs::Point target_pos_after_fly_time_and_delay{};
-    target_pos_after_fly_time_and_delay.x = pos.x + vel.x * (fly_time_ + delay) -
-                   r * cos(yaw + v_yaw * (fly_time_ + delay) + selected_armor_ * 2 * M_PI / armors_num);
-    target_pos_after_fly_time_and_delay.y = pos.y + vel.y * (fly_time_ + delay) -
-                   r * sin(yaw + v_yaw * (fly_time_ + delay) + selected_armor_ * 2 * M_PI / armors_num);
+    target_pos_after_fly_time_and_delay.x =
+        pos.x + vel.x * (fly_time_ + delay) -
+        r * cos(yaw + v_yaw * (fly_time_ + delay) + selected_armor_ * 2 * M_PI / armors_num);
+    target_pos_after_fly_time_and_delay.y =
+        pos.y + vel.y * (fly_time_ + delay) -
+        r * sin(yaw + v_yaw * (fly_time_ + delay) + selected_armor_ * 2 * M_PI / armors_num);
     target_pos_after_fly_time_and_delay.z = z + vel.z * (fly_time_ + delay);
-    error = std::sqrt(std::pow(target_pos_.x - target_pos_after_fly_time_and_delay.x,2) + std::pow(target_pos_.y - target_pos_after_fly_time_and_delay.y,2) +
-                      std::pow(target_pos_.z - target_pos_after_fly_time_and_delay.z,2));
+    error = std::sqrt(std::pow(target_pos_.x - target_pos_after_fly_time_and_delay.x, 2) +
+                      std::pow(target_pos_.y - target_pos_after_fly_time_and_delay.y, 2) +
+                      std::pow(target_pos_.z - target_pos_after_fly_time_and_delay.z, 2));
   }
   return error;
 }
