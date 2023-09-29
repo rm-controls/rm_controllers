@@ -25,7 +25,6 @@ private:
   bool getTransform(const ros::Time& time, geometry_msgs::TransformStamped& source2target, const double x,
                     const double y, const double z, const double w);
   void imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg);
-
   rm_control::RmImuSensorHandle imu_sensor_;
   rm_control::RobotStateHandle robot_state_;
 
@@ -39,5 +38,9 @@ private:
 
   ros::Subscriber imu_data_sub_;
   bool receive_imu_msg_ = false;
+  bool forced_calibration ;
+  bool init_calibration = false;
+  double cal_roll, cal_pitch, cal_yaw;
+  int getCalTimes = 0;
 };
 }  // namespace rm_orientation_controller

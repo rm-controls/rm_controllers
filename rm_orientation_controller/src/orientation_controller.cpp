@@ -13,11 +13,12 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 {
   std::string name;
   if (!controller_nh.getParam("name", name) || !controller_nh.getParam("frame_source", frame_source_) ||
-      !controller_nh.getParam("frame_target", frame_target_))
+      !controller_nh.getParam("frame_target", frame_target_) || !controller_nh.param("forced_calibration", forced_calibration, false))
   {
     ROS_ERROR("Some params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+
   imu_sensor_ = robot_hw->get<rm_control::RmImuSensorInterface>()->getHandle(name);
   robot_state_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
 
@@ -39,14 +40,47 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     source2target.header.stamp.nsec += 1;  // Avoid redundant timestamp
     source2target_msg_.header.stamp = time;
     source2target_msg_.header.stamp.nsec += 1;
+
     source2target_msg_ =
         getTransform(ros::Time(0), source2target, imu_sensor_.getOrientation()[0], imu_sensor_.getOrientation()[1],
                      imu_sensor_.getOrientation()[2], imu_sensor_.getOrientation()[3]) ?
             source2target :
             source2target_msg_;
     robot_state_.setTransform(source2target_msg_, "rm_orientation_controller");
+
     if (!receive_imu_msg_)
       tf_broadcaster_.sendTransform(source2target_msg_);
+
+    if(!init_calibration && forced_calibration)
+    {
+      try
+      {
+        tf2::Transform calibration_tf;
+        geometry_msgs::TransformStamped tf_msg;
+        tf_msg = robot_state_.lookupTransform("base_link", "odom", time);
+        tf2::fromMsg(tf_msg.transform, calibration_tf);
+        tf2::Matrix3x3 m(calibration_tf.getRotation());
+        m.getRPY(cal_roll, cal_pitch, cal_yaw);
+        getCalTimes++;
+        //ROS_INFO_THROTTLE(0.1, "%lf %lf %lf", cal_roll, cal_pitch, cal_yaw);
+        if(abs(cal_roll) > 0.1 || abs(cal_pitch) > 0.1 )
+        {
+          init_calibration = true;
+          ROS_INFO_THROTTLE(0.1, "Forced calibration success");
+        }
+        if(getCalTimes > 100)
+        {
+          forced_calibration = false;
+          ROS_INFO_THROTTLE(0.1, "Forced calibration failed");
+        }
+      }
+      catch (tf2::TransformException& ex)
+      {
+        init_calibration = false;
+        ROS_WARN("%s", ex.what());
+      }
+    }
+
   }
 }
 
@@ -74,11 +108,22 @@ bool Controller::getTransform(const ros::Time& time, geometry_msgs::TransformSta
   }
   tf2::Quaternion odom2fixed_quat;
   odom2fixed_quat.setValue(x, y, z, w);
+  if( forced_calibration && init_calibration)
+  {
+    double ori_roll, ori_pitch, ori_yaw;
+    tf2::Matrix3x3 m1(odom2fixed_quat);
+    m1.getRPY(ori_roll, ori_pitch, ori_yaw);
+    odom2fixed_quat.setRPY(ori_roll+cal_roll, ori_pitch+cal_pitch, ori_yaw);
+    odom2fixed_quat.normalize();
+  }
+
   odom2fixed.setRotation(odom2fixed_quat);
   source2target.transform = tf2::toMsg(source2odom * odom2fixed * fixed2target);
+
   return true;
 }
 
+\
 void Controller::imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg)
 {
   if (!receive_imu_msg_)
@@ -89,6 +134,7 @@ void Controller::imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg)
                msg->orientation.w);
   tf_broadcaster_.sendTransform(source2target);
 }
+
 
 }  // namespace rm_orientation_controller
 
