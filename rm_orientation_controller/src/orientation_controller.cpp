@@ -62,7 +62,6 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
         tf2::Matrix3x3 m(calibration_tf.getRotation());
         m.getRPY(cal_roll, cal_pitch, cal_yaw);
         getCalTimes++;
-        //ROS_INFO_THROTTLE(0.1, "%lf %lf %lf", cal_roll, cal_pitch, cal_yaw);
         if(abs(cal_roll) > 0.1 || abs(cal_pitch) > 0.1 )
         {
           init_calibration = true;
@@ -116,7 +115,6 @@ bool Controller::getTransform(const ros::Time& time, geometry_msgs::TransformSta
     odom2fixed_quat.setRPY(ori_roll+cal_roll, ori_pitch+cal_pitch, ori_yaw);
     odom2fixed_quat.normalize();
   }
-
   odom2fixed.setRotation(odom2fixed_quat);
   source2target.transform = tf2::toMsg(source2odom * odom2fixed * fixed2target);
 
