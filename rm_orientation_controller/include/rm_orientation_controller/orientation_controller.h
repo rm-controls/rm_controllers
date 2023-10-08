@@ -38,7 +38,7 @@ private:
 
   ros::Subscriber imu_data_sub_;
   bool receive_imu_msg_ = false;
-  bool forced_calibration ;
+  bool forced_calibration;
   bool init_calibration = false;
   double cal_roll, cal_pitch, cal_yaw;
   int getCalTimes = 0;

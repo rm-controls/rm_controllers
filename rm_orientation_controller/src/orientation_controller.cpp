@@ -13,7 +13,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 {
   std::string name;
   if (!controller_nh.getParam("name", name) || !controller_nh.getParam("frame_source", frame_source_) ||
-      !controller_nh.getParam("frame_target", frame_target_) || !controller_nh.param("forced_calibration", forced_calibration, false))
+      !controller_nh.getParam("frame_target", frame_target_) ||
+      !controller_nh.param("forced_calibration", forced_calibration, false))
   {
     ROS_ERROR("Some params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
@@ -51,7 +52,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     if (!receive_imu_msg_)
       tf_broadcaster_.sendTransform(source2target_msg_);
 
-    if(!init_calibration && forced_calibration)
+    if (!init_calibration && forced_calibration)
     {
       try
       {
@@ -62,15 +63,15 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
         tf2::Matrix3x3 m(calibration_tf.getRotation());
         m.getRPY(cal_roll, cal_pitch, cal_yaw);
         getCalTimes++;
-        if(abs(cal_roll) > 0.1 || abs(cal_pitch) > 0.1 )
+        if (abs(cal_roll) > 0.1 || abs(cal_pitch) > 0.1 )
         {
           init_calibration = true;
-          ROS_INFO_THROTTLE(0.1, "Forced calibration success");
+          ROS_INFO_THROTTLE(0.1, "Forced calibrate success");
         }
-        if(getCalTimes > 100)
+        if (getCalTimes > 30)
         {
           forced_calibration = false;
-          ROS_INFO_THROTTLE(0.1, "Forced calibration failed");
+          ROS_INFO_THROTTLE(0.1, "Forced calibrate failed");
         }
       }
       catch (tf2::TransformException& ex)
@@ -79,7 +80,6 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
         ROS_WARN("%s", ex.what());
       }
     }
-
   }
 }
 
@@ -107,12 +107,12 @@ bool Controller::getTransform(const ros::Time& time, geometry_msgs::TransformSta
   }
   tf2::Quaternion odom2fixed_quat;
   odom2fixed_quat.setValue(x, y, z, w);
-  if( forced_calibration && init_calibration)
+  if (forced_calibration && init_calibration)
   {
     double ori_roll, ori_pitch, ori_yaw;
     tf2::Matrix3x3 m1(odom2fixed_quat);
     m1.getRPY(ori_roll, ori_pitch, ori_yaw);
-    odom2fixed_quat.setRPY(ori_roll+cal_roll, ori_pitch+cal_pitch, ori_yaw);
+    odom2fixed_quat.setRPY(ori_roll + cal_roll, ori_pitch + cal_pitch, ori_yaw);
     odom2fixed_quat.normalize();
   }
   odom2fixed.setRotation(odom2fixed_quat);
@@ -121,7 +121,6 @@ bool Controller::getTransform(const ros::Time& time, geometry_msgs::TransformSta
   return true;
 }
 
-\
 void Controller::imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg)
 {
   if (!receive_imu_msg_)
@@ -132,7 +131,6 @@ void Controller::imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg)
                msg->orientation.w);
   tf_broadcaster_.sendTransform(source2target);
 }
-
 
 }  // namespace rm_orientation_controller
 
