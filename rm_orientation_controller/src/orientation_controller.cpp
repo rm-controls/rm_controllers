@@ -63,7 +63,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
         tf2::Matrix3x3 m(calibration_tf.getRotation());
         m.getRPY(cal_roll, cal_pitch, cal_yaw);
         getCalTimes++;
-        if (abs(cal_roll) > 0.1 || abs(cal_pitch) > 0.1 )
+        if (abs(cal_roll) > 0.1 || abs(cal_pitch) > 0.1)
         {
           init_calibration = true;
           ROS_INFO_THROTTLE(0.1, "Forced calibrate success");
