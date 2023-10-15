@@ -168,7 +168,8 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
         config_.forward_push_threshold)
     {
       ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
-                               2. * M_PI / static_cast<double>(push_per_rotation_));
+                                   2. * M_PI / static_cast<double>(push_per_rotation_),
+                               -1 * cmd_.hz * 2. * M_PI / static_cast<double>(push_per_rotation_));
       last_shoot_time_ = time;
     }
     // Check block
@@ -203,7 +204,8 @@ void Controller::block(const ros::Time& time, const ros::Duration& period)
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter BLOCK");
     last_block_time_ = time;
-    ctrl_trigger_.setCommand(ctrl_trigger_.joint_.getPosition() + config_.anti_block_angle);
+    ctrl_trigger_.setCommand(ctrl_trigger_.joint_.getPosition() + config_.anti_block_angle,
+                             cmd_.hz * 2. * M_PI / static_cast<double>(push_per_rotation_));
   }
   if (std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.joint_.getPosition()) <
           config_.anti_block_threshold ||
