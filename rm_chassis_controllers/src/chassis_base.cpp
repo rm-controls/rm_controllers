@@ -56,6 +56,7 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
       !controller_nh.getParam("power/vel_coeff", velocity_coeff_) ||
       !controller_nh.getParam("power/effort_coeff", effort_coeff_) ||
       !controller_nh.getParam("power/power_offset", power_offset_))
+
   {
     ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
@@ -65,6 +66,7 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   max_odom_vel_ = getParam(controller_nh, "max_odom_vel", 0);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
   publish_odom_tf_ = getParam(controller_nh, "publish_odom_tf", false);
+  enable_path_ = getParam(controller_nh, "enable_path", false);
 
   // Get and check params for covariances
   XmlRpc::XmlRpcValue twist_cov_list;
@@ -113,6 +115,8 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   if (controller_nh.hasParam("pid_follow"))
     if (!pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow")))
       return false;
+
+  path_pub_ = controller_nh.advertise<nav_msgs::Path>("/ori_path", 10);
 
   return true;
 }
@@ -347,6 +351,30 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
     odom2base_.transform.translation.y = odom2base.getOrigin().y();
     odom2base_.transform.translation.z = odom2base.getOrigin().z();
     topic_update_ = false;
+  }
+
+  if(enable_path_)
+  {
+    path_.header.stamp = time;
+    path_.header.frame_id = "odom";
+    geometry_msgs::PoseStamped this_pose_stamped;
+    this_pose_stamped.header.frame_id = "odom";
+    this_pose_stamped.header.stamp = time;
+    this_pose_stamped.pose.position.x = odom2base_.transform.translation.x;
+    this_pose_stamped.pose.position.y = odom2base_.transform.translation.y;
+    this_pose_stamped.pose.position.z = odom2base_.transform.translation.z;
+    this_pose_stamped.pose.orientation.x = odom2base_.transform.rotation.x;
+    this_pose_stamped.pose.orientation.y = odom2base_.transform.rotation.y;
+    this_pose_stamped.pose.orientation.z = odom2base_.transform.rotation.z;
+    this_pose_stamped.pose.orientation.w = odom2base_.transform.rotation.w;
+
+    double path_publish_rate = 1.0;
+    if (path_publish_rate > 0.0 && last_path_publish_time_ + ros::Duration(1.0 / path_publish_rate) < time)
+    {
+      path_.poses.push_back(this_pose_stamped);
+      path_pub_.publish(path_);//path
+      last_path_publish_time_ = time;
+    }
   }
 
   robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");

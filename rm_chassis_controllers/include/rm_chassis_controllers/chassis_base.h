@@ -48,6 +48,7 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <nav_msgs/Path.h>
 
 namespace rm_chassis_controllers
 {
@@ -153,6 +154,7 @@ protected:
   bool topic_update_ = false;
   bool publish_odom_tf_ = false;
   bool state_changed_ = true;
+  bool enable_path_ = false;
   enum
   {
     RAW,
@@ -163,7 +165,7 @@ protected:
   RampFilter<double>*ramp_x_{}, *ramp_y_{}, *ramp_w_{};
   std::string follow_source_frame_{}, command_source_frame_{};
 
-  ros::Time last_publish_time_;
+  ros::Time last_publish_time_, last_path_publish_time_;
   geometry_msgs::TransformStamped odom2base_{};
   tf2::Transform world2odom_;
   geometry_msgs::Vector3 vel_cmd_{};  // x, y
@@ -177,6 +179,8 @@ protected:
   Command cmd_struct_;
   realtime_tools::RealtimeBuffer<Command> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<nav_msgs::Odometry> odom_buffer_;
+  ros::Publisher path_pub_ ;
+  nav_msgs::Path path_;
 };
 
 }  // namespace rm_chassis_controllers
