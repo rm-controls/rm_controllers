@@ -353,7 +353,7 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
     topic_update_ = false;
   }
 
-  if(enable_path_)
+  if (enable_path_)
   {
     path_.header.stamp = time;
     path_.header.frame_id = "odom";
@@ -372,7 +372,7 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
     if (path_publish_rate > 0.0 && last_path_publish_time_ + ros::Duration(1.0 / path_publish_rate) < time)
     {
       path_.poses.push_back(this_pose_stamped);
-      path_pub_.publish(path_);//path
+      path_pub_.publish(path_);  // path
       last_path_publish_time_ = time;
     }
   }

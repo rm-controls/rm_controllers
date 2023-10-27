@@ -179,7 +179,7 @@ protected:
   Command cmd_struct_;
   realtime_tools::RealtimeBuffer<Command> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<nav_msgs::Odometry> odom_buffer_;
-  ros::Publisher path_pub_ ;
+  ros::Publisher path_pub_;
   nav_msgs::Path path_;
 };
 
