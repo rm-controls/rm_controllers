@@ -69,7 +69,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle nh_trigger = ros::NodeHandle(controller_nh, "trigger");
   if (!controller_nh.getParam("offset", offset_))
   {
-    ROS_INFO("one");
     ros::NodeHandle nh_friction_l = ros::NodeHandle(controller_nh, "friction_left");
     ros::NodeHandle nh_friction_r = ros::NodeHandle(controller_nh, "friction_right");
     return ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) &&
@@ -78,7 +77,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   }
   else
   {
-    ROS_INFO("double");
     is_double_stage = true;
     ros::NodeHandle nh_friction_l_f = ros::NodeHandle(controller_nh, "friction_left_front");
     ros::NodeHandle nh_friction_r_f = ros::NodeHandle(controller_nh, "friction_right_front");
