@@ -65,14 +65,31 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     reconfigCB(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2));
   };
   d_srv_->setCallback(cb);
-
-  ros::NodeHandle nh_friction_l = ros::NodeHandle(controller_nh, "friction_left");
-  ros::NodeHandle nh_friction_r = ros::NodeHandle(controller_nh, "friction_right");
-  ros::NodeHandle nh_trigger = ros::NodeHandle(controller_nh, "trigger");
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
-  return ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) &&
-         ctrl_friction_r_.init(effort_joint_interface_, nh_friction_r) &&
-         ctrl_trigger_.init(effort_joint_interface_, nh_trigger);
+  ros::NodeHandle nh_trigger = ros::NodeHandle(controller_nh, "trigger");
+  if (!controller_nh.getParam("offset", offset_))
+  {
+    ROS_INFO("one");
+    ros::NodeHandle nh_friction_l = ros::NodeHandle(controller_nh, "friction_left");
+    ros::NodeHandle nh_friction_r = ros::NodeHandle(controller_nh, "friction_right");
+    return ctrl_friction_l_.init(effort_joint_interface_, nh_friction_l) &&
+           ctrl_friction_r_.init(effort_joint_interface_, nh_friction_r) &&
+           ctrl_trigger_.init(effort_joint_interface_, nh_trigger);
+  }
+  else
+  {
+    ROS_INFO("double");
+    is_double_stage = true;
+    ros::NodeHandle nh_friction_l_f = ros::NodeHandle(controller_nh, "friction_left_front");
+    ros::NodeHandle nh_friction_r_f = ros::NodeHandle(controller_nh, "friction_right_front");
+    ros::NodeHandle nh_friction_l_b = ros::NodeHandle(controller_nh, "friction_left_back");
+    ros::NodeHandle nh_friction_r_b = ros::NodeHandle(controller_nh, "friction_right_back");
+    return ctrl_friction_l_f_.init(effort_joint_interface_, nh_friction_l_f) &&
+           ctrl_friction_r_f_.init(effort_joint_interface_, nh_friction_r_f) &&
+           ctrl_friction_l_b_.init(effort_joint_interface_, nh_friction_l_b) &&
+           ctrl_friction_r_b_.init(effort_joint_interface_, nh_friction_r_b) &&
+           ctrl_trigger_.init(effort_joint_interface_, nh_trigger);
+  }
 }
 
 void Controller::starting(const ros::Time& /*time*/)
@@ -121,8 +138,18 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     shoot_state_pub_->msg_.state = state_;
     shoot_state_pub_->unlockAndPublish();
   }
-  ctrl_friction_l_.update(time, period);
-  ctrl_friction_r_.update(time, period);
+  if (!is_double_stage)
+  {
+    ctrl_friction_l_.update(time, period);
+    ctrl_friction_r_.update(time, period);
+  }
+  else
+  {
+    ctrl_friction_l_f_.update(time, period);
+    ctrl_friction_r_f_.update(time, period);
+    ctrl_friction_l_b_.update(time, period);
+    ctrl_friction_r_b_.update(time, period);
+  }
   ctrl_trigger_.update(time, period);
 }
 
@@ -133,8 +160,18 @@ void Controller::stop(const ros::Time& time, const ros::Duration& period)
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter STOP");
 
-    ctrl_friction_l_.setCommand(0.);
-    ctrl_friction_r_.setCommand(0.);
+    if (!is_double_stage)
+    {
+      ctrl_friction_l_.setCommand(0.);
+      ctrl_friction_r_.setCommand(0.);
+    }
+    else
+    {
+      ctrl_friction_l_f_.setCommand(0.);
+      ctrl_friction_r_f_.setCommand(0.);
+      ctrl_friction_l_b_.setCommand(0.);
+      ctrl_friction_r_b_.setCommand(0.);
+    }
     ctrl_trigger_.setCommand(ctrl_trigger_.joint_.getPosition());
   }
 }
@@ -158,10 +195,20 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
     ROS_INFO("[Shooter] Enter PUSH");
   }
   if ((cmd_.wheel_speed == 0. ||
-       (ctrl_friction_l_.joint_.getVelocity() >= push_wheel_speed_threshold_ * ctrl_friction_l_.command_ &&
-        ctrl_friction_l_.joint_.getVelocity() > M_PI &&
-        ctrl_friction_r_.joint_.getVelocity() <= push_wheel_speed_threshold_ * ctrl_friction_r_.command_ &&
-        ctrl_friction_r_.joint_.getVelocity() < -M_PI)) &&
+       (!is_double_stage &&
+        (ctrl_friction_l_.joint_.getVelocity() >= push_wheel_speed_threshold_ * ctrl_friction_l_.command_ &&
+         ctrl_friction_l_.joint_.getVelocity() > M_PI &&
+         ctrl_friction_r_.joint_.getVelocity() <= push_wheel_speed_threshold_ * ctrl_friction_r_.command_ &&
+         ctrl_friction_r_.joint_.getVelocity() < -M_PI)) ||
+       (is_double_stage &&
+        ctrl_friction_l_f_.joint_.getVelocity() >= push_wheel_speed_threshold_ * ctrl_friction_l_f_.command_ &&
+        ctrl_friction_l_f_.joint_.getVelocity() > M_PI &&
+        ctrl_friction_r_f_.joint_.getVelocity() <= push_wheel_speed_threshold_ * ctrl_friction_r_f_.command_ &&
+        ctrl_friction_r_f_.joint_.getVelocity() < -M_PI &&
+        ctrl_friction_l_b_.joint_.getVelocity() >= push_wheel_speed_threshold_ * ctrl_friction_l_b_.command_ &&
+        ctrl_friction_l_b_.joint_.getVelocity() > M_PI &&
+        ctrl_friction_r_b_.joint_.getVelocity() <= push_wheel_speed_threshold_ * ctrl_friction_r_b_.command_ &&
+        ctrl_friction_r_b_.joint_.getVelocity() < -M_PI)) &&
       (time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
   {  // Time to shoot!!!
     if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
@@ -219,8 +266,18 @@ void Controller::block(const ros::Time& time, const ros::Duration& period)
 
 void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
 {
-  ctrl_friction_l_.setCommand(cmd_.wheel_speed + config_.extra_wheel_speed);
-  ctrl_friction_r_.setCommand(-cmd_.wheel_speed - config_.extra_wheel_speed);
+  if (!is_double_stage)
+  {
+    ctrl_friction_l_.setCommand(cmd_.wheel_speed + config_.extra_wheel_speed);
+    ctrl_friction_r_.setCommand(-cmd_.wheel_speed - config_.extra_wheel_speed);
+  }
+  else if (cmd.wheel_speed != 0)
+  {
+    ctrl_friction_l_f_.setCommand(cmd_.wheel_speed + config_.extra_wheel_speed);
+    ctrl_friction_r_f_.setCommand(-cmd_.wheel_speed - config_.extra_wheel_speed);
+    ctrl_friction_l_b_.setCommand(cmd_.wheel_speed + config_.extra_wheel_speed - offset_);
+    ctrl_friction_r_b_.setCommand(-cmd_.wheel_speed - config_.extra_wheel_speed + offset_);
+  }
 }
 
 void Controller::normalize()

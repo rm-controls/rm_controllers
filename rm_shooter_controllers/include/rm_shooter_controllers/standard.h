@@ -84,9 +84,12 @@ private:
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   effort_controllers::JointVelocityController ctrl_friction_l_, ctrl_friction_r_;
+  effort_controllers::JointVelocityController ctrl_friction_l_f_, ctrl_friction_r_f_, ctrl_friction_l_b_,
+      ctrl_friction_r_b_;
   effort_controllers::JointPositionController ctrl_trigger_;
   int push_per_rotation_{};
-  double push_wheel_speed_threshold_{};
+  double offset_, push_wheel_speed_threshold_{};
+  bool is_double_stage = false;
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool maybe_block_ = false;
