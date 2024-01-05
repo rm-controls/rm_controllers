@@ -88,30 +88,14 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   if (state_ != cmd_.mode)
   {
     if (state_ != BLOCK)
-    {
-      if (cmd_.hz >= 20)
+      if ((state_ != PUSH || cmd_.mode != READY) ||
+          (cmd_.mode == READY &&
+           std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
+               config_.exit_push_threshold))
       {
-        if ((state_ != PUSH || cmd_.mode != READY) ||
-            (cmd_.mode == READY &&
-             std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
-                 config_.exit_push_threshold + 0.5))
-        {
-          state_ = cmd_.mode;
-          state_changed_ = true;
-        }
+        state_ = cmd_.mode;
+        state_changed_ = true;
       }
-      else
-      {
-        if ((state_ != PUSH || cmd_.mode != READY) ||
-            (cmd_.mode == READY &&
-             std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
-                 config_.exit_push_threshold))
-        {
-          state_ = cmd_.mode;
-          state_changed_ = true;
-        }
-      }
-    }
   }
 
   if (state_ != STOP)
@@ -199,12 +183,12 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
           (static_cast<double>(push_per_rotation_) / 2))
       {
         expect_velocity += std::pow(-1 * cmd_.hz * 2. * M_PI / static_cast<double>(push_per_rotation_), 2) /
-                           ctrl_trigger_.command_struct_.position_;
+            (2 * (ctrl_trigger_.command_struct_.position_ - 2. * M_PI / static_cast<double>(push_per_rotation_)));
       }
       else
       {
         expect_velocity -= std::pow(-1 * cmd_.hz * 2. * M_PI / static_cast<double>(push_per_rotation_), 2) /
-                           ctrl_trigger_.command_struct_.position_;
+            (2 * (ctrl_trigger_.command_struct_.position_ - 2. * M_PI / static_cast<double>(push_per_rotation_)));
       }
       if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
           config_.forward_push_threshold)
@@ -242,6 +226,7 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
 
 void Controller::block(const ros::Time& time, const ros::Duration& period)
 {
+  expect_velocity = 0;
   if (state_changed_)
   {  // on enter
     state_changed_ = false;
