@@ -157,6 +157,10 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
           pos.x + vel.x * fly_time_ - r * cos(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
       target_pos_.y =
           pos.y + vel.y * fly_time_ - r * sin(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
+      target_vel_.x = vel.x + v_yaw * r * sin(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
+      target_vel_.y = vel.y - v_yaw * r * cos(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
+      target_accel_.x = pow(v_yaw,2) * r * cos(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
+      target_accel_.y = pow(v_yaw,2) * r * sin(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
     }
     else
     {
@@ -183,31 +187,31 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   return true;
 }
 
-void BulletSolver::getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
-                                             geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw,
-                                             double v_yaw, double r1, double r2, double dz, int armors_num)
+double BulletSolver::getYawVelDes()
 {
-  double r = r1, z = pos.z;
-  if (armors_num == 4 && selected_armor_ != 0)
-  {
-    r = r2;
-    z = pos.z + dz;
-  }
-  if (track_target_)
-  {
-    armor_pos.x = pos.x - r * cos(yaw + selected_armor_ * 2 * M_PI / armors_num);
-    armor_pos.y = pos.y - r * sin(yaw + selected_armor_ * 2 * M_PI / armors_num);
-    armor_pos.z = z;
-    armor_vel.x = vel.x + v_yaw * r * sin(yaw + selected_armor_ * 2 * M_PI / armors_num);
-    armor_vel.y = vel.y - v_yaw * r * cos(yaw + selected_armor_ * 2 * M_PI / armors_num);
-    armor_vel.z = vel.z;
-  }
-  else
-  {
-    armor_pos = pos;
-    armor_pos.z = z;
-    armor_vel = vel;
-  }
+  double yaw_vel_des = (target_pos_.x*target_vel_.y - target_pos_.y*target_vel_.x)/(pow(target_pos_.x,2) + pow(target_pos_.y,2));
+  return yaw_vel_des;
+}
+
+double BulletSolver::getYawAccelDes()
+{
+  double yaw_accel_des = (pow(target_pos_.x,3)*target_accel_.y - pow(target_pos_.y,3)*target_accel_.x +
+                          2*target_pos_.x*target_pos_.y*pow(target_vel_.x,2) - 2*target_pos_.x*target_pos_.y*pow(target_vel_.y,2)
+                          - pow(target_pos_.x,2)*target_pos_.y*target_accel_.x +
+                          target_pos_.x*pow(target_pos_.y,2)*target_accel_.y -
+                          2*pow(target_pos_.x,2)*target_vel_.x*target_vel_.y +
+                          2*pow(target_pos_.y,2)*target_vel_.x*target_vel_.y)/pow((pow(target_pos_.x,2) + pow(target_pos_.y,2)),2);
+  return yaw_accel_des;
+}
+
+double BulletSolver::getPitchVelDes()
+{
+  return 0;
+}
+
+double BulletSolver::getPitchAccelDes()
+{
+  return 0;
 }
 
 void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time)

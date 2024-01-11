@@ -73,9 +73,10 @@ public:
   {
     return -output_pitch_;
   }
-  void getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
-                                 geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
-                                 double r1, double r2, double dz, int armors_num);
+  double getYawVelDes();
+  double getYawAccelDes();
+  double getPitchVelDes();
+  double getPitchAccelDes();
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
   ~BulletSolver() = default;
@@ -94,6 +95,8 @@ private:
   bool track_target_;
 
   geometry_msgs::Point target_pos_{};
+  geometry_msgs::Vector3 target_vel_{};
+  geometry_msgs::Vector3 target_accel_{};
   double fly_time_;
   visualization_msgs::Marker marker_desire_;
   visualization_msgs::Marker marker_real_;
