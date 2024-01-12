@@ -175,7 +175,7 @@ private:
 
   // Resistance compensation
   double yaw_resistance_;
-  double velocity_dead_zone_, effort_dead_zone_;
+  double velocity_saturation_point_, effort_saturation_point_;
 
   // Chassis
   double k_chassis_vel_;

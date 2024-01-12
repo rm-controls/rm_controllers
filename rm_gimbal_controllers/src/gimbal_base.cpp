@@ -64,8 +64,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   ros::NodeHandle resistance_compensation_nh(controller_nh, "yaw/resistance_compensation");
   yaw_resistance_ = getParam(resistance_compensation_nh, "resistance", 0.);
-  velocity_dead_zone_ = getParam(resistance_compensation_nh, "velocity_dead_zone", 0.);
-  effort_dead_zone_ = getParam(resistance_compensation_nh, "effort_dead_zone", 0.);
+  velocity_saturation_point_ = getParam(resistance_compensation_nh, "velocity_saturation_point", 0.);
+  effort_saturation_point_ = getParam(resistance_compensation_nh, "effort_saturation_point", 0.);
 
   k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.);
   ros::NodeHandle chassis_vel_nh(controller_nh, "chassis_vel");
@@ -403,10 +403,12 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
   double resistance_compensation = 0.;
-  if (std::abs(ctrl_yaw_.joint_.getVelocity()) > velocity_dead_zone_)
+  if (std::abs(ctrl_yaw_.joint_.getVelocity()) > velocity_saturation_point_)
     resistance_compensation = (ctrl_yaw_.joint_.getVelocity() > 0 ? 1 : -1) * yaw_resistance_;
-  else if (std::abs(ctrl_yaw_.joint_.getCommand()) > effort_dead_zone_)
+  else if (std::abs(ctrl_yaw_.joint_.getCommand()) > effort_saturation_point_)
     resistance_compensation = (ctrl_yaw_.joint_.getCommand() > 0 ? 1 : -1) * yaw_resistance_;
+  else
+    resistance_compensation = ctrl_yaw_.joint_.getCommand() * yaw_resistance_ / effort_saturation_point_;
   ctrl_yaw_.joint_.setCommand(ctrl_yaw_.joint_.getCommand() - k_chassis_vel_ * chassis_vel_->angular_->z() +
                               yaw_k_v_ * yaw_vel_des + resistance_compensation);
   ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time) + pitch_k_v_ * pitch_vel_des);
