@@ -159,8 +159,8 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
           pos.y + vel.y * fly_time_ - r * sin(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
       target_vel_.x = vel.x + v_yaw * r * sin(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
       target_vel_.y = vel.y - v_yaw * r * cos(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
-      target_accel_.x = pow(v_yaw,2) * r * cos(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
-      target_accel_.y = pow(v_yaw,2) * r * sin(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
+      target_accel_.x = pow(v_yaw, 2) * r * cos(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
+      target_accel_.y = pow(v_yaw, 2) * r * sin(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
     }
     else
     {
@@ -187,20 +187,23 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   return true;
 }
 
-double BulletSolver::getYawVelDes()
+double BulletSolver::getYawVelDes() const
 {
-  double yaw_vel_des = (target_pos_.x*target_vel_.y - target_pos_.y*target_vel_.x)/(pow(target_pos_.x,2) + pow(target_pos_.y,2));
+  double yaw_vel_des =
+      (target_pos_.x * target_vel_.y - target_pos_.y * target_vel_.x) / (pow(target_pos_.x, 2) + pow(target_pos_.y, 2));
   return yaw_vel_des;
 }
 
-double BulletSolver::getYawAccelDes()
+double BulletSolver::getYawAccelDes() const
 {
-  double yaw_accel_des = (pow(target_pos_.x,3)*target_accel_.y - pow(target_pos_.y,3)*target_accel_.x +
-                          2*target_pos_.x*target_pos_.y*pow(target_vel_.x,2) - 2*target_pos_.x*target_pos_.y*pow(target_vel_.y,2)
-                          - pow(target_pos_.x,2)*target_pos_.y*target_accel_.x +
-                          target_pos_.x*pow(target_pos_.y,2)*target_accel_.y -
-                          2*pow(target_pos_.x,2)*target_vel_.x*target_vel_.y +
-                          2*pow(target_pos_.y,2)*target_vel_.x*target_vel_.y)/pow((pow(target_pos_.x,2) + pow(target_pos_.y,2)),2);
+  double yaw_accel_des = (pow(target_pos_.x, 3) * target_accel_.y - pow(target_pos_.y, 3) * target_accel_.x +
+                          2 * target_pos_.x * target_pos_.y * pow(target_vel_.x, 2) -
+                          2 * target_pos_.x * target_pos_.y * pow(target_vel_.y, 2) -
+                          pow(target_pos_.x, 2) * target_pos_.y * target_accel_.x +
+                          target_pos_.x * pow(target_pos_.y, 2) * target_accel_.y -
+                          2 * pow(target_pos_.x, 2) * target_vel_.x * target_vel_.y +
+                          2 * pow(target_pos_.y, 2) * target_vel_.x * target_vel_.y) /
+                         pow((pow(target_pos_.x, 2) + pow(target_pos_.y, 2)), 2);
   return yaw_accel_des;
 }
 

@@ -170,8 +170,8 @@ private:
   bool enable_gravity_compensation_;
 
   // Input feedforward
-  double yaw_k_v_,yaw_k_a_;
-  double pitch_k_v_,pitch_k_a_;
+  double yaw_k_v_, yaw_k_a_;
+  double pitch_k_v_, pitch_k_a_;
 
   // Resistance compensation
   double yaw_resistance_;

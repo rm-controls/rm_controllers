@@ -73,8 +73,8 @@ public:
   {
     return -output_pitch_;
   }
-  double getYawVelDes();
-  double getYawAccelDes();
+  double getYawVelDes() const;
+  double getYawAccelDes() const;
   double getPitchVelDes();
   double getPitchAccelDes();
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);

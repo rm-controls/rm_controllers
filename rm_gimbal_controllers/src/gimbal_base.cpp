@@ -76,7 +76,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
   yaw_k_v_ = getParam(nh_yaw, "k_v", 0.);
+  yaw_k_a_ = getParam(nh_yaw, "k_a", 0.);
   pitch_k_v_ = getParam(nh_pitch, "k_v", 0.);
+  pitch_k_a_ = getParam(nh_pitch, "k_a", 0.);
   hardware_interface::EffortJointInterface* effort_joint_interface =
       robot_hw->get<hardware_interface::EffortJointInterface>();
   if (!ctrl_yaw_.init(effort_joint_interface, nh_yaw) || !ctrl_pitch_.init(effort_joint_interface, nh_pitch))
@@ -364,7 +366,9 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   if (state_ == RATE)
   {
     yaw_vel_des = cmd_gimbal_.rate_yaw;
+    yaw_accel_des = cmd_gimbal_.accel_yaw;
     pitch_vel_des = cmd_gimbal_.rate_pitch;
+    pitch_accel_des = cmd_gimbal_.accel_pitch;
   }
   else if (state_ == TRACK)
   {
@@ -384,8 +388,9 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   else if (std::abs(ctrl_yaw_.joint_.getCommand()) > effort_dead_zone_)
     resistance_compensation = (ctrl_yaw_.joint_.getCommand() > 0 ? 1 : -1) * yaw_resistance_;
   ctrl_yaw_.joint_.setCommand(ctrl_yaw_.joint_.getCommand() - k_chassis_vel_ * chassis_vel_->angular_->z() +
-                              yaw_k_v_ * yaw_vel_des + yaw_k_a_ * yaw_accel_des +resistance_compensation);
-  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time) + pitch_k_v_ * pitch_vel_des + pitch_k_a_ * pitch_accel_des);
+                              yaw_k_v_ * yaw_vel_des + yaw_k_a_ * yaw_accel_des + resistance_compensation);
+  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time) + pitch_k_v_ * pitch_vel_des +
+                                pitch_k_a_ * pitch_accel_des);
 }
 
 double Controller::feedForward(const ros::Time& time)
