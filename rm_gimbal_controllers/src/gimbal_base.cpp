@@ -250,14 +250,16 @@ void Controller::track(const ros::Time& time)
   {
     ROS_WARN("%s", ex.what());
   }
-  target_pos.x -= odom2pitch_.transform.translation.x;
-  target_pos.y -= odom2pitch_.transform.translation.y;
-  target_pos.z -= odom2pitch_.transform.translation.z;
+  ros::Time now = ros::Time::now();
+  target_pos.x += target_vel.x * (now - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.x;
+  target_pos.y += target_vel.y * (now - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.y;
+  target_pos.z += target_vel.z * (now - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.z;
   target_vel.x -= chassis_vel_->linear_->x();
   target_vel.y -= chassis_vel_->linear_->y();
   target_vel.z -= chassis_vel_->linear_->z();
+  double yaw = data_track_.yaw + data_track_.v_yaw * (now - data_track_.header.stamp).toSec();
   bool solve_success =
-      bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, data_track_.yaw, data_track_.v_yaw,
+      bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, yaw, data_track_.v_yaw,
                             data_track_.radius_1, data_track_.radius_2, data_track_.dz, data_track_.armors_num);
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
@@ -372,10 +374,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   else if (state_ == TRACK)
   {
-    yaw_vel_des = bullet_solver_->getYawVelDes();
-    yaw_accel_des = bullet_solver_->getYawAccelDes();
-    pitch_vel_des = bullet_solver_->getPitchVelDes();
-    pitch_accel_des = bullet_solver_->getPitchAccelDes();
+    bullet_solver_->getYawVelAndAccelDes(yaw_vel_des, yaw_accel_des);
+    bullet_solver_->getPitchVelAndAccelDes(pitch_vel_des, pitch_accel_des);
   }
 
   ctrl_yaw_.setCommand(yaw_des, yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
