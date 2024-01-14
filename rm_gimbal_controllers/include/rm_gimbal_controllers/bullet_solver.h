@@ -60,9 +60,10 @@ class BulletSolver
 public:
   explicit BulletSolver(ros::NodeHandle& controller_nh);
 
-  bool solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed);
-  double getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw_real, double pitch_real,
-                        double bullet_speed);
+  bool solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw, double v_yaw,
+             double r1, double r2, double dz, int armors_num);
+  double getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw, double r1,
+                        double r2, double dz, int armors_num, double yaw_real, double pitch_real, double bullet_speed);
   double getResistanceCoefficient(double bullet_speed) const;
   double getYaw() const
   {
@@ -72,23 +73,28 @@ public:
   {
     return -output_pitch_;
   }
-  void bulletModelPub(const geometry_msgs::TransformStamped& map2pitch, const ros::Time& time);
+  void getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
+                                 geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
+                                 double r1, double r2, double dz, int armors_num);
+  void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
   ~BulletSolver() = default;
 
 private:
-  ros::Time last_publish_time_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>* d_srv_{};
   Config config_{};
+  double max_track_target_vel_;
   bool dynamic_reconfig_initialized_{};
-  double publish_rate_{};
   double output_yaw_{}, output_pitch_{};
   double bullet_speed_{}, resistance_coff_{};
+  int selected_armor_;
+  bool track_target_;
 
   geometry_msgs::Point target_pos_{};
+  double fly_time_;
   visualization_msgs::Marker marker_desire_;
   visualization_msgs::Marker marker_real_;
 };

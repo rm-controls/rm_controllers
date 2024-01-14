@@ -13,16 +13,10 @@ add_definitions(-Wall -Werror)
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
-        roslint
 
-        rm_msgs
         rm_common
-        pluginlib
-        hardware_interface
         controller_interface
-        realtime_tools
         effort_controllers
-        control_msgs
         )
 
 ###################################
@@ -40,16 +34,9 @@ catkin_package(
         LIBRARIES
         CATKIN_DEPENDS
         roscpp
-        roslint
 
-        rm_msgs
         rm_common
-        pluginlib
-        hardware_interface
-        controller_interface
-        realtime_tools
         effort_controllers
-        control_msgs
         LIBRARIES ${PROJECT_NAME}
 )
 
@@ -64,7 +51,11 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(${PROJECT_NAME} src/joint_calibration_controller.cpp)
+add_library(${PROJECT_NAME}
+        src/calibration_base.cpp
+        src/gpio_calibration_controller.cpp
+        src/mechanical_calibration_controller.cpp
+        )
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
 
@@ -105,9 +96,3 @@ install(
 #      test/AlgorithmTest.cpp)
 #  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}_core)
 #endif ()
-
-##########################
-## Static code analysis ##
-##########################
-
-roslint_cpp()

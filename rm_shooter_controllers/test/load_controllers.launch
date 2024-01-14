@@ -1,0 +1,5 @@
+<launch>
+    <rosparam file="$(find rm_shooter_controllers)/test/shooter_config_template.yaml" command="load"/>
+    <node name="controller_loader" pkg="controller_manager" type="controller_manager" output="screen"
+          args="load controllers/shooter_controller"/>
+</launch>

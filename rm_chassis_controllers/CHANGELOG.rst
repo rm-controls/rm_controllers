@@ -2,6 +2,114 @@
 Changelog for package rm_chassis_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.11 (2023-06-20)
+-------------------
+* Merge pull request `#132 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/132>`_ from chenhuiYu00/change_chassis_topic
+  Change chassis command topic.
+* Change chassis command topic.
+* Merge branch 'rm-controls:master' into master
+* Merge pull request `#123 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/123>`_ from chenhuiYu00/dev/balance
+  Add balance auto exit block
+* Update balance model value.
+* Rename BalanceMode.
+* Separate balance model into functions.
+* Use realtime pub in balance state.
+* Merge branch 'master' into dev/balance
+* Merge pull request `#120 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/120>`_ from ye-luo-xi-tui/master
+  0.1.10
+* Update GYRO to RAW and enum rename.
+* Merge branch 'master' into dev/balance
+* Balance auto exit block add pitch limit.
+* Update auto exit block.
+* Add balance auto exit block.
+* Merge branch 'rm-controls:master' into gpio_calibration_controller
+* Contributors: 1moule, ye-luo-xi-tui, yuchen
+
+0.1.10 (2023-03-25)
+-------------------
+* Merge pull request `#112 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/112>`_ from ljq-lv/Delete
+  Delete the chassis mode "GYRO"
+* Merge pull request `#115 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/115>`_ from Edwinlinks/fix-odom
+  Add manner to fix odom2base by adding outside odometry.
+* Merge pull request `#119 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/119>`_ from ye-luo-xi-tui/balance_standard
+  Clear position when position_des minus position_act bigger than threshold
+* Modify topic name and add comment.
+* Delete the unused header.
+* Add manner to fix odom2base by adding outside odometry.
+* Merge branch 'rm-controls:master' into master
+* Modified the chassis's README
+* Delete the chassis mode "GYRO"
+* Merge pull request `#111 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/111>`_ from d0h0s/master
+  Updated README.md of rm_chassis_controllers.
+* Repaired the example of chassis_controller.
+* Added the parameters of Omni and fixed the inappropriate description.
+* Updated README.md of rm_chassis_controllers.
+* Merge pull request `#108 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/108>`_ from Aung-xiao/master
+  add mecanum.yaml
+* change the name of the controller
+* add mecanum.yaml
+* Merge pull request `#106 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/106>`_ from ye-luo-xi-tui/master
+  0.1.9
+* Clear position when position_des minus position_act bigger than threshold.
+* Contributors: Aung-xiao, Edwinlinks, QiayuanLiao, d0h0s, ljq-lv, ye-luo-xi-tui, yezi
+
+0.1.9 (2023-02-21)
+------------------
+* Merge pull request `#105 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/105>`_ from ljq-lv/gimbal_toward
+  Add follow gimbal's chassis control
+* Add follow gimbal's chassis control
+* Add follow gimbal's chassis control
+* Merge pull request `#100 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/100>`_ from ye-luo-xi-tui/balance_standard
+  Add balance chassis controller
+* Update note.
+* Update test.
+* Update controller description.
+* Merge branch 'master' into balance_standard
+* Modify the expected location update policy.
+* Take some joints' name as params.
+* Fix warning.
+* Add power limit.
+* Compute state matrix and control matrix with given params.
+* Add balance_chassis's odometry.
+* Transform IMU's data to base_link.
+* Try to use PID controller to fix the problem that one block's position is differ from another.
+* Revised dynamics model and remove gazebo dependency.
+* Merge pull request `#97 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/97>`_ from ye-luo-xi-tui/master
+  0.1.8
+* Fix mistake of orientation data.
+* Add some test codes for balance chassis.
+* Contributors: ljq-lv, ye-luo-xi-tui, yezi
+
+0.1.8 (2022-11-24)
+------------------
+* Merge branch 'master' into target_velocity_correction
+* Merge pull request `#89 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/89>`_ from rm-controls/dev
+  Merge branch 'dev' into master
+* Merge pull request `#88 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/88>`_ from NaHCO3bc/dev
+  Add a push_back of joint_handles in the new OmniController.
+* Add a push_back of joint_handles in the new OmniController.
+* Merge pull request `#86 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/86>`_ from NaHCO3bc/Readme
+  Fix the dependence part bug.
+* Fix the dependence part bug.
+* Merge pull request `#85 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/85>`_ from ye-luo-xi-tui/master
+  0.1.7
+* Contributors: NaHCO3bc, ye-luo-xi-tui, yezi
+
+0.1.7 (2022-09-10)
+------------------
+* Merge pull request `#83 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/83>`_ from rm-controls/dev
+  Merge the new OmniController to master
+* Merge pull request `#82 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/82>`_ from NaHCO3bc/dev
+  Fix some bugs in the new OmniController.
+* Compute the params and fix some bugs.
+* Rename the function forwardKinematics to odometry.
+* Merge pull request `#80 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/80>`_ from qiayuanliao/master
+  New and elegant OmniController
+* Fix bug in the new OmniController
+* Add a new and elegant OmniController
+* Merge remote-tracking branch 'origin/master'
+* Contributors: NaHCO3bc, QiayuanLiao, qiayuan
+
 0.1.6 (2022-06-16)
 ------------------
 * Merge remote-tracking branch 'origin/master'

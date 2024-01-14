@@ -35,33 +35,21 @@
 // Created by qiayuan on 5/16/21.
 //
 
-#include "rm_calibration_controllers/joint_calibration_controller.h"
+#include "rm_calibration_controllers/mechanical_calibration_controller.h"
 
 #include <pluginlib/class_list_macros.hpp>
 
 namespace rm_calibration_controllers
 {
-bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
-                                      ros::NodeHandle& controller_nh)
+bool MechanicalCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
+                                           ros::NodeHandle& controller_nh)
 {
-  velocity_ctrl_.init(robot_hw->get<hardware_interface::EffortJointInterface>(), controller_nh);
-  XmlRpc::XmlRpcValue actuator;
+  CalibrationBase::init(robot_hw, root_nh, controller_nh);
   is_return_ = is_center_ = false;
   controller_nh.getParam("center", is_center_);
-  if (!controller_nh.getParam("actuator", actuator))
+  if (!controller_nh.getParam("velocity/vel_threshold", velocity_threshold_))
   {
-    ROS_ERROR("No actuator given (namespace: %s)", controller_nh.getNamespace().c_str());
-    return false;
-  }
-  actuator_ = robot_hw->get<rm_control::ActuatorExtraInterface>()->getHandle(actuator[0]);
-  if (!controller_nh.getParam("search_velocity", velocity_search_))
-  {
-    ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
-    return false;
-  }
-  if (!controller_nh.getParam("threshold", velocity_threshold_))
-  {
-    ROS_ERROR("Velocity value was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
+    ROS_ERROR("Velocity threshold was not specified (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
   if (velocity_threshold_ < 0)
@@ -79,31 +67,19 @@ bool JointCalibrationController::init(hardware_interface::RobotHW* robot_hw, ros
       ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
       return false;
     }
-    if (!controller_nh.getParam("threshold", position_threshold_))
+    if (!controller_nh.getParam("pos_threshold", position_threshold_))
     {
       ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
       return false;
     }
     is_return_ = true;
-    returned_ = false;
+    calibration_success_ = false;
   }
-  // advertise service to check calibration
-  is_calibrated_srv_ = controller_nh.advertiseService("is_calibrated", &JointCalibrationController::isCalibrated, this);
   return true;
 }
 
-void JointCalibrationController::starting(const ros::Time& time)
+void MechanicalCalibrationController::update(const ros::Time& time, const ros::Duration& period)
 {
-  actuator_.setCalibrated(false);
-  state_ = INITIALIZED;
-  if (actuator_.getCalibrated())
-    ROS_INFO("Joint %s will be recalibrated, but was already calibrated at offset %f",
-             velocity_ctrl_.getJointName().c_str(), actuator_.getOffset());
-}
-
-void JointCalibrationController::update(const ros::Time& time, const ros::Duration& period)
-{
-  // TODO: Add GPIO switch support
   switch (state_)
   {
     case INITIALIZED:
@@ -129,11 +105,13 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
           ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
           state_ = CALIBRATED;
           if (is_return_)
-            position_ctrl_.joint_.setCommand(target_position_);
+          {
+            position_ctrl_.setCommand(target_position_);
+          }
           else
           {
             velocity_ctrl_.joint_.setCommand(0.);
-            returned_ = true;
+            calibration_success_ = true;
           }
         }
         else
@@ -162,11 +140,11 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
         ROS_INFO("Joint %s calibrated", velocity_ctrl_.getJointName().c_str());
         state_ = CALIBRATED;
         if (is_return_)
-          position_ctrl_.joint_.setCommand(target_position_);
+          position_ctrl_.setCommand(target_position_);
         else
         {
           velocity_ctrl_.joint_.setCommand(0.);
-          returned_ = true;
+          calibration_success_ = true;
         }
       }
       velocity_ctrl_.update(time, period);
@@ -176,8 +154,8 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
     {
       if (is_return_)
       {
-        if ((std::abs(position_ctrl_.joint_.getPosition()) - target_position_) < position_threshold_)
-          returned_ = true;
+        if ((std::abs(position_ctrl_.joint_.getPosition() - target_position_)) < position_threshold_)
+          calibration_success_ = true;
         position_ctrl_.update(time, period);
       }
       else
@@ -186,15 +164,6 @@ void JointCalibrationController::update(const ros::Time& time, const ros::Durati
     }
   }
 }
-
-bool JointCalibrationController::isCalibrated(control_msgs::QueryCalibrationState::Request& req,
-                                              control_msgs::QueryCalibrationState::Response& resp)
-{
-  ROS_DEBUG("Is calibrated service %d", state_ == CALIBRATED && returned_);
-  resp.is_calibrated = (state_ == CALIBRATED && returned_);
-  return true;
-}
-
 }  // namespace rm_calibration_controllers
 
-PLUGINLIB_EXPORT_CLASS(rm_calibration_controllers::JointCalibrationController, controller_interface::ControllerBase)
+PLUGINLIB_EXPORT_CLASS(rm_calibration_controllers::MechanicalCalibrationController, controller_interface::ControllerBase)

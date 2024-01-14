@@ -1,9 +1,8 @@
 <launch>
-    <arg name="robot_type" default="$(env ROBOT_TYPE)" doc="Robot type [standard, hero, engineer]"/>
     <arg name="base_link_tf" default="false" doc="Set true when not imu and chassis controllers loaded"/>
     <arg name="odom_tf" default="false" doc="Set true when not chassis but imu and orientation controllers loaded"/>
 
-    <rosparam file="$(find rm_gimbal_controllers)/config/$(arg robot_type).yaml" command="load"/>
+    <rosparam file="$(find rm_gimbal_controllers)/test/gimbal_config_template.yaml" command="load"/>
     <node name="controller_loader" pkg="controller_manager" type="controller_manager" output="screen"
           args="load controllers/gimbal_controller"/>
 

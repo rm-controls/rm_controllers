@@ -1,0 +1,6 @@
+<launch>
+    <rosparam file="$(find tof_radar_controller)/test/tof_config_template.yaml" command="load"/>
+    <node name="controller_spawner" pkg="controller_manager" type="controller_manager" output="screen"
+          args="load controllers/tof_radar_controller
+"/>
+</launch>

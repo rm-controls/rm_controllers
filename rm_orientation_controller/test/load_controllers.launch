@@ -1,0 +1,5 @@
+<launch>
+    <rosparam file="$(find rm_orientation_controller)/test/orientation_config_template.yaml" command="load"/>
+    <node name="controller_loader" pkg="controller_manager" type="controller_manager" output="screen"
+          args="load controllers/orientation_controller"/>
+</launch>

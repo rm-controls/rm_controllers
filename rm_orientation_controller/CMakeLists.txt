@@ -13,18 +13,13 @@ add_definitions(-Wall -Werror)
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
-        roslint
 
         sensor_msgs
-        rm_msgs
         rm_common
 
         pluginlib
-        hardware_interface
         controller_interface
         forward_command_controller
-        realtime_tools
-        tf2
         tf2_geometry_msgs
         angles
         )
@@ -39,17 +34,12 @@ catkin_package(
         LIBRARIES
         CATKIN_DEPENDS
         roscpp
-        roslint
 
         sensor_msgs
-        rm_msgs
         rm_common
 
         pluginlib
-        hardware_interface
-        controller_interface
         forward_command_controller
-        tf2
         tf2_geometry_msgs
         angles
         LIBRARIES ${PROJECT_NAME}
@@ -94,8 +84,8 @@ install(
 
 # Mark other files for installation
 install(
-    DIRECTORY config launch
-    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+        DIRECTORY test
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 install(
     FILES rm_orientation_controller_plugin.xml
@@ -114,9 +104,3 @@ install(
 #      test/AlgorithmTest.cpp)
 #  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}_core)
 #endif ()
-
-##########################
-## Static code analysis ##
-##########################
-
-roslint_cpp()

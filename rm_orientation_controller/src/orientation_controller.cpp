@@ -18,7 +18,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     ROS_ERROR("Some params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
-  imu_sensor_ = robot_hw->get<hardware_interface::ImuSensorInterface>()->getHandle(name);
+  imu_sensor_ = robot_hw->get<rm_control::RmImuSensorInterface>()->getHandle(name);
   robot_state_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
 
   tf_broadcaster_.init(root_nh);
@@ -31,19 +31,23 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
-  geometry_msgs::TransformStamped source2target;
-  source2target.header.stamp = time;
-  source2target.header.stamp.nsec += 1;  // Avoid redundant timestamp
-  source2target_msg_.header.stamp = time;
-  source2target_msg_.header.stamp.nsec += 1;
-  source2target_msg_ =
-      getTransform(ros::Time(0), source2target, imu_sensor_.getOrientation()[0], imu_sensor_.getOrientation()[1],
-                   imu_sensor_.getOrientation()[2], imu_sensor_.getOrientation()[3]) ?
-          source2target :
-          source2target_msg_;
-  robot_state_.setTransform(source2target_msg_, "rm_orientation_controller");
-  if (!receive_imu_msg_)
-    tf_broadcaster_.sendTransform(source2target_msg_);
+  if (imu_sensor_.getTimeStamp() > last_imu_update_time_)
+  {
+    last_imu_update_time_ = imu_sensor_.getTimeStamp();
+    geometry_msgs::TransformStamped source2target;
+    source2target.header.stamp = time;
+    source2target.header.stamp.nsec += 1;  // Avoid redundant timestamp
+    source2target_msg_.header.stamp = time;
+    source2target_msg_.header.stamp.nsec += 1;
+    source2target_msg_ =
+        getTransform(ros::Time(0), source2target, imu_sensor_.getOrientation()[0], imu_sensor_.getOrientation()[1],
+                     imu_sensor_.getOrientation()[2], imu_sensor_.getOrientation()[3]) ?
+            source2target :
+            source2target_msg_;
+    robot_state_.setTransform(source2target_msg_, "rm_orientation_controller");
+    if (!receive_imu_msg_)
+      tf_broadcaster_.sendTransform(source2target_msg_);
+  }
 }
 
 bool Controller::getTransform(const ros::Time& time, geometry_msgs::TransformStamped& source2target, const double x,
@@ -81,9 +85,9 @@ void Controller::imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg)
     receive_imu_msg_ = true;
   geometry_msgs::TransformStamped source2target;
   source2target.header.stamp = msg->header.stamp;
-  if (getTransform(ros::Time(0), source2target, msg->orientation.x, msg->orientation.y, msg->orientation.z,
-                   msg->orientation.w))
-    tf_broadcaster_.sendTransform(source2target);
+  getTransform(ros::Time(0), source2target, msg->orientation.x, msg->orientation.y, msg->orientation.z,
+               msg->orientation.w);
+  tf_broadcaster_.sendTransform(source2target);
 }
 
 }  // namespace rm_orientation_controller
