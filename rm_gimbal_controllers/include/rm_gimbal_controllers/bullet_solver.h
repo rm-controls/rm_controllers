@@ -65,6 +65,14 @@ struct TargetState
   int armors_num;
 };
 
+enum class SelectedArmor
+{
+  FRONT = 0,
+  LEFT = 1,
+  BACK = 2,
+  RIGHT = 3
+};
+
 class BulletSolver
 {
 public:
@@ -72,8 +80,7 @@ public:
 
   bool solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw, double v_yaw,
              double r1, double r2, double dz, int armors_num);
-  double getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw, double r1,
-                        double r2, double dz, int armors_num, double yaw_real, double pitch_real, double bullet_speed);
+  double getGimbalError(double yaw_real, double pitch_real);
   double getResistanceCoefficient(double bullet_speed) const;
   double getYaw() const
   {
@@ -101,7 +108,7 @@ private:
   double last_pitch_vel_des_{};
   ros::Time last_pitch_vel_des_solve_time_{ 0 };
   double bullet_speed_{}, resistance_coff_{};
-  int selected_armor_;
+  SelectedArmor selected_armor_;
   bool track_target_;
 
   geometry_msgs::Point target_pos_{};
