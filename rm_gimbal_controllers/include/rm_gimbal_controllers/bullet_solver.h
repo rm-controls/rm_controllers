@@ -65,6 +65,14 @@ struct TargetState
   int armors_num;
 };
 
+enum class SelectedArmor
+{
+  FRONT = 0,
+  LEFT = 1,
+  BACK = 2,
+  RIGHT = 3
+};
+
 class BulletSolver
 {
 public:
@@ -100,7 +108,7 @@ private:
   double last_pitch_vel_des_{};
   ros::Time last_pitch_vel_des_solve_time_{ 0 };
   double bullet_speed_{}, resistance_coff_{};
-  int selected_armor_;
+  SelectedArmor selected_armor_;
   bool track_target_;
 
   geometry_msgs::Point target_pos_{};
