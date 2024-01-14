@@ -266,10 +266,7 @@ void Controller::track(const ros::Time& time)
   {
     if (error_pub_->trylock())
     {
-      double error =
-          bullet_solver_->getGimbalError(target_pos, target_vel, data_track_.yaw, data_track_.v_yaw,
-                                         data_track_.radius_1, data_track_.radius_2, data_track_.dz,
-                                         data_track_.armors_num, yaw_compute, pitch_compute, cmd_gimbal_.bullet_speed);
+      double error = bullet_solver_->getGimbalError(yaw_compute, pitch_compute);
       error_pub_->msg_.stamp = time;
       error_pub_->msg_.error = solve_success ? error : 1.0;
       error_pub_->unlockAndPublish();
