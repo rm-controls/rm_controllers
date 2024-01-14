@@ -55,6 +55,16 @@ struct Config
       resistance_coff_qd_30, g, delay, dt, timeout;
 };
 
+struct TargetState
+{
+  geometry_msgs::Point current_target_center_pos;
+  geometry_msgs::Vector3 current_target_center_vel;
+  double yaw;
+  double v_yaw;
+  double r;
+  int armors_num;
+};
+
 class BulletSolver
 {
 public:
@@ -73,9 +83,8 @@ public:
   {
     return -output_pitch_;
   }
-  void getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
-                                 geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
-                                 double r1, double r2, double dz, int armors_num);
+  void getYawVelAndAccelDes(double& vel_des, double& accel_des);
+  void getPitchVelAndAccelDes(double& vel_des, double& accel_des);
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
   ~BulletSolver() = default;
@@ -89,11 +98,16 @@ private:
   double max_track_target_vel_;
   bool dynamic_reconfig_initialized_{};
   double output_yaw_{}, output_pitch_{};
+  double last_pitch_vel_des_{};
+  ros::Time last_pitch_vel_des_solve_time_{ 0 };
   double bullet_speed_{}, resistance_coff_{};
   int selected_armor_;
   bool track_target_;
 
   geometry_msgs::Point target_pos_{};
+  geometry_msgs::Vector3 target_vel_{};
+  geometry_msgs::Vector3 target_accel_{};
+  TargetState target_state_{};
   double fly_time_;
   visualization_msgs::Marker marker_desire_;
   visualization_msgs::Marker marker_real_;
