@@ -83,7 +83,6 @@ private:
   void reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/);
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
-  XmlRpc::XmlRpcValue friction_left_, friction_right_;
   std::vector<effort_controllers::JointVelocityController*> ctrls_friction_l_, ctrls_friction_r_;
   effort_controllers::JointPositionController ctrl_trigger_;
   int push_per_rotation_{};
@@ -92,7 +91,8 @@ private:
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool maybe_block_ = false;
-  bool is_rotate_ = false;
+  bool friction_left_rotate_state_ = false;
+  bool friction_right_rotate_state_ = false;
   bool friction_left_init_state_ = false;
   bool friction_right_init_state_ = false;
 
