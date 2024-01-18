@@ -91,8 +91,8 @@ private:
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool maybe_block_ = false;
-  bool friction_left_rotate_state_ = false;
-  bool friction_right_rotate_state_ = false;
+  bool friction_left_rotate_state_ = true;
+  bool friction_right_rotate_state_ = true;
   bool friction_left_init_state_ = false;
   bool friction_right_init_state_ = false;
 

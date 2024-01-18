@@ -189,15 +189,21 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
   }
   for (auto& ctrl_friction_l : ctrls_friction_l_)
   {
-    friction_left_rotate_state_ =
-        ctrl_friction_l->joint_.getVelocity() >= push_wheel_speed_threshold_ * ctrl_friction_l->command_ &&
-        ctrl_friction_l->joint_.getVelocity() > M_PI;
+    if (ctrl_friction_l->joint_.getVelocity() < push_wheel_speed_threshold_ * ctrl_friction_l->command_ ||
+        ctrl_friction_l->joint_.getVelocity() <= M_PI)
+    {
+      friction_left_rotate_state_ = false;
+      break;
+    }
   }
   for (auto& ctrl_friction_r : ctrls_friction_r_)
   {
-    friction_right_rotate_state_ =
-        ctrl_friction_r->joint_.getVelocity() <= push_wheel_speed_threshold_ * ctrl_friction_r->command_ &&
-        ctrl_friction_r->joint_.getVelocity() < -M_PI;
+    if (ctrl_friction_r->joint_.getVelocity() > push_wheel_speed_threshold_ * ctrl_friction_r->command_ ||
+        ctrl_friction_r->joint_.getVelocity() >= -M_PI)
+    {
+      friction_right_rotate_state_ = false;
+      break;
+    }
   }
   if ((cmd_.wheel_speed == 0. || (friction_left_rotate_state_ && friction_right_rotate_state_)) &&
       (time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
