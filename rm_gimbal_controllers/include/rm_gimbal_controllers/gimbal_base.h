@@ -52,6 +52,8 @@
 #include <Eigen/Eigen>
 #include <rm_common/filters/filters.h>
 
+#include "rm_gimbal_controllers/feedforward.h"
+
 namespace rm_gimbal_controllers
 {
 class ChassisVel
@@ -135,7 +137,6 @@ private:
   bool setDesIntoLimit(double& real_des, double current_des, double base2gimbal_current_des,
                        const urdf::JointConstSharedPtr& joint_urdf);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
-  double feedForward(const ros::Time& time);
   void updateChassisVel();
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
@@ -165,20 +166,16 @@ private:
   geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_;
 
   // Gravity Compensation
-  geometry_msgs::Vector3 mass_origin_;
-  double gravity_;
-  bool enable_gravity_compensation_;
+  GravityCompensation gravity_compensation_;
 
   // Input feedforward
-  double yaw_k_v_, yaw_k_a_;
-  double pitch_k_v_, pitch_k_a_;
+  InputFeedforward yaw_input_feedforward_, pitch_input_feedforward_;
 
   // Resistance compensation
-  double yaw_resistance_;
-  double velocity_saturation_point_, effort_saturation_point_;
+  FrictionCompensation yaw_friction_compensation_, pitch_friction_compensation_;
 
   // Chassis
-  double k_chassis_vel_;
+  BaseVelCompensation base_vel_compensation_;
   std::shared_ptr<ChassisVel> chassis_vel_;
 
   enum
