@@ -74,7 +74,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   {
     ros::NodeHandle nh = ros::NodeHandle(controller_nh, "friction_left/" + it.first);
     effort_controllers::JointVelocityController* ctrl_friction_l = new effort_controllers::JointVelocityController;
-    if (!(friction_left_init_state_ &= ctrl_friction_l->init(effort_joint_interface_, nh)))
+    if (ctrl_friction_l->init(effort_joint_interface_, nh))
       ctrls_friction_l_.push_back(ctrl_friction_l);
     else
       return false;
@@ -83,7 +83,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   {
     ros::NodeHandle nh = ros::NodeHandle(controller_nh, "friction_right/" + it.first);
     effort_controllers::JointVelocityController* ctrl_friction_r = new effort_controllers::JointVelocityController;
-    if (!(friction_right_init_state_ &= ctrl_friction_r->init(effort_joint_interface_, nh)))
+    if (ctrl_friction_r->init(effort_joint_interface_, nh))
       ctrls_friction_r_.push_back(ctrl_friction_r);
     else
       return false;

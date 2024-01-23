@@ -93,8 +93,6 @@ private:
   bool maybe_block_ = false;
   bool friction_left_rotate_state_ = true;
   bool friction_right_rotate_state_ = true;
-  bool friction_left_init_state_ = false;
-  bool friction_right_init_state_ = false;
 
   ros::Time last_shoot_time_, block_time_, last_block_time_;
   enum
