@@ -140,13 +140,9 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     shoot_state_pub_->unlockAndPublish();
   }
   for (auto& ctrl_friction_l : ctrls_friction_l_)
-  {
     ctrl_friction_l->update(time, period);
-  }
   for (auto& ctrl_friction_r : ctrls_friction_r_)
-  {
     ctrl_friction_r->update(time, period);
-  }
   ctrl_trigger_.update(time, period);
 }
 
@@ -158,13 +154,9 @@ void Controller::stop(const ros::Time& time, const ros::Duration& period)
     ROS_INFO("[Shooter] Enter STOP");
 
     for (auto& ctrl_friction_l : ctrls_friction_l_)
-    {
       ctrl_friction_l->setCommand(0.);
-    }
     for (auto& ctrl_friction_r : ctrls_friction_r_)
-    {
       ctrl_friction_r->setCommand(0.);
-    }
     ctrl_trigger_.setCommand(ctrl_trigger_.joint_.getPosition());
   }
 }
