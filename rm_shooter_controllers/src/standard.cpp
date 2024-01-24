@@ -70,9 +70,11 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   XmlRpc::XmlRpcValue friction_left, friction_right;
   controller_nh.getParam("friction_left", friction_left);
   controller_nh.getParam("friction_right", friction_right);
+  double wheel_speed_offset;
   for (const auto& it : friction_left)
   {
     ros::NodeHandle nh = ros::NodeHandle(controller_nh, "friction_left/" + it.first);
+    wheel_speed_offset_l_.push_back(nh.getParam("wheel_speed_offset", wheel_speed_offset) ? wheel_speed_offset : 0.);
     effort_controllers::JointVelocityController* ctrl_friction_l = new effort_controllers::JointVelocityController;
     if (ctrl_friction_l->init(effort_joint_interface_, nh))
       ctrls_friction_l_.push_back(ctrl_friction_l);
@@ -82,6 +84,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   for (const auto& it : friction_right)
   {
     ros::NodeHandle nh = ros::NodeHandle(controller_nh, "friction_right/" + it.first);
+    wheel_speed_offset_r_.push_back(nh.getParam("wheel_speed_offset", wheel_speed_offset) ? wheel_speed_offset : 0.);
     effort_controllers::JointVelocityController* ctrl_friction_r = new effort_controllers::JointVelocityController;
     if (ctrl_friction_r->init(effort_joint_interface_, nh))
       ctrls_friction_r_.push_back(ctrl_friction_r);
@@ -256,14 +259,9 @@ void Controller::block(const ros::Time& time, const ros::Duration& period)
 void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
 {
   for (size_t i = 0; i < ctrls_friction_l_.size(); i++)
-  {
-    if (i == 1)
-      offset_wheel_speed_ = 220;
-    else
-      offset_wheel_speed_ = 0;
-    ctrls_friction_l_[i]->setCommand(cmd_.wheel_speed + config_.extra_wheel_speed - offset_wheel_speed_);
-    ctrls_friction_r_[i]->setCommand(-cmd_.wheel_speed - config_.extra_wheel_speed + offset_wheel_speed_);
-  }
+    ctrls_friction_l_[i]->setCommand(cmd_.wheel_speed + config_.extra_wheel_speed + wheel_speed_offset_l_[i]);
+  for (size_t i = 0; i < ctrls_friction_r_.size(); i++)
+    ctrls_friction_r_[i]->setCommand(-cmd_.wheel_speed - config_.extra_wheel_speed - wheel_speed_offset_r_[i]);
 }
 
 void Controller::normalize()
