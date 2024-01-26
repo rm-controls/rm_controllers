@@ -46,6 +46,7 @@
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
+#include "rm_gimbal_controllers/bullet_solver/target_kinematics_model.h"
 
 namespace rm_gimbal_controllers
 {
@@ -53,16 +54,6 @@ struct Config
 {
   double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
       resistance_coff_qd_30, g, delay, dt, timeout;
-};
-
-struct TargetState
-{
-  geometry_msgs::Point current_target_center_pos;
-  geometry_msgs::Vector3 current_target_center_vel;
-  double yaw;
-  double v_yaw;
-  double r;
-  int armors_num;
 };
 
 enum class SelectedArmor
@@ -77,9 +68,12 @@ class BulletSolver
 {
 public:
   explicit BulletSolver(ros::NodeHandle& controller_nh);
-
-  bool solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw, double v_yaw,
+  // normal target(including robots and buildings)
+  void input(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw, double v_yaw,
              double r1, double r2, double dz, int armors_num);
+  // windmill
+  void input(double theta, double theta_dot, double bullet_speed, geometry_msgs::TransformStamped windmill2odom);
+  bool solve();
   double getGimbalError(double yaw_real, double pitch_real);
   double getResistanceCoefficient(double bullet_speed) const;
   double getYaw() const
@@ -108,13 +102,12 @@ private:
   double last_pitch_vel_des_{};
   ros::Time last_pitch_vel_des_solve_time_{ 0 };
   double bullet_speed_{}, resistance_coff_{};
+  double windmill_radius_;
   SelectedArmor selected_armor_;
   bool track_target_;
 
+  std::shared_ptr<TargetKinematicsBase> target_kinematics_;
   geometry_msgs::Point target_pos_{};
-  geometry_msgs::Vector3 target_vel_{};
-  geometry_msgs::Vector3 target_accel_{};
-  TargetState target_state_{};
   double fly_time_;
   visualization_msgs::Marker marker_desire_;
   visualization_msgs::Marker marker_real_;

@@ -41,8 +41,6 @@
 #include <rm_common/ros_utilities.h>
 #include <rm_common/ori_tool.h>
 #include <pluginlib/class_list_macros.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <tf/transform_datatypes.h>
 
 namespace rm_gimbal_controllers
 {
@@ -222,33 +220,41 @@ void Controller::track(const ros::Time& time)
   quatToRPY(odom2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
   double yaw_compute = yaw_real;
   double pitch_compute = -pitch_real;
-  geometry_msgs::Point target_pos = data_track_.position;
-  geometry_msgs::Vector3 target_vel = data_track_.velocity;
+
+  ros::Time now = ros::Time::now();
+  double yaw = data_track_.yaw + data_track_.v_yaw * (now - data_track_.header.stamp).toSec();
+  geometry_msgs::TransformStamped transform;
   try
   {
     if (!data_track_.header.frame_id.empty())
     {
-      geometry_msgs::TransformStamped transform =
-          robot_state_handle_.lookupTransform("odom", data_track_.header.frame_id, data_track_.header.stamp);
-      tf2::doTransform(target_pos, target_pos, transform);
-      tf2::doTransform(target_vel, target_vel, transform);
+      transform = robot_state_handle_.lookupTransform("odom", data_track_.header.frame_id, data_track_.header.stamp);
     }
   }
   catch (tf2::TransformException& ex)
   {
     ROS_WARN("%s", ex.what());
   }
-  ros::Time now = ros::Time::now();
-  target_pos.x += target_vel.x * (now - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.x;
-  target_pos.y += target_vel.y * (now - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.y;
-  target_pos.z += target_vel.z * (now - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.z;
-  target_vel.x -= chassis_vel_->linear_->x();
-  target_vel.y -= chassis_vel_->linear_->y();
-  target_vel.z -= chassis_vel_->linear_->z();
-  double yaw = data_track_.yaw + data_track_.v_yaw * (now - data_track_.header.stamp).toSec();
-  bool solve_success =
-      bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, yaw, data_track_.v_yaw,
-                            data_track_.radius_1, data_track_.radius_2, data_track_.dz, data_track_.armors_num);
+  if (data_track_.id != 12)
+  {
+    geometry_msgs::Point target_pos = data_track_.position;
+    geometry_msgs::Vector3 target_vel = data_track_.velocity;
+    tf2::doTransform(target_pos, target_pos, transform);
+    tf2::doTransform(target_vel, target_vel, transform);
+    target_pos.x += target_vel.x * (now - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.x;
+    target_pos.y += target_vel.y * (now - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.y;
+    target_pos.z += target_vel.z * (now - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.z;
+    target_vel.x -= chassis_vel_->linear_->x();
+    target_vel.y -= chassis_vel_->linear_->y();
+    target_vel.z -= chassis_vel_->linear_->z();
+    bullet_solver_->input(target_pos, target_vel, cmd_gimbal_.bullet_speed, yaw, data_track_.v_yaw,
+                          data_track_.radius_1, data_track_.radius_2, data_track_.dz, data_track_.armors_num);
+  }
+  else
+  {
+    bullet_solver_->input(yaw, data_track_.v_yaw, cmd_gimbal_.bullet_speed, transform);
+  }
+  bool solve_success = bullet_solver_->solve();
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
