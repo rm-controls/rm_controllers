@@ -177,25 +177,25 @@ void Controller::ready(const ros::Duration& period)
 
 void Controller::push(const ros::Time& time, const ros::Duration& period)
 {
-  bool friction_rotate_state = true;
   if (state_changed_)
   {  // on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PUSH");
   }
+  bool wheel_speed_ready = true;
   for (auto& ctrl_friction_l : ctrls_friction_l_)
   {
     if (ctrl_friction_l->joint_.getVelocity() < push_wheel_speed_threshold_ * ctrl_friction_l->command_ ||
         ctrl_friction_l->joint_.getVelocity() <= M_PI)
-      friction_rotate_state = false;
+      wheel_speed_ready = false;
   }
   for (auto& ctrl_friction_r : ctrls_friction_r_)
   {
     if (ctrl_friction_r->joint_.getVelocity() > push_wheel_speed_threshold_ * ctrl_friction_r->command_ ||
         ctrl_friction_r->joint_.getVelocity() >= -M_PI)
-      friction_rotate_state = false;
+      wheel_speed_ready = false;
   }
-  if ((cmd_.wheel_speed == 0. || friction_rotate_state) && (time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
+  if ((cmd_.wheel_speed == 0. || wheel_speed_ready) && (time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
   {  // Time to shoot!!!
     if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
         config_.forward_push_threshold)
