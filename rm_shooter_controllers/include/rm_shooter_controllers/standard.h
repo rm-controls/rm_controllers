@@ -83,8 +83,9 @@ private:
   void reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/);
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
-  effort_controllers::JointVelocityController ctrl_friction_l_, ctrl_friction_r_;
+  std::vector<effort_controllers::JointVelocityController*> ctrls_friction_l_, ctrls_friction_r_;
   effort_controllers::JointPositionController ctrl_trigger_;
+  std::vector<double> wheel_speed_offset_l_, wheel_speed_offset_r_;
   int push_per_rotation_{};
   double push_wheel_speed_threshold_{};
   bool dynamic_reconfig_initialized_ = false;
