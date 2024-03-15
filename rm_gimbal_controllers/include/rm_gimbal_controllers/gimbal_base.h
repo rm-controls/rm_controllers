@@ -47,7 +47,7 @@
 #include <rm_msgs/TrackData.h>
 #include <rm_msgs/GimbalDesError.h>
 #include <dynamic_reconfigure/server.h>
-#include <rm_gimbal_controllers/bullet_solver.h>
+#include "rm_gimbal_controllers/bullet_solver/bullet_solver.h"
 #include <tf2_eigen/tf2_eigen.h>
 #include <Eigen/Eigen>
 #include <rm_common/filters/filters.h>
