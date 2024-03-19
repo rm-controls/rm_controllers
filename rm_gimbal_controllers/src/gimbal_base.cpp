@@ -62,6 +62,11 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   gravity_ = enable_feedforward ? (double)xml_rpc_value["gravity"] : 0.;
   enable_gravity_compensation_ = enable_feedforward && (bool)xml_rpc_value["enable_gravity_compensation"];
 
+  ros::NodeHandle resistance_compensation_nh(controller_nh, "yaw/resistance_compensation");
+  yaw_resistance_ = getParam(resistance_compensation_nh, "resistance", 0.);
+  velocity_saturation_point_ = getParam(resistance_compensation_nh, "velocity_saturation_point", 0.);
+  effort_saturation_point_ = getParam(resistance_compensation_nh, "effort_saturation_point", 0.);
+
   k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.);
   ros::NodeHandle chassis_vel_nh(controller_nh, "chassis_vel");
   chassis_vel_ = std::make_shared<ChassisVel>(chassis_vel_nh);
@@ -70,6 +75,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
+  yaw_k_v_ = getParam(nh_yaw, "k_v", 0.);
+  pitch_k_v_ = getParam(nh_pitch, "k_v", 0.);
   ros::NodeHandle nh_yaw_pos = ros::NodeHandle(controller_nh, "yaw_pos");
   ros::NodeHandle nh_pitch_pos = ros::NodeHandle(controller_nh, "pitch_pos");
 
@@ -256,8 +263,8 @@ void Controller::track(const ros::Time& time)
   quatToRPY(odom2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
   double yaw_compute = yaw_real;
   double pitch_compute = -pitch_real;
-  geometry_msgs::Point target_pos = data_track_.target_pos;
-  geometry_msgs::Vector3 target_vel = data_track_.target_vel;
+  geometry_msgs::Point target_pos = data_track_.position;
+  geometry_msgs::Vector3 target_vel = data_track_.velocity;
   try
   {
     if (!data_track_.header.frame_id.empty())
@@ -278,15 +285,18 @@ void Controller::track(const ros::Time& time)
   target_vel.x -= chassis_vel_->linear_->x();
   target_vel.y -= chassis_vel_->linear_->y();
   target_vel.z -= chassis_vel_->linear_->z();
-
-  bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed);
+  bool solve_success =
+      bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, data_track_.yaw, data_track_.v_yaw,
+                            data_track_.radius_1, data_track_.radius_2, data_track_.dz, data_track_.armors_num);
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
     if (error_pub_->trylock())
     {
       double error =
-          bullet_solver_->getGimbalError(target_pos, target_vel, yaw_compute, pitch_compute, cmd_gimbal_.bullet_speed);
+          bullet_solver_->getGimbalError(target_pos, target_vel, data_track_.yaw, data_track_.v_yaw,
+                                         data_track_.radius_1, data_track_.radius_2, data_track_.dz,
+                                         data_track_.armors_num, yaw_compute, pitch_compute, cmd_gimbal_.bullet_speed);
       error_pub_->msg_.stamp = time;
       error_pub_->msg_.error = solve_success ? error : 1.0;
       error_pub_->unlockAndPublish();
@@ -387,8 +397,11 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   else if (state_ == TRACK)
   {
-    geometry_msgs::Point target_pos = data_track_.target_pos;
-    geometry_msgs::Vector3 target_vel = data_track_.target_vel;
+    geometry_msgs::Point target_pos;
+    geometry_msgs::Vector3 target_vel;
+    bullet_solver_->getSelectedArmorPosAndVel(target_pos, target_vel, data_track_.position, data_track_.velocity,
+                                              data_track_.yaw, data_track_.v_yaw, data_track_.radius_1,
+                                              data_track_.radius_2, data_track_.dz, data_track_.armors_num);
     tf2::Vector3 target_pos_tf, target_vel_tf;
 
     try
@@ -400,20 +413,35 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
       tf2::fromMsg(target_pos, target_pos_tf);
       tf2::fromMsg(target_vel, target_vel_tf);
 
-      //      yaw_vel_des = target_vel_tf.cross(target_pos_tf).z() / std::pow((target_pos_tf.length()), 2);
-      transform = robot_state_handle_.lookupTransform(pitch_joint_urdf_->parent_link_name, data_track_.header.frame_id,
-                                                      data_track_.header.stamp);
+      yaw_vel_des = target_pos_tf.cross(target_vel_tf).z() / std::pow((target_pos_tf.length()), 2);
+      transform = robot_state_handle_.lookupTransform(ctrl_pitch_.joint_urdf_->parent_link_name,
+                                                      data_track_.header.frame_id, data_track_.header.stamp);
       tf2::doTransform(target_pos, target_pos, transform);
       tf2::doTransform(target_vel, target_vel, transform);
       tf2::fromMsg(target_pos, target_pos_tf);
       tf2::fromMsg(target_vel, target_vel_tf);
-      //      pitch_vel_des = target_vel_tf.cross(target_pos_tf).y() / std::pow((target_pos_tf.length()), 2);
+      pitch_vel_des = target_pos_tf.cross(target_vel_tf).y() / std::pow((target_pos_tf.length()), 2);
     }
     catch (tf2::TransformException& ex)
     {
       ROS_WARN("%s", ex.what());
     }
   }
+
+  ctrl_yaw_.setCommand(yaw_des, yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
+  ctrl_pitch_.setCommand(pitch_des, pitch_vel_des + ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
+  ctrl_yaw_.update(time, period);
+  ctrl_pitch_.update(time, period);
+  double resistance_compensation = 0.;
+  if (std::abs(ctrl_yaw_.joint_.getVelocity()) > velocity_saturation_point_)
+    resistance_compensation = (ctrl_yaw_.joint_.getVelocity() > 0 ? 1 : -1) * yaw_resistance_;
+  else if (std::abs(ctrl_yaw_.joint_.getCommand()) > effort_saturation_point_)
+    resistance_compensation = (ctrl_yaw_.joint_.getCommand() > 0 ? 1 : -1) * yaw_resistance_;
+  else
+    resistance_compensation = ctrl_yaw_.joint_.getCommand() * yaw_resistance_ / effort_saturation_point_;
+  ctrl_yaw_.joint_.setCommand(ctrl_yaw_.joint_.getCommand() - k_chassis_vel_ * chassis_vel_->angular_->z() +
+                              yaw_k_v_ * yaw_vel_des + resistance_compensation);
+  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time) + pitch_k_v_ * pitch_vel_des);
 }
 
 double Controller::feedForward(const ros::Time& time)

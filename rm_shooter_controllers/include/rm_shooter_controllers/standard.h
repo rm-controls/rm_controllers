@@ -47,6 +47,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <rm_shooter_controllers/ShooterConfig.h>
 #include <rm_msgs/ShootCmd.h>
+#include <rm_msgs/ShootState.h>
 
 #include <utility>
 
@@ -55,8 +56,8 @@ namespace rm_shooter_controllers
 struct Config
 {
   double block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold,
-      forward_push_threshold, exit_push_threshold;
-  double qd_10, qd_15, qd_16, qd_18, qd_30, lf_extra_rotat_speed;
+      forward_push_threshold,exit_push_threshold;
+  double extra_wheel_speed;
 };
 
 class Controller : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
@@ -82,10 +83,11 @@ private:
   void reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/);
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
-  effort_controllers::JointVelocityController ctrl_friction_l_, ctrl_friction_r_;
+  std::vector<effort_controllers::JointVelocityController*> ctrls_friction_l_, ctrls_friction_r_;
   effort_controllers::JointPositionController ctrl_trigger_;
+  std::vector<double> wheel_speed_offset_l_, wheel_speed_offset_r_;
   int push_per_rotation_{};
-  double push_qd_threshold_{};
+  double push_wheel_speed_threshold_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool maybe_block_ = false;
@@ -103,6 +105,7 @@ private:
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer;
   realtime_tools::RealtimeBuffer<rm_msgs::ShootCmd> cmd_rt_buffer_;
   rm_msgs::ShootCmd cmd_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootState>> shoot_state_pub_;
   ros::Subscriber cmd_subscriber_;
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>* d_srv_{};
 };

@@ -61,9 +61,8 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     return false;
   }
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.02);
-  wheel_track_ = getParam(controller_nh, "wheel_track", 0.410);
-  wheel_base_ = getParam(controller_nh, "wheel_base", 0.320);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
+  max_odom_vel_ = getParam(controller_nh, "max_odom_vel", 0);
   enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
   publish_odom_tf_ = getParam(controller_nh, "publish_odom_tf", false);
 
@@ -103,8 +102,12 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     tf_broadcaster_.init(root_nh);
     tf_broadcaster_.sendTransform(odom2base_);
   }
+  world2odom_.setRotation(tf2::Quaternion::getIdentity());
 
-  cmd_chassis_sub_ = controller_nh.subscribe<rm_msgs::ChassisCmd>("command", 1, &ChassisBase::cmdChassisCallback, this);
+  outside_odom_sub_ =
+      controller_nh.subscribe<nav_msgs::Odometry>("/odometry", 10, &ChassisBase::outsideOdomCallback, this);
+  cmd_chassis_sub_ =
+      controller_nh.subscribe<rm_msgs::ChassisCmd>("/cmd_chassis", 1, &ChassisBase::cmdChassisCallback, this);
   cmd_vel_sub_ = root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisBase::cmdVelCallback, this);
 
   if (controller_nh.hasParam("pid_follow"))
@@ -162,9 +165,6 @@ void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& perio
     case FOLLOW:
       follow(time, period);
       break;
-    case GYRO:
-      gyro();
-      break;
     case TWIST:
       twist(time, period);
       break;
@@ -217,12 +217,12 @@ void ChassisBase<T...>::twist(const ros::Time& time, const ros::Duration& period
     recovery();
     pid_follow_.reset();
   }
-  tfVelToBase("yaw");
+  tfVelToBase(command_source_frame_);
   try
   {
     double roll{}, pitch{}, yaw{};
-    quatToRPY(robot_state_handle_.lookupTransform("base_link", "yaw", ros::Time(0)).transform.rotation, roll, pitch,
-              yaw);
+    quatToRPY(robot_state_handle_.lookupTransform("base_link", command_source_frame_, ros::Time(0)).transform.rotation,
+              roll, pitch, yaw);
 
     double angle[4] = { -0.785, 0.785, 2.355, -2.355 };
     double off_set = 0.0;
@@ -247,19 +247,6 @@ void ChassisBase<T...>::twist(const ros::Time& time, const ros::Duration& period
 }
 
 template <typename... T>
-void ChassisBase<T...>::gyro()
-{
-  if (state_changed_)
-  {
-    state_changed_ = false;
-    ROS_INFO("[Chassis] Enter GYRO");
-
-    recovery();
-  }
-  tfVelToBase(follow_source_frame_);
-}
-
-template <typename... T>
 void ChassisBase<T...>::raw()
 {
   if (state_changed_)
@@ -269,6 +256,7 @@ void ChassisBase<T...>::raw()
 
     recovery();
   }
+  tfVelToBase(command_source_frame_);
 }
 
 template <typename... T>
@@ -292,10 +280,16 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
     // integral vel to pos and angle
     tf2::doTransform(vel_base.linear, linear_vel_odom, odom2base_);
     tf2::doTransform(vel_base.angular, angular_vel_odom, odom2base_);
-    odom2base_.transform.translation.x += linear_vel_odom.x * period.toSec();
-    odom2base_.transform.translation.y += linear_vel_odom.y * period.toSec();
-    odom2base_.transform.translation.z += linear_vel_odom.z * period.toSec();
     double length =
+        std::sqrt(std::pow(linear_vel_odom.x, 2) + std::pow(linear_vel_odom.y, 2) + std::pow(linear_vel_odom.z, 2));
+    if (length < max_odom_vel_)
+    {
+      // avoid nan vel
+      odom2base_.transform.translation.x += linear_vel_odom.x * period.toSec();
+      odom2base_.transform.translation.y += linear_vel_odom.y * period.toSec();
+      odom2base_.transform.translation.z += linear_vel_odom.z * period.toSec();
+    }
+    length =
         std::sqrt(std::pow(angular_vel_odom.x, 2) + std::pow(angular_vel_odom.y, 2) + std::pow(angular_vel_odom.z, 2));
     if (length > 0.001)
     {  // avoid nan quat
@@ -308,8 +302,54 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
       odom2base_quat.normalize();
       odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
     }
-    robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
   }
+
+  if (topic_update_)
+  {
+    auto* odom_msg = odom_buffer_.readFromRT();
+
+    tf2::Transform world2sensor;
+    world2sensor.setOrigin(
+        tf2::Vector3(odom_msg->pose.pose.position.x, odom_msg->pose.pose.position.y, odom_msg->pose.pose.position.z));
+    world2sensor.setRotation(tf2::Quaternion(odom_msg->pose.pose.orientation.x, odom_msg->pose.pose.orientation.y,
+                                             odom_msg->pose.pose.orientation.z, odom_msg->pose.pose.orientation.w));
+
+    if (world2odom_.getRotation() == tf2::Quaternion::getIdentity())  // First received
+    {
+      tf2::Transform odom2sensor;
+      try
+      {
+        geometry_msgs::TransformStamped tf_msg =
+            robot_state_handle_.lookupTransform("odom", "livox_frame", odom_msg->header.stamp);
+        tf2::fromMsg(tf_msg.transform, odom2sensor);
+      }
+      catch (tf2::TransformException& ex)
+      {
+        ROS_WARN("%s", ex.what());
+        return;
+      }
+      world2odom_ = world2sensor * odom2sensor.inverse();
+    }
+    tf2::Transform base2sensor;
+    try
+    {
+      geometry_msgs::TransformStamped tf_msg =
+          robot_state_handle_.lookupTransform("base_link", "livox_frame", odom_msg->header.stamp);
+      tf2::fromMsg(tf_msg.transform, base2sensor);
+    }
+    catch (tf2::TransformException& ex)
+    {
+      ROS_WARN("%s", ex.what());
+      return;
+    }
+    tf2::Transform odom2base = world2odom_.inverse() * world2sensor * base2sensor.inverse();
+    odom2base_.transform.translation.x = odom2base.getOrigin().x();
+    odom2base_.transform.translation.y = odom2base.getOrigin().y();
+    odom2base_.transform.translation.z = odom2base.getOrigin().z();
+    topic_update_ = false;
+  }
+
+  robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
@@ -389,6 +429,13 @@ void ChassisBase<T...>::cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg
   cmd_struct_.cmd_vel_ = *msg;
   cmd_struct_.stamp_ = ros::Time::now();
   cmd_rt_buffer_.writeFromNonRT(cmd_struct_);
+}
+
+template <typename... T>
+void ChassisBase<T...>::outsideOdomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+{
+  odom_buffer_.writeFromNonRT(*msg);
+  topic_update_ = true;
 }
 
 }  // namespace rm_chassis_controllers

@@ -2,6 +2,38 @@
 Changelog for package rm_shooter_controllers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.11 (2023-06-20)
+-------------------
+* Merge pull request `#129 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/129>`_ from ye-luo-xi-tui/master
+  Shooter_controller would not check block when friction wheel don't rotate
+* Shooter_controller would not check block when friction wheel don't rotate.
+* Merge branch 'master' into dev/balance
+* Merge pull request `#120 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/120>`_ from ye-luo-xi-tui/master
+  0.1.10
+* Merge branch 'rm-controls:master' into gpio_calibration_controller
+* Contributors: 1moule, ye-luo-xi-tui, yezi, yuchen
+
+0.1.10 (2023-03-25)
+-------------------
+* Merge pull request `#118 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/118>`_ from ye-luo-xi-tui/master
+  Publish shoot state
+* Publish shoot state.
+* Merge pull request `#109 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/109>`_ from ye-luo-xi-tui/master
+  Modifier default value of forward_push_threshold and exit_push_threshold
+* Modifier default value of forward_push_threshold and exit_push_threshold.
+* Merge pull request `#106 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/106>`_ from ye-luo-xi-tui/master
+  0.1.9
+* Contributors: ye-luo-xi-tui, yezi
+
+0.1.9 (2023-02-21)
+------------------
+* Merge branch 'master' into balance_standard
+* Merge remote-tracking branch 'origin/fix_return' into fix_return
+* Merge pull request `#97 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/97>`_ from ye-luo-xi-tui/master
+  0.1.8
+* Merge branch 'rm-controls:master' into fix_return
+* Contributors: L-SY, lsy, ye-luo-xi-tui, yezi
+
 0.1.8 (2022-11-24)
 ------------------
 * Merge pull request `#93 <https://github.com/ye-luo-xi-tui/rm_controllers/issues/93>`_ from NaHCO3bc/master
