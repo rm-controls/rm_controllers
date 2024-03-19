@@ -82,9 +82,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle gimbal_des_vel_nh(controller_nh, "gimbal_des_vel");
   gimbal_des_vel_ = std::make_shared<GimbalDesVel>(gimbal_des_vel_nh);
 
-  ros::NodeHandle nh_yaw_pos = ros::NodeHandle(controller_nh, "yaw_pos");
-  ros::NodeHandle nh_pitch_pos = ros::NodeHandle(controller_nh, "pitch_pos");
-  if (!pos_pid_yaw_.init(nh_yaw_pos) || !pos_pid_pitch_.init(nh_pitch_pos))
+  ros::NodeHandle nh_pid_yaw_pos = ros::NodeHandle(controller_nh, "pid_yaw_pos");
+  ros::NodeHandle nh_pid_pitch_pos = ros::NodeHandle(controller_nh, "pid_pitch_pos");
+  if (!pid_yaw_pos_.init(nh_pid_yaw_pos) || !pid_pitch_pos_.init(nh_pid_pitch_pos))
     return false;
 
   hardware_interface::EffortJointInterface* effort_joint_interface =
@@ -142,10 +142,10 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
-  pos_pid_yaw_pub_.reset(
-      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_yaw_pos, "state", 1));
-  pos_pid_pitch_pub_.reset(
-      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_pitch_pos, "state", 1));
+  pid_yaw_pos_state_pub_.reset(
+      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_pid_yaw_pos, "state", 1));
+  pid_pitch_pos_state_pub_.reset(
+      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_pid_pitch_pos, "state", 1));
   return true;
 }
 
@@ -412,50 +412,51 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   quatToRPY(odom2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
   double yaw_angle_error = angles::shortest_angular_distance(yaw_real, yaw_des);
   double pitch_angle_error = angles::shortest_angular_distance(pitch_real, pitch_des);
-  pos_pid_pitch_.computeCommand(pitch_angle_error, period);
-  pos_pid_yaw_.computeCommand(yaw_angle_error, period);
+  pid_pitch_pos_.computeCommand(pitch_angle_error, period);
+  pid_yaw_pos_.computeCommand(yaw_angle_error, period);
 
   // publish state
   if (loop_count_ % 10 == 0)
   {
-    if (pos_pid_yaw_pub_ && pos_pid_yaw_pub_->trylock())
+    if (pid_yaw_pos_state_pub_ && pid_yaw_pos_state_pub_->trylock())
     {
-      pos_pid_yaw_pub_->msg_.header.stamp = time;
-      pos_pid_yaw_pub_->msg_.set_point = yaw_des;
-      pos_pid_yaw_pub_->msg_.process_value = yaw_real;
-      pos_pid_yaw_pub_->msg_.process_value_dot = ctrl_yaw_.joint_.getVelocity();
-      pos_pid_yaw_pub_->msg_.error = yaw_angle_error;
-      pos_pid_yaw_pub_->msg_.time_step = period.toSec();
-      pos_pid_yaw_pub_->msg_.command = pos_pid_yaw_.getCurrentCmd();
+      pid_yaw_pos_state_pub_->msg_.header.stamp = time;
+      pid_yaw_pos_state_pub_->msg_.set_point = yaw_des;
+      pid_yaw_pos_state_pub_->msg_.process_value = yaw_real;
+      pid_yaw_pos_state_pub_->msg_.process_value_dot = ctrl_yaw_.joint_.getVelocity();
+      pid_yaw_pos_state_pub_->msg_.error = yaw_angle_error;
+      pid_yaw_pos_state_pub_->msg_.time_step = period.toSec();
+      pid_yaw_pos_state_pub_->msg_.command = pid_yaw_pos_.getCurrentCmd();
       double dummy;
       bool antiwindup;
-      pos_pid_yaw_.getGains(pos_pid_yaw_pub_->msg_.p, pos_pid_yaw_pub_->msg_.i, pos_pid_yaw_pub_->msg_.d,
-                            pos_pid_yaw_pub_->msg_.i_clamp, dummy, antiwindup);
-      pos_pid_yaw_pub_->msg_.antiwindup = static_cast<char>(antiwindup);
-      pos_pid_yaw_pub_->unlockAndPublish();
+      pid_yaw_pos_.getGains(pid_yaw_pos_state_pub_->msg_.p, pid_yaw_pos_state_pub_->msg_.i,
+                            pid_yaw_pos_state_pub_->msg_.d, pid_yaw_pos_state_pub_->msg_.i_clamp, dummy, antiwindup);
+      pid_yaw_pos_state_pub_->msg_.antiwindup = static_cast<char>(antiwindup);
+      pid_yaw_pos_state_pub_->unlockAndPublish();
     }
-    if (pos_pid_pitch_pub_ && pos_pid_pitch_pub_->trylock())
+    if (pid_pitch_pos_state_pub_ && pid_pitch_pos_state_pub_->trylock())
     {
-      pos_pid_pitch_pub_->msg_.header.stamp = time;
-      pos_pid_pitch_pub_->msg_.set_point = pitch_des;
-      pos_pid_pitch_pub_->msg_.process_value = pitch_real;
-      pos_pid_pitch_pub_->msg_.process_value_dot = ctrl_pitch_.joint_.getVelocity();
-      pos_pid_pitch_pub_->msg_.error = pitch_angle_error;
-      pos_pid_pitch_pub_->msg_.time_step = period.toSec();
-      pos_pid_pitch_pub_->msg_.command = pos_pid_yaw_.getCurrentCmd();
+      pid_pitch_pos_state_pub_->msg_.header.stamp = time;
+      pid_pitch_pos_state_pub_->msg_.set_point = pitch_des;
+      pid_pitch_pos_state_pub_->msg_.process_value = pitch_real;
+      pid_pitch_pos_state_pub_->msg_.process_value_dot = ctrl_pitch_.joint_.getVelocity();
+      pid_pitch_pos_state_pub_->msg_.error = pitch_angle_error;
+      pid_pitch_pos_state_pub_->msg_.time_step = period.toSec();
+      pid_pitch_pos_state_pub_->msg_.command = pid_pitch_pos_.getCurrentCmd();
       double dummy;
       bool antiwindup;
-      pos_pid_pitch_.getGains(pos_pid_pitch_pub_->msg_.p, pos_pid_pitch_pub_->msg_.i, pos_pid_pitch_pub_->msg_.d,
-                              pos_pid_pitch_pub_->msg_.i_clamp, dummy, antiwindup);
-      pos_pid_pitch_pub_->msg_.antiwindup = static_cast<char>(antiwindup);
-      pos_pid_pitch_pub_->unlockAndPublish();
+      pid_pitch_pos_.getGains(pid_pitch_pos_state_pub_->msg_.p, pid_pitch_pos_state_pub_->msg_.i,
+                              pid_pitch_pos_state_pub_->msg_.d, pid_pitch_pos_state_pub_->msg_.i_clamp, dummy,
+                              antiwindup);
+      pid_pitch_pos_state_pub_->msg_.antiwindup = static_cast<char>(antiwindup);
+      pid_pitch_pos_state_pub_->unlockAndPublish();
     }
   }
   loop_count_++;
 
-  ctrl_yaw_.setCommand(pos_pid_yaw_.getCurrentCmd() + yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() -
+  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() + yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() -
                        angular_vel_yaw.z);
-  ctrl_pitch_.setCommand(pos_pid_pitch_.getCurrentCmd() + pitch_k_v_ * pitch_vel_des +
+  ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + pitch_k_v_ * pitch_vel_des +
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);

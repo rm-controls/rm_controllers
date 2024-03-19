@@ -173,15 +173,15 @@ private:
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
   bool has_imu_ = true;
   effort_controllers::JointVelocityController ctrl_yaw_, ctrl_pitch_;
-  control_toolbox::Pid pos_pid_yaw_, pos_pid_pitch_;
+  control_toolbox::Pid pid_yaw_pos_, pid_pitch_pos_;
 
   std::shared_ptr<BulletSolver> bullet_solver_;
   std::shared_ptr<GimbalDesVel> gimbal_des_vel_;
-  std::unique_ptr<realtime_tools::RealtimePublisher<control_msgs::JointControllerState>> pos_pid_yaw_pub_,
-      pos_pid_pitch_pub_;
 
   // ROS Interface
   ros::Time last_publish_time_{};
+  std::unique_ptr<realtime_tools::RealtimePublisher<control_msgs::JointControllerState>> pid_yaw_pos_state_pub_,
+      pid_pitch_pos_state_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_track_sub_;
