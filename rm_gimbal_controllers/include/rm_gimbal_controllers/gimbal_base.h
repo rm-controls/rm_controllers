@@ -38,6 +38,7 @@
 #pragma once
 
 #include <effort_controllers/joint_position_controller.h>
+#include <effort_controllers/joint_velocity_controller.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
@@ -51,6 +52,8 @@
 #include <tf2_eigen/tf2_eigen.h>
 #include <Eigen/Eigen>
 #include <rm_common/filters/filters.h>
+#include <control_toolbox/pid.h>
+#include <urdf/model.h>
 
 namespace rm_gimbal_controllers
 {
@@ -171,7 +174,8 @@ private:
   rm_control::RobotStateHandle robot_state_handle_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
   bool has_imu_ = true;
-  effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
+  effort_controllers::JointVelocityController ctrl_yaw_, ctrl_pitch_;
+  control_toolbox::Pid pos_pid_yaw_, pos_pid_pitch_;
 
   std::shared_ptr<BulletSolver> bullet_solver_;
 
@@ -182,6 +186,7 @@ private:
   ros::Subscriber data_track_sub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TrackData> track_rt_buffer_;
+  urdf::JointConstSharedPtr pitch_joint_urdf_, yaw_joint_urdf_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
   rm_msgs::TrackData data_track_;
