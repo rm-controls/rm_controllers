@@ -82,7 +82,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle nh_yaw_pos = ros::NodeHandle(controller_nh, "yaw_pos");
   ros::NodeHandle nh_pitch_pos = ros::NodeHandle(controller_nh, "pitch_pos");
 
-  ros::NodeHandle gimbal_des_vel_nh(controller_nh, "yaw_des_vel");
+  ros::NodeHandle gimbal_des_vel_nh(controller_nh, "gimbal_des_vel");
   gimbal_des_vel_ = std::make_shared<GimbalDesVel>(gimbal_des_vel_nh);
 
   hardware_interface::EffortJointInterface* effort_joint_interface =
@@ -391,27 +391,45 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
 
   double yaw_vel_des = 0., pitch_vel_des = 0.;
+  double roll_real, pitch_real, yaw_real, roll_des, pitch_des, yaw_des;
+  quatToRPY(odom2gimbal_des_.transform.rotation, roll_des, pitch_des, yaw_des);
   if (state_ == RATE)
   {
     yaw_vel_des = cmd_gimbal_.rate_yaw;
     pitch_vel_des = cmd_gimbal_.rate_pitch;
+
+    double tf_period = odom2gimbal_des_.header.stamp.toSec() - last_odom2gimbal_des_.header.stamp.toSec();
+    double last_roll_des, last_pitch_des, last_yaw_des;
+    quatToRPY(last_odom2gimbal_des_.transform.rotation, last_roll_des, last_pitch_des, last_yaw_des);
+    double yaw_vel = angles::shortest_angular_distance(last_yaw_des, yaw_des) / tf_period;
+    double pitch_vel = angles::shortest_angular_distance(last_pitch_des, pitch_des) / tf_period;
+    gimbal_des_vel_->update(yaw_vel, pitch_vel, tf_period, time);
+    yaw_vel_des = gimbal_des_vel_->yaw_vel_des_lp_filter_->output();
+    pitch_vel_des = gimbal_des_vel_->pitch_vel_des_lp_filter_->output();
+    last_odom2gimbal_des_ = odom2gimbal_des_;
   }
-  else if (state_ == TRACK)
+  else
   {
     double tf_period = odom2gimbal_des_.header.stamp.toSec() - last_odom2gimbal_des_.header.stamp.toSec();
-    double last_roll, last_pitch, last_yaw, roll, pitch, yaw;
-    quatToRPY(odom2gimbal_des_.transform.rotation, roll, pitch, yaw);
-    quatToRPY(last_odom2gimbal_des_.transform.rotation, last_roll, last_pitch, last_yaw);
-    double yaw_vel = angles::shortest_angular_distance(last_yaw, yaw) / tf_period;
-    double pitch_vel = angles::shortest_angular_distance(last_pitch, pitch) / tf_period;
+    double last_roll_des, last_pitch_des, last_yaw_des;
+    quatToRPY(last_odom2gimbal_des_.transform.rotation, last_roll_des, last_pitch_des, last_yaw_des);
+    double yaw_vel = angles::shortest_angular_distance(last_yaw_des, yaw_des) / tf_period;
+    double pitch_vel = angles::shortest_angular_distance(last_pitch_des, pitch_des) / tf_period;
     gimbal_des_vel_->update(yaw_vel, pitch_vel, tf_period, time);
     yaw_vel_des = gimbal_des_vel_->yaw_vel_des_lp_filter_->output();
     pitch_vel_des = gimbal_des_vel_->pitch_vel_des_lp_filter_->output();
     last_odom2gimbal_des_ = odom2gimbal_des_;
   }
 
-  ctrl_yaw_.setCommand(yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
-  ctrl_pitch_.setCommand(pitch_vel_des + ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
+  quatToRPY(odom2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
+  double yaw_angle_error = angles::shortest_angular_distance(yaw_real, yaw_des);
+  double pitch_angle_error = angles::shortest_angular_distance(pitch_real, pitch_des);
+  pos_pid_pitch_.computeCommand(pitch_angle_error, period);
+  pos_pid_yaw_.computeCommand(yaw_angle_error, period);
+
+  ctrl_yaw_.setCommand(pos_pid_yaw_.getCurrentCmd() + yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
+  ctrl_pitch_.setCommand(pos_pid_pitch_.getCurrentCmd() + pitch_vel_des + ctrl_pitch_.joint_.getVelocity() -
+                         angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
 }
