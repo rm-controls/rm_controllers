@@ -84,10 +84,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   ros::NodeHandle nh_yaw_pos = ros::NodeHandle(controller_nh, "yaw_pos");
   ros::NodeHandle nh_pitch_pos = ros::NodeHandle(controller_nh, "pitch_pos");
-  pos_pid_yaw_pub_.reset(
-      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_yaw_pos, "state", 1));
-  pos_pid_pitch_pub_.reset(
-      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_pitch_pos, "state", 1));
   if (!pos_pid_yaw_.init(nh_yaw_pos) || !pos_pid_pitch_.init(nh_pitch_pos))
     return false;
 
@@ -146,7 +142,10 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
-
+  pos_pid_yaw_pub_.reset(
+      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_yaw_pos, "state", 1));
+  pos_pid_pitch_pub_.reset(
+      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_pitch_pos, "state", 1));
   return true;
 }
 
@@ -434,6 +433,22 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
                             pos_pid_yaw_pub_->msg_.i_clamp, dummy, antiwindup);
       pos_pid_yaw_pub_->msg_.antiwindup = static_cast<char>(antiwindup);
       pos_pid_yaw_pub_->unlockAndPublish();
+    }
+    if (pos_pid_pitch_pub_ && pos_pid_pitch_pub_->trylock())
+    {
+      pos_pid_pitch_pub_->msg_.header.stamp = time;
+      pos_pid_pitch_pub_->msg_.set_point = pitch_des;
+      pos_pid_pitch_pub_->msg_.process_value = pitch_real;
+      pos_pid_pitch_pub_->msg_.process_value_dot = ctrl_pitch_.joint_.getVelocity();
+      pos_pid_pitch_pub_->msg_.error = pitch_angle_error;
+      pos_pid_pitch_pub_->msg_.time_step = period.toSec();
+      pos_pid_pitch_pub_->msg_.command = pos_pid_yaw_.getCurrentCmd();
+      double dummy;
+      bool antiwindup;
+      pos_pid_pitch_.getGains(pos_pid_pitch_pub_->msg_.p, pos_pid_pitch_pub_->msg_.i, pos_pid_pitch_pub_->msg_.d,
+                              pos_pid_pitch_pub_->msg_.i_clamp, dummy, antiwindup);
+      pos_pid_pitch_pub_->msg_.antiwindup = static_cast<char>(antiwindup);
+      pos_pid_pitch_pub_->unlockAndPublish();
     }
   }
   loop_count_++;
