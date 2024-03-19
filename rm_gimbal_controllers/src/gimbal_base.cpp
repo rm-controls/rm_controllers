@@ -43,6 +43,7 @@
 #include <pluginlib/class_list_macros.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf/transform_datatypes.h>
+#include <angles/angles.h>
 
 namespace rm_gimbal_controllers
 {
@@ -142,6 +143,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
+
+  pitch_vel_des_filter_ = std::make_shared<LowPassFilter>(nh_pitch);
+  yaw_vel_des_filter_ = std::make_shared<LowPassFilter>(nh_yaw);
 
   return true;
 }
@@ -384,64 +388,31 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     angular_vel_yaw.z = ctrl_yaw_.joint_.getVelocity();
     angular_vel_pitch.y = ctrl_pitch_.joint_.getVelocity();
   }
-  geometry_msgs::TransformStamped base_frame2des;
-  base_frame2des = robot_state_handle_.lookupTransform(yaw_joint_urdf_->parent_link_name, gimbal_des_frame_id_, time);
-  double roll_des, pitch_des, yaw_des;  // desired position
-  quatToRPY(base_frame2des.transform.rotation, roll_des, pitch_des, yaw_des);
 
   double yaw_vel_des = 0., pitch_vel_des = 0.;
   if (state_ == RATE)
   {
     yaw_vel_des = cmd_gimbal_.rate_yaw;
     pitch_vel_des = cmd_gimbal_.rate_pitch;
+    double roll_real, pitch_real, yaw_real, roll_des, pitch_des, yaw_des;
+    quatToRPY(odom2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
+    quatToRPY(odom2gimbal_des_.transform.rotation, roll_des, pitch_des, yaw_des);
+    yaw_vel_des = angles::shortest_angular_distance(yaw_real, yaw_des) / period.toSec();
+    pitch_vel_des = angles::shortest_angular_distance(pitch_real, pitch_des) / period.toSec();
   }
   else if (state_ == TRACK)
   {
-    geometry_msgs::Point target_pos;
-    geometry_msgs::Vector3 target_vel;
-    bullet_solver_->getSelectedArmorPosAndVel(target_pos, target_vel, data_track_.position, data_track_.velocity,
-                                              data_track_.yaw, data_track_.v_yaw, data_track_.radius_1,
-                                              data_track_.radius_2, data_track_.dz, data_track_.armors_num);
-    tf2::Vector3 target_pos_tf, target_vel_tf;
-
-    try
-    {
-      geometry_msgs::TransformStamped transform = robot_state_handle_.lookupTransform(
-          yaw_joint_urdf_->parent_link_name, data_track_.header.frame_id, data_track_.header.stamp);
-      tf2::doTransform(target_pos, target_pos, transform);
-      tf2::doTransform(target_vel, target_vel, transform);
-      tf2::fromMsg(target_pos, target_pos_tf);
-      tf2::fromMsg(target_vel, target_vel_tf);
-
-      yaw_vel_des = target_pos_tf.cross(target_vel_tf).z() / std::pow((target_pos_tf.length()), 2);
-      transform = robot_state_handle_.lookupTransform(pitch_joint_urdf_->parent_link_name, data_track_.header.frame_id,
-                                                      data_track_.header.stamp);
-      tf2::doTransform(target_pos, target_pos, transform);
-      tf2::doTransform(target_vel, target_vel, transform);
-      tf2::fromMsg(target_pos, target_pos_tf);
-      tf2::fromMsg(target_vel, target_vel_tf);
-      pitch_vel_des = target_pos_tf.cross(target_vel_tf).y() / std::pow((target_pos_tf.length()), 2);
-    }
-    catch (tf2::TransformException& ex)
-    {
-      ROS_WARN("%s", ex.what());
-    }
+    double roll_real, pitch_real, yaw_real, roll_des, pitch_des, yaw_des;
+    quatToRPY(odom2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
+    quatToRPY(odom2gimbal_des_.transform.rotation, roll_des, pitch_des, yaw_des);
+    yaw_vel_des = angles::shortest_angular_distance(yaw_real, yaw_des) / period.toSec();
+    pitch_vel_des = angles::shortest_angular_distance(pitch_real, pitch_des) / period.toSec();
   }
 
-  //  ctrl_yaw_.setCommand(yaw_des, yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
-  //  ctrl_pitch_.setCommand(pitch_des, pitch_vel_des + ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
+  ctrl_yaw_.setCommand(yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
+  ctrl_pitch_.setCommand(pitch_vel_des + ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
-  double resistance_compensation = 0.;
-  if (std::abs(ctrl_yaw_.joint_.getVelocity()) > velocity_saturation_point_)
-    resistance_compensation = (ctrl_yaw_.joint_.getVelocity() > 0 ? 1 : -1) * yaw_resistance_;
-  else if (std::abs(ctrl_yaw_.joint_.getCommand()) > effort_saturation_point_)
-    resistance_compensation = (ctrl_yaw_.joint_.getCommand() > 0 ? 1 : -1) * yaw_resistance_;
-  else
-    resistance_compensation = ctrl_yaw_.joint_.getCommand() * yaw_resistance_ / effort_saturation_point_;
-  ctrl_yaw_.joint_.setCommand(ctrl_yaw_.joint_.getCommand() - k_chassis_vel_ * chassis_vel_->angular_->z() +
-                              yaw_k_v_ * yaw_vel_des + resistance_compensation);
-  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time) + pitch_k_v_ * pitch_vel_des);
 }
 
 double Controller::feedForward(const ros::Time& time)

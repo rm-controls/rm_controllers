@@ -54,6 +54,7 @@
 #include <rm_common/filters/filters.h>
 #include <control_toolbox/pid.h>
 #include <urdf/model.h>
+#include <rm_common/filters/lp_filter.h>
 
 namespace rm_gimbal_controllers
 {
@@ -148,6 +149,7 @@ private:
   bool has_imu_ = true;
   effort_controllers::JointVelocityController ctrl_yaw_, ctrl_pitch_;
   control_toolbox::Pid pos_pid_yaw_, pos_pid_pitch_;
+  std::shared_ptr<LowPassFilter> pitch_vel_des_filter_, yaw_vel_des_filter_;
 
   std::shared_ptr<BulletSolver> bullet_solver_;
 
