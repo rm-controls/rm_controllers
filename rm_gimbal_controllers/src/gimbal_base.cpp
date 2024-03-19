@@ -402,9 +402,11 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     double last_roll, last_pitch, last_yaw, roll, pitch, yaw;
     quatToRPY(odom2gimbal_des_.transform.rotation, roll, pitch, yaw);
     quatToRPY(last_odom2gimbal_des_.transform.rotation, last_roll, last_pitch, last_yaw);
-    yaw_vel_des = angles::shortest_angular_distance(last_yaw, yaw) / tf_period;
-    pitch_vel_des = angles::shortest_angular_distance(last_pitch, pitch) / tf_period;
-    gimbal_des_vel_->update(yaw_vel_des, pitch_vel_des, tf_period, time);
+    double yaw_vel = angles::shortest_angular_distance(last_yaw, yaw) / tf_period;
+    double pitch_vel = angles::shortest_angular_distance(last_pitch, pitch) / tf_period;
+    gimbal_des_vel_->update(yaw_vel, pitch_vel, tf_period, time);
+    yaw_vel_des = gimbal_des_vel_->yaw_vel_des_lp_filter_->output();
+    pitch_vel_des = gimbal_des_vel_->pitch_vel_des_lp_filter_->output();
     last_odom2gimbal_des_ = odom2gimbal_des_;
   }
 
