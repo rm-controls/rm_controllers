@@ -58,6 +58,31 @@
 
 namespace rm_gimbal_controllers
 {
+class GimbalDesVel
+{
+public:
+  GimbalDesVel(ros::NodeHandle& nh)
+  {
+    ros::NodeHandle nh_yaw = ros::NodeHandle(nh, "yaw");
+    ros::NodeHandle nh_pitch = ros::NodeHandle(nh, "pitch");
+    pitch_vel_des_lp_filter_ = std::make_shared<LowPassFilter>(nh_pitch);
+    yaw_vel_des_lp_filter_ = std::make_shared<LowPassFilter>(nh_yaw);
+  }
+  std::shared_ptr<LowPassFilter> pitch_vel_des_lp_filter_, yaw_vel_des_lp_filter_;
+  void update(double yaw_vel_des, double pitch_vel_des, double period, const ros::Time& time)
+  {
+    if (period < 0)
+      return;
+    if (period > 0.1)
+    {
+      pitch_vel_des_lp_filter_->reset();
+      yaw_vel_des_lp_filter_->reset();
+    }
+    pitch_vel_des_lp_filter_->input(pitch_vel_des, time);
+    yaw_vel_des_lp_filter_->input(yaw_vel_des, time);
+  }
+};
+
 class ChassisVel
 {
 public:
@@ -149,9 +174,9 @@ private:
   bool has_imu_ = true;
   effort_controllers::JointVelocityController ctrl_yaw_, ctrl_pitch_;
   control_toolbox::Pid pos_pid_yaw_, pos_pid_pitch_;
-  std::shared_ptr<LowPassFilter> pitch_vel_des_filter_, yaw_vel_des_filter_;
 
   std::shared_ptr<BulletSolver> bullet_solver_;
+  std::shared_ptr<GimbalDesVel> gimbal_des_vel_;
 
   // ROS Interface
   ros::Time last_publish_time_{};
@@ -169,7 +194,7 @@ private:
   bool state_changed_{};
 
   // Transform
-  geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_;
+  geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_, last_odom2gimbal_des_;
 
   // Gravity Compensation
   geometry_msgs::Vector3 mass_origin_;
