@@ -115,8 +115,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     ROS_ERROR("Failed to parse urdf file");
     return false;
   }
-  pitch_joint_urdf_ = urdf.getJoint("pitch");
-  yaw_joint_urdf_ = urdf.getJoint("yaw");
+  pitch_joint_urdf_ = urdf.getJoint(ctrl_pitch_.getJointName());
+  yaw_joint_urdf_ = urdf.getJoint(ctrl_yaw_.getJointName());
   if (!pitch_joint_urdf_)
   {
     ROS_ERROR("Could not find joint pitch in urdf");
@@ -394,11 +394,6 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   {
     yaw_vel_des = cmd_gimbal_.rate_yaw;
     pitch_vel_des = cmd_gimbal_.rate_pitch;
-    double roll_real, pitch_real, yaw_real, roll_des, pitch_des, yaw_des;
-    quatToRPY(odom2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
-    quatToRPY(odom2gimbal_des_.transform.rotation, roll_des, pitch_des, yaw_des);
-    yaw_vel_des = angles::shortest_angular_distance(yaw_real, yaw_des) / period.toSec();
-    pitch_vel_des = angles::shortest_angular_distance(pitch_real, pitch_des) / period.toSec();
   }
   else if (state_ == TRACK)
   {
