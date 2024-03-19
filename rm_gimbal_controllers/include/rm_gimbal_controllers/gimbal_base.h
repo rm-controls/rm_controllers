@@ -177,6 +177,8 @@ private:
 
   std::shared_ptr<BulletSolver> bullet_solver_;
   std::shared_ptr<GimbalDesVel> gimbal_des_vel_;
+  std::unique_ptr<realtime_tools::RealtimePublisher<control_msgs::JointControllerState>> pos_pid_yaw_pub_,
+      pos_pid_pitch_pub_;
 
   // ROS Interface
   ros::Time last_publish_time_{};
@@ -192,6 +194,7 @@ private:
   std::string gimbal_des_frame_id_{}, imu_name_{};
   double publish_rate_{};
   bool state_changed_{};
+  int loop_count_{};
 
   // Transform
   geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_, last_odom2gimbal_des_;
