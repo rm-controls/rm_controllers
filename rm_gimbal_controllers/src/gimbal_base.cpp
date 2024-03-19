@@ -142,10 +142,10 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
-  pid_yaw_pos_state_pub_.reset(
-      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_pid_yaw_pos, "state", 1));
-  pid_pitch_pos_state_pub_.reset(
-      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_pid_pitch_pos, "state", 1));
+  pid_yaw_pos_state_pub_.reset(new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(
+      nh_pid_yaw_pos, "pid_yaw_pos_state", 1));
+  pid_pitch_pos_state_pub_.reset(new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(
+      nh_pid_pitch_pos, "pid_pitch_pos_state", 1));
   return true;
 }
 
@@ -391,23 +391,15 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   double yaw_vel_des = 0., pitch_vel_des = 0.;
   double roll_real, pitch_real, yaw_real, roll_des, pitch_des, yaw_des;
   quatToRPY(odom2gimbal_des_.transform.rotation, roll_des, pitch_des, yaw_des);
-  if (state_ == RATE)
-  {
-    yaw_vel_des = cmd_gimbal_.rate_yaw;
-    pitch_vel_des = cmd_gimbal_.rate_pitch;
-  }
-  else
-  {
-    double tf_period = odom2gimbal_des_.header.stamp.toSec() - last_odom2gimbal_des_.header.stamp.toSec();
-    double last_roll_des, last_pitch_des, last_yaw_des;
-    quatToRPY(last_odom2gimbal_des_.transform.rotation, last_roll_des, last_pitch_des, last_yaw_des);
-    double yaw_vel = angles::shortest_angular_distance(last_yaw_des, yaw_des) / tf_period;
-    double pitch_vel = angles::shortest_angular_distance(last_pitch_des, pitch_des) / tf_period;
-    gimbal_des_vel_->update(yaw_vel, pitch_vel, tf_period, time);
-    yaw_vel_des = gimbal_des_vel_->yaw_vel_des_lp_filter_->output();
-    pitch_vel_des = gimbal_des_vel_->pitch_vel_des_lp_filter_->output();
-    last_odom2gimbal_des_ = odom2gimbal_des_;
-  }
+  double tf_period = odom2gimbal_des_.header.stamp.toSec() - last_odom2gimbal_des_.header.stamp.toSec();
+  double last_roll_des, last_pitch_des, last_yaw_des;
+  quatToRPY(last_odom2gimbal_des_.transform.rotation, last_roll_des, last_pitch_des, last_yaw_des);
+  double yaw_vel = angles::shortest_angular_distance(last_yaw_des, yaw_des) / tf_period;
+  double pitch_vel = angles::shortest_angular_distance(last_pitch_des, pitch_des) / tf_period;
+  gimbal_des_vel_->update(yaw_vel, pitch_vel, tf_period, time);
+  yaw_vel_des = gimbal_des_vel_->yaw_vel_des_lp_filter_->output();
+  pitch_vel_des = gimbal_des_vel_->pitch_vel_des_lp_filter_->output();
+  last_odom2gimbal_des_ = odom2gimbal_des_;
 
   quatToRPY(odom2pitch_.transform.rotation, roll_real, pitch_real, yaw_real);
   double yaw_angle_error = angles::shortest_angular_distance(yaw_real, yaw_des);
@@ -458,6 +450,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
                        angular_vel_yaw.z);
   ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + pitch_k_v_ * pitch_vel_des +
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
+  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
 }
