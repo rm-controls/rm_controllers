@@ -84,6 +84,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   ros::NodeHandle nh_pid_yaw_pos = ros::NodeHandle(controller_nh, "pid_yaw_pos");
   ros::NodeHandle nh_pid_pitch_pos = ros::NodeHandle(controller_nh, "pid_pitch_pos");
+  if (!nh_pid_yaw_pos.getParam("max_output", max_pid_yaw_pos_output_) ||
+      !nh_pid_pitch_pos.getParam("max_output", max_pid_pitch_pos_output_))
+    ROS_ERROR("Pid pos max output has not defined");
   if (!pid_yaw_pos_.init(nh_pid_yaw_pos) || !pid_pitch_pos_.init(nh_pid_pitch_pos))
     return false;
 
@@ -388,6 +391,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     angular_vel_pitch.y = ctrl_pitch_.joint_.getVelocity();
   }
 
+  // compute gimbal vel des
   double yaw_vel_des = 0., pitch_vel_des = 0.;
   double roll_real, pitch_real, yaw_real, roll_des, pitch_des, yaw_des;
   quatToRPY(odom2gimbal_des_.transform.rotation, roll_des, pitch_des, yaw_des);
@@ -406,6 +410,13 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   double pitch_angle_error = angles::shortest_angular_distance(pitch_real, pitch_des);
   pid_pitch_pos_.computeCommand(pitch_angle_error, period);
   pid_yaw_pos_.computeCommand(yaw_angle_error, period);
+
+  // limit feedforward output
+  if (std::abs(pitch_vel_des) > max_pid_pitch_pos_output_)
+    pitch_vel_des = pitch_vel_des > 0. ? max_pid_pitch_pos_output_ : -max_pid_pitch_pos_output_;
+  if (std::abs(pid_pitch_pos_.getCurrentCmd()) > max_pid_yaw_pos_output_)
+    pid_pitch_pos_.setCurrentCmd(pid_pitch_pos_.getCurrentCmd() > 0. ? max_pid_yaw_pos_output_ :
+                                                                       -max_pid_yaw_pos_output_);
 
   // publish state
   if (loop_count_ % 10 == 0)

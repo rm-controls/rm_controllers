@@ -174,6 +174,7 @@ private:
   bool has_imu_ = true;
   effort_controllers::JointVelocityController ctrl_yaw_, ctrl_pitch_;
   control_toolbox::Pid pid_yaw_pos_, pid_pitch_pos_;
+  double max_pid_yaw_pos_output_, max_pid_pitch_pos_output_;
 
   std::shared_ptr<BulletSolver> bullet_solver_;
   std::shared_ptr<GimbalDesVel> gimbal_des_vel_;
