@@ -43,7 +43,6 @@
 #include <pluginlib/class_list_macros.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <tf/transform_datatypes.h>
-#include <angles/angles.h>
 
 namespace rm_gimbal_controllers
 {
@@ -84,15 +83,19 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   ros::NodeHandle nh_pid_yaw_pos = ros::NodeHandle(controller_nh, "pid_yaw_pos");
   ros::NodeHandle nh_pid_pitch_pos = ros::NodeHandle(controller_nh, "pid_pitch_pos");
-  if (!nh_pid_yaw_pos.getParam("max_output", max_pid_yaw_pos_output_) ||
-      !nh_pid_pitch_pos.getParam("max_output", max_pid_pitch_pos_output_))
-    ROS_ERROR("Pid pos max output has not defined");
-  if (!pid_yaw_pos_.init(nh_pid_yaw_pos) || !pid_pitch_pos_.init(nh_pid_pitch_pos))
-    return false;
+
+  config_ = { .max_pid_yaw_pos_output = getParam(nh_pid_yaw_pos, "max_output", 0.),
+              .max_pid_pitch_pos_output = getParam(nh_pid_pitch_pos, "max_output", 0.) };
+  config_rt_buffer_.initRT(config_);
+  d_srv_ = new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>(controller_nh);
+  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>::CallbackType cb =
+      [this](auto&& PH1, auto&& PH2) { reconfigCB(PH1, PH2); };
+  d_srv_->setCallback(cb);
 
   hardware_interface::EffortJointInterface* effort_joint_interface =
       robot_hw->get<hardware_interface::EffortJointInterface>();
-  if (!ctrl_yaw_.init(effort_joint_interface, nh_yaw) || !ctrl_pitch_.init(effort_joint_interface, nh_pitch))
+  if (!ctrl_yaw_.init(effort_joint_interface, nh_yaw) || !ctrl_pitch_.init(effort_joint_interface, nh_pitch) ||
+      !pid_yaw_pos_.init(nh_pid_yaw_pos) || !pid_pitch_pos_.init(nh_pid_pitch_pos))
     return false;
 
   robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
@@ -162,6 +165,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
   cmd_gimbal_ = *cmd_rt_buffer_.readFromRT();
   data_track_ = *track_rt_buffer_.readFromNonRT();
+  config_ = *config_rt_buffer_.readFromRT();
   try
   {
     odom2pitch_ = robot_state_handle_.lookupTransform("odom", pitch_joint_urdf_->child_link_name, time);
@@ -412,11 +416,11 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   pid_yaw_pos_.computeCommand(yaw_angle_error, period);
 
   // limit feedforward output
-  if (std::abs(pitch_vel_des) > max_pid_pitch_pos_output_)
-    pitch_vel_des = pitch_vel_des > 0. ? max_pid_pitch_pos_output_ : -max_pid_pitch_pos_output_;
-  if (std::abs(pid_pitch_pos_.getCurrentCmd()) > max_pid_yaw_pos_output_)
-    pid_pitch_pos_.setCurrentCmd(pid_pitch_pos_.getCurrentCmd() > 0. ? max_pid_yaw_pos_output_ :
-                                                                       -max_pid_yaw_pos_output_);
+  if (std::abs(pitch_vel_des) > config_.max_pid_pitch_pos_output)
+    pitch_vel_des = pitch_vel_des > 0. ? config_.max_pid_pitch_pos_output : -config_.max_pid_pitch_pos_output;
+  if (std::abs(pid_pitch_pos_.getCurrentCmd()) > config_.max_pid_yaw_pos_output)
+    pid_pitch_pos_.setCurrentCmd(pid_pitch_pos_.getCurrentCmd() > 0. ? config_.max_pid_yaw_pos_output :
+                                                                       -config_.max_pid_yaw_pos_output);
 
   // publish state
   if (loop_count_ % 10 == 0)
@@ -514,6 +518,23 @@ void Controller::trackCB(const rm_msgs::TrackDataConstPtr& msg)
   if (msg->id == 0)
     return;
   track_rt_buffer_.writeFromNonRT(*msg);
+}
+
+void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t /*unused*/)
+{
+  ROS_INFO("[Gimbal Base] Dynamic params change");
+  if (!dynamic_reconfig_initialized_)
+  {
+    GimbalConfig init_config = *config_rt_buffer_.readFromNonRT();  // config init use yaml
+    config.max_pid_yaw_pos_output = init_config.max_pid_yaw_pos_output;
+    config.max_pid_pitch_pos_output = init_config.max_pid_pitch_pos_output;
+    dynamic_reconfig_initialized_ = true;
+  }
+  GimbalConfig config_non_rt{
+    .max_pid_yaw_pos_output = config.max_pid_yaw_pos_output,
+    .max_pid_pitch_pos_output = config.max_pid_pitch_pos_output,
+  };
+  config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 
 }  // namespace rm_gimbal_controllers

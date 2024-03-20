@@ -55,9 +55,16 @@
 #include <control_toolbox/pid.h>
 #include <urdf/model.h>
 #include <rm_common/filters/lp_filter.h>
+#include <rm_gimbal_controllers/GimbalBaseConfig.h>
+#include <dynamic_reconfigure/server.h>
 
 namespace rm_gimbal_controllers
 {
+struct GimbalConfig
+{
+  double max_pid_yaw_pos_output, max_pid_pitch_pos_output;
+};
+
 class GimbalDesVel
 {
 public:
@@ -168,13 +175,13 @@ private:
   void updateChassisVel();
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
+  void reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t);
 
   rm_control::RobotStateHandle robot_state_handle_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
   bool has_imu_ = true;
   effort_controllers::JointVelocityController ctrl_yaw_, ctrl_pitch_;
   control_toolbox::Pid pid_yaw_pos_, pid_pitch_pos_;
-  double max_pid_yaw_pos_output_, max_pid_pitch_pos_output_;
 
   std::shared_ptr<BulletSolver> bullet_solver_;
   std::shared_ptr<GimbalDesVel> gimbal_des_vel_;
@@ -216,6 +223,11 @@ private:
   // Chassis
   double k_chassis_vel_;
   std::shared_ptr<ChassisVel> chassis_vel_;
+
+  bool dynamic_reconfig_initialized_{};
+  GimbalConfig config_{};
+  realtime_tools::RealtimeBuffer<GimbalConfig> config_rt_buffer_;
+  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>* d_srv_{};
 
   enum
   {
