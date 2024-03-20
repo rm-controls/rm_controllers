@@ -416,11 +416,11 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   pid_yaw_pos_.computeCommand(yaw_angle_error, period);
 
   // limit feedforward output
-  if (std::abs(pitch_vel_des) > config_.max_pid_pitch_pos_output)
-    pitch_vel_des = pitch_vel_des > 0. ? config_.max_pid_pitch_pos_output : -config_.max_pid_pitch_pos_output;
-  if (std::abs(pid_pitch_pos_.getCurrentCmd()) > config_.max_pid_yaw_pos_output)
-    pid_pitch_pos_.setCurrentCmd(pid_pitch_pos_.getCurrentCmd() > 0. ? config_.max_pid_yaw_pos_output :
-                                                                       -config_.max_pid_yaw_pos_output);
+  //  if (std::abs(pitch_vel_des) > config_.max_pid_pitch_pos_output)
+  //    pitch_vel_des = pitch_vel_des > 0. ? config_.max_pid_pitch_pos_output : -config_.max_pid_pitch_pos_output;
+  //  if (std::abs(pid_pitch_pos_.getCurrentCmd()) > config_.max_pid_yaw_pos_output)
+  //    pid_pitch_pos_.setCurrentCmd(pid_pitch_pos_.getCurrentCmd() > 0. ? config_.max_pid_yaw_pos_output :
+  //                                                                       -config_.max_pid_yaw_pos_output);
 
   // publish state
   if (loop_count_ % 10 == 0)
