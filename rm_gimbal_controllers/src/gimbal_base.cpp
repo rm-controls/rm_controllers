@@ -75,8 +75,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
-  yaw_k_v_ = getParam(nh_yaw, "k_v", 0.);
-  pitch_k_v_ = getParam(nh_pitch, "k_v", 0.);
 
   ros::NodeHandle gimbal_des_vel_nh(controller_nh, "gimbal_des_vel");
   gimbal_des_vel_ = std::make_shared<GimbalDesVel>(gimbal_des_vel_nh);
@@ -85,7 +83,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle nh_pid_pitch_pos = ros::NodeHandle(controller_nh, "pid_pitch_pos");
 
   config_ = { .max_pid_yaw_pos_output = getParam(nh_pid_yaw_pos, "max_output", 0.),
-              .max_pid_pitch_pos_output = getParam(nh_pid_pitch_pos, "max_output", 0.) };
+              .max_pid_pitch_pos_output = getParam(nh_pid_pitch_pos, "max_output", 0.),
+              .yaw_k_v_ = getParam(nh_pitch, "k_v", 0.),
+              .pitch_k_v_ = getParam(nh_yaw, "k_v", 0.) };
   config_rt_buffer_.initRT(config_);
   d_srv_ = new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>::CallbackType cb =
@@ -461,9 +461,9 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   loop_count_++;
 
-  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() + yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() -
+  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() + config_.yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() -
                        angular_vel_yaw.z);
-  ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + pitch_k_v_ * pitch_vel_des +
+  ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + config_.pitch_k_v_ * pitch_vel_des +
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
   ctrl_yaw_.update(time, period);

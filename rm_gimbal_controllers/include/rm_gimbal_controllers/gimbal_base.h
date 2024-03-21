@@ -63,6 +63,8 @@ namespace rm_gimbal_controllers
 struct GimbalConfig
 {
   double max_pid_yaw_pos_output, max_pid_pitch_pos_output;
+  // Input feedforward
+  double yaw_k_v_, pitch_k_v_;
 };
 
 class GimbalDesVel
@@ -211,10 +213,6 @@ private:
   geometry_msgs::Vector3 mass_origin_;
   double gravity_;
   bool enable_gravity_compensation_;
-
-  // Input feedforward
-  double yaw_k_v_;
-  double pitch_k_v_;
 
   // Resistance compensation
   double yaw_resistance_;
