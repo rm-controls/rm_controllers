@@ -528,11 +528,15 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     GimbalConfig init_config = *config_rt_buffer_.readFromNonRT();  // config init use yaml
     config.max_pid_yaw_pos_output = init_config.max_pid_yaw_pos_output;
     config.max_pid_pitch_pos_output = init_config.max_pid_pitch_pos_output;
+    config.yaw_k_v_ = init_config.yaw_k_v_;
+    config.pitch_k_v_ = init_config.pitch_k_v_;
     dynamic_reconfig_initialized_ = true;
   }
   GimbalConfig config_non_rt{
     .max_pid_yaw_pos_output = config.max_pid_yaw_pos_output,
     .max_pid_pitch_pos_output = config.max_pid_pitch_pos_output,
+    .yaw_k_v_ = config.yaw_k_v_,
+    .pitch_k_v_ = config.pitch_k_v_,
   };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
