@@ -46,13 +46,14 @@
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
+#include <rm_msgs/TrackData.h>
 
 namespace rm_gimbal_controllers
 {
 struct Config
 {
   double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
-      resistance_coff_qd_30, g, delay, dt, timeout;
+      resistance_coff_qd_30, g, delay, dt, timeout, angle1, angle2;
 };
 
 class BulletSolver
@@ -85,6 +86,9 @@ private:
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>* d_srv_{};
+  rm_msgs::TrackData switch_target_;
+  ros::NodeHandle controller_nh_;
+  ros::Publisher switch_target_pub = controller_nh_.advertise<rm_msgs::TrackData>("IsSwitchTarget", 100);
   Config config_{};
   double max_track_target_vel_;
   bool dynamic_reconfig_initialized_{};
