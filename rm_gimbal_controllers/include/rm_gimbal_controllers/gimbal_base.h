@@ -41,21 +41,20 @@
 #include <effort_controllers/joint_velocity_controller.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <rm_common/hardware_interface/robot_state_interface.h>
 #include <hardware_interface/imu_sensor_interface.h>
-#include <realtime_tools/realtime_publisher.h>
+#include <rm_common/hardware_interface/robot_state_interface.h>
+#include <rm_common/filters/filters.h>
 #include <rm_msgs/GimbalCmd.h>
 #include <rm_msgs/TrackData.h>
 #include <rm_msgs/GimbalDesError.h>
-#include <dynamic_reconfigure/server.h>
+#include <rm_gimbal_controllers/GimbalBaseConfig.h>
 #include <rm_gimbal_controllers/bullet_solver.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <Eigen/Eigen>
-#include <rm_common/filters/filters.h>
 #include <control_toolbox/pid.h>
 #include <urdf/model.h>
-#include <rm_gimbal_controllers/GimbalBaseConfig.h>
 #include <dynamic_reconfigure/server.h>
+#include <realtime_tools/realtime_publisher.h>
 
 namespace rm_gimbal_controllers
 {
