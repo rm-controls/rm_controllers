@@ -54,7 +54,6 @@
 #include <rm_common/filters/filters.h>
 #include <control_toolbox/pid.h>
 #include <urdf/model.h>
-#include <rm_common/filters/lp_filter.h>
 #include <rm_gimbal_controllers/GimbalBaseConfig.h>
 #include <dynamic_reconfigure/server.h>
 
@@ -65,31 +64,6 @@ struct GimbalConfig
   double max_pid_yaw_pos_output, max_pid_pitch_pos_output;
   // Input feedforward
   double yaw_k_v_, pitch_k_v_;
-};
-
-class GimbalDesVel
-{
-public:
-  GimbalDesVel(ros::NodeHandle& nh)
-  {
-    ros::NodeHandle nh_yaw = ros::NodeHandle(nh, "yaw");
-    ros::NodeHandle nh_pitch = ros::NodeHandle(nh, "pitch");
-    pitch_vel_des_lp_filter_ = std::make_shared<LowPassFilter>(nh_pitch);
-    yaw_vel_des_lp_filter_ = std::make_shared<LowPassFilter>(nh_yaw);
-  }
-  std::shared_ptr<LowPassFilter> pitch_vel_des_lp_filter_, yaw_vel_des_lp_filter_;
-  void update(double yaw_vel_des, double pitch_vel_des, double period, const ros::Time& time)
-  {
-    if (period < 0)
-      return;
-    if (period > 0.1)
-    {
-      pitch_vel_des_lp_filter_->reset();
-      yaw_vel_des_lp_filter_->reset();
-    }
-    pitch_vel_des_lp_filter_->input(pitch_vel_des, time);
-    yaw_vel_des_lp_filter_->input(yaw_vel_des, time);
-  }
 };
 
 class ChassisVel
@@ -186,7 +160,6 @@ private:
   control_toolbox::Pid pid_yaw_pos_, pid_pitch_pos_;
 
   std::shared_ptr<BulletSolver> bullet_solver_;
-  std::shared_ptr<GimbalDesVel> gimbal_des_vel_;
 
   // ROS Interface
   ros::Time last_publish_time_{};
