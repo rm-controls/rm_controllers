@@ -61,7 +61,6 @@ namespace rm_gimbal_controllers
 {
 struct GimbalConfig
 {
-  double max_pid_yaw_pos_output, max_pid_pitch_pos_output;
   // Input feedforward
   double yaw_k_v_, pitch_k_v_;
 };

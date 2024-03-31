@@ -78,10 +78,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle nh_pid_yaw_pos = ros::NodeHandle(controller_nh, "pid_yaw_pos");
   ros::NodeHandle nh_pid_pitch_pos = ros::NodeHandle(controller_nh, "pid_pitch_pos");
 
-  config_ = { .max_pid_yaw_pos_output = getParam(nh_pid_yaw_pos, "max_output", 0.),
-              .max_pid_pitch_pos_output = getParam(nh_pid_pitch_pos, "max_output", 0.),
-              .yaw_k_v_ = getParam(nh_pitch, "k_v", 0.),
-              .pitch_k_v_ = getParam(nh_yaw, "k_v", 0.) };
+  config_ = { .yaw_k_v_ = getParam(nh_pitch, "k_v", 0.), .pitch_k_v_ = getParam(nh_yaw, "k_v", 0.) };
   config_rt_buffer_.initRT(config_);
   d_srv_ = new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>::CallbackType cb =
@@ -540,15 +537,11 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
   if (!dynamic_reconfig_initialized_)
   {
     GimbalConfig init_config = *config_rt_buffer_.readFromNonRT();  // config init use yaml
-    config.max_pid_yaw_pos_output = init_config.max_pid_yaw_pos_output;
-    config.max_pid_pitch_pos_output = init_config.max_pid_pitch_pos_output;
     config.yaw_k_v_ = init_config.yaw_k_v_;
     config.pitch_k_v_ = init_config.pitch_k_v_;
     dynamic_reconfig_initialized_ = true;
   }
   GimbalConfig config_non_rt{
-    .max_pid_yaw_pos_output = config.max_pid_yaw_pos_output,
-    .max_pid_pitch_pos_output = config.max_pid_pitch_pos_output,
     .yaw_k_v_ = config.yaw_k_v_,
     .pitch_k_v_ = config.pitch_k_v_,
   };
