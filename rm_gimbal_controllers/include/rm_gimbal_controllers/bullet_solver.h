@@ -46,7 +46,6 @@
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
-#include <rm_msgs/TrackData.h>
 #include <rm_msgs/GimbalDesError.h>
 
 namespace rm_gimbal_controllers
@@ -86,12 +85,9 @@ public:
 private:
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> is_shoot_after_delay_pub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>* d_srv_{};
-  rm_msgs::TrackData switch_target_;
-  ros::NodeHandle controller_nh_;
-  ros::Publisher switch_target_pub = controller_nh_.advertise<rm_msgs::TrackData>("IsSwitchTarget", 100);
   Config config_{};
   double max_track_target_vel_;
   bool dynamic_reconfig_initialized_{};

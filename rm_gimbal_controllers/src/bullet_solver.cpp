@@ -82,7 +82,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_desire", 10));
   path_real_pub_.reset(
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_real", 10));
-  pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "allow_shoot", 10));
+  is_shoot_after_delay_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "allow_shoot", 10));
 }
 
 double BulletSolver::getResistanceCoefficient(double bullet_speed) const
@@ -125,7 +125,6 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
                                                   (-acos(r / target_rho) + config_.angle1 + config_.angle2) *
                                                       std::abs(v_yaw) / max_track_target_vel_ :
                                               config_.angle2;
-  bool switch_target = 0;
   is_shoot_after_delay_ = 1.;
   if (((((yaw + v_yaw * (rough_fly_time + config_.delay)) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
        (((yaw + v_yaw * (rough_fly_time + config_.delay)) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
@@ -137,11 +136,7 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
     selected_armor_ = v_yaw > 0. ? -1 : 1;
     r = armors_num == 4 ? r2 : r1;
     z = armors_num == 4 ? pos.z + dz : pos.z;
-    switch_target = 1;
   }
-  switch_target_.yaw = switch_armor_angle;
-  switch_target_.id = switch_target;
-  switch_target_pub.publish(switch_target_);
   int count{};
   double error = 999;
   if (track_target_)
@@ -227,11 +222,11 @@ void BulletSolver::getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, ge
 
 void BulletSolver::isShootAfterDelay(const ros::Time& time)
 {
-  if (pub_->trylock())
+  if (is_shoot_after_delay_pub_->trylock())
   {
-    pub_->msg_.stamp = time;
-    pub_->msg_.error = is_shoot_after_delay_;
-    pub_->unlockAndPublish();
+    is_shoot_after_delay_pub_->msg_.stamp = time;
+    is_shoot_after_delay_pub_->msg_.error = is_shoot_after_delay_;
+    is_shoot_after_delay_pub_->unlockAndPublish();
   }
 }
 
