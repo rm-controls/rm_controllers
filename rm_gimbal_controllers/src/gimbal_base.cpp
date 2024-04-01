@@ -305,6 +305,7 @@ void Controller::track(const ros::Time& time)
       error_pub_->unlockAndPublish();
     }
     bullet_solver_->bulletModelPub(odom2pitch_, time);
+    bullet_solver_->isShootAfterDelay(time);
     last_publish_time_ = time;
   }
 

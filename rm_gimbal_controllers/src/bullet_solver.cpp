@@ -82,6 +82,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_desire", 10));
   path_real_pub_.reset(
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_real", 10));
+  pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "allow_shoot", 10));
 }
 
 double BulletSolver::getResistanceCoefficient(double bullet_speed) const
@@ -127,7 +128,9 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   bool switch_target = 0;
   if ((((yaw + v_yaw * (rough_fly_time + config_.delay)) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
       (((yaw + v_yaw * (rough_fly_time + config_.delay)) < output_yaw_ - switch_armor_angle) && v_yaw < 0.))
-    is_shoot_after_delay_ = false;
+    is_shoot_after_delay_ = 0.;
+  else
+    is_shoot_after_delay_ = 1.;
   if ((((yaw + v_yaw * rough_fly_time) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
       (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.))
   {
@@ -222,9 +225,14 @@ void BulletSolver::getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, ge
   }
 }
 
-bool BulletSolver::isShootAfterDelay()
+void BulletSolver::isShootAfterDelay(const ros::Time& time)
 {
-  return is_shoot_after_delay_;
+  if (pub_->trylock())
+  {
+    pub_->msg_.stamp = time;
+    pub_->msg_.error = is_shoot_after_delay_;
+    pub_->unlockAndPublish();
+  }
 }
 
 void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time)
