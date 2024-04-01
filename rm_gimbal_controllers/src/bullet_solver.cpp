@@ -125,6 +125,9 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
                                                       std::abs(v_yaw) / max_track_target_vel_ :
                                               config_.angle2;
   bool switch_target = 0;
+  if ((((yaw + v_yaw * (rough_fly_time + config_.delay)) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
+      (((yaw + v_yaw * (rough_fly_time + config_.delay)) < output_yaw_ - switch_armor_angle) && v_yaw < 0.))
+    is_shoot_after_delay_ = false;
   if ((((yaw + v_yaw * rough_fly_time) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
       (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.))
   {
@@ -217,6 +220,11 @@ void BulletSolver::getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, ge
     armor_pos.z = z;
     armor_vel = vel;
   }
+}
+
+bool BulletSolver::isShootAfterDelay()
+{
+  return is_shoot_after_delay_;
 }
 
 void BulletSolver::bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time)

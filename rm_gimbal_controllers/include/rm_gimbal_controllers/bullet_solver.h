@@ -77,6 +77,7 @@ public:
   void getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
                                  geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
                                  double r1, double r2, double dz, int armors_num);
+  bool isShootAfterDelay();
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
   ~BulletSolver() = default;
@@ -96,6 +97,7 @@ private:
   double bullet_speed_{}, resistance_coff_{};
   int selected_armor_;
   bool track_target_;
+  bool is_shoot_after_delay_;
 
   geometry_msgs::Point target_pos_{};
   double fly_time_;
