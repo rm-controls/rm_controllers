@@ -67,7 +67,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   velocity_saturation_point_ = getParam(resistance_compensation_nh, "velocity_saturation_point", 0.);
   effort_saturation_point_ = getParam(resistance_compensation_nh, "effort_saturation_point", 0.);
 
-  k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.);
   ros::NodeHandle chassis_vel_nh(controller_nh, "chassis_vel");
   chassis_vel_ = std::make_shared<ChassisVel>(chassis_vel_nh);
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
@@ -78,7 +77,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle nh_pid_yaw_pos = ros::NodeHandle(controller_nh, "pid_yaw_pos");
   ros::NodeHandle nh_pid_pitch_pos = ros::NodeHandle(controller_nh, "pid_pitch_pos");
 
-  config_ = { .yaw_k_v_ = getParam(nh_pitch, "k_v", 0.), .pitch_k_v_ = getParam(nh_yaw, "k_v", 0.) };
+  config_ = { .yaw_k_v_ = getParam(nh_yaw, "k_v", 0.),
+              .pitch_k_v_ = getParam(nh_pitch, "k_v", 0.),
+              .k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.) };
   config_rt_buffer_.initRT(config_);
   d_srv_ = new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>::CallbackType cb =
@@ -472,8 +473,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   loop_count_++;
 
-  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() + config_.yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() -
-                       angular_vel_yaw.z);
+  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
+                       config_.yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
   ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + config_.pitch_k_v_ * pitch_vel_des +
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
@@ -539,12 +540,12 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     GimbalConfig init_config = *config_rt_buffer_.readFromNonRT();  // config init use yaml
     config.yaw_k_v_ = init_config.yaw_k_v_;
     config.pitch_k_v_ = init_config.pitch_k_v_;
+    config.k_chassis_vel_ = init_config.k_chassis_vel_;
     dynamic_reconfig_initialized_ = true;
   }
-  GimbalConfig config_non_rt{
-    .yaw_k_v_ = config.yaw_k_v_,
-    .pitch_k_v_ = config.pitch_k_v_,
-  };
+  GimbalConfig config_non_rt{ .yaw_k_v_ = config.yaw_k_v_,
+                              .pitch_k_v_ = config.pitch_k_v_,
+                              .k_chassis_vel_ = config.k_chassis_vel_ };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 

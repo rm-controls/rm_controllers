@@ -60,8 +60,8 @@ namespace rm_gimbal_controllers
 {
 struct GimbalConfig
 {
-  // Input feedforward
-  double yaw_k_v_, pitch_k_v_;
+  // feedforward
+  double yaw_k_v_, pitch_k_v_, k_chassis_vel_;
 };
 
 class ChassisVel
@@ -190,7 +190,6 @@ private:
   double velocity_saturation_point_, effort_saturation_point_;
 
   // Chassis
-  double k_chassis_vel_;
   std::shared_ptr<ChassisVel> chassis_vel_;
 
   bool dynamic_reconfig_initialized_{};
