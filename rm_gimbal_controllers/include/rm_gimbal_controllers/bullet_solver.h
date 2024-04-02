@@ -46,14 +46,13 @@
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
-#include <rm_msgs/GimbalDesError.h>
 
 namespace rm_gimbal_controllers
 {
 struct Config
 {
   double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
-      resistance_coff_qd_30, g, delay, dt, timeout, angle1, angle2;
+      resistance_coff_qd_30, g, delay, dt, timeout;
 };
 
 class BulletSolver
@@ -77,7 +76,6 @@ public:
   void getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
                                  geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
                                  double r1, double r2, double dz, int armors_num);
-  void isShootAfterDelay(const ros::Time& time);
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
   ~BulletSolver() = default;
@@ -85,7 +83,6 @@ public:
 private:
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> is_shoot_after_delay_pub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>* d_srv_{};
   Config config_{};
@@ -95,7 +92,6 @@ private:
   double bullet_speed_{}, resistance_coff_{};
   int selected_armor_;
   bool track_target_;
-  double is_shoot_after_delay_ = 1.;
 
   geometry_msgs::Point target_pos_{};
   double fly_time_;

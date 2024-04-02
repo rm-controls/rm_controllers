@@ -52,9 +52,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .g = getParam(controller_nh, "g", 0.),
               .delay = getParam(controller_nh, "delay", 0.),
               .dt = getParam(controller_nh, "dt", 0.),
-              .timeout = getParam(controller_nh, "timeout", 0.),
-              .angle1 = getParam(controller_nh, "angle1", 15.),
-              .angle2 = getParam(controller_nh, "angle2", 15.) };
+              .timeout = getParam(controller_nh, "timeout", 0.) };
   max_track_target_vel_ = getParam(controller_nh, "max_track_target_vel", 5.0);
   config_rt_buffer_.initRT(config_);
 
@@ -82,7 +80,6 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_desire", 10));
   path_real_pub_.reset(
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_real", 10));
-  is_shoot_after_delay_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "allow_shoot", 10));
 }
 
 double BulletSolver::getResistanceCoefficient(double bullet_speed) const
@@ -119,17 +116,10 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   double r = r1;
   double z = pos.z;
   track_target_ = std::abs(v_yaw) < max_track_target_vel_;
-  config_.angle1 = config_.angle1 * M_PI / 180;
-  config_.angle2 = config_.angle2 * M_PI / 180;
-  double switch_armor_angle = track_target_ ? acos(r / target_rho) - config_.angle1 +
-                                                  (-acos(r / target_rho) + config_.angle1 + config_.angle2) *
-                                                      std::abs(v_yaw) / max_track_target_vel_ :
-                                              config_.angle2;
-  is_shoot_after_delay_ = 1.;
-  if (((((yaw + v_yaw * (rough_fly_time + config_.delay)) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
-       (((yaw + v_yaw * (rough_fly_time + config_.delay)) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
-      track_target_)
-    is_shoot_after_delay_ = 0.;
+  double switch_armor_angle = track_target_ ?
+                                  acos(r / target_rho) - M_PI / 12 +
+                                      (-acos(r / target_rho) + M_PI / 6) * std::abs(v_yaw) / max_track_target_vel_ :
+                                  M_PI / 12;
   if ((((yaw + v_yaw * rough_fly_time) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
       (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.))
   {
@@ -217,16 +207,6 @@ void BulletSolver::getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, ge
     armor_pos = pos;
     armor_pos.z = z;
     armor_vel = vel;
-  }
-}
-
-void BulletSolver::isShootAfterDelay(const ros::Time& time)
-{
-  if (is_shoot_after_delay_pub_->trylock())
-  {
-    is_shoot_after_delay_pub_->msg_.stamp = time;
-    is_shoot_after_delay_pub_->msg_.error = is_shoot_after_delay_;
-    is_shoot_after_delay_pub_->unlockAndPublish();
   }
 }
 
@@ -336,8 +316,6 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.delay = init_config.delay;
     config.dt = init_config.dt;
     config.timeout = init_config.timeout;
-    config.angle1 = init_config.angle1;
-    config.angle2 = init_config.angle2;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{ .resistance_coff_qd_10 = config.resistance_coff_qd_10,
@@ -348,9 +326,7 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .g = config.g,
                         .delay = config.delay,
                         .dt = config.dt,
-                        .timeout = config.timeout,
-                        .angle1 = config.angle1,
-                        .angle2 = config.angle2 };
+                        .timeout = config.timeout };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 }  // namespace rm_gimbal_controllers

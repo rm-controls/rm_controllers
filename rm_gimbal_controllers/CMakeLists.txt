@@ -24,11 +24,10 @@ find_package(catkin REQUIRED
         visualization_msgs
         dynamic_reconfigure
         angles
-)
+        )
 
 generate_dynamic_reconfigure_options(
         cfg/BulletSolver.cfg
-        cfg/GimbalBase.cfg
 )
 
 ###################################
