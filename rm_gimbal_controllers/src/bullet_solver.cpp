@@ -359,7 +359,7 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.dt = init_config.dt;
     config.timeout = init_config.timeout;
     config.time_interrupt_ = init_config.time_interrupt_;
-    config.timeout = init_config.time_over_;
+    config.time_over_ = init_config.time_over_;
     config.angle1 = init_config.angle1;
     config.angle2 = init_config.angle2;
     dynamic_reconfig_initialized_ = true;
