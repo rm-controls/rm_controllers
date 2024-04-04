@@ -55,7 +55,7 @@ namespace rm_gimbal_controllers
 struct Config
 {
   double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
-      resistance_coff_qd_30, g, delay, dt, timeout, time_interrupt_, time_over_;
+      resistance_coff_qd_30, g, delay, dt, timeout, time_interrupt_, time_over_, angle1, angle2;
 };
 
 class BulletSolver

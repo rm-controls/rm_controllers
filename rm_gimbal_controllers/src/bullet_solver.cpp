@@ -54,7 +54,9 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .dt = getParam(controller_nh, "dt", 0.),
               .timeout = getParam(controller_nh, "timeout", 0.),
               .time_interrupt_ = getParam(controller_nh, "time_interrupt", 0.0),
-              .time_over_ = getParam(controller_nh, "time_over", 0.0) };
+              .time_over_ = getParam(controller_nh, "time_over", 0.0),
+              .angle1 = getParam(controller_nh, "angle1", 40.0),
+              .angle2 = getParam(controller_nh, "angle2", 2.0) };
   max_track_target_vel_ = getParam(controller_nh, "max_track_target_vel", 5.0);
   config_rt_buffer_.initRT(config_);
 
@@ -358,6 +360,8 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.timeout = init_config.timeout;
     config.time_interrupt_ = init_config.time_interrupt_;
     config.timeout = init_config.time_over_;
+    config.angle1 = init_config.angle1;
+    config.angle2 = init_config.angle2;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{ .resistance_coff_qd_10 = config.resistance_coff_qd_10,
@@ -370,7 +374,9 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .dt = config.dt,
                         .timeout = config.timeout,
                         .time_interrupt_ = config.time_interrupt_,
-                        .time_over_ = config.time_over_ };
+                        .time_over_ = config.time_over_,
+                        .angle1 = config.angle1,
+                        .angle2 = config.angle2 };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 }  // namespace rm_gimbal_controllers
