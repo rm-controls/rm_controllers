@@ -53,8 +53,8 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .delay = getParam(controller_nh, "delay", 0.),
               .dt = getParam(controller_nh, "dt", 0.),
               .timeout = getParam(controller_nh, "timeout", 0.),
-              .time_interrupt_ = getParam(controller_nh, "time_interrupt", 2.0),
-              .time_over_ = getParam(controller_nh, "time_over", 2.0) };
+              .time_interrupt_ = getParam(controller_nh, "time_interrupt", 0.0),
+              .time_over_ = getParam(controller_nh, "time_over", 0.0) };
   max_track_target_vel_ = getParam(controller_nh, "max_track_target_vel", 5.0);
   config_rt_buffer_.initRT(config_);
 
@@ -325,10 +325,10 @@ void BulletSolver::IsVisionTargetChangedCallback(const std_msgs::Bool data)
 
 void BulletSolver::IgnoreErrorToShoot(const ros::Time& time)
 {
-  if (is_in_delay_before_switch_ && !state_changed_)
+  if ((ros::Time::now() - switch_angle_time_).toSec() < ros::Duration(config_.time_interrupt_).toSec())
     is_shoot_ignore_error_ = -1.0;
-  else if ((ros::Time::now() - switch_angle_time_).toSec() < ros::Duration(config_.time_interrupt_).toSec())
-    is_shoot_ignore_error_ = 0.;
+  else if (is_in_delay_before_switch_ && selected_armor_ == 0)
+    is_shoot_ignore_error_ = 0.0;
   else if ((ros::Time::now() - switch_angle_time_).toSec() < ros::Duration(config_.time_over_).toSec())
     is_shoot_ignore_error_ = 2.;
   else
