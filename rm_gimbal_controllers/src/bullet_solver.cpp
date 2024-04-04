@@ -124,13 +124,13 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   selected_armor_ = 0;
   double r = r1;
   double z = pos.z;
+  double angle1 = config_.angle1 / 180 * M_PI;
+  double angle2 = config_.angle2 / 180 * M_PI;
   track_target_ = std::abs(v_yaw) < max_track_target_vel_;
-  config_.angle1 = config_.angle1 / 180 * M_PI;
-  config_.angle2 = config_.angle2 / 180 * M_PI;
-  double switch_armor_angle = track_target_ ? acos(r / target_rho) - config_.angle1 +
-                                                  (-acos(r / target_rho) + (config_.angle1 + config_.angle2)) *
-                                                      std::abs(v_yaw) / max_track_target_vel_ :
-                                              config_.angle2;
+  double switch_armor_angle =
+      track_target_ ? acos(r / target_rho) - angle1 +
+                          (-acos(r / target_rho) + (angle1 + angle2)) * std::abs(v_yaw) / max_track_target_vel_ :
+                      angle2;
   is_in_delay_before_switch_ =
       ((((yaw + v_yaw * (rough_fly_time + config_.delay)) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
        (((yaw + v_yaw * (rough_fly_time + config_.delay)) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
