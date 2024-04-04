@@ -285,12 +285,9 @@ void Controller::track(const ros::Time& time)
     ROS_WARN("%s", ex.what());
   }
   double yaw = data_track_.yaw + data_track_.v_yaw * ((time - data_track_.header.stamp).toSec() + config_.delay);
-  target_pos.x +=
-      target_vel.x * ((time - data_track_.header.stamp).toSec() + config_.delay) - odom2pitch_.transform.translation.x;
-  target_pos.y +=
-      target_vel.y * ((time - data_track_.header.stamp).toSec() + config_.delay) - odom2pitch_.transform.translation.y;
-  target_pos.z +=
-      target_vel.z * ((time - data_track_.header.stamp).toSec() + config_.delay) - odom2pitch_.transform.translation.z;
+  target_pos.x += target_vel.x * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.x;
+  target_pos.y += target_vel.y * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.y;
+  target_pos.z += target_vel.z * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.z;
   target_vel.x -= chassis_vel_->linear_->x();
   target_vel.y -= chassis_vel_->linear_->y();
   target_vel.z -= chassis_vel_->linear_->z();
