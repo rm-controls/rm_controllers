@@ -125,6 +125,8 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   double r = r1;
   double z = pos.z;
   track_target_ = std::abs(v_yaw) < max_track_target_vel_;
+  config_.angle1 = config_.angle1 / 180 * M_PI;
+  config_.angle2 = config_.angle2 / 180 * M_PI;
   double switch_armor_angle = track_target_ ? acos(r / target_rho) - config_.angle1 +
                                                   (-acos(r / target_rho) + (config_.angle1 + config_.angle2)) *
                                                       std::abs(v_yaw) / max_track_target_vel_ :
