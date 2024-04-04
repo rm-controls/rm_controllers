@@ -46,6 +46,7 @@
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
+#include <std_msgs/Bool.h>
 
 namespace rm_gimbal_controllers
 {
@@ -77,12 +78,14 @@ public:
                                  geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
                                  double r1, double r2, double dz, int armors_num);
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
+  void IsVisionTargetChangedCallback(const std_msgs::Bool data);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
   ~BulletSolver() = default;
 
 private:
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
+  ros::Subscriber vision_target_changed_sub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>* d_srv_{};
   Config config_{};
@@ -90,8 +93,10 @@ private:
   bool dynamic_reconfig_initialized_{};
   double output_yaw_{}, output_pitch_{};
   double bullet_speed_{}, resistance_coff_{};
+  ros::Time switch_angle_time_{};
   int selected_armor_;
   bool track_target_;
+  bool state_changed_ = true;
 
   geometry_msgs::Point target_pos_{};
   double fly_time_;

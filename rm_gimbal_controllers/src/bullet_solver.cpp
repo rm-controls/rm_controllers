@@ -80,6 +80,9 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_desire", 10));
   path_real_pub_.reset(
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_real", 10));
+
+  vision_target_changed_sub_ = controller_nh.subscribe<std_msgs::Bool>(
+      "/armor_processor/change", 10, &BulletSolver::IsVisionTargetChangedCallback, this);
 }
 
 double BulletSolver::getResistanceCoefficient(double bullet_speed) const
@@ -123,6 +126,11 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   if ((((yaw + v_yaw * rough_fly_time) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
       (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.))
   {
+    if (state_changed_)
+    {
+      state_changed_ = false;
+      switch_angle_time_ = ros::Time::now();
+    }
     selected_armor_ = v_yaw > 0. ? -1 : 1;
     r = armors_num == 4 ? r2 : r1;
     z = armors_num == 4 ? pos.z + dz : pos.z;
@@ -299,6 +307,12 @@ double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vec
                       std::pow(target_pos_.z - target_pos_after_fly_time_and_delay.z, 2));
   }
   return error;
+}
+
+void BulletSolver::IsVisionTargetChangedCallback(const std_msgs::Bool data)
+{
+  if (data.data)
+    state_changed_ = true;
 }
 
 void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t /*unused*/)
