@@ -53,7 +53,8 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .delay = getParam(controller_nh, "delay", 0.),
               .dt = getParam(controller_nh, "dt", 0.),
               .timeout = getParam(controller_nh, "timeout", 0.),
-              .time_interrupt_ = getParam(controller_nh, "time_interrupt", 2.0) };
+              .time_interrupt_ = getParam(controller_nh, "time_interrupt", 2.0),
+              .time_over_ = getParam(controller_nh, "time_over", 2.0) };
   max_track_target_vel_ = getParam(controller_nh, "max_track_target_vel", 5.0);
   config_rt_buffer_.initRT(config_);
 
@@ -324,8 +325,12 @@ void BulletSolver::IsVisionTargetChangedCallback(const std_msgs::Bool data)
 
 void BulletSolver::IgnoreErrorToShoot(const ros::Time& time)
 {
-  if ((ros::Time::now() - switch_angle_time_ < ros::Duration(config_.time_interrupt_)) || is_in_delay_before_switch_)
+  if (is_in_delay_before_switch_ && !state_changed_)
+    is_shoot_ignore_error_ = -1.0;
+  else if ((ros::Time::now() - switch_angle_time_).toSec() < ros::Duration(config_.time_interrupt_).toSec())
     is_shoot_ignore_error_ = 0.;
+  else if ((ros::Time::now() - switch_angle_time_).toSec() < ros::Duration(config_.time_over_).toSec())
+    is_shoot_ignore_error_ = 2.;
   else
     is_shoot_ignore_error_ = 1.;
   if (control_fire_near_switching_pub_->trylock())
@@ -352,6 +357,7 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.dt = init_config.dt;
     config.timeout = init_config.timeout;
     config.time_interrupt_ = init_config.time_interrupt_;
+    config.timeout = init_config.time_over_;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{ .resistance_coff_qd_10 = config.resistance_coff_qd_10,
@@ -363,7 +369,8 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .delay = config.delay,
                         .dt = config.dt,
                         .timeout = config.timeout,
-                        .time_interrupt_ = config.time_interrupt_ };
+                        .time_interrupt_ = config.time_interrupt_,
+                        .time_over_ = config.time_over_ };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 }  // namespace rm_gimbal_controllers
