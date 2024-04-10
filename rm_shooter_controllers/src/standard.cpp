@@ -200,8 +200,8 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
   {  // Time to shoot!!!
     if (cmd_.hz >= 20)
     {
-        ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
-                                     2. * M_PI / static_cast<double>(push_per_rotation_),
+      ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
+                                   2. * M_PI / static_cast<double>(push_per_rotation_),
                                -1 * cmd_.hz * 2. * M_PI / static_cast<double>(push_per_rotation_));
       last_shoot_time_ = time;
     }
