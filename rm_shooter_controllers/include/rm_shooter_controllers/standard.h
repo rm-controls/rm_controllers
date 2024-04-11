@@ -88,7 +88,7 @@ private:
   std::vector<double> wheel_speed_offset_l_, wheel_speed_offset_r_;
   int push_per_rotation_{};
   double push_wheel_speed_threshold_{};
-  double high_shoot_frequency_{};
+  double freq_threshold_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool maybe_block_ = false;
