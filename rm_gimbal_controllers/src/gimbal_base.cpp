@@ -69,8 +69,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
-  ros::NodeHandle nh_pid_yaw_pos = ros::NodeHandle(controller_nh, "pid_yaw_pos");
-  ros::NodeHandle nh_pid_pitch_pos = ros::NodeHandle(controller_nh, "pid_pitch_pos");
+  ros::NodeHandle nh_pid_yaw_pos = ros::NodeHandle(controller_nh, "yaw/pid_pos");
+  ros::NodeHandle nh_pid_pitch_pos = ros::NodeHandle(controller_nh, "pitch/pid_pos");
 
   config_ = { .yaw_k_v_ = getParam(nh_yaw, "k_v", 0.),
               .pitch_k_v_ = getParam(nh_pitch, "k_v", 0.),
@@ -138,10 +138,10 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
-  pid_yaw_pos_state_pub_.reset(new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(
-      nh_pid_yaw_pos, "pid_yaw_pos_state", 1));
-  pid_pitch_pos_state_pub_.reset(new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(
-      nh_pid_pitch_pos, "pid_pitch_pos_state", 1));
+  pid_yaw_pos_state_pub_.reset(
+      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_yaw, "pos_state", 1));
+  pid_pitch_pos_state_pub_.reset(
+      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_pitch, "pos_state", 1));
   return true;
 }
 
