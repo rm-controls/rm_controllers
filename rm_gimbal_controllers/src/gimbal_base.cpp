@@ -264,7 +264,9 @@ void Controller::track(const ros::Time& time)
   double yaw_compute = yaw_real;
   double pitch_compute = -pitch_real;
   geometry_msgs::Point target_pos = data_track_.position;
-  geometry_msgs::Vector3 target_vel = data_track_.velocity;
+  geometry_msgs::Vector3 target_vel{};
+  if (data_track_.id != 12)
+    target_vel = data_track_.velocity;
   try
   {
     if (!data_track_.header.frame_id.empty())
@@ -478,7 +480,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
-  //  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
+  if (data_track_.id == 12)
+    ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
 }
 
 double Controller::feedForward(const ros::Time& time)
