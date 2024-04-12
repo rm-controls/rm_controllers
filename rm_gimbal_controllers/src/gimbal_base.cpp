@@ -62,11 +62,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   gravity_ = enable_feedforward ? (double)xml_rpc_value["gravity"] : 0.;
   enable_gravity_compensation_ = enable_feedforward && (bool)xml_rpc_value["enable_gravity_compensation"];
 
-  ros::NodeHandle resistance_compensation_nh(controller_nh, "yaw/resistance_compensation");
-  yaw_resistance_ = getParam(resistance_compensation_nh, "resistance", 0.);
-  velocity_saturation_point_ = getParam(resistance_compensation_nh, "velocity_saturation_point", 0.);
-  effort_saturation_point_ = getParam(resistance_compensation_nh, "effort_saturation_point", 0.);
-
   ros::NodeHandle chassis_vel_nh(controller_nh, "chassis_vel");
   chassis_vel_ = std::make_shared<ChassisVel>(chassis_vel_nh);
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
@@ -483,7 +478,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
-//  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
+  //  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
 }
 
 double Controller::feedForward(const ros::Time& time)

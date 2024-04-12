@@ -192,10 +192,6 @@ private:
   double gravity_;
   bool enable_gravity_compensation_;
 
-  // Resistance compensation
-  double yaw_resistance_;
-  double velocity_saturation_point_, effort_saturation_point_;
-
   // Chassis
   std::shared_ptr<ChassisVel> chassis_vel_;
 
