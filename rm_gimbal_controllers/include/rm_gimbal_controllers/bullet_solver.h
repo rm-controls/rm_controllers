@@ -82,7 +82,7 @@ public:
                                  double r1, double r2, double dz, int armors_num);
   void judgeShootBeforehand(const ros::Time& time);
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
-  void identifiedTargetChangeCB(const std_msgs::Bool data);
+  void identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
   ~BulletSolver() = default;
 
@@ -90,20 +90,20 @@ private:
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>> shoot_beforehand_cmd_pub_;
-  ros::Subscriber vision_target_changed_sub_;
+  ros::Subscriber identified_target_change_sub_;
+  ros::Time switch_armor_time_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>* d_srv_{};
   Config config_{};
   double max_track_target_vel_;
-  bool dynamic_reconfig_initialized_{};
   double output_yaw_{}, output_pitch_{};
   double bullet_speed_{}, resistance_coff_{};
   int shoot_beforehand_cmd_{};
-  ros::Time switch_angle_time_{};
   int selected_armor_;
   bool track_target_;
-  bool state_changed_ = true;
+  bool identified_target_change_ = true;
   bool is_in_delay_before_switch_{};
+  bool dynamic_reconfig_initialized_{};
 
   geometry_msgs::Point target_pos_{};
   double fly_time_;
