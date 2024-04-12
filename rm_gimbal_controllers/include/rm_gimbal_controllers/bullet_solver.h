@@ -47,7 +47,7 @@
 #include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
 #include <std_msgs/Bool.h>
-#include <rm_msgs/GimbalDesError.h>
+#include <std_msgs/Float64.h>
 #include <rm_msgs/TrackData.h>
 #include <rm_msgs/ShootBeforehandCmd.h>
 
@@ -90,6 +90,7 @@ private:
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>> shoot_beforehand_cmd_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> fly_time_pub_;
   ros::Subscriber identified_target_change_sub_;
   ros::Time switch_armor_time_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;

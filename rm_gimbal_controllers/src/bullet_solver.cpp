@@ -86,6 +86,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_real", 10));
   shoot_beforehand_cmd_pub_.reset(
       new realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>(controller_nh, "shoot_beforehand_cmd", 10));
+  fly_time_pub_.reset(new realtime_tools::RealtimePublisher<std_msgs::Float64>(controller_nh, "fly_time", 10));
 
   identified_target_change_sub_ = controller_nh.subscribe<std_msgs::Bool>(
       "/armor_processor/change", 10, &BulletSolver::identifiedTargetChangeCB, this);
@@ -201,6 +202,11 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
 
     if (count >= 20 || std::isnan(error))
       return false;
+  }
+  if (fly_time_pub_->trylock())
+  {
+    fly_time_pub_->msg_.data = fly_time_;
+    fly_time_pub_->unlockAndPublish();
   }
   return true;
 }
