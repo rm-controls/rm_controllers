@@ -84,11 +84,11 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_desire", 10));
   path_real_pub_.reset(
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_real", 10));
-  control_fire_near_switching_pub_.reset(
-      new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "allow_shoot", 10));
+  shoot_beforehand_cmd_pub_.reset(
+      new realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>(controller_nh, "shoot_beforehand_cmd", 10));
 
-  vision_target_changed_sub_ = controller_nh.subscribe<std_msgs::Bool>(
-      "/armor_processor/change", 10, &BulletSolver::IsVisionTargetChangedCallback, this);
+  vision_target_changed_sub_ = controller_nh.subscribe<std_msgs::Bool>("/armor_processor/change", 10,
+                                                                       &BulletSolver::identifiedTargetChangeCB, this);
 }
 
 double BulletSolver::getResistanceCoefficient(double bullet_speed) const
@@ -323,27 +323,27 @@ double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vec
   return error;
 }
 
-void BulletSolver::IsVisionTargetChangedCallback(const std_msgs::Bool data)
+void BulletSolver::identifiedTargetChangeCB(const std_msgs::Bool data)
 {
   if (data.data)
     state_changed_ = true;
 }
 
-void BulletSolver::IgnoreErrorToShoot(const ros::Time& time)
+void BulletSolver::judgeShootBeforehand(const ros::Time& time)
 {
   if ((ros::Time::now() - switch_angle_time_).toSec() < ros::Duration(config_.time_interrupt_).toSec())
-    is_shoot_ignore_error_ = -1.0;
+    shoot_beforehand_cmd_ = -1;
   else if (is_in_delay_before_switch_ && selected_armor_ == 0)
-    is_shoot_ignore_error_ = 0.0;
+    shoot_beforehand_cmd_ = 0;
   else if ((ros::Time::now() - switch_angle_time_).toSec() < ros::Duration(config_.time_over_).toSec())
-    is_shoot_ignore_error_ = 2.;
+    shoot_beforehand_cmd_ = 2.;
   else
-    is_shoot_ignore_error_ = 1.;
-  if (control_fire_near_switching_pub_->trylock())
+    shoot_beforehand_cmd_ = 1.;
+  if (shoot_beforehand_cmd_pub_->trylock())
   {
-    control_fire_near_switching_pub_->msg_.stamp = time;
-    control_fire_near_switching_pub_->msg_.error = is_shoot_ignore_error_;
-    control_fire_near_switching_pub_->unlockAndPublish();
+    shoot_beforehand_cmd_pub_->msg_.stamp = time;
+    shoot_beforehand_cmd_pub_->msg_.cmd = shoot_beforehand_cmd_;
+    shoot_beforehand_cmd_pub_->unlockAndPublish();
   }
 }
 

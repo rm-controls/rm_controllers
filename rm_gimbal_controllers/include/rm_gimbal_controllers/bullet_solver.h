@@ -49,6 +49,7 @@
 #include <std_msgs/Bool.h>
 #include <rm_msgs/GimbalDesError.h>
 #include <rm_msgs/TrackData.h>
+#include <rm_msgs/ShootBeforehandCmd.h>
 
 namespace rm_gimbal_controllers
 {
@@ -79,16 +80,16 @@ public:
   void getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
                                  geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
                                  double r1, double r2, double dz, int armors_num);
-  void IgnoreErrorToShoot(const ros::Time& time);
+  void judgeShootBeforehand(const ros::Time& time);
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
-  void IsVisionTargetChangedCallback(const std_msgs::Bool data);
+  void identifiedTargetChangeCB(const std_msgs::Bool data);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
   ~BulletSolver() = default;
 
 private:
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> control_fire_near_switching_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>> shoot_beforehand_cmd_pub_;
   ros::Subscriber vision_target_changed_sub_;
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>* d_srv_{};
@@ -97,7 +98,7 @@ private:
   bool dynamic_reconfig_initialized_{};
   double output_yaw_{}, output_pitch_{};
   double bullet_speed_{}, resistance_coff_{};
-  double is_shoot_ignore_error_{};
+  int shoot_beforehand_cmd_{};
   ros::Time switch_angle_time_{};
   int selected_armor_;
   bool track_target_;
