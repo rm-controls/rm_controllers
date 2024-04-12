@@ -332,13 +332,13 @@ void BulletSolver::identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg)
 void BulletSolver::judgeShootBeforehand(const ros::Time& time)
 {
   if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.time_interrupt_).toSec())
-    shoot_beforehand_cmd_ = -1;
+    shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
   else if (is_in_delay_before_switch_ && selected_armor_ == 0)
-    shoot_beforehand_cmd_ = 0;
+    shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
   else if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.time_over_).toSec())
-    shoot_beforehand_cmd_ = 2.;
+    shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::ALLOW_SHOOT;
   else
-    shoot_beforehand_cmd_ = 1.;
+    shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
   if (shoot_beforehand_cmd_pub_->trylock())
   {
     shoot_beforehand_cmd_pub_->msg_.stamp = time;
