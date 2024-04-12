@@ -53,8 +53,8 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .delay = getParam(controller_nh, "delay", 0.),
               .dt = getParam(controller_nh, "dt", 0.),
               .timeout = getParam(controller_nh, "timeout", 0.),
-              .time_interrupt_ = getParam(controller_nh, "time_interrupt", 0.0),
-              .time_over_ = getParam(controller_nh, "time_over", 0.0),
+              .ban_shoot_duration = getParam(controller_nh, "ban_shoot_duration", 0.0),
+              .gimbal_switch_duration = getParam(controller_nh, "gimbal_switch_duration", 0.0),
               .angle1 = getParam(controller_nh, "angle1", 40.0),
               .angle2 = getParam(controller_nh, "angle2", 2.0) };
   max_track_target_vel_ = getParam(controller_nh, "max_track_target_vel", 5.0);
@@ -331,11 +331,11 @@ void BulletSolver::identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg)
 
 void BulletSolver::judgeShootBeforehand(const ros::Time& time)
 {
-  if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.time_interrupt_).toSec())
+  if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.ban_shoot_duration).toSec())
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
   else if (is_in_delay_before_switch_ && selected_armor_ == 0)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
-  else if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.time_over_).toSec())
+  else if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.gimbal_switch_duration).toSec())
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::ALLOW_SHOOT;
   else
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
@@ -362,8 +362,8 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.delay = init_config.delay;
     config.dt = init_config.dt;
     config.timeout = init_config.timeout;
-    config.time_interrupt_ = init_config.time_interrupt_;
-    config.time_over_ = init_config.time_over_;
+    config.ban_shoot_duration = init_config.ban_shoot_duration;
+    config.gimbal_switch_duration = init_config.gimbal_switch_duration;
     config.angle1 = init_config.angle1;
     config.angle2 = init_config.angle2;
     dynamic_reconfig_initialized_ = true;
@@ -377,8 +377,8 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .delay = config.delay,
                         .dt = config.dt,
                         .timeout = config.timeout,
-                        .time_interrupt_ = config.time_interrupt_,
-                        .time_over_ = config.time_over_,
+                        .ban_shoot_duration = config.ban_shoot_duration,
+                        .gimbal_switch_duration = config.gimbal_switch_duration,
                         .angle1 = config.angle1,
                         .angle2 = config.angle2 };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
