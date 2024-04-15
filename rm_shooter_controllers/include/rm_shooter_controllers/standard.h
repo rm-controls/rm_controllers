@@ -56,8 +56,8 @@ namespace rm_shooter_controllers
 struct Config
 {
   double block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold,
-      forward_push_threshold,exit_push_threshold;
-  double extra_wheel_speed;
+      forward_push_threshold, exit_push_threshold;
+  double extra_wheel_speed, wheel_speed_drop_threshold, time_out;
 };
 
 class Controller : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
@@ -91,6 +91,8 @@ private:
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool maybe_block_ = false;
+  bool maybe_shoot_ = false;
+  bool has_shoot_ = false;
 
   ros::Time last_shoot_time_, block_time_, last_block_time_;
   enum
