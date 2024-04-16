@@ -53,8 +53,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
               .forward_push_threshold = getParam(controller_nh, "forward_push_threshold", 0.1),
               .exit_push_threshold = getParam(controller_nh, "exit_push_threshold", 0.1),
               .extra_wheel_speed = getParam(controller_nh, "extra_wheel_speed", 0.),
-              .wheel_speed_drop_threshold = getParam(controller_nh, "wheel_speed_drop_threshold", 0.),
-              .time_out = getParam(controller_nh, "time_out", 0.) };
+              .wheel_speed_drop_threshold = getParam(controller_nh, "wheel_speed_drop_threshold", 0.) };
   config_rt_buffer.initRT(config_);
   push_per_rotation_ = getParam(controller_nh, "push_per_rotation", 0);
   push_wheel_speed_threshold_ = getParam(controller_nh, "push_wheel_speed_threshold", 0.);
@@ -254,7 +253,7 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
   if (maybe_shoot_ &&
       abs(ctrls_friction_l_[0]->command_ - ctrls_friction_l_[0]->joint_.getVelocity()) <
           config_.wheel_speed_drop_threshold &&
-      (time - last_shoot_time_).toSec() < config_.time_out)
+      (time - last_shoot_time_).toSec() < 1. / cmd_.hz)
   {
     has_shoot_ = true;
     maybe_shoot_ = false;
@@ -312,7 +311,6 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint3
     config.exit_push_threshold = init_config.exit_push_threshold;
     config.extra_wheel_speed = init_config.extra_wheel_speed;
     config.wheel_speed_drop_threshold = init_config.wheel_speed_drop_threshold;
-    config.time_out = init_config.time_out;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{ .block_effort = config.block_effort,
@@ -324,8 +322,7 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint3
                         .forward_push_threshold = config.forward_push_threshold,
                         .exit_push_threshold = config.exit_push_threshold,
                         .extra_wheel_speed = config.extra_wheel_speed,
-                        .wheel_speed_drop_threshold = config.wheel_speed_drop_threshold,
-                        .time_out = config.time_out };
+                        .wheel_speed_drop_threshold = config.wheel_speed_drop_threshold };
   config_rt_buffer.writeFromNonRT(config_non_rt);
 }
 
