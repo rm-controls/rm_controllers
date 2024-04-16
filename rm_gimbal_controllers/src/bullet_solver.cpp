@@ -133,9 +133,8 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
                           (-acos(r / target_rho) + (angle1 + angle2)) * std::abs(v_yaw) / max_track_target_vel_ :
                       angle2;
   is_in_delay_before_switch_ =
-      ((((yaw + v_yaw * (rough_fly_time + config_.delay)) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
-       (((yaw + v_yaw * (rough_fly_time + config_.delay)) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
-      track_target_;
+      (((yaw + v_yaw * (rough_fly_time + config_.delay)) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
+      (((yaw + v_yaw * (rough_fly_time + config_.delay)) < output_yaw_ - switch_armor_angle) && v_yaw < 0.);
   bool is_low_speed = std::abs(v_yaw) < 1.0;
   if (((((yaw + v_yaw * rough_fly_time) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
        (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
@@ -337,7 +336,9 @@ void BulletSolver::identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg)
 
 void BulletSolver::judgeShootBeforehand(const ros::Time& time)
 {
-  if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.ban_shoot_duration).toSec())
+  if (!track_target_)
+    shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
+  else if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.ban_shoot_duration).toSec())
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
   else if (is_in_delay_before_switch_ && selected_armor_ == 0)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
