@@ -75,7 +75,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   config_ = { .yaw_k_v_ = getParam(nh_yaw, "k_v", 0.),
               .pitch_k_v_ = getParam(nh_pitch, "k_v", 0.),
               .k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.),
-              .delay = getParam(controller_nh, "delay", 0.) };
+              .delay = getParam(controller_nh, "delay", 0.),
+              .delay2 = getParam(controller_nh, "delay2", 0.) };
   config_rt_buffer_.initRT(config_);
   d_srv_ = new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>::CallbackType cb =
@@ -282,8 +283,10 @@ void Controller::track(const ros::Time& time)
     ROS_WARN("%s", ex.what());
   }
   double yaw = data_track_.yaw + data_track_.v_yaw * ((time - data_track_.header.stamp).toSec() + config_.delay);
-  target_pos.x += target_vel.x * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.x;
-  target_pos.y += target_vel.y * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.y;
+  target_pos.x +=
+      target_vel.x * ((time - data_track_.header.stamp).toSec() + config_.delay2) - odom2pitch_.transform.translation.x;
+  target_pos.y +=
+      target_vel.y * ((time - data_track_.header.stamp).toSec() + config_.delay2) - odom2pitch_.transform.translation.y;
   target_pos.z += target_vel.z * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.z;
   target_vel.x -= chassis_vel_->linear_->x();
   target_vel.y -= chassis_vel_->linear_->y();
@@ -544,12 +547,14 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     config.pitch_k_v_ = init_config.pitch_k_v_;
     config.k_chassis_vel_ = init_config.k_chassis_vel_;
     config.delay = init_config.delay;
+    config.delay2 = init_config.delay2;
     dynamic_reconfig_initialized_ = true;
   }
   GimbalConfig config_non_rt{ .yaw_k_v_ = config.yaw_k_v_,
                               .pitch_k_v_ = config.pitch_k_v_,
                               .k_chassis_vel_ = config.k_chassis_vel_,
-                              .delay = config.delay };
+                              .delay = config.delay,
+                              .delay2 = config.delay2 };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 
