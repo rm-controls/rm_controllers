@@ -137,6 +137,20 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
       block(time, period);
       break;
   }
+  if (maybe_shoot_)
+  {
+    if (abs(ctrls_friction_l_[0]->command_ - ctrls_friction_l_[0]->joint_.getVelocity()) >
+        config_.wheel_speed_drop_threshold)
+      wheel_speed_drop_ = true;
+    if (wheel_speed_drop_ &&
+        ctrls_friction_l_[0]->joint_.getVelocity() < push_wheel_speed_threshold_ * ctrls_friction_l_[0]->command_)
+    {
+      has_shoot_ = true;
+      wheel_speed_drop_ = false;
+    }
+    if ((time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
+      maybe_shoot_ = false;
+  }
   if (shoot_state_pub_->trylock())
   {
     shoot_state_pub_->msg_.stamp = time;
@@ -144,6 +158,8 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     shoot_state_pub_->msg_.has_shoot = has_shoot_;
     shoot_state_pub_->unlockAndPublish();
   }
+  if (has_shoot_)
+    has_shoot_ = false;
   for (auto& ctrl_friction_l : ctrls_friction_l_)
     ctrl_friction_l->update(time, period);
   for (auto& ctrl_friction_r : ctrls_friction_r_)
@@ -184,8 +200,6 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter PUSH");
   }
-  if (has_shoot_)
-    has_shoot_ = false;
   bool wheel_speed_ready = true;
   for (auto& ctrl_friction_l : ctrls_friction_l_)
   {
@@ -250,20 +264,6 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
   }
   else
     ROS_DEBUG("[Shooter] Wait for friction wheel");
-  if (maybe_shoot_)
-  {
-    if (abs(ctrls_friction_l_[0]->command_ - ctrls_friction_l_[0]->joint_.getVelocity()) >
-        config_.wheel_speed_drop_threshold)
-      wheel_speed_drop_ = true;
-    if (wheel_speed_drop_ &&
-        ctrls_friction_l_[0]->joint_.getVelocity() < push_wheel_speed_threshold_ * ctrls_friction_l_[0]->command_)
-    {
-      has_shoot_ = true;
-      wheel_speed_drop_ = false;
-    }
-    if ((time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
-      maybe_shoot_ = false;
-  }
 }
 
 void Controller::block(const ros::Time& time, const ros::Duration& period)
