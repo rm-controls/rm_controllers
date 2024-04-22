@@ -93,6 +93,7 @@ private:
   bool maybe_block_ = false;
   bool maybe_shoot_ = false;
   bool has_shoot_ = false;
+  bool wheel_speed_drop_ = false;
 
   ros::Time last_shoot_time_, block_time_, last_block_time_;
   enum

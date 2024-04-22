@@ -250,13 +250,19 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
   }
   else
     ROS_DEBUG("[Shooter] Wait for friction wheel");
-  if (maybe_shoot_ &&
-      abs(ctrls_friction_l_[0]->command_ - ctrls_friction_l_[0]->joint_.getVelocity()) <
-          config_.wheel_speed_drop_threshold &&
-      (time - last_shoot_time_).toSec() < 1. / cmd_.hz)
+  if (maybe_shoot_)
   {
-    has_shoot_ = true;
-    maybe_shoot_ = false;
+    if (abs(ctrls_friction_l_[0]->command_ - ctrls_friction_l_[0]->joint_.getVelocity()) >
+        config_.wheel_speed_drop_threshold)
+      wheel_speed_drop_ = true;
+    if (wheel_speed_drop_ &&
+        ctrls_friction_l_[0]->joint_.getVelocity() < push_wheel_speed_threshold_ * ctrls_friction_l_[0]->command_)
+    {
+      has_shoot_ = true;
+      wheel_speed_drop_ = false;
+    }
+    if ((time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
+      maybe_shoot_ = false;
   }
 }
 
