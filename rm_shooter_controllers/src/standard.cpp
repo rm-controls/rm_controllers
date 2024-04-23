@@ -56,6 +56,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   config_rt_buffer.initRT(config_);
   push_per_rotation_ = getParam(controller_nh, "push_per_rotation", 0);
   push_wheel_speed_threshold_ = getParam(controller_nh, "push_wheel_speed_threshold", 0.);
+  freq_threshold_ = getParam(controller_nh, "freq_threshold", 20.);
 
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::ShootCmd>("command", 1, &Controller::commandCB, this);
   shoot_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::ShootState>(controller_nh, "state", 10));
@@ -111,8 +112,9 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     if (state_ != BLOCK)
       if ((state_ != PUSH || cmd_.mode != READY) ||
           (cmd_.mode == READY &&
-           std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
-               config_.exit_push_threshold))
+           (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
+                config_.exit_push_threshold ||
+            cmd_.hz >= freq_threshold_)))
       {
         state_ = cmd_.mode;
         state_changed_ = true;
@@ -197,28 +199,19 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
   }
   if ((cmd_.wheel_speed == 0. || wheel_speed_ready) && (time - last_shoot_time_).toSec() >= 1. / cmd_.hz)
   {  // Time to shoot!!!
-    if (cmd_.hz >= 20)
+    if (cmd_.hz >= freq_threshold_)
     {
-      config_.forward_push_threshold += 0.5;
-      if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
-          config_.forward_push_threshold)
-      {
-        ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
-                                     2. * M_PI / static_cast<double>(push_per_rotation_),
-                                 -1 * cmd_.hz * 2. * M_PI / static_cast<double>(push_per_rotation_));
-        last_shoot_time_ = time;
-      }
-      config_.forward_push_threshold -= 0.5;
+      ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
+                                   2. * M_PI / static_cast<double>(push_per_rotation_),
+                               -1 * cmd_.hz * 2. * M_PI / static_cast<double>(push_per_rotation_));
+      last_shoot_time_ = time;
     }
-    else
+    else if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
+             config_.forward_push_threshold)
     {
-      if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
-          config_.forward_push_threshold)
-      {
-        ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
-                                 2. * M_PI / static_cast<double>(push_per_rotation_));
-        last_shoot_time_ = time;
-      }
+      ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
+                               2. * M_PI / static_cast<double>(push_per_rotation_));
+      last_shoot_time_ = time;
     }
     // Check block
     if ((ctrl_trigger_.joint_.getEffort() < -config_.block_effort &&
@@ -277,7 +270,8 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
 void Controller::normalize()
 {
   double push_angle = 2. * M_PI / static_cast<double>(push_per_rotation_);
-  ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01) / push_angle));
+  ctrl_trigger_.setCommand(
+      push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01 + config_.exit_push_threshold) / push_angle));
 }
 
 void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/)

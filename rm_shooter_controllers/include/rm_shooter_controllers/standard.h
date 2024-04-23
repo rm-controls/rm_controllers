@@ -56,7 +56,7 @@ namespace rm_shooter_controllers
 struct Config
 {
   double block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold,
-      forward_push_threshold,exit_push_threshold;
+      forward_push_threshold, exit_push_threshold;
   double extra_wheel_speed;
 };
 
@@ -88,6 +88,7 @@ private:
   std::vector<double> wheel_speed_offset_l_, wheel_speed_offset_r_;
   int push_per_rotation_{};
   double push_wheel_speed_threshold_{};
+  double freq_threshold_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool maybe_block_ = false;
