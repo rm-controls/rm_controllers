@@ -64,7 +64,7 @@ struct GimbalConfig
 {
   double yaw_k_v_, pitch_k_v_, k_chassis_vel_;
   double accel_pitch_{}, accel_yaw_{};
-  double delay, delay2;
+  double track_rotate_target_delay, track_move_target_delay;
 };
 
 class ChassisVel

@@ -77,7 +77,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
               .k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.),
               .accel_pitch_ = getParam(controller_nh, "pitch/accel", 99.),
               .accel_yaw_ = getParam(controller_nh, "yaw/accel", 99.),
-              .delay = getParam(controller_nh, "delay", 0.) };
+              .track_rotate_target_delay = getParam(controller_nh, "track_rotate_target_delay", 0.),
+              .track_move_target_delay = getParam(controller_nh, "track_rotate_target_delay", 0.) };
   config_rt_buffer_.initRT(config_);
   d_srv_ = new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>::CallbackType cb =
@@ -294,11 +295,12 @@ void Controller::track(const ros::Time& time)
   {
     ROS_WARN("%s", ex.what());
   }
-  double yaw = data_track_.yaw + data_track_.v_yaw * ((time - data_track_.header.stamp).toSec() + config_.delay);
-  target_pos.x +=
-      target_vel.x * ((time - data_track_.header.stamp).toSec() + config_.delay2) - odom2pitch_.transform.translation.x;
-  target_pos.y +=
-      target_vel.y * ((time - data_track_.header.stamp).toSec() + config_.delay2) - odom2pitch_.transform.translation.y;
+  double yaw = data_track_.yaw +
+               data_track_.v_yaw * ((time - data_track_.header.stamp).toSec() + config_.track_rotate_target_delay);
+  target_pos.x += target_vel.x * ((time - data_track_.header.stamp).toSec() + config_.track_move_target_delay) -
+                  odom2pitch_.transform.translation.x;
+  target_pos.y += target_vel.y * ((time - data_track_.header.stamp).toSec() + config_.track_move_target_delay) -
+                  odom2pitch_.transform.translation.y;
   target_pos.z += target_vel.z * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.z;
   target_vel.x -= chassis_vel_->linear_->x();
   target_vel.y -= chassis_vel_->linear_->y();
@@ -555,8 +557,8 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     config.k_chassis_vel_ = init_config.k_chassis_vel_;
     config.accel_pitch_ = init_config.accel_pitch_;
     config.accel_yaw_ = init_config.accel_yaw_;
-    config.delay = init_config.delay;
-    config.delay2 = init_config.delay2;
+    config.track_rotate_target_delay = init_config.track_rotate_target_delay;
+    config.track_move_target_delay = init_config.track_move_target_delay;
     dynamic_reconfig_initialized_ = true;
   }
   GimbalConfig config_non_rt{ .yaw_k_v_ = config.yaw_k_v_,
@@ -564,8 +566,8 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
                               .k_chassis_vel_ = config.k_chassis_vel_,
                               .accel_pitch_ = config.accel_pitch_,
                               .accel_yaw_ = config.accel_yaw_,
-                              .delay = config.delay,
-                              .delay2 = config.delay2 };
+                              .track_rotate_target_delay = config.track_rotate_target_delay,
+                              .track_move_target_delay = config.track_move_target_delay };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 
