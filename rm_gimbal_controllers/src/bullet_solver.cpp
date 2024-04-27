@@ -54,7 +54,9 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .dt = getParam(controller_nh, "dt", 0.),
               .timeout = getParam(controller_nh, "timeout", 0.),
               .ban_shoot_duration = getParam(controller_nh, "ban_shoot_duration", 0.0),
-              .gimbal_switch_duration = getParam(controller_nh, "gimbal_switch_duration", 0.0) };
+              .gimbal_switch_duration = getParam(controller_nh, "gimbal_switch_duration", 0.0),
+              .angle1 = getParam(controller_nh, "angle1", 40.0),
+              .angle2 = getParam(controller_nh, "angle2", 2.0) };
   max_track_target_vel_ = getParam(controller_nh, "max_track_target_vel", 5.0);
   config_rt_buffer_.initRT(config_);
 
@@ -123,14 +125,17 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   selected_armor_ = 0;
   double r = r1;
   double z = pos.z;
+  double angle1 = config_.angle1 / 180 * M_PI;
+  double angle2 = config_.angle2 / 180 * M_PI;
   track_target_ = std::abs(v_yaw) < max_track_target_vel_;
-  double switch_armor_angle = track_target_ ? acos(r / target_rho) - 40 / 180 * M_PI +
-                                                  (-acos(r / target_rho) + (40 / 180 * M_PI + 2 / 180 * M_PI)) *
-                                                      std::abs(v_yaw) / max_track_target_vel_ :
-                                              2 / 180 * M_PI;
+  double switch_armor_angle =
+      track_target_ ? acos(r / target_rho) - angle1 +
+                          (-acos(r / target_rho) + (angle1 + angle2)) * std::abs(v_yaw) / max_track_target_vel_ :
+                      angle2;
   is_in_delay_before_switch_ =
-      (((yaw + v_yaw * (rough_fly_time + config_.delay)) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
-      (((yaw + v_yaw * (rough_fly_time + config_.delay)) < output_yaw_ - switch_armor_angle) && v_yaw < 0.);
+      ((((yaw + v_yaw * (rough_fly_time + config_.delay)) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
+       (((yaw + v_yaw * (rough_fly_time + config_.delay)) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
+      track_target_;
   bool is_low_speed = std::abs(v_yaw) < 1.0;
   if (((((yaw + v_yaw * rough_fly_time) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
        (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
@@ -367,6 +372,8 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.timeout = init_config.timeout;
     config.ban_shoot_duration = init_config.ban_shoot_duration;
     config.gimbal_switch_duration = init_config.gimbal_switch_duration;
+    config.angle1 = init_config.angle1;
+    config.angle2 = init_config.angle2;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{ .resistance_coff_qd_10 = config.resistance_coff_qd_10,
@@ -379,7 +386,9 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .dt = config.dt,
                         .timeout = config.timeout,
                         .ban_shoot_duration = config.ban_shoot_duration,
-                        .gimbal_switch_duration = config.gimbal_switch_duration };
+                        .gimbal_switch_duration = config.gimbal_switch_duration,
+                        .angle1 = config.angle1,
+                        .angle2 = config.angle2 };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 }  // namespace rm_gimbal_controllers

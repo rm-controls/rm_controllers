@@ -75,8 +75,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   config_ = { .yaw_k_v_ = getParam(nh_yaw, "k_v", 0.),
               .pitch_k_v_ = getParam(nh_pitch, "k_v", 0.),
               .k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.),
-              .delay = getParam(controller_nh, "delay", 0.),
-              .delay2 = getParam(controller_nh, "delay2", 0.) };
+              .accel_pitch_ = getParam(controller_nh, "pitch/accel", 99.),
+              .accel_yaw_ = getParam(controller_nh, "yaw/accel", 99.),
+              .delay = getParam(controller_nh, "delay", 0.) };
   config_rt_buffer_.initRT(config_);
   d_srv_ = new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>::CallbackType cb =
@@ -139,10 +140,13 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
-  pid_yaw_pos_state_pub_.reset(
-      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_yaw, "pos_state", 1));
+  pid_yaw_pos_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>(nh_yaw, "pos_state", 1));
   pid_pitch_pos_state_pub_.reset(
-      new realtime_tools::RealtimePublisher<control_msgs::JointControllerState>(nh_pitch, "pos_state", 1));
+      new realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>(nh_pitch, "pos_state", 1));
+
+  ramp_rate_pitch_ = new RampFilter<double>(0, 0.001);
+  ramp_rate_yaw_ = new RampFilter<double>(0, 0.001);
+
   return true;
 }
 
@@ -157,6 +161,12 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   cmd_gimbal_ = *cmd_rt_buffer_.readFromRT();
   data_track_ = *track_rt_buffer_.readFromNonRT();
   config_ = *config_rt_buffer_.readFromRT();
+  ramp_rate_pitch_->setAcc(config_.accel_pitch_);
+  ramp_rate_yaw_->setAcc(config_.accel_yaw_);
+  ramp_rate_pitch_->input(cmd_gimbal_.rate_pitch);
+  ramp_rate_yaw_->input(cmd_gimbal_.rate_yaw);
+  cmd_gimbal_.rate_pitch = ramp_rate_pitch_->output();
+  cmd_gimbal_.rate_yaw = ramp_rate_yaw_->output();
   try
   {
     odom2pitch_ = robot_state_handle_.lookupTransform("odom", pitch_joint_urdf_->child_link_name, time);
@@ -199,7 +209,8 @@ void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des)
   quatToRPY(toMsg(base2gimbal_des), roll_temp, base2gimbal_current_des_pitch, base2gimbal_current_des_yaw);
   double pitch_real_des, yaw_real_des;
 
-  if (!setDesIntoLimit(pitch_real_des, pitch_des, base2gimbal_current_des_pitch, pitch_joint_urdf_))
+  pitch_des_in_limit = setDesIntoLimit(pitch_real_des, pitch_des, base2gimbal_current_des_pitch, pitch_joint_urdf_);
+  if (!pitch_des_in_limit)
   {
     double yaw_temp;
     tf2::Quaternion base2new_des;
@@ -215,7 +226,8 @@ void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des)
     quatToRPY(toMsg(odom2base * base2new_des), roll_temp, pitch_real_des, yaw_temp);
   }
 
-  if (!setDesIntoLimit(yaw_real_des, yaw_des, base2gimbal_current_des_yaw, yaw_joint_urdf_))
+  yaw_des_in_limit_ = setDesIntoLimit(yaw_real_des, yaw_des, base2gimbal_current_des_yaw, yaw_joint_urdf_);
+  if (!yaw_des_in_limit_)
   {
     double pitch_temp;
     tf2::Quaternion base2new_des;
@@ -436,6 +448,13 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
       ROS_WARN("%s", ex.what());
     }
   }
+  if (!pitch_des_in_limit)
+    pitch_vel_des = 0.;
+  if (!yaw_des_in_limit_)
+    yaw_vel_des = 0.;
+
+  pid_pitch_pos_.computeCommand(pitch_angle_error, period);
+  pid_yaw_pos_.computeCommand(yaw_angle_error, period);
 
   // publish state
   if (loop_count_ % 10 == 0)
@@ -444,33 +463,20 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     {
       pid_yaw_pos_state_pub_->msg_.header.stamp = time;
       pid_yaw_pos_state_pub_->msg_.set_point = yaw_des;
+      pid_yaw_pos_state_pub_->msg_.set_point_dot = yaw_vel_des;
       pid_yaw_pos_state_pub_->msg_.process_value = yaw_real;
-      pid_yaw_pos_state_pub_->msg_.process_value_dot = ctrl_yaw_.joint_.getVelocity();
-      pid_yaw_pos_state_pub_->msg_.error = yaw_angle_error;
-      pid_yaw_pos_state_pub_->msg_.time_step = period.toSec();
+      pid_yaw_pos_state_pub_->msg_.error = angles::shortest_angular_distance(yaw_real, yaw_des);
       pid_yaw_pos_state_pub_->msg_.command = pid_yaw_pos_.getCurrentCmd();
-      double dummy;
-      bool antiwindup;
-      pid_yaw_pos_.getGains(pid_yaw_pos_state_pub_->msg_.p, pid_yaw_pos_state_pub_->msg_.i,
-                            pid_yaw_pos_state_pub_->msg_.d, pid_yaw_pos_state_pub_->msg_.i_clamp, dummy, antiwindup);
-      pid_yaw_pos_state_pub_->msg_.antiwindup = static_cast<char>(antiwindup);
       pid_yaw_pos_state_pub_->unlockAndPublish();
     }
     if (pid_pitch_pos_state_pub_ && pid_pitch_pos_state_pub_->trylock())
     {
       pid_pitch_pos_state_pub_->msg_.header.stamp = time;
       pid_pitch_pos_state_pub_->msg_.set_point = pitch_des;
+      pid_pitch_pos_state_pub_->msg_.set_point_dot = pitch_vel_des;
       pid_pitch_pos_state_pub_->msg_.process_value = pitch_real;
-      pid_pitch_pos_state_pub_->msg_.process_value_dot = ctrl_pitch_.joint_.getVelocity();
-      pid_pitch_pos_state_pub_->msg_.error = pitch_angle_error;
-      pid_pitch_pos_state_pub_->msg_.time_step = period.toSec();
+      pid_pitch_pos_state_pub_->msg_.error = angles::shortest_angular_distance(pitch_real, pitch_des);
       pid_pitch_pos_state_pub_->msg_.command = pid_pitch_pos_.getCurrentCmd();
-      double dummy;
-      bool antiwindup;
-      pid_pitch_pos_.getGains(pid_pitch_pos_state_pub_->msg_.p, pid_pitch_pos_state_pub_->msg_.i,
-                              pid_pitch_pos_state_pub_->msg_.d, pid_pitch_pos_state_pub_->msg_.i_clamp, dummy,
-                              antiwindup);
-      pid_pitch_pos_state_pub_->msg_.antiwindup = static_cast<char>(antiwindup);
       pid_pitch_pos_state_pub_->unlockAndPublish();
     }
   }
@@ -481,6 +487,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
                        config_.yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
   ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + config_.pitch_k_v_ * pitch_vel_des +
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
+
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
   if (data_track_.id == 12)
@@ -546,6 +553,8 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     config.yaw_k_v_ = init_config.yaw_k_v_;
     config.pitch_k_v_ = init_config.pitch_k_v_;
     config.k_chassis_vel_ = init_config.k_chassis_vel_;
+    config.accel_pitch_ = init_config.accel_pitch_;
+    config.accel_yaw_ = init_config.accel_yaw_;
     config.delay = init_config.delay;
     config.delay2 = init_config.delay2;
     dynamic_reconfig_initialized_ = true;
@@ -553,6 +562,8 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
   GimbalConfig config_non_rt{ .yaw_k_v_ = config.yaw_k_v_,
                               .pitch_k_v_ = config.pitch_k_v_,
                               .k_chassis_vel_ = config.k_chassis_vel_,
+                              .accel_pitch_ = config.accel_pitch_,
+                              .accel_yaw_ = config.accel_yaw_,
                               .delay = config.delay,
                               .delay2 = config.delay2 };
   config_rt_buffer_.writeFromNonRT(config_non_rt);

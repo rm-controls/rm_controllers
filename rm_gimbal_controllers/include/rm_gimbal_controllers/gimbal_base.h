@@ -47,6 +47,7 @@
 #include <rm_msgs/GimbalCmd.h>
 #include <rm_msgs/TrackData.h>
 #include <rm_msgs/GimbalDesError.h>
+#include <rm_msgs/GimbalPosState.h>
 #include <rm_gimbal_controllers/GimbalBaseConfig.h>
 #include <rm_gimbal_controllers/bullet_solver.h>
 #include <tf2_eigen/tf2_eigen.h>
@@ -61,8 +62,8 @@ namespace rm_gimbal_controllers
 {
 struct GimbalConfig
 {
-  // feedforward
   double yaw_k_v_, pitch_k_v_, k_chassis_vel_;
+  double accel_pitch_{}, accel_yaw_{};
   double delay, delay2;
 };
 
@@ -168,7 +169,7 @@ private:
 
   // ROS Interface
   ros::Time last_publish_time_{};
-  std::unique_ptr<realtime_tools::RealtimePublisher<control_msgs::JointControllerState>> pid_yaw_pos_state_pub_,
+  std::unique_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>> pid_yaw_pos_state_pub_,
       pid_pitch_pos_state_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   ros::Subscriber cmd_gimbal_sub_;
@@ -182,6 +183,7 @@ private:
   std::string gimbal_des_frame_id_{}, imu_name_{};
   double publish_rate_{};
   bool state_changed_{};
+  bool pitch_des_in_limit{}, yaw_des_in_limit_{};
   int loop_count_{};
 
   // Transform
@@ -199,6 +201,8 @@ private:
   GimbalConfig config_{};
   realtime_tools::RealtimeBuffer<GimbalConfig> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>* d_srv_{};
+
+  RampFilter<double>*ramp_rate_pitch_{}, *ramp_rate_yaw_{};
 
   enum
   {
