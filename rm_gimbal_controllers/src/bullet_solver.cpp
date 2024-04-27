@@ -141,14 +141,20 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
        (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
       !is_low_speed)
   {
+    count_++;
     if (identified_target_change_)
     {
+      count_ = 0;
       identified_target_change_ = false;
-      switch_armor_time_ = ros::Time::now();
     }
-    selected_armor_ = v_yaw > 0. ? -1 : 1;
-    r = armors_num == 4 ? r2 : r1;
-    z = armors_num == 4 ? pos.z + dz : pos.z;
+    if (count_ >= min_fit_switch_count_)
+    {
+      if (count_ == min_fit_switch_count_)
+        switch_armor_time_ = ros::Time::now();
+      selected_armor_ = v_yaw > 0. ? -1 : 1;
+      r = armors_num == 4 ? r2 : r1;
+      z = armors_num == 4 ? pos.z + dz : pos.z;
+    }
   }
   int count{};
   double error = 999;

@@ -101,6 +101,8 @@ private:
   double bullet_speed_{}, resistance_coff_{};
   int shoot_beforehand_cmd_{};
   int selected_armor_;
+  int count_;
+  int min_fit_switch_count_;
   bool track_target_;
   bool identified_target_change_ = true;
   bool is_in_delay_before_switch_{};
