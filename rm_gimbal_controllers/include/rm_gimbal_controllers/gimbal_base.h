@@ -56,7 +56,6 @@
 #include <urdf/model.h>
 #include <dynamic_reconfigure/server.h>
 #include <realtime_tools/realtime_publisher.h>
-#include <rm_common/filters/lp_filter.h>
 
 namespace rm_gimbal_controllers
 {
@@ -77,8 +76,6 @@ public:
     nh.param("debug", is_debug_, true);
     linear_ = std::make_shared<Vector3WithFilter<double>>(num_data);
     angular_ = std::make_shared<Vector3WithFilter<double>>(num_data);
-    ros::NodeHandle nh_lp = ros::NodeHandle(nh, "lp");
-    angular_lp_filter_ = std::make_unique<LowPassFilter>(nh_lp);
     if (is_debug_)
     {
       real_pub_.reset(new realtime_tools::RealtimePublisher<geometry_msgs::Twist>(nh, "real", 1));
@@ -87,7 +84,6 @@ public:
   }
   std::shared_ptr<Vector3WithFilter<double>> linear_;
   std::shared_ptr<Vector3WithFilter<double>> angular_;
-  std::shared_ptr<LowPassFilter> angular_lp_filter_;
   void update(double linear_vel[3], double angular_vel[3], double period)
   {
     if (period < 0)
@@ -96,11 +92,9 @@ public:
     {
       linear_->clear();
       angular_->clear();
-      angular_lp_filter_->reset();
     }
     linear_->input(linear_vel);
     angular_->input(angular_vel);
-    angular_lp_filter_->input(angular_vel[2]);
     if (is_debug_ && loop_count_ % 10 == 0)
     {
       if (real_pub_->trylock())
