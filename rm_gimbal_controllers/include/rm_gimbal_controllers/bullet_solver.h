@@ -58,6 +58,7 @@ struct Config
   double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
       resistance_coff_qd_30, g, delay, dt, timeout, ban_shoot_duration, gimbal_switch_duration, max_switch_angle_,
       min_switch_angle_;
+  int min_fit_switch_count_;
 };
 
 class BulletSolver
@@ -103,7 +104,6 @@ private:
   int shoot_beforehand_cmd_{};
   int selected_armor_;
   int count_;
-  int min_fit_switch_count_;
   bool track_target_;
   bool identified_target_change_ = true;
   bool is_in_delay_before_switch_{};

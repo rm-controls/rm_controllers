@@ -55,8 +55,9 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .timeout = getParam(controller_nh, "timeout", 0.),
               .ban_shoot_duration = getParam(controller_nh, "ban_shoot_duration", 0.0),
               .gimbal_switch_duration = getParam(controller_nh, "gimbal_switch_duration", 0.0),
-              .max_switch_angle_ = getParam(controller_nh, "max_switch_angle_", 40.0),
-              .min_switch_angle_ = getParam(controller_nh, "min_switch_angle_", 2.0) };
+              .max_switch_angle_ = getParam(controller_nh, "max_switch_angle", 40.0),
+              .min_switch_angle_ = getParam(controller_nh, "min_switch_angle", 2.0),
+              .min_fit_switch_count_ = getParam(controller_nh, "min_fit_switch_count", 3) };
   max_track_target_vel_ = getParam(controller_nh, "max_track_target_vel", 5.0);
   config_rt_buffer_.initRT(config_);
 
@@ -147,9 +148,9 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
       count_ = 0;
       identified_target_change_ = false;
     }
-    if (count_ >= min_fit_switch_count_)
+    if (count_ >= config_.min_fit_switch_count_)
     {
-      if (count_ == min_fit_switch_count_)
+      if (count_ == config_.min_fit_switch_count_)
         switch_armor_time_ = ros::Time::now();
       selected_armor_ = v_yaw > 0. ? -1 : 1;
       r = armors_num == 4 ? r2 : r1;
@@ -380,6 +381,7 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.gimbal_switch_duration = init_config.gimbal_switch_duration;
     config.max_switch_angle_ = init_config.max_switch_angle_;
     config.min_switch_angle_ = init_config.min_switch_angle_;
+    config.min_fit_switch_count_ = init_config.min_fit_switch_count_;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{ .resistance_coff_qd_10 = config.resistance_coff_qd_10,
@@ -394,7 +396,8 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .ban_shoot_duration = config.ban_shoot_duration,
                         .gimbal_switch_duration = config.gimbal_switch_duration,
                         .max_switch_angle_ = config.max_switch_angle_,
-                        .min_switch_angle_ = config.min_switch_angle_ };
+                        .min_switch_angle_ = config.min_switch_angle_,
+                        .min_fit_switch_count_ = config.min_fit_switch_count_ };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 }  // namespace rm_gimbal_controllers
