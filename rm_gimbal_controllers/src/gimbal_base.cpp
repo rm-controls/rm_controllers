@@ -491,15 +491,14 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
 
   ctrl_yaw_.update(time, period);
   ctrl_pitch_.update(time, period);
-  if (data_track_.id == 12)
-    ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
+  ctrl_pitch_.joint_.setCommand(ctrl_pitch_.joint_.getCommand() + feedForward(time));
 }
 
 double Controller::feedForward(const ros::Time& time)
 {
   Eigen::Vector3d gravity(0, 0, -gravity_);
   tf2::doTransform(gravity, gravity,
-                   robot_state_handle_.lookupTransform(pitch_joint_urdf_->child_link_name, "odom", time));
+                   robot_state_handle_.lookupTransform(pitch_joint_urdf_->child_link_name, "base_link", time));
   Eigen::Vector3d mass_origin(mass_origin_.x, 0, mass_origin_.z);
   double feedforward = -mass_origin.cross(gravity).y();
   if (enable_gravity_compensation_)
