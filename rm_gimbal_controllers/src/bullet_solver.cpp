@@ -90,7 +90,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
   fly_time_pub_.reset(new realtime_tools::RealtimePublisher<std_msgs::Float64>(controller_nh, "fly_time", 10));
 
   identified_target_change_sub_ = controller_nh.subscribe<std_msgs::Bool>(
-      "/armor_processor/change", 10, &BulletSolver::identifiedTargetChangeCB, this);
+      "/change", 10, &BulletSolver::identifiedTargetChangeCB, this);
 }
 
 double BulletSolver::getResistanceCoefficient(double bullet_speed) const
