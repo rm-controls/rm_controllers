@@ -46,7 +46,6 @@
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/eigen_types.h>
 #include <rm_common/ros_utilities.h>
-#include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
 #include <rm_msgs/TrackData.h>
 #include <rm_msgs/ShootBeforehandCmd.h>
