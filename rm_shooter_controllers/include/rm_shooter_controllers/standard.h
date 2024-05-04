@@ -80,20 +80,22 @@ private:
   {
     cmd_rt_buffer_.writeFromNonRT(*msg);
   }
+
   void reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/);
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   std::vector<effort_controllers::JointVelocityController*> ctrls_friction_l_, ctrls_friction_r_;
   effort_controllers::JointPositionController ctrl_trigger_;
   std::vector<double> wheel_speed_offset_l_, wheel_speed_offset_r_;
-  int push_per_rotation_{};
+  int push_per_rotation_{}, count_{};
   double push_wheel_speed_threshold_{};
+  double freq_threshold_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool maybe_block_ = false;
   bool maybe_shoot_ = false;
   bool has_shoot_ = false;
-  bool wheel_speed_drop_ = false;
+  bool has_shoot_last_ = false;
 
   ros::Time last_shoot_time_, block_time_, last_block_time_;
   enum
@@ -109,7 +111,7 @@ private:
   realtime_tools::RealtimeBuffer<rm_msgs::ShootCmd> cmd_rt_buffer_;
   rm_msgs::ShootCmd cmd_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootState>> shoot_state_pub_;
-  ros::Subscriber cmd_subscriber_;
+  ros::Subscriber cmd_subscriber_, heat_sub_;
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>* d_srv_{};
 };
 
