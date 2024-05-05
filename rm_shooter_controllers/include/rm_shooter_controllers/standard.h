@@ -57,7 +57,7 @@ struct Config
 {
   double block_effort, block_speed, block_duration, block_overtime, anti_block_angle, anti_block_threshold,
       forward_push_threshold, exit_push_threshold;
-  double extra_wheel_speed, wheel_speed_drop_threshold;
+  double extra_wheel_speed, wheel_speed_drop_threshold, wheel_speed_raise_threshold;
 };
 
 class Controller : public controller_interface::MultiInterfaceController<hardware_interface::EffortJointInterface,
@@ -76,6 +76,7 @@ private:
   void block(const ros::Time& time, const ros::Duration& period);
   void setSpeed(const rm_msgs::ShootCmd& cmd);
   void normalize();
+  void localHeat(const ros::Time& time, const ros::Duration& period);
   void commandCB(const rm_msgs::ShootCmdConstPtr& msg)
   {
     cmd_rt_buffer_.writeFromNonRT(*msg);
@@ -93,9 +94,10 @@ private:
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
   bool maybe_block_ = false;
-  bool maybe_shoot_ = false;
-  bool has_shoot_ = false;
-  bool has_shoot_last_ = false;
+
+  bool has_shoot_ = false, has_shoot_last_ = false;
+  bool raise_flag_ = true, drop_flag_ = true;
+  double last_vel_l_{};
 
   ros::Time last_shoot_time_, block_time_, last_block_time_;
   enum

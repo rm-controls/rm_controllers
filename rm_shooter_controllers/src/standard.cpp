@@ -53,7 +53,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
               .forward_push_threshold = getParam(controller_nh, "forward_push_threshold", 0.1),
               .exit_push_threshold = getParam(controller_nh, "exit_push_threshold", 0.1),
               .extra_wheel_speed = getParam(controller_nh, "extra_wheel_speed", 0.),
-              .wheel_speed_drop_threshold = getParam(controller_nh, "wheel_speed_drop_threshold", 0.) };
+              .wheel_speed_drop_threshold = getParam(controller_nh, "wheel_speed_drop_threshold", 0.),
+              .wheel_speed_raise_threshold = getParam(controller_nh, "wheel_speed_raise_threshold", 3.1) };
   config_rt_buffer.initRT(config_);
   push_per_rotation_ = getParam(controller_nh, "push_per_rotation", 0);
   push_wheel_speed_threshold_ = getParam(controller_nh, "push_wheel_speed_threshold", 0.);
@@ -140,32 +141,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
       block(time, period);
       break;
   }
-  if (maybe_shoot_)
-  {
-    has_shoot_ = true;
-    maybe_shoot_ = false;
-  }
-  count_++;
-  if (has_shoot_last_ == true)
-  {
-    has_shoot_ = true;
-  }
-  has_shoot_last_ = has_shoot_;
-  if (count_ == 5)
-  {
-    if (shoot_state_pub_->trylock())
-    {
-      ROS_INFO("count:%d", count_);
-      shoot_state_pub_->msg_.has_shoot = has_shoot_;
-      shoot_state_pub_->msg_.stamp = time;
-      shoot_state_pub_->msg_.state = state_;
-      shoot_state_pub_->unlockAndPublish();
-    }
-    has_shoot_last_ = false;
-    count_ = 0;
-  }
-  if (has_shoot_)
-    has_shoot_ = false;
+  localHeat(time, period);
   for (auto& ctrl_friction_l : ctrls_friction_l_)
     ctrl_friction_l->update(time, period);
   for (auto& ctrl_friction_r : ctrls_friction_r_)
@@ -227,7 +203,6 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
                                    2. * M_PI / static_cast<double>(push_per_rotation_),
                                -1 * cmd_.hz * 2. * M_PI / static_cast<double>(push_per_rotation_));
       last_shoot_time_ = time;
-      maybe_shoot_ = true;
     }
     else if (std::fmod(std::abs(ctrl_trigger_.command_struct_.position_ - ctrl_trigger_.getPosition()), 2. * M_PI) <
              config_.forward_push_threshold)
@@ -235,7 +210,6 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
       ctrl_trigger_.setCommand(ctrl_trigger_.command_struct_.position_ -
                                2. * M_PI / static_cast<double>(push_per_rotation_));
       last_shoot_time_ = time;
-      maybe_shoot_ = true;
     }
     // Check block
     if ((ctrl_trigger_.joint_.getEffort() < -config_.block_effort &&
@@ -252,7 +226,6 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
       {
         state_ = BLOCK;
         state_changed_ = true;
-        maybe_shoot_ = false;
         ROS_INFO("[Shooter] Exit PUSH");
       }
     }
@@ -299,6 +272,42 @@ void Controller::normalize()
       push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01 + config_.exit_push_threshold) / push_angle));
 }
 
+void Controller::localHeat(const ros::Time& time, const ros::Duration& period)
+{
+  if (abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_vel_l_ > config_.wheel_speed_raise_threshold && drop_flag_)
+  {
+    raise_flag_ = true;
+    drop_flag_ = false;
+  }
+
+  if (last_vel_l_ - abs(ctrls_friction_l_[0]->joint_.getVelocity()) > config_.wheel_speed_drop_threshold &&
+      abs(ctrls_friction_l_[0]->joint_.getVelocity()) > 300. && raise_flag_)
+  {
+    drop_flag_ = true;
+    raise_flag_ = false;
+    has_shoot_ = true;
+  }
+  last_vel_l_ = abs(ctrls_friction_l_[0]->joint_.getVelocity());
+  count_++;
+  if (has_shoot_last_)
+  {
+    has_shoot_ = true;
+  }
+  has_shoot_last_ = has_shoot_;
+  if (count_ == 5)
+  {
+    if (shoot_state_pub_->trylock())
+    {
+      ROS_INFO("count:%d", count_);
+      shoot_state_pub_->msg_.has_shoot = has_shoot_;
+      shoot_state_pub_->msg_.stamp = time;
+      shoot_state_pub_->msg_.state = state_;
+      shoot_state_pub_->unlockAndPublish();
+    }
+    has_shoot_last_ = false;
+    count_ = 0;
+  }
+}
 void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/)
 {
   ROS_INFO("[Shooter] Dynamic params change");
@@ -315,6 +324,7 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint3
     config.exit_push_threshold = init_config.exit_push_threshold;
     config.extra_wheel_speed = init_config.extra_wheel_speed;
     config.wheel_speed_drop_threshold = init_config.wheel_speed_drop_threshold;
+    config.wheel_speed_raise_threshold = init_config.wheel_speed_raise_threshold;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{ .block_effort = config.block_effort,
@@ -326,7 +336,8 @@ void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint3
                         .forward_push_threshold = config.forward_push_threshold,
                         .exit_push_threshold = config.exit_push_threshold,
                         .extra_wheel_speed = config.extra_wheel_speed,
-                        .wheel_speed_drop_threshold = config.wheel_speed_drop_threshold };
+                        .wheel_speed_drop_threshold = config.wheel_speed_drop_threshold,
+                        .wheel_speed_raise_threshold = config.wheel_speed_raise_threshold };
   config_rt_buffer.writeFromNonRT(config_non_rt);
 }
 
