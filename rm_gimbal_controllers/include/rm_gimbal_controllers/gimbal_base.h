@@ -37,7 +37,6 @@
 
 #pragma once
 
-#include <effort_controllers/joint_position_controller.h>
 #include <effort_controllers/joint_velocity_controller.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
