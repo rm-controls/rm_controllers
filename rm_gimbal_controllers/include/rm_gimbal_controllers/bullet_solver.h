@@ -56,9 +56,9 @@ namespace rm_gimbal_controllers
 struct Config
 {
   double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
-      resistance_coff_qd_30, g, delay, dt, timeout, ban_shoot_duration, gimbal_switch_duration, max_switch_angle_,
-      min_switch_angle_;
-  int min_fit_switch_count_;
+      resistance_coff_qd_30, g, delay, dt, timeout, ban_shoot_duration, gimbal_switch_duration, max_switch_angle,
+      min_switch_angle, max_chassis_angular_vel, track_rotate_target_delay, track_move_target_delay;
+  int min_fit_switch_count;
 };
 
 class BulletSolver
@@ -67,7 +67,7 @@ public:
   explicit BulletSolver(ros::NodeHandle& controller_nh);
 
   bool solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw, double v_yaw,
-             double r1, double r2, double dz, int armors_num);
+             double r1, double r2, double dz, int armors_num, double chassis_angular_z);
   double getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw, double r1,
                         double r2, double dz, int armors_num, double yaw_real, double pitch_real, double bullet_speed);
   double getResistanceCoefficient(double bullet_speed) const;
@@ -101,6 +101,7 @@ private:
   double max_track_target_vel_;
   double output_yaw_{}, output_pitch_{};
   double bullet_speed_{}, resistance_coff_{};
+  double fly_time_;
   int shoot_beforehand_cmd_{};
   int selected_armor_;
   int count_;
@@ -110,7 +111,6 @@ private:
   bool dynamic_reconfig_initialized_{};
 
   geometry_msgs::Point target_pos_{};
-  double fly_time_;
   visualization_msgs::Marker marker_desire_;
   visualization_msgs::Marker marker_real_;
 };
