@@ -62,7 +62,6 @@ struct GimbalConfig
 {
   double yaw_k_v_, pitch_k_v_, k_chassis_vel_;
   double accel_pitch_{}, accel_yaw_{};
-  double track_rotate_target_delay, track_move_target_delay;
 };
 
 class ChassisVel
@@ -162,8 +161,7 @@ private:
 
   // ROS Interface
   ros::Time last_publish_time_{};
-  std::unique_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>> pid_yaw_pos_state_pub_,
-      pid_pitch_pos_state_pub_;
+  std::unique_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>> yaw_pos_state_pub_, pitch_pos_state_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_track_sub_;
@@ -176,11 +174,11 @@ private:
   std::string gimbal_des_frame_id_{}, imu_name_{};
   double publish_rate_{};
   bool state_changed_{};
-  bool pitch_des_in_limit{}, yaw_des_in_limit_{};
+  bool pitch_des_in_limit_{}, yaw_des_in_limit_{};
   int loop_count_{};
 
   // Transform
-  geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_, last_odom2gimbal_des_;
+  geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_;
 
   // Gravity Compensation
   geometry_msgs::Vector3 mass_origin_;
