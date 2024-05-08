@@ -142,7 +142,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
       block(time, period);
       break;
   }
-  localHeat(time, period);
+  judgeBulletShoot(time, period);
   if (shoot_state_pub_->trylock())
   {
     shoot_state_pub_->msg_.stamp = time;
@@ -278,23 +278,24 @@ void Controller::normalize()
       push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01 + config_.exit_push_threshold) / push_angle));
 }
 
-void Controller::localHeat(const ros::Time& time, const ros::Duration& period)
+void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& period)
 {
-  if (abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_vel_l_ > config_.wheel_speed_raise_threshold && drop_flag_)
+  if (abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_wheel_speed_ > config_.wheel_speed_raise_threshold &&
+      wheel_speed_drop_)
   {
-    raise_flag_ = true;
-    drop_flag_ = false;
+    wheel_speed_raise_ = true;
+    wheel_speed_drop_ = false;
   }
 
-  if (last_vel_l_ - abs(ctrls_friction_l_[0]->joint_.getVelocity()) > config_.wheel_speed_drop_threshold &&
-      abs(ctrls_friction_l_[0]->joint_.getVelocity()) > 300. && raise_flag_)
+  if (last_wheel_speed_ - abs(ctrls_friction_l_[0]->joint_.getVelocity()) > config_.wheel_speed_drop_threshold &&
+      abs(ctrls_friction_l_[0]->joint_.getVelocity()) > 300. && wheel_speed_raise_)
   {
-    drop_flag_ = true;
-    raise_flag_ = false;
+    wheel_speed_drop_ = true;
+    wheel_speed_raise_ = false;
     has_shoot_ = true;
   }
-  double friction_change_vel_ = abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_vel_l_;
-  last_vel_l_ = abs(ctrls_friction_l_[0]->joint_.getVelocity());
+  double friction_change_vel_ = abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_wheel_speed_;
+  last_wheel_speed_ = abs(ctrls_friction_l_[0]->joint_.getVelocity());
   count_++;
   if (has_shoot_last_)
   {

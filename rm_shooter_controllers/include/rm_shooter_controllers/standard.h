@@ -77,7 +77,7 @@ private:
   void block(const ros::Time& time, const ros::Duration& period);
   void setSpeed(const rm_msgs::ShootCmd& cmd);
   void normalize();
-  void localHeat(const ros::Time& time, const ros::Duration& period);
+  void judgeBulletShoot(const ros::Time& time, const ros::Duration& period);
   void commandCB(const rm_msgs::ShootCmdConstPtr& msg)
   {
     cmd_rt_buffer_.writeFromNonRT(*msg);
@@ -97,8 +97,8 @@ private:
   bool maybe_block_ = false;
 
   bool has_shoot_ = false, has_shoot_last_ = false;
-  bool raise_flag_ = true, drop_flag_ = true;
-  double last_vel_l_{};
+  bool wheel_speed_raise_ = true, wheel_speed_drop_ = true;
+  double last_wheel_speed_{};
 
   ros::Time last_shoot_time_, block_time_, last_block_time_;
   enum
