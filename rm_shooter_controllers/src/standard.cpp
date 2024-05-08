@@ -53,7 +53,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
               .forward_push_threshold = getParam(controller_nh, "forward_push_threshold", 0.1),
               .exit_push_threshold = getParam(controller_nh, "exit_push_threshold", 0.1),
               .extra_wheel_speed = getParam(controller_nh, "extra_wheel_speed", 0.),
-              .wheel_speed_drop_threshold = getParam(controller_nh, "wheel_speed_drop_threshold", 0.),
+              .wheel_speed_drop_threshold = getParam(controller_nh, "wheel_speed_drop_threshold", 10.),
               .wheel_speed_raise_threshold = getParam(controller_nh, "wheel_speed_raise_threshold", 3.1) };
   config_rt_buffer.initRT(config_);
   push_per_rotation_ = getParam(controller_nh, "push_per_rotation", 0);
@@ -61,8 +61,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   freq_threshold_ = getParam(controller_nh, "freq_threshold", 20.);
 
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::ShootCmd>("command", 1, &Controller::commandCB, this);
+  local_heat_state_pub_.reset(
+      new realtime_tools::RealtimePublisher<rm_msgs::LocalHeatState>(controller_nh, "/local_heat_state", 10));
   shoot_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::ShootState>(controller_nh, "state", 10));
-
   // Init dynamic reconfigure
   d_srv_ = new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>::CallbackType cb = [this](auto&& PH1, auto&& PH2) {
@@ -142,6 +143,12 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
       break;
   }
   localHeat(time, period);
+  if (shoot_state_pub_->trylock())
+  {
+    shoot_state_pub_->msg_.stamp = time;
+    shoot_state_pub_->msg_.state = state_;
+    shoot_state_pub_->unlockAndPublish();
+  }
   for (auto& ctrl_friction_l : ctrls_friction_l_)
     ctrl_friction_l->update(time, period);
   for (auto& ctrl_friction_r : ctrls_friction_r_)
@@ -250,7 +257,6 @@ void Controller::block(const ros::Time& time, const ros::Duration& period)
       (time - last_block_time_).toSec() > config_.block_overtime)
   {
     normalize();
-
     state_ = PUSH;
     state_changed_ = true;
     ROS_INFO("[Shooter] Exit BLOCK");
@@ -287,6 +293,7 @@ void Controller::localHeat(const ros::Time& time, const ros::Duration& period)
     raise_flag_ = false;
     has_shoot_ = true;
   }
+  double friction_change_vel_ = abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_vel_l_;
   last_vel_l_ = abs(ctrls_friction_l_[0]->joint_.getVelocity());
   count_++;
   if (has_shoot_last_)
@@ -296,17 +303,18 @@ void Controller::localHeat(const ros::Time& time, const ros::Duration& period)
   has_shoot_last_ = has_shoot_;
   if (count_ == 5)
   {
-    if (shoot_state_pub_->trylock())
+    if (local_heat_state_pub_->trylock())
     {
-      ROS_INFO("count:%d", count_);
-      shoot_state_pub_->msg_.has_shoot = has_shoot_;
-      shoot_state_pub_->msg_.stamp = time;
-      shoot_state_pub_->msg_.state = state_;
-      shoot_state_pub_->unlockAndPublish();
+      local_heat_state_pub_->msg_.stamp = time;
+      local_heat_state_pub_->msg_.has_shoot = has_shoot_;
+      local_heat_state_pub_->msg_.friction_change_vel = friction_change_vel_;
+      local_heat_state_pub_->unlockAndPublish();
     }
     has_shoot_last_ = false;
     count_ = 0;
   }
+  if (has_shoot_)
+    has_shoot_ = false;
 }
 void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/)
 {
