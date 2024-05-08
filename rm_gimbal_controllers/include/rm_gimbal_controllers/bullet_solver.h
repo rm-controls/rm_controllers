@@ -67,7 +67,7 @@ public:
   explicit BulletSolver(ros::NodeHandle& controller_nh);
 
   bool solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw, double v_yaw,
-             double r1, double r2, double dz, int armors_num, double chassis_angular_z);
+             double r1, double r2, double dz, int armors_num, double chassis_angular_vel_z);
   double getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw, double r1,
                         double r2, double dz, int armors_num, double yaw_real, double pitch_real, double bullet_speed);
   double getResistanceCoefficient(double bullet_speed) const;

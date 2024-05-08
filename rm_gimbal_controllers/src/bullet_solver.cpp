@@ -114,7 +114,7 @@ double BulletSolver::getResistanceCoefficient(double bullet_speed) const
 }
 
 bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw,
-                         double v_yaw, double r1, double r2, double dz, int armors_num, double chassis_angular_z)
+                         double v_yaw, double r1, double r2, double dz, int armors_num, double chassis_angular_vel_z)
 {
   config_ = *config_rt_buffer_.readFromRT();
   bullet_speed_ = bullet_speed;
@@ -132,14 +132,14 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   double max_switch_angle = config_.max_switch_angle / 180 * M_PI;
   double min_switch_angle = config_.min_switch_angle / 180 * M_PI;
   track_target_ = std::abs(v_yaw) < max_track_target_vel_;
-  if (std::abs(chassis_angular_z) >= config_.max_chassis_angular_vel)
+  if (std::abs(chassis_angular_vel_z) >= config_.max_chassis_angular_vel)
     track_target_ = 0;
   double switch_armor_angle =
       track_target_ ?
           (acos(r / target_rho) - max_switch_angle +
            (-acos(r / target_rho) + (max_switch_angle + min_switch_angle)) * std::abs(v_yaw) / max_track_target_vel_) *
-                  (1 - std::abs(chassis_angular_z) / config_.max_chassis_angular_vel) +
-              min_switch_angle * std::abs(chassis_angular_z) / config_.max_chassis_angular_vel :
+                  (1 - std::abs(chassis_angular_vel_z) / config_.max_chassis_angular_vel) +
+              min_switch_angle * std::abs(chassis_angular_vel_z) / config_.max_chassis_angular_vel :
           min_switch_angle;
   if (((((yaw + v_yaw * rough_fly_time) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
        (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
@@ -397,6 +397,7 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.min_switch_angle = init_config.min_switch_angle;
     config.max_chassis_angular_vel = init_config.max_chassis_angular_vel;
     config.track_rotate_target_delay = init_config.track_rotate_target_delay;
+    config.track_move_target_delay = init_config.track_move_target_delay;
     config.min_fit_switch_count = init_config.min_fit_switch_count;
     dynamic_reconfig_initialized_ = true;
   }
@@ -415,6 +416,7 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .min_switch_angle = config.min_switch_angle,
                         .max_chassis_angular_vel = config.max_chassis_angular_vel,
                         .track_rotate_target_delay = config.track_rotate_target_delay,
+                        .track_move_target_delay = config.track_move_target_delay,
                         .min_fit_switch_count = config.min_fit_switch_count };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
