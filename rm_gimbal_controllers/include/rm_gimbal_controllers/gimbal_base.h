@@ -37,23 +37,33 @@
 
 #pragma once
 
-#include <effort_controllers/joint_position_controller.h>
+#include <effort_controllers/joint_velocity_controller.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <hardware_interface/joint_command_interface.h>
-#include <rm_common/hardware_interface/robot_state_interface.h>
 #include <hardware_interface/imu_sensor_interface.h>
-#include <realtime_tools/realtime_publisher.h>
+#include <rm_common/hardware_interface/robot_state_interface.h>
+#include <rm_common/filters/filters.h>
 #include <rm_msgs/GimbalCmd.h>
 #include <rm_msgs/TrackData.h>
 #include <rm_msgs/GimbalDesError.h>
-#include <dynamic_reconfigure/server.h>
+#include <rm_msgs/GimbalPosState.h>
+#include <rm_gimbal_controllers/GimbalBaseConfig.h>
 #include <rm_gimbal_controllers/bullet_solver.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <Eigen/Eigen>
-#include <rm_common/filters/filters.h>
+#include <control_toolbox/pid.h>
+#include <urdf/model.h>
+#include <dynamic_reconfigure/server.h>
+#include <realtime_tools/realtime_publisher.h>
 
 namespace rm_gimbal_controllers
 {
+struct GimbalConfig
+{
+  double yaw_k_v_, pitch_k_v_, k_chassis_vel_;
+  double accel_pitch_{}, accel_yaw_{};
+};
+
 class ChassisVel
 {
 public:
@@ -139,27 +149,33 @@ private:
   void updateChassisVel();
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
+  void reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t);
 
   rm_control::RobotStateHandle robot_state_handle_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
   bool has_imu_ = true;
-  effort_controllers::JointPositionController ctrl_yaw_, ctrl_pitch_;
+  effort_controllers::JointVelocityController ctrl_yaw_, ctrl_pitch_;
+  control_toolbox::Pid pid_yaw_pos_, pid_pitch_pos_;
 
   std::shared_ptr<BulletSolver> bullet_solver_;
 
   // ROS Interface
   ros::Time last_publish_time_{};
+  std::unique_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>> yaw_pos_state_pub_, pitch_pos_state_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_track_sub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TrackData> track_rt_buffer_;
+  urdf::JointConstSharedPtr pitch_joint_urdf_, yaw_joint_urdf_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
   rm_msgs::TrackData data_track_;
   std::string gimbal_des_frame_id_{}, imu_name_{};
   double publish_rate_{};
   bool state_changed_{};
+  bool pitch_des_in_limit_{}, yaw_des_in_limit_{};
+  int loop_count_{};
 
   // Transform
   geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_;
@@ -169,17 +185,15 @@ private:
   double gravity_;
   bool enable_gravity_compensation_;
 
-  // Input feedforward
-  double yaw_k_v_;
-  double pitch_k_v_;
-
-  // Resistance compensation
-  double yaw_resistance_;
-  double velocity_saturation_point_, effort_saturation_point_;
-
   // Chassis
-  double k_chassis_vel_;
   std::shared_ptr<ChassisVel> chassis_vel_;
+
+  bool dynamic_reconfig_initialized_{};
+  GimbalConfig config_{};
+  realtime_tools::RealtimeBuffer<GimbalConfig> config_rt_buffer_;
+  dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>* d_srv_{};
+
+  RampFilter<double>*ramp_rate_pitch_{}, *ramp_rate_yaw_{};
 
   enum
   {
