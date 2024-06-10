@@ -61,8 +61,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   freq_threshold_ = getParam(controller_nh, "freq_threshold", 20.);
 
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::ShootCmd>("command", 1, &Controller::commandCB, this);
-  local_heat_state_pub_.reset(
-      new realtime_tools::RealtimePublisher<rm_msgs::LocalHeatState>(controller_nh, "/local_heat_state", 10));
+  local_heat_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::LocalHeatState>(
+      controller_nh, "/local_heat_state/shooter_state", 10));
   shoot_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::ShootState>(controller_nh, "state", 10));
   // Init dynamic reconfigure
   d_srv_ = new dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>(controller_nh);
@@ -294,7 +294,7 @@ void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& pe
     wheel_speed_raise_ = false;
     has_shoot_ = true;
   }
-  double friction_change_vel_ = abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_wheel_speed_;
+  double friction_change_vel = abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_wheel_speed_;
   last_wheel_speed_ = abs(ctrls_friction_l_[0]->joint_.getVelocity());
   count_++;
   if (has_shoot_last_)
@@ -302,13 +302,13 @@ void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& pe
     has_shoot_ = true;
   }
   has_shoot_last_ = has_shoot_;
-  if (count_ == 5)
+  if (count_ == 2)
   {
     if (local_heat_state_pub_->trylock())
     {
       local_heat_state_pub_->msg_.stamp = time;
       local_heat_state_pub_->msg_.has_shoot = has_shoot_;
-      local_heat_state_pub_->msg_.friction_change_vel = friction_change_vel_;
+      local_heat_state_pub_->msg_.friction_change_vel = friction_change_vel;
       local_heat_state_pub_->unlockAndPublish();
     }
     has_shoot_last_ = false;
