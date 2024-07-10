@@ -280,19 +280,22 @@ void Controller::normalize()
 
 void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& period)
 {
-  if (abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_wheel_speed_ > config_.wheel_speed_raise_threshold &&
-      wheel_speed_drop_)
+  if (state_ != STOP)
   {
-    wheel_speed_raise_ = true;
-    wheel_speed_drop_ = false;
-  }
+    if (abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_wheel_speed_ > config_.wheel_speed_raise_threshold &&
+        wheel_speed_drop_)
+    {
+      wheel_speed_raise_ = true;
+      wheel_speed_drop_ = false;
+    }
 
-  if (last_wheel_speed_ - abs(ctrls_friction_l_[0]->joint_.getVelocity()) > config_.wheel_speed_drop_threshold &&
-      abs(ctrls_friction_l_[0]->joint_.getVelocity()) > 300. && wheel_speed_raise_)
-  {
-    wheel_speed_drop_ = true;
-    wheel_speed_raise_ = false;
-    has_shoot_ = true;
+    if (last_wheel_speed_ - abs(ctrls_friction_l_[0]->joint_.getVelocity()) > config_.wheel_speed_drop_threshold &&
+        abs(ctrls_friction_l_[0]->joint_.getVelocity()) > 300. && wheel_speed_raise_)
+    {
+      wheel_speed_drop_ = true;
+      wheel_speed_raise_ = false;
+      has_shoot_ = true;
+    }
   }
   double friction_change_vel = abs(ctrls_friction_l_[0]->joint_.getVelocity()) - last_wheel_speed_;
   last_wheel_speed_ = abs(ctrls_friction_l_[0]->joint_.getVelocity());
