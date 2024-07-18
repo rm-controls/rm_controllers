@@ -198,7 +198,7 @@ void ChassisBase<T...>::follow(const ros::Time& time, const ros::Duration& perio
               roll, pitch, yaw);
     double follow_error = angles::shortest_angular_distance(yaw, 0);
     pid_follow_.computeCommand(-follow_error, period);
-    vel_cmd_.z = pid_follow_.getCurrentCmd();
+    vel_cmd_.z = pid_follow_.getCurrentCmd() + cmd_rt_buffer_.readFromRT()->cmd_chassis_.follow_vel_des;
   }
   catch (tf2::TransformException& ex)
   {
