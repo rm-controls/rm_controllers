@@ -366,7 +366,7 @@ void Controller::traj(const ros::Time& time)
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter TRAJ");
   }
-  setDes(time, cmd_gimbal_.yaw_des, cmd_gimbal_.pitch_des);
+  setDes(time, cmd_gimbal_.traj_yaw, cmd_gimbal_.traj_pitch);
 }
 
 bool Controller::setDesIntoLimit(double& real_des, double current_des, double base2gimbal_current_des,
