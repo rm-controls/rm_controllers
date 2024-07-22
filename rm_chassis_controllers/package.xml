@@ -19,6 +19,7 @@
     <depend>controller_interface</depend>
     <depend>effort_controllers</depend>
     <depend>tf2_geometry_msgs</depend>
+    <depend>nav_msgs</depend>
     <depend>angles</depend>
 
     <exec_depend>robot_localization</exec_depend>
