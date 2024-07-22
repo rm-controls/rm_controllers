@@ -19,6 +19,7 @@ find_package(catkin REQUIRED
         controller_interface
         effort_controllers
         tf2_geometry_msgs
+        nav_msgs
         angles
         )
 
@@ -45,6 +46,8 @@ catkin_package(
 
         effort_controllers
         tf2_geometry_msgs
+        nav_msgs
+        angles
         LIBRARIES ${PROJECT_NAME}
 )
 
