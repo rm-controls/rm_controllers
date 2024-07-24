@@ -364,7 +364,7 @@ void BulletSolver::judgeShootBeforehand(const ros::Time& time, double v_yaw)
   else if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.ban_shoot_duration).toSec())
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
   else if (((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.gimbal_switch_duration).toSec()) &&
-           std::abs(v_yaw) > 5.0)
+           std::abs(v_yaw) > config_.min_shoot_beforehand_vel)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::ALLOW_SHOOT;
   else if (is_in_delay_before_switch_)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
