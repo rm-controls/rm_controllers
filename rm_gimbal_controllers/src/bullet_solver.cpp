@@ -57,6 +57,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .gimbal_switch_duration = getParam(controller_nh, "gimbal_switch_duration", 0.0),
               .max_switch_angle = getParam(controller_nh, "max_switch_angle", 40.0),
               .min_switch_angle = getParam(controller_nh, "min_switch_angle", 2.0),
+              .min_shoot_beforehand_vel = getParam(controller_nh, "min_shoot_beforehand_vel", 5.0),
               .max_chassis_angular_vel = getParam(controller_nh, "max_chassis_angular_vel", 8.5),
               .track_rotate_target_delay = getParam(controller_nh, "track_rotate_target_delay", 0.),
               .track_move_target_delay = getParam(controller_nh, "track_move_target_delay", 0.),
@@ -356,13 +357,14 @@ void BulletSolver::identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg)
     identified_target_change_ = true;
 }
 
-void BulletSolver::judgeShootBeforehand(const ros::Time& time)
+void BulletSolver::judgeShootBeforehand(const ros::Time& time, double v_yaw)
 {
   if (!track_target_)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
   else if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.ban_shoot_duration).toSec())
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
-  else if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.gimbal_switch_duration).toSec())
+  else if (((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.gimbal_switch_duration).toSec()) &&
+           std::abs(v_yaw) > 5.0)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::ALLOW_SHOOT;
   else if (is_in_delay_before_switch_)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
@@ -395,6 +397,7 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.gimbal_switch_duration = init_config.gimbal_switch_duration;
     config.max_switch_angle = init_config.max_switch_angle;
     config.min_switch_angle = init_config.min_switch_angle;
+    config.min_shoot_beforehand_vel = init_config.min_shoot_beforehand_vel;
     config.max_chassis_angular_vel = init_config.max_chassis_angular_vel;
     config.track_rotate_target_delay = init_config.track_rotate_target_delay;
     config.track_move_target_delay = init_config.track_move_target_delay;
@@ -414,6 +417,7 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .gimbal_switch_duration = config.gimbal_switch_duration,
                         .max_switch_angle = config.max_switch_angle,
                         .min_switch_angle = config.min_switch_angle,
+                        .min_shoot_beforehand_vel = config.min_shoot_beforehand_vel,
                         .max_chassis_angular_vel = config.max_chassis_angular_vel,
                         .track_rotate_target_delay = config.track_rotate_target_delay,
                         .track_move_target_delay = config.track_move_target_delay,
