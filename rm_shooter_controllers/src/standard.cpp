@@ -274,8 +274,11 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
 void Controller::normalize()
 {
   double push_angle = 2. * M_PI / static_cast<double>(push_per_rotation_);
-  ctrl_trigger_.setCommand(
-      push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01 + config_.exit_push_threshold) / push_angle));
+  if (cmd_.hz >= freq_threshold_)
+    ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01) / push_angle));
+  else
+    ctrl_trigger_.setCommand(
+        push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01 + config_.exit_push_threshold) / push_angle));
 }
 
 void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& period)
@@ -288,7 +291,6 @@ void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& pe
       wheel_speed_raise_ = true;
       wheel_speed_drop_ = false;
     }
-
     if (last_wheel_speed_ - abs(ctrls_friction_l_[0]->joint_.getVelocity()) > config_.wheel_speed_drop_threshold &&
         abs(ctrls_friction_l_[0]->joint_.getVelocity()) > 300. && wheel_speed_raise_)
     {
@@ -320,6 +322,7 @@ void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& pe
   if (has_shoot_)
     has_shoot_ = false;
 }
+
 void Controller::reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/)
 {
   ROS_INFO("[Shooter] Dynamic params change");
