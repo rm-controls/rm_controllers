@@ -19,8 +19,9 @@ find_package(catkin REQUIRED
         controller_interface
         effort_controllers
         tf2_geometry_msgs
+        nav_msgs
         angles
-        )
+)
 
 find_package(Eigen3 REQUIRED)
 
@@ -45,6 +46,8 @@ catkin_package(
 
         effort_controllers
         tf2_geometry_msgs
+        nav_msgs
+        angles
         LIBRARIES ${PROJECT_NAME}
 )
 
@@ -66,12 +69,12 @@ add_library(${PROJECT_NAME}
         src/sentry.cpp
         src/swerve.cpp
         src/balance.cpp
-        )
+)
 
 ## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
-        )
+)
 
 #############
 ## Install ##
