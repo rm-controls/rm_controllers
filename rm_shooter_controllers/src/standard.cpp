@@ -259,7 +259,6 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
     friction_block_count = (friction_block_count + 1) % 1000;
   }
 }
-}
 
 void Controller::block(const ros::Time& time, const ros::Duration& period)
 {
