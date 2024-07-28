@@ -192,6 +192,9 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     case DIRECT:
       direct(time);
       break;
+    case TRAJ:
+      traj(time);
+      break;
   }
   moveJoint(time, period);
 }
@@ -354,6 +357,16 @@ void Controller::direct(const ros::Time& time)
                              std::sqrt(std::pow(aim_point_odom.x - odom2pitch_.transform.translation.x, 2) +
                                        std::pow(aim_point_odom.y - odom2pitch_.transform.translation.y, 2)));
   setDes(time, yaw, pitch);
+}
+
+void Controller::traj(const ros::Time& time)
+{
+  if (state_changed_)
+  {  // on enter
+    state_changed_ = false;
+    ROS_INFO("[Gimbal] Enter TRAJ");
+  }
+  setDes(time, cmd_gimbal_.traj_yaw, cmd_gimbal_.traj_pitch);
 }
 
 bool Controller::setDesIntoLimit(double& real_des, double current_des, double base2gimbal_current_des,
