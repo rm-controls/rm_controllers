@@ -60,7 +60,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   push_wheel_speed_threshold_ = getParam(controller_nh, "push_wheel_speed_threshold", 0.);
   freq_threshold_ = getParam(controller_nh, "freq_threshold", 20.);
   anti_friction_block_duty_cycle_ = getParam(controller_nh, "anti_friction_block_duty_cycle", 0.5);
-  anti_friction_block_vel_ = getParam(controller_nh, "anti_friction_block_vel", 810);
+  anti_friction_block_vel_ = getParam(controller_nh, "anti_friction_block_vel", 810.0);
 
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::ShootCmd>("command", 1, &Controller::commandCB, this);
   local_heat_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::LocalHeatState>(
@@ -245,7 +245,9 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
   else
   {
     ROS_DEBUG("[Shooter] Wait for friction wheel");
-    double command = (friction_block_count <= anti_friction_block_duty_cycle_ * 1000) ? anti_friction_block_vel_ : 0;
+    double command = (friction_block_count <= static_cast<int>(anti_friction_block_duty_cycle_ * 1000)) ?
+                         anti_friction_block_vel_ :
+                         0.;
     for (auto& ctrl_friction_l : ctrls_friction_l_)
     {
       ctrl_friction_l->setCommand(command);
