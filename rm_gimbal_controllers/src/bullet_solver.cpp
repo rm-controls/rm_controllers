@@ -186,16 +186,15 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   {
     target_pos_.x = pos.x - r * cos(atan2(pos.y, pos.x));
     target_pos_.y = pos.y - r * sin(atan2(pos.y, pos.x));
-    if (((v_yaw > 1.0 && (yaw + v_yaw * (fly_time_ + config_.track_center_next_delay) +
-                          selected_armor_ * 2 * M_PI / armors_num) > output_yaw_) ||
-         (v_yaw < -1.0 && (yaw + v_yaw * (fly_time_ + config_.track_center_next_delay) +
-                           selected_armor_ * 2 * M_PI / armors_num) < output_yaw_)) &&
-        std::abs(v_yaw) > 12.0)
+    if ((v_yaw > 1.0 && (yaw + v_yaw * (fly_time_ + config_.track_center_next_delay) +
+                         selected_armor_ * 2 * M_PI / armors_num) > output_yaw_) ||
+        (v_yaw < -1.0 && (yaw + v_yaw * (fly_time_ + config_.track_center_next_delay) +
+                          selected_armor_ * 2 * M_PI / armors_num) < output_yaw_))
       selected_armor_ = v_yaw > 0. ? -2 : 2;
     if (selected_armor_ % 2 == 0)
     {
-      r = armors_num == 4 ? r1 : r2;
-      z = armors_num == 4 ? pos.z : pos.z + dz;
+      r = r1;
+      z = pos.z;
     }
   }
   target_pos_.z = z;
@@ -335,8 +334,8 @@ double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vec
   double r, z;
   if (selected_armor_ % 2 == 0)
   {
-    r = armors_num == 4 ? r1 : r2;
-    z = armors_num == 4 ? pos.z : pos.z + dz;
+    r = r1;
+    z = pos.z;
   }
   else
   {
