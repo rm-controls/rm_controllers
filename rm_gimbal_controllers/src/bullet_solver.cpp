@@ -51,8 +51,8 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .resistance_coff_qd_30 = getParam(controller_nh, "resistance_coff_qd_30", 0.),
               .g = getParam(controller_nh, "g", 0.),
               .delay = getParam(controller_nh, "delay", 0.),
-              .track_center_next_delay = getParam(controller_nh, "track_center_next_delay", 0.105),
-              .track_center_second_delay = getParam(controller_nh, "track_center_second_delay", 0.105),
+              .wait_next_armor_delay = getParam(controller_nh, "wait_next_armor_delay", 0.105),
+              .wait_diagonal_armor_delay = getParam(controller_nh, "wait_diagonal_armor_delay", 0.105),
               .dt = getParam(controller_nh, "dt", 0.),
               .timeout = getParam(controller_nh, "timeout", 0.),
               .ban_shoot_duration = getParam(controller_nh, "ban_shoot_duration", 0.0),
@@ -186,9 +186,9 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   {
     target_pos_.x = pos.x - r * cos(atan2(pos.y, pos.x));
     target_pos_.y = pos.y - r * sin(atan2(pos.y, pos.x));
-    if ((v_yaw > 1.0 && (yaw + v_yaw * (fly_time_ + config_.track_center_next_delay) +
+    if ((v_yaw > 1.0 && (yaw + v_yaw * (fly_time_ + config_.wait_next_armor_delay) +
                          selected_armor_ * 2 * M_PI / armors_num) > output_yaw_) ||
-        (v_yaw < -1.0 && (yaw + v_yaw * (fly_time_ + config_.track_center_next_delay) +
+        (v_yaw < -1.0 && (yaw + v_yaw * (fly_time_ + config_.wait_next_armor_delay) +
                           selected_armor_ * 2 * M_PI / armors_num) < output_yaw_))
       selected_armor_ = v_yaw > 0. ? -2 : 2;
     if (selected_armor_ % 2 == 0)
@@ -330,7 +330,7 @@ double BulletSolver::getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vec
   if (track_target_)
     delay = 0.;
   else
-    delay = selected_armor_ % 2 == 0 ? config_.track_center_second_delay : config_.track_center_next_delay;
+    delay = selected_armor_ % 2 == 0 ? config_.wait_diagonal_armor_delay : config_.wait_next_armor_delay;
   double r, z;
   if (selected_armor_ % 2 == 0)
   {
@@ -412,8 +412,8 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.resistance_coff_qd_30 = init_config.resistance_coff_qd_30;
     config.g = init_config.g;
     config.delay = init_config.delay;
-    config.track_center_next_delay = init_config.track_center_next_delay;
-    config.track_center_second_delay = init_config.track_center_second_delay;
+    config.wait_next_armor_delay = init_config.wait_next_armor_delay;
+    config.wait_diagonal_armor_delay = init_config.wait_diagonal_armor_delay;
     config.dt = init_config.dt;
     config.timeout = init_config.timeout;
     config.ban_shoot_duration = init_config.ban_shoot_duration;
@@ -434,8 +434,8 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .resistance_coff_qd_30 = config.resistance_coff_qd_30,
                         .g = config.g,
                         .delay = config.delay,
-                        .track_center_next_delay = config.track_center_next_delay,
-                        .track_center_second_delay = config.track_center_second_delay,
+                        .wait_next_armor_delay = config.wait_next_armor_delay,
+                        .wait_diagonal_armor_delay = config.wait_diagonal_armor_delay,
                         .dt = config.dt,
                         .timeout = config.timeout,
                         .ban_shoot_duration = config.ban_shoot_duration,
