@@ -270,20 +270,20 @@ void Controller::block(const ros::Time& time, const ros::Duration& period)
 void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
 {
   static int friction_block_count = 0;
-  bool wheel_speed_ready = true;
+  bool friction_wheel_block = false;
   for (auto& ctrl_friction_l : ctrls_friction_l_)
   {
     if (ctrl_friction_l->joint_.getVelocity() <= friction_block_vel_ &&
         abs(ctrl_friction_l->joint_.getEffort()) >= friction_block_effort_ && cmd.wheel_speed != 0)
-      wheel_speed_ready = false;
+      friction_wheel_block = true;
   }
   for (auto& ctrl_friction_r : ctrls_friction_r_)
   {
     if (ctrl_friction_r->joint_.getVelocity() >= -1.0 * friction_block_vel_ &&
         abs(ctrl_friction_r->joint_.getVelocity()) >= friction_block_effort_ && cmd.wheel_speed != 0)
-      wheel_speed_ready = false;
+      friction_wheel_block = true;
   }
-  if (wheel_speed_ready)
+  if (!friction_wheel_block)
   {
     for (size_t i = 0; i < ctrls_friction_l_.size(); i++)
       ctrls_friction_l_[i]->setCommand(cmd_.wheel_speed + config_.extra_wheel_speed + wheel_speed_offset_l_[i]);
