@@ -280,7 +280,7 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
   for (auto& ctrl_friction_r : ctrls_friction_r_)
   {
     if (ctrl_friction_r->joint_.getVelocity() >= -1.0 * friction_block_vel_ &&
-        abs(ctrl_friction_r->joint_.getVelocity()) >= friction_block_effort_ && cmd.wheel_speed != 0)
+        abs(ctrl_friction_r->joint_.getEffort()) >= friction_block_effort_ && cmd.wheel_speed != 0)
       friction_wheel_block = true;
   }
   if (!friction_wheel_block)
