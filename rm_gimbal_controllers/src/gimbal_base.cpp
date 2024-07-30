@@ -148,10 +148,22 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   return true;
 }
 
-void Controller::starting(const ros::Time& /*unused*/)
+void Controller::starting(const ros::Time& time)
 {
   state_ = RATE;
   state_changed_ = true;
+  try
+  {
+    odom2pitch_ = robot_state_handle_.lookupTransform("odom", pitch_joint_urdf_->child_link_name, time);
+  }
+  catch (tf2::TransformException& ex)
+  {
+    ROS_WARN("%s", ex.what());
+    return;
+  }
+  odom2gimbal_des_.transform.rotation = odom2pitch_.transform.rotation;
+  odom2gimbal_des_.header.stamp = time;
+  robot_state_handle_.setTransform(odom2gimbal_des_, "rm_gimbal_controllers");
 }
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
@@ -254,9 +266,6 @@ void Controller::rate(const ros::Time& time, const ros::Duration& period)
   {  // on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
-    odom2gimbal_des_.transform.rotation = odom2pitch_.transform.rotation;
-    odom2gimbal_des_.header.stamp = time;
-    robot_state_handle_.setTransform(odom2gimbal_des_, "rm_gimbal_controllers");
   }
   else
   {
