@@ -204,6 +204,7 @@ private:
     TRAJ
   };
   int state_ = RATE;
+  bool start_ = false;
 };
 
 }  // namespace rm_gimbal_controllers
