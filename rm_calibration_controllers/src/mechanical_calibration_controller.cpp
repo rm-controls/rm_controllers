@@ -67,7 +67,7 @@ bool MechanicalCalibrationController::init(hardware_interface::RobotHW* robot_hw
       ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
       return false;
     }
-    if (!controller_nh.getParam("pos_threshold", position_threshold_))
+    if (!nh_return.getParam("pos_threshold", position_threshold_))
     {
       ROS_ERROR("Position value was not specified (namespace: %s)", nh_return.getNamespace().c_str());
       return false;

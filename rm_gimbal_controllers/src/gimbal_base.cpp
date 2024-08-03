@@ -152,6 +152,7 @@ void Controller::starting(const ros::Time& /*unused*/)
 {
   state_ = RATE;
   state_changed_ = true;
+  start_ = true;
 }
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
@@ -191,6 +192,9 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
       break;
     case DIRECT:
       direct(time);
+      break;
+    case TRAJ:
+      traj(time);
       break;
   }
   moveJoint(time, period);
@@ -251,9 +255,13 @@ void Controller::rate(const ros::Time& time, const ros::Duration& period)
   {  // on enter
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter RATE");
-    odom2gimbal_des_.transform.rotation = odom2pitch_.transform.rotation;
-    odom2gimbal_des_.header.stamp = time;
-    robot_state_handle_.setTransform(odom2gimbal_des_, "rm_gimbal_controllers");
+    if (start_)
+    {
+      odom2gimbal_des_.transform.rotation = odom2pitch_.transform.rotation;
+      odom2gimbal_des_.header.stamp = time;
+      robot_state_handle_.setTransform(odom2gimbal_des_, "rm_gimbal_controllers");
+      start_ = false;
+    }
   }
   else
   {
@@ -293,6 +301,10 @@ void Controller::track(const ros::Time& time)
     ROS_WARN("%s", ex.what());
   }
   double yaw = data_track_.yaw + data_track_.v_yaw * ((time - data_track_.header.stamp).toSec());
+  while (yaw > M_PI)
+    yaw -= 2 * M_PI;
+  while (yaw < -M_PI)
+    yaw += 2 * M_PI;
   target_pos.x += target_vel.x * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.x;
   target_pos.y += target_vel.y * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.y;
   target_pos.z += target_vel.z * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.z;
@@ -302,7 +314,7 @@ void Controller::track(const ros::Time& time)
   bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, yaw, data_track_.v_yaw,
                                              data_track_.radius_1, data_track_.radius_2, data_track_.dz,
                                              data_track_.armors_num, chassis_vel_->angular_->z());
-  bullet_solver_->judgeShootBeforehand(time);
+  bullet_solver_->judgeShootBeforehand(time, data_track_.v_yaw);
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
@@ -354,6 +366,16 @@ void Controller::direct(const ros::Time& time)
                              std::sqrt(std::pow(aim_point_odom.x - odom2pitch_.transform.translation.x, 2) +
                                        std::pow(aim_point_odom.y - odom2pitch_.transform.translation.y, 2)));
   setDes(time, yaw, pitch);
+}
+
+void Controller::traj(const ros::Time& time)
+{
+  if (state_changed_)
+  {  // on enter
+    state_changed_ = false;
+    ROS_INFO("[Gimbal] Enter TRAJ");
+  }
+  setDes(time, cmd_gimbal_.traj_yaw, cmd_gimbal_.traj_pitch);
 }
 
 bool Controller::setDesIntoLimit(double& real_des, double current_des, double base2gimbal_current_des,
