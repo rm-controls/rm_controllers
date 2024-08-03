@@ -301,6 +301,10 @@ void Controller::track(const ros::Time& time)
     ROS_WARN("%s", ex.what());
   }
   double yaw = data_track_.yaw + data_track_.v_yaw * ((time - data_track_.header.stamp).toSec());
+  while (yaw > M_PI)
+    yaw -= 2 * M_PI;
+  while (yaw < -M_PI)
+    yaw += 2 * M_PI;
   target_pos.x += target_vel.x * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.x;
   target_pos.y += target_vel.y * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.y;
   target_pos.z += target_vel.z * (time - data_track_.header.stamp).toSec() - odom2pitch_.transform.translation.z;
