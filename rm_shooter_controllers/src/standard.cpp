@@ -59,6 +59,10 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   push_per_rotation_ = getParam(controller_nh, "push_per_rotation", 0);
   push_wheel_speed_threshold_ = getParam(controller_nh, "push_wheel_speed_threshold", 0.);
   freq_threshold_ = getParam(controller_nh, "freq_threshold", 20.);
+  anti_friction_block_duty_cycle_ = getParam(controller_nh, "anti_friction_block_duty_cycle", 0.5);
+  anti_friction_block_vel_ = getParam(controller_nh, "anti_friction_block_vel", 810.0);
+  friction_block_effort_ = getParam(controller_nh, "friction_block_effort", 0.2);
+  friction_block_vel_ = getParam(controller_nh, "friction_block_vel", 1.0);
 
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::ShootCmd>("command", 1, &Controller::commandCB, this);
   local_heat_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::LocalHeatState>(
@@ -265,10 +269,42 @@ void Controller::block(const ros::Time& time, const ros::Duration& period)
 
 void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
 {
-  for (size_t i = 0; i < ctrls_friction_l_.size(); i++)
-    ctrls_friction_l_[i]->setCommand(cmd_.wheel_speed + config_.extra_wheel_speed + wheel_speed_offset_l_[i]);
-  for (size_t i = 0; i < ctrls_friction_r_.size(); i++)
-    ctrls_friction_r_[i]->setCommand(-cmd_.wheel_speed - config_.extra_wheel_speed - wheel_speed_offset_r_[i]);
+  static int friction_block_count = 0;
+  bool friction_wheel_block = false;
+  for (auto& ctrl_friction_l : ctrls_friction_l_)
+  {
+    if (ctrl_friction_l->joint_.getVelocity() <= friction_block_vel_ &&
+        abs(ctrl_friction_l->joint_.getEffort()) >= friction_block_effort_ && cmd.wheel_speed != 0)
+      friction_wheel_block = true;
+  }
+  for (auto& ctrl_friction_r : ctrls_friction_r_)
+  {
+    if (ctrl_friction_r->joint_.getVelocity() >= -1.0 * friction_block_vel_ &&
+        abs(ctrl_friction_r->joint_.getEffort()) >= friction_block_effort_ && cmd.wheel_speed != 0)
+      friction_wheel_block = true;
+  }
+  if (!friction_wheel_block)
+  {
+    for (size_t i = 0; i < ctrls_friction_l_.size(); i++)
+      ctrls_friction_l_[i]->setCommand(cmd_.wheel_speed + config_.extra_wheel_speed + wheel_speed_offset_l_[i]);
+    for (size_t i = 0; i < ctrls_friction_r_.size(); i++)
+      ctrls_friction_r_[i]->setCommand(-cmd_.wheel_speed - config_.extra_wheel_speed - wheel_speed_offset_r_[i]);
+  }
+  else
+  {
+    double command = (friction_block_count <= static_cast<int>(anti_friction_block_duty_cycle_ * 1000)) ?
+                         anti_friction_block_vel_ :
+                         0.;
+    for (auto& ctrl_friction_l : ctrls_friction_l_)
+    {
+      ctrl_friction_l->setCommand(command);
+    }
+    for (auto& ctrl_friction_r : ctrls_friction_r_)
+    {
+      ctrl_friction_r->setCommand(command);
+    }
+    friction_block_count = (friction_block_count + 1) % 1000;
+  }
 }
 
 void Controller::normalize()
