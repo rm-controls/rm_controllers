@@ -173,7 +173,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   }
   catch (tf2::TransformException& ex)
   {
-    ROS_WARN("%s", ex.what());
+    ROS_WARN_THROTTLE(1, "%s\n", ex.what());
     return;
   }
   updateChassisVel();
