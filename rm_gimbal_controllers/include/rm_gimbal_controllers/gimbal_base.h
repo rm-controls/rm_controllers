@@ -60,7 +60,7 @@ namespace rm_gimbal_controllers
 {
 struct GimbalConfig
 {
-  double yaw_k_v_, pitch_k_v_, k_chassis_vel_, k_chassis_vel_a, k_chassis_vel_b, k_chassis_vel_c, k_chassis_vel_d;
+  double yaw_k_v_, pitch_k_v_, k_chassis_vel_, k_chassis_vel_a, k_chassis_vel_b, k_chassis_vel_c, k_chassis_vel_d,k_chassis_vel_e,k_chassis_vel_f;
   double accel_pitch_{}, accel_yaw_{};
 };
 
