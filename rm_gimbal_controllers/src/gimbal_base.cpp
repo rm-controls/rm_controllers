@@ -66,6 +66,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   chassis_vel_ = std::make_shared<ChassisVel>(chassis_vel_nh);
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   bullet_solver_ = std::make_shared<BulletSolver>(nh_bullet_solver);
+  joint_state_sub_ =
+      controller_nh.subscribe<sensor_msgs::JointState>("/joint_states", 10, &Controller::jointStateCallback, this);
 
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
@@ -75,12 +77,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   config_ = { .yaw_k_v_ = getParam(nh_yaw, "k_v", 0.),
               .pitch_k_v_ = getParam(nh_pitch, "k_v", 0.),
               .k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.),
-              .k_chassis_vel_a = getParam(controller_nh, "yaw/k_chassis_vel_a", 0.),
-              .k_chassis_vel_b = getParam(controller_nh, "yaw/k_chassis_vel_b", 0.),
-              .k_chassis_vel_c = getParam(controller_nh, "yaw/k_chassis_vel_c", 0.),
-              .k_chassis_vel_d = getParam(controller_nh, "yaw/k_chassis_vel_d", 0.),
-              .k_chassis_vel_e = getParam(controller_nh, "yaw/k_chassis_vel_e", 0.),
-              .k_chassis_vel_f = getParam(controller_nh, "yaw/k_chassis_vel_f", 0.),
               .accel_pitch_ = getParam(controller_nh, "pitch/accel", 99.),
               .accel_yaw_ = getParam(controller_nh, "yaw/accel", 99.) };
   config_rt_buffer_.initRT(config_);
@@ -505,8 +501,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     }
   }
   loop_count_++;
-  double chassis_vel_angular_z=chassis_vel_->angular_->z();
-  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() - updateCompensation(chassis_vel_angular_z) +
+
+  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() - updateCompensation() +
                        config_.yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
   ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + config_.pitch_k_v_ * pitch_vel_des +
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
@@ -554,13 +550,16 @@ void Controller::updateChassisVel()
   last_odom2base_ = odom2base_;
 }
 
-double Controller::updateCompensation(double chassis_vel_angular_z)
+void Controller::jointStateCallback(const sensor_msgs::JointState::ConstPtr& data)
 {
-  double chassis_compensation;
-  chassis_compensation= config_.k_chassis_vel_a*pow(chassis_vel_angular_z,5)+config_.k_chassis_vel_b*pow(chassis_vel_angular_z,4)+
-                         config_.k_chassis_vel_c*pow(chassis_vel_angular_z,3)+config_.k_chassis_vel_d*pow(chassis_vel_angular_z,2)+
-                         config_.k_chassis_vel_e*chassis_vel_angular_z+config_.k_chassis_vel_f;
-  return chassis_compensation;
+  joint_state_ = *data;
+}
+
+double Controller::updateCompensation()
+{
+  double yaw_compensation;
+  yaw_compensation=joint_state_.effort[9];
+  return yaw_compensation;
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)
@@ -584,12 +583,6 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     config.yaw_k_v_ = init_config.yaw_k_v_;
     config.pitch_k_v_ = init_config.pitch_k_v_;
     config.k_chassis_vel_ = init_config.k_chassis_vel_;
-    config.k_chassis_vel_a = init_config.k_chassis_vel_a;
-    config.k_chassis_vel_b = init_config.k_chassis_vel_b;
-    config.k_chassis_vel_c = init_config.k_chassis_vel_c;
-    config.k_chassis_vel_d = init_config.k_chassis_vel_d;
-    config.k_chassis_vel_e = init_config.k_chassis_vel_e;
-    config.k_chassis_vel_f = init_config.k_chassis_vel_f;
     config.accel_pitch_ = init_config.accel_pitch_;
     config.accel_yaw_ = init_config.accel_yaw_;
     dynamic_reconfig_initialized_ = true;
@@ -597,12 +590,6 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
   GimbalConfig config_non_rt{ .yaw_k_v_ = config.yaw_k_v_,
                               .pitch_k_v_ = config.pitch_k_v_,
                               .k_chassis_vel_ = config.k_chassis_vel_,
-                              .k_chassis_vel_a = config.k_chassis_vel_a,
-                              .k_chassis_vel_b = config.k_chassis_vel_b,
-                              .k_chassis_vel_c = config.k_chassis_vel_c,
-                              .k_chassis_vel_d = config.k_chassis_vel_d,
-                              .k_chassis_vel_e = config.k_chassis_vel_e,
-                              .k_chassis_vel_f = config.k_chassis_vel_f,
                               .accel_pitch_ = config.accel_pitch_,
                               .accel_yaw_ = config.accel_yaw_ };
   config_rt_buffer_.writeFromNonRT(config_non_rt);

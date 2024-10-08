@@ -76,8 +76,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   d_srv_->setCallback(cb);
 
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
-  XmlRpc::XmlRpcValue friction_left, friction_right;
+  XmlRpc::XmlRpcValue friction_left, friction_mid, friction_right;
   controller_nh.getParam("friction_left", friction_left);
+  controller_nh.getParam("friction_mid", friction_mid);
   controller_nh.getParam("friction_right", friction_right);
   double wheel_speed_offset;
   for (const auto& it : friction_left)
@@ -87,6 +88,16 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     effort_controllers::JointVelocityController* ctrl_friction_l = new effort_controllers::JointVelocityController;
     if (ctrl_friction_l->init(effort_joint_interface_, nh))
       ctrls_friction_l_.push_back(ctrl_friction_l);
+    else
+      return false;
+  }
+  for (const auto& it : friction_mid)
+  {
+    ros::NodeHandle nh = ros::NodeHandle(controller_nh, "friction_mid/" + it.first);
+    wheel_speed_offset_m_.push_back(nh.getParam("wheel_speed_offset", wheel_speed_offset) ? wheel_speed_offset : 0.);
+    effort_controllers::JointVelocityController* ctrl_friction_m = new effort_controllers::JointVelocityController;
+    if (ctrl_friction_m->init(effort_joint_interface_, nh))
+      ctrls_friction_m_.push_back(ctrl_friction_m);
     else
       return false;
   }
@@ -155,6 +166,8 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   }
   for (auto& ctrl_friction_l : ctrls_friction_l_)
     ctrl_friction_l->update(time, period);
+  for (auto& ctrl_friction_m : ctrls_friction_m_)
+    ctrl_friction_m->update(time, period);
   for (auto& ctrl_friction_r : ctrls_friction_r_)
     ctrl_friction_r->update(time, period);
   ctrl_trigger_.update(time, period);
@@ -169,6 +182,8 @@ void Controller::stop(const ros::Time& time, const ros::Duration& period)
 
     for (auto& ctrl_friction_l : ctrls_friction_l_)
       ctrl_friction_l->setCommand(0.);
+    for (auto& ctrl_friction_m : ctrls_friction_m_)
+      ctrl_friction_m->setCommand(0.);
     for (auto& ctrl_friction_r : ctrls_friction_r_)
       ctrl_friction_r->setCommand(0.);
     ctrl_trigger_.setCommand(ctrl_trigger_.joint_.getPosition());
@@ -198,6 +213,12 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
   {
     if (ctrl_friction_l->joint_.getVelocity() < push_wheel_speed_threshold_ * ctrl_friction_l->command_ ||
         ctrl_friction_l->joint_.getVelocity() <= M_PI)
+      wheel_speed_ready = false;
+  }
+  for (auto& ctrl_friction_m : ctrls_friction_m_)
+  {
+    if (ctrl_friction_m->joint_.getVelocity() < push_wheel_speed_threshold_ * ctrl_friction_m->command_ ||
+        ctrl_friction_m->joint_.getVelocity() <= M_PI)
       wheel_speed_ready = false;
   }
   for (auto& ctrl_friction_r : ctrls_friction_r_)
@@ -277,6 +298,12 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
         abs(ctrl_friction_l->joint_.getEffort()) >= friction_block_effort_ && cmd.wheel_speed != 0)
       friction_wheel_block = true;
   }
+  for (auto& ctrl_friction_m : ctrls_friction_m_)
+  {
+    if (ctrl_friction_m->joint_.getVelocity() <= friction_block_vel_ &&
+        abs(ctrl_friction_m->joint_.getEffort()) >= friction_block_effort_ && cmd.wheel_speed != 0)
+      friction_wheel_block = true;
+  }
   for (auto& ctrl_friction_r : ctrls_friction_r_)
   {
     if (ctrl_friction_r->joint_.getVelocity() >= -1.0 * friction_block_vel_ &&
@@ -287,6 +314,8 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
   {
     for (size_t i = 0; i < ctrls_friction_l_.size(); i++)
       ctrls_friction_l_[i]->setCommand(cmd_.wheel_speed + config_.extra_wheel_speed + wheel_speed_offset_l_[i]);
+    for (size_t i = 0; i < ctrls_friction_m_.size(); i++)
+      ctrls_friction_m_[i]->setCommand(cmd_.wheel_speed + config_.extra_wheel_speed + wheel_speed_offset_m_[i]);
     for (size_t i = 0; i < ctrls_friction_r_.size(); i++)
       ctrls_friction_r_[i]->setCommand(-cmd_.wheel_speed - config_.extra_wheel_speed - wheel_speed_offset_r_[i]);
   }
@@ -298,6 +327,10 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
     for (auto& ctrl_friction_l : ctrls_friction_l_)
     {
       ctrl_friction_l->setCommand(command);
+    }
+    for (auto& ctrl_friction_m : ctrls_friction_m_)
+    {
+      ctrl_friction_m->setCommand(command);
     }
     for (auto& ctrl_friction_r : ctrls_friction_r_)
     {
