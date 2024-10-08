@@ -66,6 +66,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   chassis_vel_ = std::make_shared<ChassisVel>(chassis_vel_nh);
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   bullet_solver_ = std::make_shared<BulletSolver>(nh_bullet_solver);
+  joint_state_sub_ =
+      controller_nh.subscribe<sensor_msgs::JointState>("/joint_states", 10, &Controller::jointStateCallback, this);
 
   ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
   ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
@@ -173,7 +175,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   }
   catch (tf2::TransformException& ex)
   {
-    ROS_WARN("%s", ex.what());
+    ROS_WARN_THROTTLE(5,"%s\n",ex.what());
     return;
   }
   updateChassisVel();
@@ -500,7 +502,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   loop_count_++;
 
-  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
+  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() - updateCompensation() +
                        config_.yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
   ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + config_.pitch_k_v_ * pitch_vel_des +
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
@@ -546,6 +548,18 @@ void Controller::updateChassisVel()
   double angular_vel[3]{ angular_x, angular_y, angular_z };
   chassis_vel_->update(linear_vel, angular_vel, tf_period);
   last_odom2base_ = odom2base_;
+}
+
+void Controller::jointStateCallback(const sensor_msgs::JointState::ConstPtr& data)
+{
+  joint_state_ = *data;
+}
+
+double Controller::updateCompensation()
+{
+  double yaw_compensation;
+  yaw_compensation=joint_state_.effort[9];
+  return yaw_compensation;
 }
 
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)
