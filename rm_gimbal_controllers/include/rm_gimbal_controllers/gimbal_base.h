@@ -54,14 +54,13 @@
 #include <control_toolbox/pid.h>
 #include <urdf/model.h>
 #include <dynamic_reconfigure/server.h>
-#include <sensor_msgs/JointState.h>
 #include <realtime_tools/realtime_publisher.h>
 
 namespace rm_gimbal_controllers
 {
 struct GimbalConfig
 {
-  double yaw_k_v_, pitch_k_v_, k_chassis_vel_;
+  double yaw_k_v_, pitch_k_v_, a_compensation, b_compensation, c_compensation;
   double accel_pitch_{}, accel_yaw_{};
 };
 
@@ -149,8 +148,8 @@ private:
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   double feedForward(const ros::Time& time);
   void updateChassisVel();
-  void jointStateCallback(const sensor_msgs::JointState::ConstPtr& data);
-  double updateCompensation();
+  double chassis_compensation, a_compensation, b_compensation, c_compensation;
+  double updateCompensation(double chassis_vel_angular_z);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t);
@@ -162,7 +161,6 @@ private:
   control_toolbox::Pid pid_yaw_pos_, pid_pitch_pos_;
 
   std::shared_ptr<BulletSolver> bullet_solver_;
-  sensor_msgs::JointState joint_state_;
 
   // ROS Interface
   ros::Time last_publish_time_{};
@@ -170,7 +168,6 @@ private:
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_track_sub_;
-  ros::Subscriber joint_state_sub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TrackData> track_rt_buffer_;
   urdf::JointConstSharedPtr pitch_joint_urdf_, yaw_joint_urdf_;
