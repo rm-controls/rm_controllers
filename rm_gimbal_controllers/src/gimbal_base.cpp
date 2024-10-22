@@ -553,7 +553,7 @@ void Controller::updateChassisVel()
 
 double Controller::updateCompensation(double chassis_vel_angular_z)
 {
-  chassis_compensation = a_compensation * pow(chassis_vel_angular_z,2) + b_compensation * chassis_vel_angular_z + c_compensation;
+  chassis_compensation = config_.a_compensation * pow(chassis_vel_angular_z,2) + config_.b_compensation * chassis_vel_angular_z + config_.c_compensation;
   return chassis_compensation;
 }
 
