@@ -502,8 +502,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   loop_count_++;
 
-  double chassis_vel_anlugar_z = chassis_vel_->angular_->z();
-  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() - updateCompensation(chassis_vel_anlugar_z) * chassis_vel_->angular_->z()
+  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() - updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z()
                        + config_.yaw_k_v_ * yaw_vel_des +ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
   ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + config_.pitch_k_v_ * pitch_vel_des +
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
