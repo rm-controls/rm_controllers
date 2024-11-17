@@ -74,7 +74,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   config_ = { .yaw_k_v_ = getParam(nh_yaw, "k_v", 0.),
               .pitch_k_v_ = getParam(nh_pitch, "k_v", 0.),
-              .k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.),
+              .a_compensation = getParam(controller_nh,"yaw/a_compensation",0.),
+              .b_compensation = getParam(controller_nh,"yaw/b_compensation",0.),
+              .c_compensation = getParam(controller_nh,"yaw/c_compensation",0.),
               .accel_pitch_ = getParam(controller_nh, "pitch/accel", 99.),
               .accel_yaw_ = getParam(controller_nh, "yaw/accel", 99.) };
   config_rt_buffer_.initRT(config_);
@@ -173,7 +175,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   }
   catch (tf2::TransformException& ex)
   {
-    ROS_WARN("%s", ex.what());
+    ROS_WARN_THROTTLE(5, "%s\n", ex.what());
     return;
   }
   updateChassisVel();
@@ -500,7 +502,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   loop_count_++;
 
-  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
+  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() - updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
                        config_.yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
   ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + config_.pitch_k_v_ * pitch_vel_des +
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
@@ -548,6 +550,12 @@ void Controller::updateChassisVel()
   last_odom2base_ = odom2base_;
 }
 
+double Controller::updateCompensation(double chassis_vel_angular_z)
+{
+  chassis_compensation = config_.a_compensation * pow(chassis_vel_angular_z,2) + config_.b_compensation * chassis_vel_angular_z + config_.c_compensation;
+  return chassis_compensation;
+}
+
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)
 {
   cmd_rt_buffer_.writeFromNonRT(*msg);
@@ -568,14 +576,18 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     GimbalConfig init_config = *config_rt_buffer_.readFromNonRT();  // config init use yaml
     config.yaw_k_v_ = init_config.yaw_k_v_;
     config.pitch_k_v_ = init_config.pitch_k_v_;
-    config.k_chassis_vel_ = init_config.k_chassis_vel_;
+    config.a_compensation = init_config.a_compensation;
+    config.b_compensation = init_config.b_compensation;
+    config.c_compensation = init_config.c_compensation;
     config.accel_pitch_ = init_config.accel_pitch_;
     config.accel_yaw_ = init_config.accel_yaw_;
     dynamic_reconfig_initialized_ = true;
   }
   GimbalConfig config_non_rt{ .yaw_k_v_ = config.yaw_k_v_,
                               .pitch_k_v_ = config.pitch_k_v_,
-                              .k_chassis_vel_ = config.k_chassis_vel_,
+                              .a_compensation = config.a_compensation,
+                              .b_compensation = config.b_compensation,
+                              .c_compensation = config.c_compensation,
                               .accel_pitch_ = config.accel_pitch_,
                               .accel_yaw_ = config.accel_yaw_ };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
