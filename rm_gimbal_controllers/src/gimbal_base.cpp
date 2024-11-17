@@ -579,6 +579,8 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     config.a_compensation = init_config.a_compensation;
     config.b_compensation = init_config.b_compensation;
     config.c_compensation = init_config.c_compensation;
+    config.accel_pitch_ = init_config.accel_pitch_;
+    config.accel_yaw_ = init_config.accel_yaw_;
     dynamic_reconfig_initialized_ = true;
   }
   GimbalConfig config_non_rt{ .yaw_k_v_ = config.yaw_k_v_,
