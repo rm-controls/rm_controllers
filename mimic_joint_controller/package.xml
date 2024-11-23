@@ -12,6 +12,8 @@
   <depend>pluginlib</depend>
   <depend>roscpp</depend>
   <depend>controller_interface</depend>
+  <depend>effort_controllers</depend>
+  <depend>hardware_interface</depend>
 
   <export>
     <controller_interface plugin="${prefix}/mimic_joint_controller_plugins.xml"/>
