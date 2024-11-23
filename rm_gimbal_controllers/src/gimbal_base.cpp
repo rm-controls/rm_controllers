@@ -74,9 +74,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   config_ = { .yaw_k_v_ = getParam(nh_yaw, "k_v", 0.),
               .pitch_k_v_ = getParam(nh_pitch, "k_v", 0.),
-              .chassis_comp_a_ = getParam(controller_nh,"yaw/chassis_comp_a",0.),
-              .chassis_comp_b_ = getParam(controller_nh,"yaw/chassis_comp_b",0.),
-              .chassis_comp_c_ = getParam(controller_nh,"yaw/chassis_comp_c",0.),
+              .chassis_comp_a_ = getParam(controller_nh, "yaw/chassis_comp_a", 0.),
+              .chassis_comp_b_ = getParam(controller_nh, "yaw/chassis_comp_b", 0.),
+              .chassis_comp_c_ = getParam(controller_nh, "yaw/chassis_comp_c", 0.),
               .accel_pitch_ = getParam(controller_nh, "pitch/accel", 99.),
               .accel_yaw_ = getParam(controller_nh, "yaw/accel", 99.) };
   config_rt_buffer_.initRT(config_);
@@ -502,7 +502,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   loop_count_++;
 
-  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() - updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
+  ctrl_yaw_.setCommand(pid_yaw_pos_.getCurrentCmd() -
+                       updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
                        config_.yaw_k_v_ * yaw_vel_des + ctrl_yaw_.joint_.getVelocity() - angular_vel_yaw.z);
   ctrl_pitch_.setCommand(pid_pitch_pos_.getCurrentCmd() + config_.pitch_k_v_ * pitch_vel_des +
                          ctrl_pitch_.joint_.getVelocity() - angular_vel_pitch.y);
@@ -552,7 +553,8 @@ void Controller::updateChassisVel()
 
 double Controller::updateCompensation(double chassis_vel_angular_z)
 {
-  chassis_compensation_ = config_.chassis_comp_a_ * pow(chassis_vel_angular_z,2) + config_.chassis_comp_b_ * chassis_vel_angular_z + config_.chassis_comp_c_;
+  chassis_compensation_ = config_.chassis_comp_a_ * pow(chassis_vel_angular_z, 2) +
+                          config_.chassis_comp_b_ * chassis_vel_angular_z + config_.chassis_comp_c_;
   return chassis_compensation_;
 }
 
