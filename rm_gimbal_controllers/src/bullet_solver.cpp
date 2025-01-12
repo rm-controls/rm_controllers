@@ -102,6 +102,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
 double BulletSolver::getResistanceCoefficient(double bullet_speed) const
 {
   // bullet_speed have 5 value:10,15,16,18,30
+  //根据子弹的速度，选择不同的阻力系数，返回值是阻力系数
   double resistance_coff;
   if (bullet_speed < 12.5)
     resistance_coff = config_.resistance_coff_qd_10;
@@ -119,12 +120,14 @@ double BulletSolver::getResistanceCoefficient(double bullet_speed) const
 bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw,
                          double v_yaw, double r1, double r2, double dz, int armors_num, double chassis_angular_vel_z)
 {
+  //在缓冲区读取数据，然后获取空气阻力系数
   config_ = *config_rt_buffer_.readFromRT();
   bullet_speed_ = bullet_speed;
   resistance_coff_ = getResistanceCoefficient(bullet_speed_) != 0 ? getResistanceCoefficient(bullet_speed_) : 0.001;
 
   double temp_z = pos.z;
   double target_rho = std::sqrt(std::pow(pos.x, 2) + std::pow(pos.y, 2));
+  //在这里计算目标的yaw和pitch，然后计算飞行时间
   output_yaw_ = std::atan2(pos.y, pos.x);
   output_pitch_ = std::atan2(temp_z, std::sqrt(std::pow(pos.x, 2) + std::pow(pos.y, 2)));
   double rough_fly_time =
@@ -134,31 +137,38 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   double z = pos.z;
   double max_switch_angle = config_.max_switch_angle / 180 * M_PI;
   double min_switch_angle = config_.min_switch_angle / 180 * M_PI;
+  //判断是否跟踪移动的目标（装甲板）,速度超过最大跟踪速度，就不跟踪移动的目标
   track_target_ = std::abs(v_yaw) < max_track_target_vel_;
-  if (std::abs(chassis_angular_vel_z) >= config_.max_chassis_angular_vel)
-    track_target_ = 0;
   double switch_armor_angle =
       track_target_ ?
+        //跟踪目标时候的计算
           (acos(r / target_rho) - max_switch_angle +
            (-acos(r / target_rho) + (max_switch_angle + min_switch_angle)) * std::abs(v_yaw) / max_track_target_vel_) *
                   (1 - std::abs(chassis_angular_vel_z) / config_.max_chassis_angular_vel) +
               min_switch_angle * std::abs(chassis_angular_vel_z) / config_.max_chassis_angular_vel :
-          min_switch_angle;
+            //不跟踪目标的话直接使用最小切换速度
+            min_switch_angle;
+  //这里的yaw+v_yaw*rough_fly_time 是预测的角度，与最大和最小允许角度进行比较，
   if (((((yaw + v_yaw * rough_fly_time) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
        (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
       std::abs(v_yaw) >= 1.0)
   {
     count_++;
+    //判断是否切换了跟踪目标
     if (identified_target_change_)
     {
+      //如果是就重新记数
       count_ = 0;
       identified_target_change_ = false;
     }
     if (count_ >= config_.min_fit_switch_count)
     {
+      //计数超过一定次数，就就记录时间
       if (count_ == config_.min_fit_switch_count)
         switch_armor_time_ = ros::Time::now();
+      //通过转动的方向来判断是要选上一个装甲板还是下一个
       selected_armor_ = v_yaw > 0. ? -1 : 1;
+      //这里应该是四号装甲板有特殊的半径和高度
       r = armors_num == 4 ? r2 : r1;
       z = armors_num == 4 ? pos.z + dz : pos.z;
     }
@@ -171,6 +181,7 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
          output_yaw_ - switch_armor_angle) &&
         v_yaw < 0.)) &&
       track_target_;
+  //如果是跟踪模式，
   if (track_target_)
     yaw += v_yaw * config_.track_rotate_target_delay;
   pos.x += vel.x * config_.track_move_target_delay;

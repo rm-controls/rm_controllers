@@ -55,6 +55,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
               .extra_wheel_speed = getParam(controller_nh, "extra_wheel_speed", 0.),
               .wheel_speed_drop_threshold = getParam(controller_nh, "wheel_speed_drop_threshold", 10.),
               .wheel_speed_raise_threshold = getParam(controller_nh, "wheel_speed_raise_threshold", 3.1) };
+  //初始化实时配置缓冲区，将初始配置参数载入缓冲区
   config_rt_buffer.initRT(config_);
   push_per_rotation_ = getParam(controller_nh, "push_per_rotation", 0);
   push_wheel_speed_threshold_ = getParam(controller_nh, "push_wheel_speed_threshold", 0.);
@@ -63,7 +64,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   anti_friction_block_vel_ = getParam(controller_nh, "anti_friction_block_vel", 810.0);
   friction_block_effort_ = getParam(controller_nh, "friction_block_effort", 0.2);
   friction_block_vel_ = getParam(controller_nh, "friction_block_vel", 1.0);
-
   cmd_subscriber_ = controller_nh.subscribe<rm_msgs::ShootCmd>("command", 1, &Controller::commandCB, this);
   local_heat_state_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::LocalHeatState>(
       controller_nh, "/local_heat_state/shooter_state", 10));
