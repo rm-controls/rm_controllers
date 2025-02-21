@@ -143,8 +143,8 @@ private:
   void track(const ros::Time& time);
   void direct(const ros::Time& time);
   void traj(const ros::Time& time);
-  bool setDesIntoLimit(double& real_des, double current_des, double base2gimbal_current_des,
-                       const urdf::JointConstSharedPtr& joint_urdf);
+  bool setDesIntoLimit(double& real_des, double current_des, double base2gimbal_current_des, double temp,
+                       const urdf::JointConstSharedPtr& joint_urdf, tf2::Quaternion& base2new_des);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   double feedForward(const ros::Time& time);
   void updateChassisVel();
