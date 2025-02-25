@@ -472,7 +472,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   {
     pid_pos_.at(2)->computeCommand(angle_error[2], period);
     ctrl_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
-                            config_.yaw_k_v_ * vel_des[2] + ctrl_.at(1)->joint_.getVelocity() - angular_vel.z);
+                            config_.yaw_k_v_ * vel_des[2] + ctrl_.at(2)->joint_.getVelocity() - angular_vel.z);
 
     ctrl_.at(2)->update(time, period);
   }
