@@ -213,13 +213,13 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
 
 void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des)
 {
-  tf2::Quaternion odom2base, odom2gimbal_des, base2new_des;
+  tf2::Quaternion odom2base, odom2gimbal_des;
   tf2::fromMsg(odom2base_.transform.rotation, odom2base);
   odom2gimbal_des.setRPY(0, pitch_des, yaw_des);
   tf2::Quaternion base2gimbal_des = odom2base.inverse() * odom2gimbal_des;
   for (const auto& it : joint_urdfs_)
-    pos_des_in_limit_.insert(std::make_pair(it.first, setDesIntoLimit(base2gimbal_des, it.second, base2new_des)));
-  odom2gimbal_des_.transform.rotation = tf2::toMsg(odom2base * base2new_des);
+    pos_des_in_limit_.insert(std::make_pair(it.first, setDesIntoLimit(base2gimbal_des, it.second, base2gimbal_des)));
+  odom2gimbal_des_.transform.rotation = tf2::toMsg(odom2base * base2gimbal_des);
   odom2gimbal_des_.header.stamp = time;
   robot_state_handle_.setTransform(odom2gimbal_des_, "rm_gimbal_controllers");
 }
@@ -350,7 +350,30 @@ void Controller::traj(const ros::Time& time)
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter TRAJ");
   }
-  setDes(time, cmd_gimbal_.traj_yaw, cmd_gimbal_.traj_pitch);
+  double traj[3] = { 0. };
+  try
+  {
+    if (!cmd_gimbal_.traj_frame_id.empty())
+    {
+      tf2::Quaternion odom2traj_quat, traj2target, odom2target;
+      geometry_msgs::TransformStamped odom2traj =
+          robot_state_handle_.lookupTransform("odom", cmd_gimbal_.traj_frame_id, time);
+      tf2::fromMsg(odom2traj.transform.rotation, odom2traj_quat);
+      traj2target.setRPY(0., cmd_gimbal_.traj_pitch, cmd_gimbal_.traj_yaw);
+      odom2target = odom2traj_quat * traj2target;
+      quatToRPY(toMsg(odom2target), traj[0], traj[1], traj[2]);
+    }
+    else
+    {
+      traj[1] = cmd_gimbal_.traj_pitch;
+      traj[2] = cmd_gimbal_.traj_yaw;
+    }
+  }
+  catch (tf2::TransformException& ex)
+  {
+    ROS_WARN("%s", ex.what());
+  }
+  setDes(time, traj[2], traj[1]);
 }
 
 bool Controller::setDesIntoLimit(const tf2::Quaternion& base2gimbal_des, const urdf::JointConstSharedPtr& joint_urdf,
