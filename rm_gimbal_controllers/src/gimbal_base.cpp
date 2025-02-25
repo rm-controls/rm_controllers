@@ -100,7 +100,7 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
         ROS_ERROR("Failed to parse urdf file");
         return false;
       }
-      auto joint_urdf = urdf.getJoint(getParam(nh, "joint_name", std::string()));
+      auto joint_urdf = urdf.getJoint(getParam(nh, "joint", std::string()));
       if (!joint_urdf)
       {
         ROS_ERROR("Could not find joint in urdf");
@@ -471,10 +471,10 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   if (pid_pos_.find(2) != pid_pos_.end())
   {
     pid_pos_.at(2)->computeCommand(angle_error[2], period);
-    ctrl_.at(1)->setCommand(pid_pos_.at(2)->getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
+    ctrl_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
                             config_.yaw_k_v_ * vel_des[2] + ctrl_.at(1)->joint_.getVelocity() - angular_vel.z);
 
-    ctrl_.at(1)->update(time, period);
+    ctrl_.at(2)->update(time, period);
   }
 
   // publish state
