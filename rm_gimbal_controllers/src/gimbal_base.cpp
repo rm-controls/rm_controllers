@@ -112,12 +112,12 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
         joint_urdfs_.insert(std::make_pair(axis, joint_urdf));
       }
 
-      ctrl_.insert(std::make_pair(axis, std::make_unique<effort_controllers::JointVelocityController>()));
+      ctrls_.insert(std::make_pair(axis, std::make_unique<effort_controllers::JointVelocityController>()));
       pid_pos_.insert(std::make_pair(axis, std::make_unique<control_toolbox::Pid>()));
       pos_state_pub_.insert(std::make_pair(
           axis, std::make_unique<realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>>(nh, "pos_state", 1)));
 
-      if (!ctrl_.at(axis)->init(effort_joint_interface, nh) || !pid_pos_.at(axis)->init(nh_pid_pos))
+      if (!ctrls_.at(axis)->init(effort_joint_interface, nh) || !pid_pos_.at(axis)->init(nh_pid_pos))
         return false;
     }
   }
@@ -425,12 +425,12 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   else
   {
-    if (ctrl_.find(0) != ctrl_.end())
-      angular_vel.x = ctrl_.at(0)->joint_.getVelocity();
-    if (ctrl_.find(1) != ctrl_.end())
-      angular_vel.y = ctrl_.at(1)->joint_.getVelocity();
-    if (ctrl_.find(2) != ctrl_.end())
-      angular_vel.z = ctrl_.at(2)->joint_.getVelocity();
+    if (ctrls_.find(0) != ctrls_.end())
+      angular_vel.x = ctrls_.at(0)->joint_.getVelocity();
+    if (ctrls_.find(1) != ctrls_.end())
+      angular_vel.y = ctrls_.at(1)->joint_.getVelocity();
+    if (ctrls_.find(2) != ctrls_.end())
+      angular_vel.z = ctrls_.at(2)->joint_.getVelocity();
   }
   double pos_real[3], pos_des[3], vel_des[3], angle_error[3];
   quatToRPY(odom2gimbal_des_.transform.rotation, pos_des[0], pos_des[1], pos_des[2]);
@@ -486,18 +486,18 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   if (pid_pos_.find(1) != pid_pos_.end())
   {
     pid_pos_.at(1)->computeCommand(angle_error[1], period);
-    ctrl_.at(1)->setCommand(pid_pos_.at(1)->getCurrentCmd() + config_.pitch_k_v_ * vel_des[1] +
-                            ctrl_.at(1)->joint_.getVelocity() - angular_vel.y);
-    ctrl_.at(1)->update(time, period);
-    ctrl_.at(1)->joint_.setCommand(ctrl_.at(1)->joint_.getCommand() + feedForward(time));
+    ctrls_.at(1)->setCommand(pid_pos_.at(1)->getCurrentCmd() + config_.pitch_k_v_ * vel_des[1] +
+                             ctrls_.at(1)->joint_.getVelocity() - angular_vel.y);
+    ctrls_.at(1)->update(time, period);
+    ctrls_.at(1)->joint_.setCommand(ctrls_.at(1)->joint_.getCommand() + feedForward(time));
   }
   if (pid_pos_.find(2) != pid_pos_.end())
   {
     pid_pos_.at(2)->computeCommand(angle_error[2], period);
-    ctrl_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
-                            config_.yaw_k_v_ * vel_des[2] + ctrl_.at(2)->joint_.getVelocity() - angular_vel.z);
+    ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
+                             config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
 
-    ctrl_.at(2)->update(time, period);
+    ctrls_.at(2)->update(time, period);
   }
 
   // publish state
