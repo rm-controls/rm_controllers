@@ -409,16 +409,15 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     if (ctrl_.find(2) != ctrl_.end())
       angular_vel.z = ctrl_.at(2)->joint_.getVelocity();
   }
-  double roll_real, pitch_real, yaw_real, roll_des, pitch_des, yaw_des;
-  quatToRPY(odom2gimbal_des_.transform.rotation, roll_des, pitch_des, yaw_des);
-  quatToRPY(odom2gimbal_.transform.rotation, roll_real, pitch_real, yaw_real);
-  double yaw_angle_error = angles::shortest_angular_distance(yaw_real, yaw_des);
-  double pitch_angle_error = angles::shortest_angular_distance(pitch_real, pitch_des);
-  double yaw_vel_des = 0., pitch_vel_des = 0.;
+  double pos_real[3], pos_des[3], vel_des[3], angle_error[3];
+  quatToRPY(odom2gimbal_des_.transform.rotation, pos_des[0], pos_des[1], pos_des[2]);
+  quatToRPY(odom2gimbal_.transform.rotation, pos_real[0], pos_real[1], pos_real[2]);
+  for (int i = 0; i < 3; i++)
+    angle_error[i] = angles::shortest_angular_distance(pos_real[i], pos_des[i]);
   if (state_ == RATE)
   {
-    yaw_vel_des = cmd_gimbal_.rate_yaw;
-    pitch_vel_des = cmd_gimbal_.rate_pitch;
+    vel_des[2] = cmd_gimbal_.rate_yaw;
+    vel_des[1] = cmd_gimbal_.rate_pitch;
   }
   else if (state_ == TRACK)
   {
@@ -439,7 +438,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
         tf2::doTransform(target_vel, target_vel, transform);
         tf2::fromMsg(target_pos, target_pos_tf);
         tf2::fromMsg(target_vel, target_vel_tf);
-        yaw_vel_des = target_pos_tf.cross(target_vel_tf).z() / std::pow((target_pos_tf.length()), 2);
+        vel_des[2] = target_pos_tf.cross(target_vel_tf).z() / std::pow((target_pos_tf.length()), 2);
       }
       if (joint_urdfs_.find(1) != joint_urdfs_.end())
       {
@@ -449,7 +448,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
         tf2::doTransform(target_vel, target_vel, transform);
         tf2::fromMsg(target_pos, target_pos_tf);
         tf2::fromMsg(target_vel, target_vel_tf);
-        pitch_vel_des = target_pos_tf.cross(target_vel_tf).y() / std::pow((target_pos_tf.length()), 2);
+        vel_des[1] = target_pos_tf.cross(target_vel_tf).y() / std::pow((target_pos_tf.length()), 2);
       }
     }
     catch (tf2::TransformException& ex)
@@ -457,24 +456,23 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
       ROS_WARN("%s", ex.what());
     }
   }
-  if (pos_des_in_limit_.find(1) != pos_des_in_limit_.end() && !pos_des_in_limit_.at(1))
-    pitch_vel_des = 0.;
-  if (pos_des_in_limit_.find(2) != pos_des_in_limit_.end() && !pos_des_in_limit_.at(2))
-    yaw_vel_des = 0.;
+  for (const auto& in_limit : pos_des_in_limit_)
+    if (!in_limit.second)
+      vel_des[in_limit.first] = 0.;
 
   if (pid_pos_.find(1) != pid_pos_.end())
   {
-    pid_pos_.at(1)->computeCommand(pitch_angle_error, period);
-    ctrl_.at(1)->setCommand(pid_pos_.at(1)->getCurrentCmd() + config_.pitch_k_v_ * pitch_vel_des +
+    pid_pos_.at(1)->computeCommand(angle_error[1], period);
+    ctrl_.at(1)->setCommand(pid_pos_.at(1)->getCurrentCmd() + config_.pitch_k_v_ * vel_des[1] +
                             ctrl_.at(1)->joint_.getVelocity() - angular_vel.y);
     ctrl_.at(1)->update(time, period);
     ctrl_.at(1)->joint_.setCommand(ctrl_.at(1)->joint_.getCommand() + feedForward(time));
   }
   if (pid_pos_.find(2) != pid_pos_.end())
   {
-    pid_pos_.at(2)->computeCommand(yaw_angle_error, period);
+    pid_pos_.at(2)->computeCommand(angle_error[2], period);
     ctrl_.at(1)->setCommand(pid_pos_.at(2)->getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
-                            config_.yaw_k_v_ * yaw_vel_des + ctrl_.at(1)->joint_.getVelocity() - angular_vel.z);
+                            config_.yaw_k_v_ * vel_des[2] + ctrl_.at(1)->joint_.getVelocity() - angular_vel.z);
 
     ctrl_.at(1)->update(time, period);
   }
@@ -482,26 +480,19 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   // publish state
   if (loop_count_ % 10 == 0)
   {
-    //    if (yaw_pos_state_pub_ && yaw_pos_state_pub_->trylock())
-    //    {
-    //      yaw_pos_state_pub_->msg_.header.stamp = time;
-    //      yaw_pos_state_pub_->msg_.set_point = yaw_des;
-    //      yaw_pos_state_pub_->msg_.set_point_dot = yaw_vel_des;
-    //      yaw_pos_state_pub_->msg_.process_value = yaw_real;
-    //      yaw_pos_state_pub_->msg_.error = angles::shortest_angular_distance(yaw_real, yaw_des);
-    //      yaw_pos_state_pub_->msg_.command = pid_yaw_pos_.getCurrentCmd();
-    //      yaw_pos_state_pub_->unlockAndPublish();
-    //    }
-    //    if (pitch_pos_state_pub_ && pitch_pos_state_pub_->trylock())
-    //    {
-    //      pitch_pos_state_pub_->msg_.header.stamp = time;
-    //      pitch_pos_state_pub_->msg_.set_point = pitch_des;
-    //      pitch_pos_state_pub_->msg_.set_point_dot = pitch_vel_des;
-    //      pitch_pos_state_pub_->msg_.process_value = pitch_real;
-    //      pitch_pos_state_pub_->msg_.error = angles::shortest_angular_distance(pitch_real, pitch_des);
-    //      pitch_pos_state_pub_->msg_.command = pid_pitch_pos_.getCurrentCmd();
-    //      pitch_pos_state_pub_->unlockAndPublish();
-    //    }
+    for (const auto& pub : pos_state_pub_)
+    {
+      if (pub.second && pub.second->trylock())
+      {
+        pub.second->msg_.header.stamp = time;
+        pub.second->msg_.set_point = pos_des[pub.first];
+        pub.second->msg_.set_point_dot = vel_des[pub.first];
+        pub.second->msg_.process_value = pos_real[pub.first];
+        pub.second->msg_.error = angle_error[pub.first];
+        pub.second->msg_.command = pid_pos_.at(pub.first)->getCurrentCmd();
+        pub.second->unlockAndPublish();
+      }
+    }
   }
   loop_count_++;
 }
@@ -548,7 +539,7 @@ void Controller::updateChassisVel()
   last_odom2base_ = odom2base_;
 }
 
-std::string getGimbalFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs)
+std::string Controller::getGimbalFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs)
 {
   if (joint_urdfs.find(1) != joint_urdfs.end())
     return joint_urdfs.at(1)->child_link_name.c_str();
@@ -559,7 +550,7 @@ std::string getGimbalFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> 
   return std::string();
 }
 
-std::string getBaseFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs)
+std::string Controller::getBaseFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs)
 {
   if (joint_urdfs.find(2) != joint_urdfs.end())
     return joint_urdfs.at(2)->parent_link_name.c_str();
