@@ -149,11 +149,11 @@ private:
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   double feedForward(const ros::Time& time);
   void updateChassisVel();
-  std::string getGimbalFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs);
-  std::string getBaseFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t);
+  std::string getGimbalFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs);
+  std::string getBaseFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs);
 
   rm_control::RobotStateHandle robot_state_handle_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
