@@ -67,16 +67,11 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   bullet_solver_ = std::make_shared<BulletSolver>(nh_bullet_solver);
 
-  ros::NodeHandle nh_yaw = ros::NodeHandle(controller_nh, "yaw");
-  ros::NodeHandle nh_pitch = ros::NodeHandle(controller_nh, "pitch");
-  ros::NodeHandle nh_pid_yaw_pos = ros::NodeHandle(controller_nh, "yaw/pid_pos");
-  ros::NodeHandle nh_pid_pitch_pos = ros::NodeHandle(controller_nh, "pitch/pid_pos");
-
-  config_ = { .yaw_k_v_ = getParam(nh_yaw, "k_v", 0.),
-              .pitch_k_v_ = getParam(nh_pitch, "k_v", 0.),
-              .k_chassis_vel_ = getParam(controller_nh, "yaw/k_chassis_vel", 0.),
-              .accel_pitch_ = getParam(controller_nh, "pitch/accel", 99.),
-              .accel_yaw_ = getParam(controller_nh, "yaw/accel", 99.) };
+  config_ = { .yaw_k_v_ = getParam(controller_nh, "controllers/yaw/k_v", 0.),
+              .pitch_k_v_ = getParam(controller_nh, "controllers/pitch/k_v", 0.),
+              .k_chassis_vel_ = getParam(controller_nh, "controllers/yaw/k_chassis_vel", 0.),
+              .accel_pitch_ = getParam(controller_nh, "controllers/pitch/accel", 99.),
+              .accel_yaw_ = getParam(controller_nh, "controllers/yaw/accel", 99.) };
   config_rt_buffer_.initRT(config_);
   d_srv_ = new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>::CallbackType cb =
@@ -350,18 +345,16 @@ void Controller::traj(const ros::Time& time)
     state_changed_ = false;
     ROS_INFO("[Gimbal] Enter TRAJ");
   }
-  double traj[3] = { 0. };
+  double traj[3]{ 0. };
   try
   {
     if (!cmd_gimbal_.traj_frame_id.empty())
     {
-      tf2::Quaternion odom2traj_quat, traj2target, odom2target;
       geometry_msgs::TransformStamped odom2traj =
           robot_state_handle_.lookupTransform("odom", cmd_gimbal_.traj_frame_id, time);
-      tf2::fromMsg(odom2traj.transform.rotation, odom2traj_quat);
-      traj2target.setRPY(0., cmd_gimbal_.traj_pitch, cmd_gimbal_.traj_yaw);
-      odom2target = odom2traj_quat * traj2target;
-      quatToRPY(toMsg(odom2target), traj[0], traj[1], traj[2]);
+      quatToRPY(odom2traj.transform.rotation, traj[0], traj[1], traj[2]);
+      traj[1] += cmd_gimbal_.traj_pitch;
+      traj[2] += cmd_gimbal_.traj_yaw;
     }
     else
     {
@@ -432,7 +425,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     if (ctrls_.find(2) != ctrls_.end())
       angular_vel.z = ctrls_.at(2)->joint_.getVelocity();
   }
-  double pos_real[3], pos_des[3], vel_des[3], angle_error[3];
+  double pos_real[3]{ 0. }, pos_des[3]{ 0. }, vel_des[3]{ 0. }, angle_error[3]{ 0. };
   quatToRPY(odom2gimbal_des_.transform.rotation, pos_des[0], pos_des[1], pos_des[2]);
   quatToRPY(odom2gimbal_.transform.rotation, pos_real[0], pos_real[1], pos_real[2]);
   for (int i = 0; i < 3; i++)
