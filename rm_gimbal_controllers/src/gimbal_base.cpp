@@ -476,7 +476,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     if (!in_limit.second)
       vel_des[in_limit.first] = 0.;
 
-  if (pid_pos_.find(1) != pid_pos_.end())
+  if (pid_pos_.find(1) != pid_pos_.end() && ctrls_.find(1) != ctrls_.end())
   {
     pid_pos_.at(1)->computeCommand(angle_error[1], period);
     ctrls_.at(1)->setCommand(pid_pos_.at(1)->getCurrentCmd() + config_.pitch_k_v_ * vel_des[1] +
@@ -484,7 +484,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     ctrls_.at(1)->update(time, period);
     ctrls_.at(1)->joint_.setCommand(ctrls_.at(1)->joint_.getCommand() + feedForward(time));
   }
-  if (pid_pos_.find(2) != pid_pos_.end())
+  if (pid_pos_.find(2) != pid_pos_.end() && ctrls_.find(2) != ctrls_.end())
   {
     pid_pos_.at(2)->computeCommand(angle_error[2], period);
     ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
