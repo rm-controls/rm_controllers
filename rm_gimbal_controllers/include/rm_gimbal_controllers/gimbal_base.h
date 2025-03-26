@@ -60,7 +60,7 @@ namespace rm_gimbal_controllers
 {
 struct GimbalConfig
 {
-  double yaw_k_v_, pitch_k_v_, k_chassis_vel_;
+  double yaw_k_v_, pitch_k_v_, chassis_comp_a_, chassis_comp_b_, chassis_comp_c_, chassis_comp_d_;
   double accel_pitch_{}, accel_yaw_{};
 };
 
@@ -148,6 +148,7 @@ private:
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   double feedForward(const ros::Time& time);
   void updateChassisVel();
+  double updateCompensation(double chassis_vel_angular_z);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t);
@@ -188,6 +189,7 @@ private:
 
   // Chassis
   std::shared_ptr<ChassisVel> chassis_vel_;
+  double chassis_compensation_;
 
   bool dynamic_reconfig_initialized_{};
   GimbalConfig config_{};
