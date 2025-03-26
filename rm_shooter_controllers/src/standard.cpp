@@ -79,14 +79,15 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   double wheel_speed_offset;
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   controller_nh.getParam("friction", friction);
-  for (const auto &its : friction) {
+  for (const auto& its : friction)
+  {
     std::vector<double> wheel_speed_offset_temp;
-    std::vector<effort_controllers::JointVelocityController *> ctrl_frictions;
-    for (const auto &it : its.second) {
+    std::vector<effort_controllers::JointVelocityController*> ctrl_frictions;
+    for (const auto& it : its.second)
+    {
       ros::NodeHandle nh = ros::NodeHandle(controller_nh, "friction/" + its.first + "/" + it.first);
-      wheel_speed_offset_temp.
-          push_back(nh.getParam("wheel_speed_offset", wheel_speed_offset) ? wheel_speed_offset : 0.);
-      effort_controllers::JointVelocityController *ctrl_friction = new effort_controllers::JointVelocityController;
+      wheel_speed_offset_temp.push_back(nh.getParam("wheel_speed_offset", wheel_speed_offset) ? wheel_speed_offset : 0.);
+      effort_controllers::JointVelocityController* ctrl_friction = new effort_controllers::JointVelocityController;
       if (ctrl_friction->init(effort_joint_interface_, nh))
         ctrl_frictions.push_back(ctrl_friction);
       else
@@ -147,8 +148,10 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     shoot_state_pub_->msg_.state = state_;
     shoot_state_pub_->unlockAndPublish();
   }
-  for (auto &ctrl_frictions : ctrls_friction_) {
-    for (auto &ctrl_friction : ctrl_frictions) {
+  for (auto& ctrl_frictions : ctrls_friction_)
+  {
+    for (auto& ctrl_friction : ctrl_frictions)
+    {
       ctrl_friction->update(time, period);
     }
   }
@@ -161,8 +164,10 @@ void Controller::stop(const ros::Time& time, const ros::Duration& period)
   {  // on enter
     state_changed_ = false;
     ROS_INFO("[Shooter] Enter STOP");
-    for (auto &ctrl_frictions : ctrls_friction_) {
-      for (auto &ctrl_friction : ctrl_frictions) {
+    for (auto& ctrl_frictions : ctrls_friction_)
+    {
+      for (auto& ctrl_friction : ctrl_frictions)
+      {
         ctrl_friction->setCommand(0.);
       }
     }
@@ -189,10 +194,12 @@ void Controller::push(const ros::Time& time, const ros::Duration& period)
     ROS_INFO("[Shooter] Enter PUSH");
   }
   bool wheel_speed_ready = true;
-  for (auto &ctrl_frictions : ctrls_friction_) {
-    for (auto &ctrl_friction : ctrl_frictions) {
+  for (auto& ctrl_frictions : ctrls_friction_)
+  {
+    for (auto& ctrl_friction : ctrl_frictions)
+    {
       if (ctrl_friction->joint_.getVelocity() < push_wheel_speed_threshold_ * ctrl_friction->command_ ||
-        ctrl_friction->joint_.getVelocity() <= M_PI)
+          ctrl_friction->joint_.getVelocity() <= M_PI)
         wheel_speed_ready = false;
     }
   }
@@ -261,26 +268,34 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
 {
   static int friction_block_count = 0;
   bool friction_wheel_block = false;
-  for (auto &ctrl_frictions : ctrls_friction_) {
-    for (auto &ctrl_friction : ctrl_frictions) {
+  for (auto& ctrl_frictions : ctrls_friction_)
+  {
+    for (auto& ctrl_friction : ctrl_frictions)
+    {
       if (ctrl_friction->joint_.getVelocity() <= friction_block_vel_ &&
-        abs(ctrl_friction->joint_.getEffort()) >= friction_block_effort_ && cmd.wheel_speed != 0)
+          abs(ctrl_friction->joint_.getEffort()) >= friction_block_effort_ && cmd.wheel_speed != 0)
         friction_wheel_block = true;
     }
   }
   if (!friction_wheel_block)
   {
-    for (size_t i = 0; i < ctrls_friction_.size(); i++) {
-      for (size_t j = 0; j < ctrls_friction_[i].size(); j++) {
+    for (size_t i = 0; i < ctrls_friction_.size(); i++)
+    {
+      for (size_t j = 0; j < ctrls_friction_[i].size(); j++)
+      {
         ctrls_friction_[i][j]->setCommand(cmd_.wheel_speed + config_.extra_wheel_speed + wheel_speed_offsets_[i][j]);
       }
     }
-  } else {
-    double command = (friction_block_count <= static_cast<int>(anti_friction_block_duty_cycle_ * 1000))
-                       ? anti_friction_block_vel_
-                       : 0.;
-    for (auto &ctrl_frictions : ctrls_friction_) {
-      for (auto &ctrl_friction : ctrl_frictions) {
+  }
+  else
+  {
+    double command = (friction_block_count <= static_cast<int>(anti_friction_block_duty_cycle_ * 1000)) ?
+                         anti_friction_block_vel_ :
+                         0.;
+    for (auto& ctrl_frictions : ctrls_friction_)
+    {
+      for (auto& ctrl_friction : ctrl_frictions)
+      {
         ctrl_friction->setCommand(command);
       }
     }
@@ -297,15 +312,18 @@ void Controller::normalize()
 
 void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& period)
 {
-  if (state_ != STOP) {
+  if (state_ != STOP)
+  {
     if (abs(ctrls_friction_[0][0]->joint_.getVelocity()) - last_wheel_speed_ > config_.wheel_speed_raise_threshold &&
-      wheel_speed_drop_) {
+        wheel_speed_drop_)
+    {
       wheel_speed_raise_ = true;
       wheel_speed_drop_ = false;
     }
 
     if (last_wheel_speed_ - abs(ctrls_friction_[0][0]->joint_.getVelocity()) > config_.wheel_speed_drop_threshold &&
-      abs(ctrls_friction_[0][0]->joint_.getVelocity()) > 300. && wheel_speed_raise_) {
+        abs(ctrls_friction_[0][0]->joint_.getVelocity()) > 300. && wheel_speed_raise_)
+    {
       wheel_speed_drop_ = true;
       wheel_speed_raise_ = false;
       has_shoot_ = true;
@@ -314,7 +332,8 @@ void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& pe
   double friction_change_vel = abs(ctrls_friction_[0][0]->joint_.getVelocity()) - last_wheel_speed_;
   last_wheel_speed_ = abs(ctrls_friction_[0][0]->joint_.getVelocity());
   count_++;
-  if (has_shoot_last_) {
+  if (has_shoot_last_)
+  {
     has_shoot_ = true;
   }
   has_shoot_last_ = has_shoot_;
