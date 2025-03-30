@@ -151,9 +151,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
 
-  ramp_rate_pitch_ = new RampFilter<double>(0, 0.001);
-  ramp_rate_yaw_ = new RampFilter<double>(0, 0.001);
-
   return true;
 }
 
@@ -169,12 +166,6 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   cmd_gimbal_ = *cmd_rt_buffer_.readFromRT();
   data_track_ = *track_rt_buffer_.readFromNonRT();
   config_ = *config_rt_buffer_.readFromRT();
-  ramp_rate_pitch_->setAcc(config_.accel_pitch_);
-  ramp_rate_yaw_->setAcc(config_.accel_yaw_);
-  ramp_rate_pitch_->input(cmd_gimbal_.rate_pitch);
-  ramp_rate_yaw_->input(cmd_gimbal_.rate_yaw);
-  cmd_gimbal_.rate_pitch = ramp_rate_pitch_->output();
-  cmd_gimbal_.rate_yaw = ramp_rate_yaw_->output();
   try
   {
     odom2gimbal_ = robot_state_handle_.lookupTransform("odom", odom2gimbal_.child_frame_id, time);
@@ -234,13 +225,17 @@ void Controller::rate(const ros::Time& time, const ros::Duration& period)
       odom2gimbal_des_.header.stamp = time;
       robot_state_handle_.setTransform(odom2gimbal_des_, "rm_gimbal_controllers");
       start_ = false;
+      rate_yaw_ = 0.;
+      rate_pitch_ = 0.;
     }
   }
   else
   {
     double roll{}, pitch{}, yaw{};
     quatToRPY(odom2gimbal_des_.transform.rotation, roll, pitch, yaw);
-    setDes(time, yaw + period.toSec() * cmd_gimbal_.rate_yaw, pitch + period.toSec() * cmd_gimbal_.rate_pitch);
+    rate_yaw_ = firstOrderLag(cmd_gimbal_.rate_yaw, rate_yaw_, 0.02);
+    rate_pitch_ = firstOrderLag(cmd_gimbal_.rate_pitch, rate_pitch_, 0.02);
+    setDes(time, yaw + period.toSec() * rate_yaw_, pitch + period.toSec() * rate_pitch_);
   }
 }
 
@@ -435,8 +430,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     angle_error[i] = angles::shortest_angular_distance(pos_real[i], pos_des[i]);
   if (state_ == RATE)
   {
-    vel_des[2] = cmd_gimbal_.rate_yaw;
-    vel_des[1] = cmd_gimbal_.rate_pitch;
+    vel_des[2] = rate_yaw_;
+    vel_des[1] = rate_pitch_;
   }
   else if (state_ == TRACK)
   {
