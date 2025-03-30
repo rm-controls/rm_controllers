@@ -69,7 +69,10 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   config_ = { .yaw_k_v_ = getParam(controller_nh, "controllers/yaw/k_v", 0.),
               .pitch_k_v_ = getParam(controller_nh, "controllers/pitch/k_v", 0.),
-              .k_chassis_vel_ = getParam(controller_nh, "controllers/yaw/k_chassis_vel", 0.),
+              .chassis_comp_a_ = getParam(controller_nh, "controllers/yaw/chassis_comp_a", 0.),
+              .chassis_comp_b_ = getParam(controller_nh, "controllers/yaw/chassis_comp_b", 0.),
+              .chassis_comp_c_ = getParam(controller_nh, "controllers/yaw/chassis_comp_c", 0.),
+              .chassis_comp_d_ = getParam(controller_nh, "controllers/yaw/chassis_comp_d", 0.),
               .accel_pitch_ = getParam(controller_nh, "controllers/pitch/accel", 99.),
               .accel_yaw_ = getParam(controller_nh, "controllers/yaw/accel", 99.) };
   config_rt_buffer_.initRT(config_);
@@ -487,7 +490,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   if (pid_pos_.find(2) != pid_pos_.end() && ctrls_.find(2) != ctrls_.end())
   {
     pid_pos_.at(2)->computeCommand(angle_error[2], period);
-    ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() - config_.k_chassis_vel_ * chassis_vel_->angular_->z() +
+    ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
+                             updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
                              config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
     ctrls_.at(2)->update(time, period);
   }
