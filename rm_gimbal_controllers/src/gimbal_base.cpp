@@ -179,7 +179,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   }
   catch (tf2::TransformException& ex)
   {
-    ROS_WARN_THROTTLE(1, "%s\n", ex.what());
+    ROS_WARN_THROTTLE(5, "%s\n", ex.what());
     return;
   }
   updateChassisVel();
@@ -576,6 +576,14 @@ std::string Controller::getBaseFrameID(std::unordered_map<int, urdf::JointConstS
   return std::string();
 }
 
+double Controller::updateCompensation(double chassis_vel_angular_z)
+{
+  chassis_compensation_ =
+      config_.chassis_comp_a_ * sin(config_.chassis_comp_b_ * chassis_vel_angular_z + config_.chassis_comp_c_) +
+      config_.chassis_comp_d_;
+  return chassis_compensation_;
+}
+
 void Controller::commandCB(const rm_msgs::GimbalCmdConstPtr& msg)
 {
   cmd_rt_buffer_.writeFromNonRT(*msg);
@@ -596,14 +604,20 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     GimbalConfig init_config = *config_rt_buffer_.readFromNonRT();  // config init use yaml
     config.yaw_k_v_ = init_config.yaw_k_v_;
     config.pitch_k_v_ = init_config.pitch_k_v_;
-    config.k_chassis_vel_ = init_config.k_chassis_vel_;
+    config.chassis_comp_a_ = init_config.chassis_comp_a_;
+    config.chassis_comp_b_ = init_config.chassis_comp_b_;
+    config.chassis_comp_c_ = init_config.chassis_comp_c_;
+    config.chassis_comp_d_ = init_config.chassis_comp_d_;
     config.accel_pitch_ = init_config.accel_pitch_;
     config.accel_yaw_ = init_config.accel_yaw_;
     dynamic_reconfig_initialized_ = true;
   }
   GimbalConfig config_non_rt{ .yaw_k_v_ = config.yaw_k_v_,
                               .pitch_k_v_ = config.pitch_k_v_,
-                              .k_chassis_vel_ = config.k_chassis_vel_,
+                              .chassis_comp_a_ = config.chassis_comp_a_,
+                              .chassis_comp_b_ = config.chassis_comp_b_,
+                              .chassis_comp_c_ = config.chassis_comp_c_,
+                              .chassis_comp_d_ = config.chassis_comp_d_,
                               .accel_pitch_ = config.accel_pitch_,
                               .accel_yaw_ = config.accel_yaw_ };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
