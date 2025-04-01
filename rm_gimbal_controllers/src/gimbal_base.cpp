@@ -225,17 +225,13 @@ void Controller::rate(const ros::Time& time, const ros::Duration& period)
       odom2gimbal_des_.header.stamp = time;
       robot_state_handle_.setTransform(odom2gimbal_des_, "rm_gimbal_controllers");
       start_ = false;
-      rate_yaw_ = 0.;
-      rate_pitch_ = 0.;
     }
   }
   else
   {
     double roll{}, pitch{}, yaw{};
     quatToRPY(odom2gimbal_des_.transform.rotation, roll, pitch, yaw);
-    rate_yaw_ = firstOrderLag(cmd_gimbal_.rate_yaw, rate_yaw_, 0.02);
-    rate_pitch_ = firstOrderLag(cmd_gimbal_.rate_pitch, rate_pitch_, 0.02);
-    setDes(time, yaw + period.toSec() * rate_yaw_, pitch + period.toSec() * rate_pitch_);
+    setDes(time, yaw + period.toSec() * cmd_gimbal_.rate_yaw, pitch + period.toSec() * cmd_gimbal_.rate_pitch);
   }
 }
 
@@ -430,8 +426,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     angle_error[i] = angles::shortest_angular_distance(pos_real[i], pos_des[i]);
   if (state_ == RATE)
   {
-    vel_des[2] = rate_yaw_;
-    vel_des[1] = rate_pitch_;
+    vel_des[2] = cmd_gimbal_.rate_yaw;
+    vel_des[1] = cmd_gimbal_.rate_pitch;
   }
   else if (state_ == TRACK)
   {

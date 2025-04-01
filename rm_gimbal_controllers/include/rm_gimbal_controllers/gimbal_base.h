@@ -150,10 +150,6 @@ private:
   void updateChassisVel();
   double feedForward(const ros::Time& time);
   double updateCompensation(double chassis_vel_angular_z);
-  double firstOrderLag(double input, double previous_output, double time_constant)
-  {
-    return previous_output + (input - previous_output) * (0.001 / (time_constant + 0.001));
-  }
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t);
@@ -212,7 +208,6 @@ private:
   };
   int state_ = RATE;
   bool start_ = false;
-  double rate_yaw_{}, rate_pitch_{};
 };
 
 }  // namespace rm_gimbal_controllers
