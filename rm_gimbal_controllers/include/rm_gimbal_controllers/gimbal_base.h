@@ -55,6 +55,7 @@
 #include <urdf/model.h>
 #include <dynamic_reconfigure/server.h>
 #include <realtime_tools/realtime_publisher.h>
+#include <unordered_map>
 
 namespace rm_gimbal_controllers
 {
@@ -143,44 +144,46 @@ private:
   void track(const ros::Time& time);
   void direct(const ros::Time& time);
   void traj(const ros::Time& time);
-  bool setDesIntoLimit(double& real_des, double current_des, double base2gimbal_current_des,
-                       const urdf::JointConstSharedPtr& joint_urdf);
+  bool setDesIntoLimit(const tf2::Quaternion& base2gimbal_des, const urdf::JointConstSharedPtr& joint_urdf,
+                       tf2::Quaternion& base2new_des);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
-  double feedForward(const ros::Time& time);
   void updateChassisVel();
+  double feedForward(const ros::Time& time);
   double updateCompensation(double chassis_vel_angular_z);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t);
+  std::string getGimbalFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs);
+  std::string getBaseFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs);
 
   rm_control::RobotStateHandle robot_state_handle_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
+  std::unordered_map<int, std::unique_ptr<effort_controllers::JointVelocityController>> ctrls_;
+  std::unordered_map<int, std::unique_ptr<control_toolbox::Pid>> pid_pos_;
+  std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs_;
+  std::unordered_map<int, bool> pos_des_in_limit_;
   bool has_imu_ = true;
-  effort_controllers::JointVelocityController ctrl_yaw_, ctrl_pitch_;
-  control_toolbox::Pid pid_yaw_pos_, pid_pitch_pos_;
 
   std::shared_ptr<BulletSolver> bullet_solver_;
 
   // ROS Interface
   ros::Time last_publish_time_{};
-  std::unique_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>> yaw_pos_state_pub_, pitch_pos_state_pub_;
+  std::unordered_map<int, std::unique_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>>> pos_state_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_track_sub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TrackData> track_rt_buffer_;
-  urdf::JointConstSharedPtr pitch_joint_urdf_, yaw_joint_urdf_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
   rm_msgs::TrackData data_track_;
   std::string gimbal_des_frame_id_{}, imu_name_{};
   double publish_rate_{};
   bool state_changed_{};
-  bool pitch_des_in_limit_{}, yaw_des_in_limit_{};
   int loop_count_{};
 
   // Transform
-  geometry_msgs::TransformStamped odom2gimbal_des_, odom2pitch_, odom2base_, last_odom2base_;
+  geometry_msgs::TransformStamped odom2gimbal_des_, odom2gimbal_, odom2base_, last_odom2base_;
 
   // Gravity Compensation
   geometry_msgs::Vector3 mass_origin_;
@@ -195,8 +198,6 @@ private:
   GimbalConfig config_{};
   realtime_tools::RealtimeBuffer<GimbalConfig> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>* d_srv_{};
-
-  RampFilter<double>*ramp_rate_pitch_{}, *ramp_rate_yaw_{};
 
   enum
   {
