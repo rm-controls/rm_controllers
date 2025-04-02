@@ -145,7 +145,7 @@ void RobotStateController::update(const ros::Time& time, const ros::Duration& pe
     tf_buffer_->setTransform(tran, "robot_state_controller", false);
   for (const auto& tran : tf_static_transforms)
     tf_buffer_->setTransform(tran, "robot_state_controller", true);
-  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
+  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) <= time)
   {
     tf_broadcaster_.sendTransform(tf_transforms);
     if (use_tf_static_)
