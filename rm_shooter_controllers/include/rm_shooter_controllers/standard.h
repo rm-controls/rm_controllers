@@ -94,6 +94,7 @@ private:
   double freq_threshold_{};
   bool dynamic_reconfig_initialized_ = false;
   bool state_changed_ = false;
+  bool enter_ready_ = false;
   bool maybe_block_ = false;
   double friction_block_effort_{}, friction_block_vel_{};
   double anti_friction_block_duty_cycle_{}, anti_friction_block_vel_{};
