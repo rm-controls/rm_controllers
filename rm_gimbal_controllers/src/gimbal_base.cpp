@@ -436,6 +436,9 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     bullet_solver_->getSelectedArmorPosAndVel(target_pos, target_vel, data_track_.position, data_track_.velocity,
                                               data_track_.yaw, data_track_.v_yaw, data_track_.radius_1,
                                               data_track_.radius_2, data_track_.dz, data_track_.armors_num);
+    target_vel.x -= chassis_vel_->linear_->x();
+    target_vel.y -= chassis_vel_->linear_->y();
+    target_vel.z -= chassis_vel_->linear_->z();
     tf2::Vector3 target_pos_tf, target_vel_tf;
     try
     {
@@ -499,7 +502,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
         pub.second->msg_.set_point_dot = vel_des[pub.first];
         pub.second->msg_.process_value = pos_real[pub.first];
         pub.second->msg_.error = angle_error[pub.first];
-        pub.second->msg_.command = pid_pos_.at(pub.first)->getCurrentCmd();
+        pub.second->msg_.command = pid_pos_[pub.first]->getCurrentCmd();
         pub.second->unlockAndPublish();
       }
     }
