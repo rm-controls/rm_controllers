@@ -119,6 +119,8 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
                 config_.exit_push_threshold ||
             cmd_.hz >= freq_threshold_)))
       {
+        if (state_ == STOP && cmd_.mode == READY)
+          enter_ready_ = true;
         state_ = cmd_.mode;
         state_changed_ = true;
       }
@@ -306,8 +308,16 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
 void Controller::normalize()
 {
   double push_angle = 2. * M_PI / static_cast<double>(push_per_rotation_);
-  ctrl_trigger_.setCommand(
-      push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01 + config_.exit_push_threshold) / push_angle));
+  if (cmd_.hz <= freq_threshold_)
+    ctrl_trigger_.setCommand(
+        push_angle * std::floor(ctrl_trigger_.joint_.getPosition() + 0.01 + config_.exit_push_threshold) / push_angle);
+  else if (enter_ready_)
+  {
+    ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() + 0.01) / push_angle));
+    enter_ready_ = false;
+  }
+  else
+    ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() - 0.01) / push_angle));
 }
 
 void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& period)
