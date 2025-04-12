@@ -257,7 +257,7 @@ void Controller::block(const ros::Time& time, const ros::Duration& period)
   if (state_changed_)
   {  // on enter
     state_changed_ = false;
-    ROS_INFO("[Shooter] Enter BLOCK");
+    ROS_INFO("[Shooter] Trigger Enter BLOCK");
     last_block_time_ = time;
     ctrl_trigger_.setCommand(ctrl_trigger_.joint_.getPosition() + config_.anti_block_angle);
   }
@@ -268,14 +268,12 @@ void Controller::block(const ros::Time& time, const ros::Duration& period)
     normalize();
     state_ = PUSH;
     state_changed_ = true;
-    ROS_INFO("[Shooter] Exit BLOCK");
+    ROS_INFO("[Shooter] Trigger Exit BLOCK");
   }
 }
 
 void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
 {
-  static int friction_block_count = 0;
-  bool friction_wheel_block = false;
   for (size_t i = 0; i < ctrls_friction_.size(); i++)
   {
     for (size_t j = 0; j < ctrls_friction_[i].size(); j++)
@@ -283,10 +281,17 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
       if (wheel_speed_directions_[i][j] * ctrls_friction_[i][j]->joint_.getVelocity() <= friction_block_vel_ &&
           abs(ctrls_friction_[i][j]->joint_.getEffort()) >= friction_block_effort_ && cmd.wheel_speed != 0)
         friction_wheel_block = true;
+      else
+        friction_wheel_block = false;
     }
   }
   if (!friction_wheel_block)
   {
+    if (last_friction_wheel_block)
+    {
+      ROS_INFO("[Shooter] Frictions Exit BLOCK");
+      last_friction_wheel_block = false;
+    }
     for (size_t i = 0; i < ctrls_friction_.size(); i++)
     {
       for (size_t j = 0; j < ctrls_friction_[i].size(); j++)
@@ -298,6 +303,8 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
   }
   else
   {
+    ROS_INFO("[Shooter] Frictions Enter BLOCK");
+    last_friction_wheel_block = true;
     double command = (friction_block_count <= static_cast<int>(anti_friction_block_duty_cycle_ * 1000)) ?
                          anti_friction_block_vel_ :
                          0.;
