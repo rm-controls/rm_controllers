@@ -103,10 +103,11 @@ private:
   double output_yaw_{}, output_pitch_{};
   double bullet_speed_{}, resistance_coff_{};
   double fly_time_;
+  double switch_hysteresis_;
   int shoot_beforehand_cmd_{};
   int selected_armor_;
   int count_;
-  bool track_target_;
+  bool track_target_ = true;
   bool identified_target_change_ = true;
   bool is_in_delay_before_switch_{};
   bool dynamic_reconfig_initialized_{};

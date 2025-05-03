@@ -65,6 +65,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
               .track_move_target_delay = getParam(controller_nh, "track_move_target_delay", 0.),
               .min_fit_switch_count = getParam(controller_nh, "min_fit_switch_count", 3) };
   max_track_target_vel_ = getParam(controller_nh, "max_track_target_vel", 5.0);
+  switch_hysteresis_ = getParam(controller_nh, "switch_hysteresis", 1.0);
   config_rt_buffer_.initRT(config_);
 
   marker_desire_.header.frame_id = "odom";
@@ -134,7 +135,16 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   double z = pos.z;
   double max_switch_angle = config_.max_switch_angle / 180 * M_PI;
   double min_switch_angle = config_.min_switch_angle / 180 * M_PI;
-  track_target_ = std::abs(v_yaw) < max_track_target_vel_;
+  if (track_target_)
+  {
+    if (std::abs(v_yaw) >= max_track_target_vel_ + switch_hysteresis_)
+      track_target_ = false;
+  }
+  else
+  {
+    if (std::abs(v_yaw) <= max_track_target_vel_ - switch_hysteresis_)
+      track_target_ = true;
+  }
   double switch_armor_angle =
       track_target_ ?
           (acos(r / target_rho) - max_switch_angle +
