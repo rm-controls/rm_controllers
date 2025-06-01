@@ -347,7 +347,8 @@ void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& pe
   {
     if (friction_change_speed_derivative > 0 && has_shoot_)
       has_shoot_ = false;
-    if (friction_change_speed < -config_.wheel_speed_drop_threshold  && !has_shoot_ && friction_change_speed_derivative < 0)
+    if (friction_change_speed < -config_.wheel_speed_drop_threshold && !has_shoot_ &&
+        friction_change_speed_derivative < 0)
       has_shoot_ = true;
   }
   last_fricition_speed_ = abs(friction_speed);

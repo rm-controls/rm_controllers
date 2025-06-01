@@ -91,7 +91,7 @@ private:
   effort_controllers::JointPositionController ctrl_trigger_;
   std::vector<std::vector<double>> wheel_speed_offsets_;
   std::vector<std::vector<double>> wheel_speed_directions_;
-  LowPassFilter *lp_filter_;
+  LowPassFilter* lp_filter_;
   int push_per_rotation_{}, count_{};
   double push_wheel_speed_threshold_{};
   double freq_threshold_{};
