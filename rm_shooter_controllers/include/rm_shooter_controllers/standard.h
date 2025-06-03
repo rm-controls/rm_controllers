@@ -43,6 +43,7 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/ros_utilities.h>
+#include <rm_common/filters/lp_filter.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_shooter_controllers/ShooterConfig.h>
@@ -90,6 +91,7 @@ private:
   effort_controllers::JointPositionController ctrl_trigger_;
   std::vector<std::vector<double>> wheel_speed_offsets_;
   std::vector<std::vector<double>> wheel_speed_directions_;
+  LowPassFilter* lp_filter_;
   int push_per_rotation_{}, count_{};
   double push_wheel_speed_threshold_{};
   double freq_threshold_{};
@@ -102,8 +104,9 @@ private:
   double friction_block_effort_{}, friction_block_vel_{};
   double anti_friction_block_duty_cycle_{}, anti_friction_block_vel_{};
   bool has_shoot_ = false, has_shoot_last_ = false;
-  bool wheel_speed_raise_ = true, wheel_speed_drop_ = true;
-  double last_wheel_speed_{};
+  bool wheel_speed_drop_ = true;
+  double last_fricition_speed_{};
+  double last_friction_change_speed_{};
 
   ros::Time last_shoot_time_, block_time_, last_block_time_;
   enum
