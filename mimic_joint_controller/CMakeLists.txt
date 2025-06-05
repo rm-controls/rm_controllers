@@ -3,7 +3,8 @@ project(mimic_joint_controller)
 
 find_package(catkin REQUIRED COMPONENTS
         roscpp
-
+        effort_controllers
+        hardware_interface
         pluginlib
         controller_interface
         )
@@ -13,7 +14,8 @@ catkin_package(
         include
         CATKIN_DEPENDS
         roscpp
-
+        effort_controllers
+        hardware_interface
         pluginlib
         controller_interface
         LIBRARIES ${PROJECT_NAME}
