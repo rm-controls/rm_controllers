@@ -297,8 +297,14 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
     {
       for (size_t j = 0; j < ctrls_friction_[i].size(); j++)
       {
-        ctrls_friction_[i][j]->setCommand(wheel_speed_directions_[i][j] *
-                                          (cmd_.wheel_speed + config_.extra_wheel_speed + wheel_speed_offsets_[i][j]));
+        if (j == 0)
+          ctrls_friction_[i][j]->setCommand(
+              wheel_speed_directions_[i][j] *
+              (cmd_.wheel_speed + config_.extra_wheel_speed + cmd_.wheels_speed_offset_front));
+        if (j == 1)
+          ctrls_friction_[i][j]->setCommand(
+              wheel_speed_directions_[i][j] *
+              (cmd_.wheel_speed + config_.extra_wheel_speed + cmd_.wheels_speed_offset_back));
       }
     }
   }
