@@ -104,6 +104,7 @@ private:
   double bullet_speed_{}, resistance_coff_{};
   double fly_time_;
   double switch_hysteresis_;
+  double last_yaw_{}, filtered_yaw_{};
   int shoot_beforehand_cmd_{};
   int selected_armor_;
   int count_;
