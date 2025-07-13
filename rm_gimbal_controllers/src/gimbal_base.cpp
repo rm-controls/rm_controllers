@@ -455,8 +455,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
         vel_des[2] = angles::shortest_angular_distance(last_pos_des_[2], pos_des[2]) / 0.001;
         vel_des[2] =
             std::max(-joint_urdfs_.at(2)->limits->velocity, std::min(vel_des[2], joint_urdfs_.at(2)->limits->velocity));
-        if (data_track_.v_yaw * vel_des[2] > 0)
-          vel_des[2] = 0;
+        if (data_track_.v_yaw * vel_des[2] > 0.)
+          vel_des[2] = 0.;
       }
       if (joint_urdfs_.find(1) != joint_urdfs_.end())
       {
