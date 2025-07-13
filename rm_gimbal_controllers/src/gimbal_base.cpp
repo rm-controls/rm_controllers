@@ -452,8 +452,11 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
         tf2::doTransform(target_vel, target_vel, transform);
         tf2::fromMsg(target_pos, target_pos_tf);
         tf2::fromMsg(target_vel, target_vel_tf);
-        vel_des[2] = angles::shortest_angular_distance(last_pos_des_[2], pos_des[2]) / period.toSec();
-        last_pos_des_[2] = pos_des[2];
+        vel_des[2] = angles::shortest_angular_distance(last_pos_des_[2], pos_des[2]) / 0.001;
+        vel_des[2] =
+            std::max(-joint_urdfs_.at(2)->limits->velocity, std::min(vel_des[2], joint_urdfs_.at(2)->limits->velocity));
+        if (data_track_.v_yaw * vel_des[2] > 0)
+          vel_des[2] = 0;
       }
       if (joint_urdfs_.find(1) != joint_urdfs_.end())
       {
@@ -471,6 +474,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
       ROS_WARN("%s", ex.what());
     }
   }
+  last_pos_des_[2] = pos_des[2];
   for (const auto& in_limit : pos_des_in_limit_)
     if (!in_limit.second)
       vel_des[in_limit.first] = 0.;
@@ -490,6 +494,9 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
                              updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
                              config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
     ctrls_.at(2)->update(time, period);
+    ctrls_.at(2)->joint_.setCommand(
+        std::max(-joint_urdfs_.at(2)->limits->effort,
+                 std::min(ctrls_.at(2)->joint_.getCommand(), joint_urdfs_.at(2)->limits->effort)));
   }
 
   // publish state
