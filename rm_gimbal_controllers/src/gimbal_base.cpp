@@ -453,8 +453,6 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
         tf2::fromMsg(target_pos, target_pos_tf);
         tf2::fromMsg(target_vel, target_vel_tf);
         vel_des[2] = target_pos_tf.cross(target_vel_tf).z() / std::pow((target_pos_tf.length()), 2);
-        //        vel_des[2] =
-        //            std::max(-joint_urdfs_.at(2)->limits->velocity, std::min(vel_des[2], joint_urdfs_.at(2)->limits->velocity));
       }
       if (joint_urdfs_.find(1) != joint_urdfs_.end())
       {
@@ -492,9 +490,6 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
                              updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
                              config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
     ctrls_.at(2)->update(time, period);
-    //    ctrls_.at(2)->joint_.setCommand(
-    //        std::max(-joint_urdfs_.at(2)->limits->effort,
-    //                 std::min(ctrls_.at(2)->joint_.getCommand(), joint_urdfs_.at(2)->limits->effort)));
   }
 
   // publish state
