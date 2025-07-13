@@ -452,7 +452,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
         tf2::doTransform(target_vel, target_vel, transform);
         tf2::fromMsg(target_pos, target_pos_tf);
         tf2::fromMsg(target_vel, target_vel_tf);
-        vel_des[2] = target_pos_tf.cross(target_vel_tf).z() / std::pow((target_pos_tf.length()), 2);
+        vel_des[2] = angles::shortest_angular_distance(last_pos_des_[2], pos_des[2]) / period.toSec();
+        last_pos_des_[2] = pos_des[2];
       }
       if (joint_urdfs_.find(1) != joint_urdfs_.end())
       {
