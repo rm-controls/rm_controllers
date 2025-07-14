@@ -39,7 +39,6 @@
 #include <cmath>
 #include <tf/transform_datatypes.h>
 #include <rm_common/ori_tool.h>
-#include <angles/angles.h>
 
 namespace rm_gimbal_controllers
 {
@@ -125,10 +124,12 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   bullet_speed_ = bullet_speed;
   resistance_coff_ = getResistanceCoefficient(bullet_speed_) != 0 ? getResistanceCoefficient(bullet_speed_) : 0.001;
 
-  if (abs(angles::shortest_angular_distance(last_yaw_, yaw)) > 1.)
+  if (abs(yaw - last_yaw_) > 1.)
     filtered_yaw_ = yaw;
   else if (last_yaw_ != yaw)
+  {
     filtered_yaw_ = filtered_yaw_ + (yaw - filtered_yaw_) * (0.001 / (0.01 + 0.001));
+  }
   last_yaw_ = yaw;
 
   double temp_z = pos.z;
