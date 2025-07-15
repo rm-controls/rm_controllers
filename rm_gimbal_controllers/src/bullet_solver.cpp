@@ -155,8 +155,12 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   double switch_armor_angle =
       track_target_ ? M_PI / armors_num - (2 * rough_fly_time + config_.gimbal_switch_duration) / 2 * abs(v_yaw) :
                       min_switch_angle;
-  if (((filtered_yaw_ > output_yaw_ + switch_armor_angle) && v_yaw > 1.) ||
-      ((filtered_yaw_ < output_yaw_ - switch_armor_angle) && v_yaw < -1.))
+  double yaw_subtract = filtered_yaw_ - output_yaw_;
+  while (yaw_subtract > M_PI)
+    yaw_subtract -= 2 * yaw_subtract;
+  while (yaw_subtract < -M_PI)
+    yaw_subtract += 2 * M_PI;
+  if (((yaw_subtract > switch_armor_angle) && v_yaw > 1.) || ((yaw_subtract < switch_armor_angle) && v_yaw < -1.))
   {
     count_++;
     if (identified_target_change_)
