@@ -283,8 +283,8 @@ void BulletSolver::getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, ge
     r = r2;
     z = pos.z + dz;
   }
-  pos.x += vel.x * config_.track_move_target_delay;
-  pos.y += vel.y * config_.track_move_target_delay;
+  pos.x += vel.x * (config_.track_move_target_delay + fly_time_);
+  pos.y += vel.y * (config_.track_move_target_delay + fly_time_);
   if (track_target_)
   {
     armor_pos.x = pos.x - r * cos(yaw + v_yaw * (fly_time_ + config_.track_rotate_target_delay) +
