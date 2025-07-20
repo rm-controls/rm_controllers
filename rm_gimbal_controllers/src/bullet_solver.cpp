@@ -44,26 +44,29 @@ namespace rm_gimbal_controllers
 {
 BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
 {
-  config_ = { .resistance_coff_qd_10 = getParam(controller_nh, "resistance_coff_qd_10", 0.),
-              .resistance_coff_qd_15 = getParam(controller_nh, "resistance_coff_qd_15", 0.),
-              .resistance_coff_qd_16 = getParam(controller_nh, "resistance_coff_qd_16", 0.),
-              .resistance_coff_qd_18 = getParam(controller_nh, "resistance_coff_qd_18", 0.),
-              .resistance_coff_qd_30 = getParam(controller_nh, "resistance_coff_qd_30", 0.),
-              .g = getParam(controller_nh, "g", 0.),
-              .delay = getParam(controller_nh, "delay", 0.),
-              .wait_next_armor_delay = getParam(controller_nh, "wait_next_armor_delay", 0.105),
-              .wait_diagonal_armor_delay = getParam(controller_nh, "wait_diagonal_armor_delay", 0.105),
-              .dt = getParam(controller_nh, "dt", 0.),
-              .timeout = getParam(controller_nh, "timeout", 0.),
-              .ban_shoot_duration = getParam(controller_nh, "ban_shoot_duration", 0.0),
-              .gimbal_switch_duration = getParam(controller_nh, "gimbal_switch_duration", 0.0),
-              .max_switch_angle = getParam(controller_nh, "max_switch_angle", 40.0),
-              .min_switch_angle = getParam(controller_nh, "min_switch_angle", 2.0),
-              .min_shoot_beforehand_vel = getParam(controller_nh, "min_shoot_beforehand_vel", 4.5),
-              .max_chassis_angular_vel = getParam(controller_nh, "max_chassis_angular_vel", 8.5),
-              .track_rotate_target_delay = getParam(controller_nh, "track_rotate_target_delay", 0.),
-              .track_move_target_delay = getParam(controller_nh, "track_move_target_delay", 0.),
-              .min_fit_switch_count = getParam(controller_nh, "min_fit_switch_count", 3) };
+  config_ = {
+    .resistance_coff_qd_10 = getParam(controller_nh, "resistance_coff_qd_10", 0.),
+    .resistance_coff_qd_15 = getParam(controller_nh, "resistance_coff_qd_15", 0.),
+    .resistance_coff_qd_16 = getParam(controller_nh, "resistance_coff_qd_16", 0.),
+    .resistance_coff_qd_18 = getParam(controller_nh, "resistance_coff_qd_18", 0.),
+    .resistance_coff_qd_30 = getParam(controller_nh, "resistance_coff_qd_30", 0.),
+    .g = getParam(controller_nh, "g", 0.),
+    .delay = getParam(controller_nh, "delay", 0.),
+    .wait_next_armor_delay = getParam(controller_nh, "wait_next_armor_delay", 0.105),
+    .wait_diagonal_armor_delay = getParam(controller_nh, "wait_diagonal_armor_delay", 0.105),
+    .dt = getParam(controller_nh, "dt", 0.),
+    .timeout = getParam(controller_nh, "timeout", 0.),
+    .max_switch_angle = getParam(controller_nh, "max_switch_angle", 40.0),
+    .min_switch_angle = getParam(controller_nh, "min_switch_angle", 2.0),
+    .switch_duration_scale = getParam(controller_nh, "switch_duration_scale", 0.),
+    .switch_duration_rate = getParam(controller_nh, "switch_duration_rate", 0.),
+    .switch_duration_offset = getParam(controller_nh, "switch_duration_offset", 0.08),
+    .min_shoot_beforehand_vel = getParam(controller_nh, "min_shoot_beforehand_vel", 4.5),
+    .max_chassis_angular_vel = getParam(controller_nh, "max_chassis_angular_vel", 8.5),
+    .track_rotate_target_delay = getParam(controller_nh, "track_rotate_target_delay", 0.),
+    .track_move_target_delay = getParam(controller_nh, "track_move_target_delay", 0.),
+    .min_fit_switch_count = getParam(controller_nh, "min_fit_switch_count", 3),
+  };
   max_track_target_vel_ = getParam(controller_nh, "max_track_target_vel", 5.0);
   switch_hysteresis_ = getParam(controller_nh, "switch_hysteresis", 1.0);
   config_rt_buffer_.initRT(config_);
@@ -95,7 +98,6 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
   shoot_beforehand_cmd_pub_.reset(
       new realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>(controller_nh, "shoot_beforehand_cmd", 10));
   fly_time_pub_.reset(new realtime_tools::RealtimePublisher<std_msgs::Float64>(controller_nh, "fly_time", 10));
-
   identified_target_change_sub_ =
       controller_nh.subscribe<std_msgs::Bool>("/change", 10, &BulletSolver::identifiedTargetChangeCB, this);
 }
@@ -124,6 +126,14 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   bullet_speed_ = bullet_speed;
   resistance_coff_ = getResistanceCoefficient(bullet_speed_) != 0 ? getResistanceCoefficient(bullet_speed_) : 0.001;
 
+  if (abs(yaw - last_yaw_) > 1.)
+    filtered_yaw_ = yaw;
+  else if (last_yaw_ != yaw)
+  {
+    filtered_yaw_ = filtered_yaw_ + (yaw - filtered_yaw_) * (0.001 / (0.01 + 0.001));
+  }
+  last_yaw_ = yaw;
+
   double temp_z = pos.z;
   double target_rho = std::sqrt(std::pow(pos.x, 2) + std::pow(pos.y, 2));
   output_yaw_ = std::atan2(pos.y, pos.x);
@@ -133,7 +143,6 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   selected_armor_ = 0;
   double r = r1;
   double z = pos.z;
-  double max_switch_angle = config_.max_switch_angle / 180 * M_PI;
   double min_switch_angle = config_.min_switch_angle / 180 * M_PI;
   if (track_target_)
   {
@@ -145,16 +154,24 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
     if (std::abs(v_yaw) <= max_track_target_vel_ - switch_hysteresis_)
       track_target_ = true;
   }
-  double switch_armor_angle =
-      track_target_ ?
-          (acos(r / target_rho) - max_switch_angle +
-           (-acos(r / target_rho) + (max_switch_angle + min_switch_angle)) * std::abs(v_yaw) / max_track_target_vel_) *
-                  (1 - std::abs(chassis_angular_vel_z) / config_.max_chassis_angular_vel) +
-              min_switch_angle * std::abs(chassis_angular_vel_z) / config_.max_chassis_angular_vel :
-          min_switch_angle;
-  if (((((yaw + v_yaw * rough_fly_time) > output_yaw_ + switch_armor_angle) && v_yaw > 0.) ||
-       (((yaw + v_yaw * rough_fly_time) < output_yaw_ - switch_armor_angle) && v_yaw < 0.)) &&
-      std::abs(v_yaw) >= 1.0)
+  double switch_armor_angle{};
+  if (track_target_)
+  {
+    if (v_yaw > 0.)
+      switch_armor_angle =
+          M_PI / armors_num - (2 * rough_fly_time + getGimbalSwitchDuration(std::abs(v_yaw))) / 2 * v_yaw;
+    else if (v_yaw < 0.)
+      switch_armor_angle =
+          -M_PI / armors_num - (2 * rough_fly_time + getGimbalSwitchDuration(std::abs(v_yaw))) / 2 * v_yaw;
+  }
+  else
+    switch_armor_angle = min_switch_angle;
+  double yaw_subtract = filtered_yaw_ - output_yaw_;
+  while (yaw_subtract > M_PI)
+    yaw_subtract -= 2 * M_PI;
+  while (yaw_subtract < -M_PI)
+    yaw_subtract += 2 * M_PI;
+  if (((yaw_subtract > switch_armor_angle) && v_yaw > 1.) || ((yaw_subtract < switch_armor_angle) && v_yaw < -1.))
   {
     count_++;
     if (identified_target_change_)
@@ -171,14 +188,15 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
       z = armors_num == 4 ? pos.z + dz : pos.z;
     }
   }
-  is_in_delay_before_switch_ =
-      (((((yaw + selected_armor_ * 2 * M_PI / armors_num) + v_yaw * (rough_fly_time + config_.delay)) >
-         output_yaw_ + switch_armor_angle) &&
-        v_yaw > 0.) ||
-       ((((yaw + selected_armor_ * 2 * M_PI / armors_num) + v_yaw * (rough_fly_time + config_.delay)) <
-         output_yaw_ - switch_armor_angle) &&
-        v_yaw < 0.)) &&
-      track_target_;
+  double filtered_aim_armor_yaw = filtered_yaw_ + selected_armor_ * 2 * M_PI / armors_num;
+  double aim_yaw_subtract = filtered_aim_armor_yaw - output_yaw_;
+  while (aim_yaw_subtract > M_PI)
+    aim_yaw_subtract -= 2 * M_PI;
+  while (aim_yaw_subtract < -M_PI)
+    aim_yaw_subtract += 2 * M_PI;
+  is_in_delay_before_switch_ = ((((aim_yaw_subtract + v_yaw * config_.delay) > switch_armor_angle) && v_yaw > 0.) ||
+                                (((aim_yaw_subtract + v_yaw * config_.delay) < switch_armor_angle) && v_yaw < 0.)) &&
+                               track_target_;
   if (track_target_)
     yaw += v_yaw * config_.track_rotate_target_delay;
   pos.x += vel.x * config_.track_move_target_delay;
@@ -264,13 +282,21 @@ void BulletSolver::getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, ge
     r = r2;
     z = pos.z + dz;
   }
+  pos.x += vel.x * (config_.track_move_target_delay + fly_time_);
+  pos.y += vel.y * (config_.track_move_target_delay + fly_time_);
   if (track_target_)
   {
-    armor_pos.x = pos.x - r * cos(yaw + selected_armor_ * 2 * M_PI / armors_num);
-    armor_pos.y = pos.y - r * sin(yaw + selected_armor_ * 2 * M_PI / armors_num);
+    armor_pos.x = pos.x - r * cos(yaw + v_yaw * (fly_time_ + config_.track_rotate_target_delay) +
+                                  selected_armor_ * 2 * M_PI / armors_num);
+    armor_pos.y = pos.y - r * sin(yaw + v_yaw * (fly_time_ + config_.track_rotate_target_delay) +
+                                  selected_armor_ * 2 * M_PI / armors_num);
     armor_pos.z = z;
-    armor_vel.x = vel.x + v_yaw * r * sin(yaw + selected_armor_ * 2 * M_PI / armors_num);
-    armor_vel.y = vel.y - v_yaw * r * cos(yaw + selected_armor_ * 2 * M_PI / armors_num);
+    armor_vel.x = vel.x + v_yaw * r *
+                              sin(yaw + v_yaw * (fly_time_ + config_.track_rotate_target_delay) +
+                                  selected_armor_ * 2 * M_PI / armors_num);
+    armor_vel.y = vel.y - v_yaw * r *
+                              cos(yaw + v_yaw * (fly_time_ + config_.track_rotate_target_delay) +
+                                  selected_armor_ * 2 * M_PI / armors_num);
     armor_vel.z = vel.z;
   }
   else
@@ -386,13 +412,21 @@ void BulletSolver::identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg)
     identified_target_change_ = true;
 }
 
+double BulletSolver::getGimbalSwitchDuration(double v_yaw)
+{
+  gimbal_switch_duration_ =
+      config_.switch_duration_scale * std::exp(config_.switch_duration_rate * (v_yaw * 60 / (2 * M_PI))) +
+      config_.switch_duration_offset;
+  return gimbal_switch_duration_;
+}
+
 void BulletSolver::judgeShootBeforehand(const ros::Time& time, double v_yaw)
 {
   if (!track_target_)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
-  else if ((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.ban_shoot_duration).toSec())
+  else if ((ros::Time::now() - switch_armor_time_).toSec() < getGimbalSwitchDuration(std::abs(v_yaw)) - config_.delay)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
-  else if (((ros::Time::now() - switch_armor_time_).toSec() < ros::Duration(config_.gimbal_switch_duration).toSec()) &&
+  else if (((ros::Time::now() - switch_armor_time_).toSec() < getGimbalSwitchDuration(std::abs(v_yaw))) &&
            std::abs(v_yaw) > config_.min_shoot_beforehand_vel)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::ALLOW_SHOOT;
   else if (is_in_delay_before_switch_)
@@ -424,10 +458,11 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.wait_diagonal_armor_delay = init_config.wait_diagonal_armor_delay;
     config.dt = init_config.dt;
     config.timeout = init_config.timeout;
-    config.ban_shoot_duration = init_config.ban_shoot_duration;
-    config.gimbal_switch_duration = init_config.gimbal_switch_duration;
     config.max_switch_angle = init_config.max_switch_angle;
     config.min_switch_angle = init_config.min_switch_angle;
+    config.switch_duration_scale = init_config.switch_duration_scale;
+    config.switch_duration_rate = init_config.switch_duration_rate;
+    config.switch_duration_offset = init_config.switch_duration_offset;
     config.min_shoot_beforehand_vel = init_config.min_shoot_beforehand_vel;
     config.max_chassis_angular_vel = init_config.max_chassis_angular_vel;
     config.track_rotate_target_delay = init_config.track_rotate_target_delay;
@@ -446,10 +481,11 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .wait_diagonal_armor_delay = config.wait_diagonal_armor_delay,
                         .dt = config.dt,
                         .timeout = config.timeout,
-                        .ban_shoot_duration = config.ban_shoot_duration,
-                        .gimbal_switch_duration = config.gimbal_switch_duration,
                         .max_switch_angle = config.max_switch_angle,
                         .min_switch_angle = config.min_switch_angle,
+                        .switch_duration_scale = config.switch_duration_scale,
+                        .switch_duration_rate = config.switch_duration_rate,
+                        .switch_duration_offset = config.switch_duration_offset,
                         .min_shoot_beforehand_vel = config.min_shoot_beforehand_vel,
                         .max_chassis_angular_vel = config.max_chassis_angular_vel,
                         .track_rotate_target_delay = config.track_rotate_target_delay,
