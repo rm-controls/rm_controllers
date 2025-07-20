@@ -181,7 +181,6 @@ private:
   double publish_rate_{};
   bool state_changed_{};
   int loop_count_{};
-  double last_pos_des_[3]{ 0. };
 
   // Transform
   geometry_msgs::TransformStamped odom2gimbal_des_, odom2gimbal_, odom2base_, last_odom2base_;

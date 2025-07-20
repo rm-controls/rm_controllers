@@ -434,9 +434,10 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   {
     geometry_msgs::Point target_pos;
     geometry_msgs::Vector3 target_vel;
-    bullet_solver_->getSelectedArmorPosAndVel(target_pos, target_vel, data_track_.position, data_track_.velocity,
-                                              data_track_.yaw, data_track_.v_yaw, data_track_.radius_1,
-                                              data_track_.radius_2, data_track_.dz, data_track_.armors_num);
+    double yaw = data_track_.yaw + data_track_.v_yaw * ((time - data_track_.header.stamp).toSec());
+    bullet_solver_->getSelectedArmorPosAndVel(target_pos, target_vel, data_track_.position, data_track_.velocity, yaw,
+                                              data_track_.v_yaw, data_track_.radius_1, data_track_.radius_2,
+                                              data_track_.dz, data_track_.armors_num);
     target_vel.x -= chassis_vel_->linear_->x();
     target_vel.y -= chassis_vel_->linear_->y();
     target_vel.z -= chassis_vel_->linear_->z();
@@ -452,8 +453,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
         tf2::doTransform(target_vel, target_vel, transform);
         tf2::fromMsg(target_pos, target_pos_tf);
         tf2::fromMsg(target_vel, target_vel_tf);
-        vel_des[2] = angles::shortest_angular_distance(last_pos_des_[2], pos_des[2]) / period.toSec();
-        last_pos_des_[2] = pos_des[2];
+        vel_des[2] = target_pos_tf.cross(target_vel_tf).z() / std::pow((target_pos_tf.length()), 2);
       }
       if (joint_urdfs_.find(1) != joint_urdfs_.end())
       {
