@@ -58,7 +58,6 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
     .timeout = getParam(controller_nh, "timeout", 0.),
     .max_switch_angle = getParam(controller_nh, "max_switch_angle", 40.0),
     .min_switch_angle = getParam(controller_nh, "min_switch_angle", 2.0),
-    .switch_angle_offset = getParam(controller_nh, "switch_angle_offset", 2.0),
     .switch_duration_scale = getParam(controller_nh, "switch_duration_scale", 0.),
     .switch_duration_rate = getParam(controller_nh, "switch_duration_rate", 0.),
     .switch_duration_offset = getParam(controller_nh, "switch_duration_offset", 0.08),
@@ -461,7 +460,6 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.timeout = init_config.timeout;
     config.max_switch_angle = init_config.max_switch_angle;
     config.min_switch_angle = init_config.min_switch_angle;
-    config.switch_angle_offset = init_config.switch_angle_offset;
     config.switch_duration_scale = init_config.switch_duration_scale;
     config.switch_duration_rate = init_config.switch_duration_rate;
     config.switch_duration_offset = init_config.switch_duration_offset;
@@ -485,7 +483,6 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .timeout = config.timeout,
                         .max_switch_angle = config.max_switch_angle,
                         .min_switch_angle = config.min_switch_angle,
-                        .switch_angle_offset = config.switch_angle_offset,
                         .switch_duration_scale = config.switch_duration_scale,
                         .switch_duration_rate = config.switch_duration_rate,
                         .switch_duration_offset = config.switch_duration_offset,
