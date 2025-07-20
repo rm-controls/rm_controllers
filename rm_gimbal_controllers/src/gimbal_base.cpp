@@ -471,7 +471,6 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
       ROS_WARN("%s", ex.what());
     }
   }
-  last_pos_des_[2] = pos_des[2];
   for (const auto& in_limit : pos_des_in_limit_)
     if (!in_limit.second)
       vel_des[in_limit.first] = 0.;
