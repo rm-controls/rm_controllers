@@ -148,7 +148,10 @@ protected:
 
   double wheel_radius_{}, publish_rate_{}, twist_angular_{}, timeout_{}, effort_coeff_{}, velocity_coeff_{},
       power_offset_{};
+  double roll_ = 0., pitch_ = 0., yaw_ = 0.;
+  double pitch_angle_threshold_ = 0., scale_ = 0.;
   double max_odom_vel_;
+  bool enable_uphill_acceleration_ = false;
   bool enable_odom_tf_ = false;
   bool topic_update_ = false;
   bool publish_odom_tf_ = false;

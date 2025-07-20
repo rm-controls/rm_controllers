@@ -60,6 +60,9 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
     return false;
   }
+  pitch_angle_threshold_ = getParam(controller_nh, "pitch_angle_threshold", -0.25);
+  scale_ = getParam(controller_nh, "scale", 1.);
+  enable_uphill_acceleration_ = getParam(controller_nh, "enable_uphill_acceleration", false);
   wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.02);
   twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
   max_odom_vel_ = getParam(controller_nh, "max_odom_vel", 0);
@@ -269,6 +272,9 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
     try
     {
       odom2base_ = robot_state_handle_.lookupTransform("odom", "base_link", ros::Time(0));
+      tf2::Quaternion q;
+      tf2::fromMsg(odom2base_.transform.rotation, q);
+      tf2::Matrix3x3(q).getEulerYPR(yaw_, pitch_, roll_);
     }
     catch (tf2::TransformException& ex)
     {
@@ -399,7 +405,21 @@ void ChassisBase<T...>::powerLimit()
   for (auto joint : joint_handles_)
     if (joint.getName().find("wheel") != std::string::npos)
     {
-      joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
+      if (pitch_ < pitch_angle_threshold_ && enable_uphill_acceleration_)
+      {
+        if (joint.getName().find("back") != std::string::npos)
+        {
+          joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff * scale_);
+        }
+        if (joint.getName().find("front") != std::string::npos)
+        {
+          joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
+        }
+      }
+      else
+      {
+        joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
+      }
     }
 }
 
