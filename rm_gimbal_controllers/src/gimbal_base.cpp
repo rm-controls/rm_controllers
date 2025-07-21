@@ -437,8 +437,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     double yaw = data_track_.yaw + data_track_.v_yaw * ((time - data_track_.header.stamp).toSec());
     if (data_track_.id != 12)
       bullet_solver_->getSelectedArmorPosAndVel(target_pos, target_vel, data_track_.position, data_track_.velocity, yaw,
-                                              data_track_.v_yaw, data_track_.radius_1, data_track_.radius_2,
-                                              data_track_.dz, data_track_.armors_num);
+                                                data_track_.v_yaw, data_track_.radius_1, data_track_.radius_2,
+                                                data_track_.dz, data_track_.armors_num);
     else
     {
       target_pos = data_track_.position;
