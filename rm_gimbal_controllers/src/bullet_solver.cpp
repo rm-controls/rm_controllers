@@ -58,6 +58,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
     .timeout = getParam(controller_nh, "timeout", 0.),
     .max_switch_angle = getParam(controller_nh, "max_switch_angle", 40.0),
     .min_switch_angle = getParam(controller_nh, "min_switch_angle", 2.0),
+    .switch_angle_offset = getParam(controller_nh, "switch_angle_offset", 0.0),
     .switch_duration_scale = getParam(controller_nh, "switch_duration_scale", 0.),
     .switch_duration_rate = getParam(controller_nh, "switch_duration_rate", 0.),
     .switch_duration_offset = getParam(controller_nh, "switch_duration_offset", 0.08),
@@ -154,24 +155,16 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
     if (std::abs(v_yaw) <= max_track_target_vel_ - switch_hysteresis_)
       track_target_ = true;
   }
-  double switch_armor_angle{};
-  if (track_target_)
-  {
-    if (v_yaw > 0.)
-      switch_armor_angle =
-          M_PI / armors_num - (2 * rough_fly_time + getGimbalSwitchDuration(std::abs(v_yaw))) / 2 * v_yaw;
-    else if (v_yaw < 0.)
-      switch_armor_angle =
-          -M_PI / armors_num - (2 * rough_fly_time + getGimbalSwitchDuration(std::abs(v_yaw))) / 2 * v_yaw;
-  }
-  else
-    switch_armor_angle = min_switch_angle;
+  double switch_armor_angle =
+      track_target_ ? M_PI / armors_num - (2 * rough_fly_time + getGimbalSwitchDuration(abs(v_yaw))) / 2 * abs(v_yaw) +
+                          config_.switch_angle_offset :
+                      min_switch_angle;
   double yaw_subtract = filtered_yaw_ - output_yaw_;
   while (yaw_subtract > M_PI)
     yaw_subtract -= 2 * M_PI;
   while (yaw_subtract < -M_PI)
     yaw_subtract += 2 * M_PI;
-  if (((yaw_subtract > switch_armor_angle) && v_yaw > 1.) || ((yaw_subtract < switch_armor_angle) && v_yaw < -1.))
+  if (((yaw_subtract > switch_armor_angle) && v_yaw > 1.) || ((yaw_subtract < -switch_armor_angle) && v_yaw < -1.))
   {
     count_++;
     if (identified_target_change_)
@@ -194,8 +187,8 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
     aim_yaw_subtract -= 2 * M_PI;
   while (aim_yaw_subtract < -M_PI)
     aim_yaw_subtract += 2 * M_PI;
-  is_in_delay_before_switch_ = ((((aim_yaw_subtract + v_yaw * config_.delay) > switch_armor_angle) && v_yaw > 0.) ||
-                                (((aim_yaw_subtract + v_yaw * config_.delay) < switch_armor_angle) && v_yaw < 0.)) &&
+  is_in_delay_before_switch_ = ((((aim_yaw_subtract + v_yaw * config_.delay) > switch_armor_angle) && v_yaw > 1.) ||
+                                (((aim_yaw_subtract + v_yaw * config_.delay) < -switch_armor_angle) && v_yaw < -1.)) &&
                                track_target_;
   if (track_target_)
     yaw += v_yaw * config_.track_rotate_target_delay;
@@ -212,10 +205,10 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   {
     target_pos_.x = pos.x - r * cos(atan2(pos.y, pos.x));
     target_pos_.y = pos.y - r * sin(atan2(pos.y, pos.x));
-    if ((v_yaw > 1.0 && (yaw + v_yaw * (fly_time_ + config_.wait_next_armor_delay) +
-                         selected_armor_ * 2 * M_PI / armors_num) > output_yaw_) ||
-        (v_yaw < -1.0 && (yaw + v_yaw * (fly_time_ + config_.wait_next_armor_delay) +
-                          selected_armor_ * 2 * M_PI / armors_num) < output_yaw_))
+    if ((v_yaw > 1.0 && (yaw_subtract + v_yaw * (fly_time_ + config_.wait_next_armor_delay) +
+                         selected_armor_ * 2 * M_PI / armors_num) > 0.) ||
+        (v_yaw < -1.0 && (yaw_subtract + v_yaw * (fly_time_ + config_.wait_next_armor_delay) +
+                          selected_armor_ * 2 * M_PI / armors_num) < 0.))
       selected_armor_ = v_yaw > 0. ? -2 : 2;
     if (selected_armor_ % 2 == 0)
     {
@@ -424,13 +417,15 @@ void BulletSolver::judgeShootBeforehand(const ros::Time& time, double v_yaw)
 {
   if (!track_target_)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
-  else if ((ros::Time::now() - switch_armor_time_).toSec() < getGimbalSwitchDuration(std::abs(v_yaw)) - config_.delay)
-    shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
-  else if (((ros::Time::now() - switch_armor_time_).toSec() < getGimbalSwitchDuration(std::abs(v_yaw))) &&
-           std::abs(v_yaw) > config_.min_shoot_beforehand_vel)
-    shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::ALLOW_SHOOT;
-  else if (is_in_delay_before_switch_)
-    shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
+  else if (std::abs(v_yaw) > config_.min_shoot_beforehand_vel)
+  {
+    if ((ros::Time::now() - switch_armor_time_).toSec() < getGimbalSwitchDuration(std::abs(v_yaw)) - config_.delay)
+      shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
+    if (((ros::Time::now() - switch_armor_time_).toSec() < getGimbalSwitchDuration(std::abs(v_yaw))))
+      shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::ALLOW_SHOOT;
+    if (is_in_delay_before_switch_)
+      shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
+  }
   else
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
   if (shoot_beforehand_cmd_pub_->trylock())
@@ -460,6 +455,7 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.timeout = init_config.timeout;
     config.max_switch_angle = init_config.max_switch_angle;
     config.min_switch_angle = init_config.min_switch_angle;
+    config.switch_angle_offset = init_config.switch_angle_offset;
     config.switch_duration_scale = init_config.switch_duration_scale;
     config.switch_duration_rate = init_config.switch_duration_rate;
     config.switch_duration_offset = init_config.switch_duration_offset;
@@ -483,6 +479,7 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .timeout = config.timeout,
                         .max_switch_angle = config.max_switch_angle,
                         .min_switch_angle = config.min_switch_angle,
+                        .switch_angle_offset = config.switch_angle_offset,
                         .switch_duration_scale = config.switch_duration_scale,
                         .switch_duration_rate = config.switch_duration_rate,
                         .switch_duration_offset = config.switch_duration_offset,
