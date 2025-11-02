@@ -47,10 +47,11 @@
 #include <rm_common/filters/lp_filter.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <dynamic_reconfigure/server.h>
-#include <rm_shooter_controllers/ShooterConfig.h>
+#include <rm_dshot_shooter_controllers/ShooterConfig.h>
 #include <rm_msgs/ShootCmd.h>
 #include <rm_msgs/ShootState.h>
 #include <rm_msgs/LocalHeatState.h>
+#include <control_toolbox/pid.h>
 
 #include <utility>
 
@@ -78,7 +79,7 @@ private:
   void ready(const ros::Duration& period);
   void push(const ros::Time& time, const ros::Duration& period);
   void block(const ros::Time& time, const ros::Duration& period);
-  void setSpeed(const rm_msgs::ShootCmd& cmd);
+  void setSpeed(const rm_msgs::ShootCmd& cmd, const ros::Duration& period);
   void normalize();
   void judgeBulletShoot(const ros::Time& time, const ros::Duration& period);
   void commandCB(const rm_msgs::ShootCmdConstPtr& msg)
@@ -86,11 +87,12 @@ private:
     cmd_rt_buffer_.writeFromNonRT(*msg);
   }
 
-  void reconfigCB(rm_shooter_controllers::ShooterConfig& config, uint32_t /*level*/);
+  void reconfigCB(rm_dshot_shooter_controllers::ShooterConfig& config, uint32_t /*level*/);
 
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   hardware_interface::VelocityJointInterface* velocity_joint_interface_{};
   std::vector<std::vector<velocity_controllers::JointVelocityController*>> ctrls_friction_;
+  std::vector<std::vector<control_toolbox::Pid>> friction_pid_controllers_;
   effort_controllers::JointPositionController ctrl_trigger_;
   std::vector<std::vector<double>> wheel_speed_offsets_;
   LowPassFilter* lp_filter_;
@@ -125,8 +127,11 @@ private:
   rm_msgs::ShootCmd cmd_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::LocalHeatState>> local_heat_state_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootState>> shoot_state_pub_;
+  std::vector<std::vector<std::unique_ptr<realtime_tools::RealtimePublisher<control_msgs::JointControllerState>>>>
+      friction_state_publishers_;
+  int loop_count_ = 0;
   ros::Subscriber cmd_subscriber_;
-  dynamic_reconfigure::Server<rm_shooter_controllers::ShooterConfig>* d_srv_{};
+  dynamic_reconfigure::Server<rm_dshot_shooter_controllers::ShooterConfig>* d_srv_{};
 };
 
 }  // namespace rm_dshot_shooter_controllers
