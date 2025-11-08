@@ -78,7 +78,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   d_srv_->setCallback(cb);
 
   XmlRpc::XmlRpcValue friction;
-  double wheel_speed_offset;
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
   velocity_joint_interface_ = robot_hw->get<hardware_interface::VelocityJointInterface>();
   controller_nh.getParam("friction", friction);
@@ -91,7 +90,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     for (const auto& it : its.second)
     {
       ros::NodeHandle nh = ros::NodeHandle(controller_nh, "friction/" + its.first + "/" + it.first);
-      wheel_speed_offset_temp.push_back(nh.getParam("wheel_speed_offset", wheel_speed_offset) ? wheel_speed_offset : 0.);
       auto* ctrl_friction = new velocity_controllers::JointVelocityController;
       if (ctrl_friction->init(velocity_joint_interface_, nh))
       {
@@ -116,7 +114,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     }
     friction_state_publishers_.push_back(std::move(state_pubs));
     ctrls_friction_.push_back(ctrl_frictions);
-    wheel_speed_offsets_.push_back(wheel_speed_offset_temp);
     friction_pid_controllers_.push_back(pid_controllers_temp);
   }
   lp_filter_ = new LowPassFilter(controller_nh);

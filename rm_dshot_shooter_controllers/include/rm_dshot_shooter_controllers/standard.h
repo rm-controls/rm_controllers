@@ -94,7 +94,6 @@ private:
   std::vector<std::vector<velocity_controllers::JointVelocityController*>> ctrls_friction_;
   std::vector<std::vector<std::shared_ptr<control_toolbox::Pid>>> friction_pid_controllers_;
   effort_controllers::JointPositionController ctrl_trigger_;
-  std::vector<std::vector<double>> wheel_speed_offsets_;
   LowPassFilter* lp_filter_;
   int push_per_rotation_{}, count_{};
   double push_wheel_speed_threshold_{};
