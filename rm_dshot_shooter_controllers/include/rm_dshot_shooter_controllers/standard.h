@@ -92,7 +92,7 @@ private:
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
   hardware_interface::VelocityJointInterface* velocity_joint_interface_{};
   std::vector<std::vector<velocity_controllers::JointVelocityController*>> ctrls_friction_;
-  std::vector<std::vector<control_toolbox::Pid>> friction_pid_controllers_;
+  std::vector<std::vector<std::shared_ptr<control_toolbox::Pid>>> friction_pid_controllers_;
   effort_controllers::JointPositionController ctrl_trigger_;
   std::vector<std::vector<double>> wheel_speed_offsets_;
   LowPassFilter* lp_filter_;
