@@ -39,6 +39,8 @@
 #include <cmath>
 #include <tf/transform_datatypes.h>
 #include <rm_common/ori_tool.h>
+#include <rm_msgs/PowerHeatData.h>
+
 
 namespace rm_gimbal_controllers
 {
@@ -61,12 +63,14 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
     .switch_angle_offset = getParam(controller_nh, "switch_angle_offset", 0.0),
     .switch_duration_scale = getParam(controller_nh, "switch_duration_scale", 0.),
     .switch_duration_rate = getParam(controller_nh, "switch_duration_rate", 0.),
-    .switch_duration_offset = getParam(controller_nh, "switch_duration_offset", 0.08),
+    .switch_duration_offset = getParam(controller_nh, "switch_duration_offset", 0.1),
     .min_shoot_beforehand_vel = getParam(controller_nh, "min_shoot_beforehand_vel", 4.5),
     .max_chassis_angular_vel = getParam(controller_nh, "max_chassis_angular_vel", 8.5),
     .track_rotate_target_delay = getParam(controller_nh, "track_rotate_target_delay", 0.),
     .track_move_target_delay = getParam(controller_nh, "track_move_target_delay", 0.),
     .min_fit_switch_count = getParam(controller_nh, "min_fit_switch_count", 3),
+    .traject_ahead_ = getParam(controller_nh, "traject_ahead_", 1.),
+    .clean_shoot_num_ = getParam(controller_nh, "clean_shoot_num_", 1),
   };
   max_track_target_vel_ = getParam(controller_nh, "max_track_target_vel", 5.0);
   switch_hysteresis_ = getParam(controller_nh, "switch_hysteresis", 1.0);
@@ -101,6 +105,8 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
   fly_time_pub_.reset(new realtime_tools::RealtimePublisher<std_msgs::Float64>(controller_nh, "fly_time", 10));
   identified_target_change_sub_ =
       controller_nh.subscribe<std_msgs::Bool>("/change", 10, &BulletSolver::identifiedTargetChangeCB, this);
+  shoot_state_sub_ =
+      controller_nh.subscribe<rm_msgs::LocalHeatState>("/local_heat_state/shooter_state", 50, &BulletSolver::heatCB, this);
 }
 
 double BulletSolver::getResistanceCoefficient(double bullet_speed) const
@@ -121,12 +127,12 @@ double BulletSolver::getResistanceCoefficient(double bullet_speed) const
 }
 
 bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw,
-                         double v_yaw, double r1, double r2, double dz, int armors_num, double chassis_angular_vel_z)
+                         double v_yaw, double r1, double r2, double dz, int armors_num, double chassis_angular_vel_z,
+                         ros::Time time,ros::Duration period,double start_pos,double start_vel)
 {
   config_ = *config_rt_buffer_.readFromRT();
   bullet_speed_ = bullet_speed;
   resistance_coff_ = getResistanceCoefficient(bullet_speed_) != 0 ? getResistanceCoefficient(bullet_speed_) : 0.001;
-
   if (abs(yaw - last_yaw_) > 1.)
     filtered_yaw_ = yaw;
   else if (last_yaw_ != yaw)
@@ -134,82 +140,96 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
     filtered_yaw_ = filtered_yaw_ + (yaw - filtered_yaw_) * (0.001 / (0.01 + 0.001));
   }
   last_yaw_ = yaw;
-
+  filtered_v_yaw_ = filtered_v_yaw_ + (v_yaw - filtered_v_yaw_) * 0.05;
   double temp_z = pos.z;
   double target_rho = std::sqrt(std::pow(pos.x, 2) + std::pow(pos.y, 2));
-  output_yaw_ = std::atan2(pos.y, pos.x);
+  double output_yaw_central = std::atan2(pos.y, pos.x);
   output_pitch_ = std::atan2(temp_z, std::sqrt(std::pow(pos.x, 2) + std::pow(pos.y, 2)));
   double rough_fly_time =
       (-std::log(1 - target_rho * resistance_coff_ / (bullet_speed_ * std::cos(output_pitch_)))) / resistance_coff_;
-  selected_armor_ = 0;
   double r = r1;
   double z = pos.z;
-  double min_switch_angle = config_.min_switch_angle / 180 * M_PI;
+  if (track_target_)
+    yaw += filtered_v_yaw_ * config_.track_rotate_target_delay;
+  pos.x += vel.x * config_.track_move_target_delay;
+  pos.y += vel.y * config_.track_move_target_delay;
   if (track_target_)
   {
-    if (std::abs(v_yaw) >= max_track_target_vel_ + switch_hysteresis_)
+    if (std::abs(filtered_v_yaw_) >= max_track_target_vel_ + switch_hysteresis_)
       track_target_ = false;
   }
   else
   {
-    if (std::abs(v_yaw) <= max_track_target_vel_ - switch_hysteresis_)
+    if (std::abs(filtered_v_yaw_) <= max_track_target_vel_ - switch_hysteresis_)
       track_target_ = true;
   }
-  double switch_armor_angle =
-      track_target_ ? M_PI / armors_num - (2 * rough_fly_time + getGimbalSwitchDuration(abs(v_yaw))) / 2 * abs(v_yaw) +
-                          config_.switch_angle_offset :
-                      min_switch_angle;
-  double yaw_subtract = filtered_yaw_ - output_yaw_;
-  while (yaw_subtract > M_PI)
-    yaw_subtract -= 2 * M_PI;
-  while (yaw_subtract < -M_PI)
-    yaw_subtract += 2 * M_PI;
-  if (((yaw_subtract > switch_armor_angle) && v_yaw > 1.) || ((yaw_subtract < -switch_armor_angle) && v_yaw < -1.))
+  double after_fly_time_yaw_ = yaw + rough_fly_time * v_yaw;
+  switch_armor_angle = acos(r1/target_rho) - 0.7;
+  traject_switch_time_ =  1.321 * exp(-0.289 * abs(filtered_v_yaw_)) * config_.traject_ahead_;
+  yaw_subtract_ = after_fly_time_yaw_ - output_yaw_central;
+  while (yaw_subtract_ > M_PI)
+    yaw_subtract_ -= 2 * M_PI;
+  while (yaw_subtract_ < -M_PI)
+    yaw_subtract_ += 2 * M_PI;
+
+  if (( yaw_subtract_ > switch_armor_angle && filtered_v_yaw_ > 4.)||  ( yaw_subtract_ < switch_armor_angle && filtered_v_yaw_ < -4.))
   {
     count_++;
-    if (identified_target_change_)
+    if (change_armor)
     {
       count_ = 0;
-      identified_target_change_ = false;
+      change_armor = false;
     }
     if (count_ >= config_.min_fit_switch_count)
     {
-      if (count_ == config_.min_fit_switch_count)
-        switch_armor_time_ = ros::Time::now();
       selected_armor_ = v_yaw > 0. ? -1 : 1;
       r = armors_num == 4 ? r2 : r1;
       z = armors_num == 4 ? pos.z + dz : pos.z;
+      if (count_ == config_.min_fit_switch_count)
+      {
+        switch_armor_time_ = ros::Time::now();
+        traject_count_ = 0;
+      }
     }
   }
-  double filtered_aim_armor_yaw = filtered_yaw_ + selected_armor_ * 2 * M_PI / armors_num;
-  double aim_yaw_subtract = filtered_aim_armor_yaw - output_yaw_;
+  else if (( yaw_subtract_ < switch_armor_angle - 0.3 && filtered_v_yaw_ > 4.)||  ( yaw_subtract_ > switch_armor_angle + 0.3 && filtered_v_yaw_ < -4.))
+  {
+    selected_armor_ = 0;
+  }
+    if (ros::Time::now().toSec() > (switch_armor_time_.toSec() + traject_switch_time_) && abs(filtered_v_yaw_) > 4)
+   {
+     traject_count_ ++;
+     if ( traject_count_ == 2)
+     {
+       using_traject_ = true;
+       start_using_traject_time = ros::Time::now();
+     }
+   }
+  double filtered_aim_armor_yaw = filtered_yaw_ + selected_armor_ * 1.9;
+  double aim_yaw_subtract = filtered_aim_armor_yaw - output_yaw_central;
   while (aim_yaw_subtract > M_PI)
     aim_yaw_subtract -= 2 * M_PI;
   while (aim_yaw_subtract < -M_PI)
     aim_yaw_subtract += 2 * M_PI;
-  is_in_delay_before_switch_ = ((((aim_yaw_subtract + v_yaw * config_.delay) > switch_armor_angle) && v_yaw > 1.) ||
-                                (((aim_yaw_subtract + v_yaw * config_.delay) < -switch_armor_angle) && v_yaw < -1.)) &&
+  is_in_delay_before_switch_ = ((((aim_yaw_subtract + filtered_v_yaw_ * config_.delay) > switch_armor_angle) && filtered_v_yaw_ > 1.) ||
+                                (((aim_yaw_subtract + filtered_v_yaw_ * config_.delay) < -switch_armor_angle) && filtered_v_yaw_ < -1.)) &&
                                track_target_;
-  if (track_target_)
-    yaw += v_yaw * config_.track_rotate_target_delay;
-  pos.x += vel.x * config_.track_move_target_delay;
-  pos.y += vel.y * config_.track_move_target_delay;
   int count{};
   double error = 999;
   if (track_target_)
   {
-    target_pos_.x = pos.x - r * cos(yaw + selected_armor_ * 2 * M_PI / armors_num);
-    target_pos_.y = pos.y - r * sin(yaw + selected_armor_ * 2 * M_PI / armors_num);
+    target_pos_.x = pos.x - r * cos(yaw + selected_armor_ * 1.9);
+    target_pos_.y = pos.y - r * sin(yaw + selected_armor_ * 1.9);
   }
   else
   {
     target_pos_.x = pos.x - r * cos(atan2(pos.y, pos.x));
     target_pos_.y = pos.y - r * sin(atan2(pos.y, pos.x));
-    if ((v_yaw > 1.0 && (yaw_subtract + v_yaw * (fly_time_ + config_.wait_next_armor_delay) +
+    if ((filtered_v_yaw_ > 1.0 && (yaw_subtract_ + filtered_v_yaw_ * (fly_time_ + config_.wait_next_armor_delay) +
                          selected_armor_ * 2 * M_PI / armors_num) > 0.) ||
-        (v_yaw < -1.0 && (yaw_subtract + v_yaw * (fly_time_ + config_.wait_next_armor_delay) +
+        (filtered_v_yaw_ < -1.0 && (yaw_subtract_ + filtered_v_yaw_ * (fly_time_ + config_.wait_next_armor_delay) +
                           selected_armor_ * 2 * M_PI / armors_num) < 0.))
-      selected_armor_ = v_yaw > 0. ? -2 : 2;
+      selected_armor_ = filtered_v_yaw_ > 0. ? -2 : 2;
     if (selected_armor_ % 2 == 0)
     {
       r = r1;
@@ -217,23 +237,73 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
     }
   }
   target_pos_.z = z;
+
+  double r_trajcet_;
+  if (selected_armor_ == 1 || selected_armor_ == -1)
+  {
+    r_trajcet_ = r1;
+  }
+  else
+  {
+    r_trajcet_ = r2;
+  }
+
+  if (!using_traject_)
+  {
+    switchtime = 0.09;
+
+    if (filtered_v_yaw_ > 0)
+    {
+      after_traject_output_yaw_.x = pos.x + vel.x * (fly_time_ + switchtime) - r_trajcet_ * cos(yaw + v_yaw * (fly_time_ + switchtime) + (selected_armor_ - 1) * 2 * M_PI / armors_num);
+      after_traject_output_yaw_.y = pos.y + vel.y * (fly_time_ + switchtime) - r_trajcet_ * sin(yaw + v_yaw * (fly_time_ + switchtime)+ (selected_armor_ - 1) * 2 * M_PI / armors_num);
+    }
+    else
+    {
+      after_traject_output_yaw_.x = pos.x + vel.x * (fly_time_ + switchtime) - r_trajcet_ * cos(yaw + v_yaw * (fly_time_ + switchtime) + (selected_armor_ + 1) * 2 * M_PI / armors_num);
+      after_traject_output_yaw_.y = pos.y + vel.y * (fly_time_ + switchtime) - r_trajcet_ * sin(yaw + v_yaw * (fly_time_ + switchtime) + (selected_armor_ + 1) * 2 * M_PI / armors_num);
+    }
+    stauts_limit_.start_pos = output_yaw_;
+    stauts_limit_.start_vel = start_vel;
+    stauts_limit_.end_pos = std::atan2(after_traject_output_yaw_.y, after_traject_output_yaw_.x);
+    stauts_limit_.end_vel = stauts_limit_.start_vel;
+
+    if (switchtime > 0.2)
+    {
+      using_traject_ = false;
+    }
+    trajectory_function_coefficients.a0=stauts_limit_.start_pos;
+    trajectory_function_coefficients.a1=stauts_limit_.start_vel;
+
+    Eigen::Matrix2d A;
+    A<< std::pow(switchtime,2),std::pow(switchtime,3),
+    2*switchtime,3*std::pow(switchtime,2);
+    Eigen::Vector2d B;
+    B<<stauts_limit_.end_pos - (stauts_limit_.start_pos + stauts_limit_.start_vel * switchtime),
+    stauts_limit_.end_vel - stauts_limit_.start_vel;
+
+    Eigen::Vector2d X = A.colPivHouseholderQr().solve(B);
+
+    trajectory_function_coefficients.a2=X(0);
+    trajectory_function_coefficients.a3=X(1);
+  }
+
   while (error >= 0.001)
   {
     output_yaw_ = std::atan2(target_pos_.y, target_pos_.x);
     output_pitch_ = std::atan2(temp_z, std::sqrt(std::pow(target_pos_.x, 2) + std::pow(target_pos_.y, 2)));
     target_rho = std::sqrt(std::pow(target_pos_.x, 2) + std::pow(target_pos_.y, 2));
     fly_time_ =
-        (-std::log(1 - target_rho * resistance_coff_ / (bullet_speed_ * std::cos(output_pitch_)))) / resistance_coff_;
+      (-std::log(1 - target_rho * resistance_coff_ / (bullet_speed_ * std::cos(output_pitch_)))) / resistance_coff_ ;
     double real_z = (bullet_speed_ * std::sin(output_pitch_) + (config_.g / resistance_coff_)) *
-                        (1 - std::exp(-resistance_coff_ * fly_time_)) / resistance_coff_ -
-                    config_.g * fly_time_ / resistance_coff_;
+      (1 - std::exp(-resistance_coff_ * fly_time_)) / resistance_coff_ -
+        config_.g * fly_time_ / resistance_coff_;
 
     if (track_target_)
     {
       target_pos_.x =
-          pos.x + vel.x * fly_time_ - r * cos(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
+        pos.x + vel.x * fly_time_ - r * cos(yaw + v_yaw * fly_time_+ selected_armor_ * 2 * M_PI / armors_num);
       target_pos_.y =
-          pos.y + vel.y * fly_time_ - r * sin(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
+        pos.y + vel.y * fly_time_ - r * sin(yaw + v_yaw * fly_time_ + selected_armor_ * 2 * M_PI / armors_num);
     }
     else
     {
@@ -241,9 +311,9 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
       target_pos_after_fly_time[0] = pos.x + vel.x * fly_time_;
       target_pos_after_fly_time[1] = pos.y + vel.y * fly_time_;
       target_pos_.x =
-          target_pos_after_fly_time[0] - r * cos(atan2(target_pos_after_fly_time[1], target_pos_after_fly_time[0]));
+        target_pos_after_fly_time[0] - r * cos(atan2(target_pos_after_fly_time[1], target_pos_after_fly_time[0]));
       target_pos_.y =
-          target_pos_after_fly_time[1] - r * sin(atan2(target_pos_after_fly_time[1], target_pos_after_fly_time[0]));
+        target_pos_after_fly_time[1] - r * sin(atan2(target_pos_after_fly_time[1], target_pos_after_fly_time[0]));
     }
     target_pos_.z = z + vel.z * fly_time_;
 
@@ -262,9 +332,21 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
     fly_time_pub_->msg_.data = fly_time_;
     fly_time_pub_->unlockAndPublish();
   }
+  if (using_traject_)
+  {
+    ros::Time temp = ros::Time::now();
+    traject_output_yaw_ = planningPoint(temp,start_using_traject_time);
+    if ( ros::Time::now() - start_using_traject_time > ros::Duration(switchtime))
+    {
+      using_traject_ = false;
+    }
+  }
+  else
+  {
+    traject_output_yaw_ = output_yaw_;
+  }
   return true;
 }
-
 void BulletSolver::getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
                                              geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw,
                                              double v_yaw, double r1, double r2, double dz, int armors_num)
@@ -403,6 +485,11 @@ void BulletSolver::identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg)
 {
   if (msg->data)
     identified_target_change_ = true;
+  else if (!msg->data && identified_target_change_)
+  {
+    change_armor = true;
+    identified_target_change_ = false;
+  }
 }
 
 double BulletSolver::getGimbalSwitchDuration(double v_yaw)
@@ -419,12 +506,11 @@ void BulletSolver::judgeShootBeforehand(const ros::Time& time, double v_yaw)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
   else if (std::abs(v_yaw) > config_.min_shoot_beforehand_vel)
   {
-    if ((ros::Time::now() - switch_armor_time_).toSec() < getGimbalSwitchDuration(std::abs(v_yaw)) - config_.delay)
+    if ((ros::Time::now().toSec() > (switch_armor_time_.toSec() + traject_switch_time_ - config_.delay) && abs(filtered_v_yaw_) > 4) &&
+        (ros::Time::now().toSec() < (switch_armor_time_.toSec() + traject_switch_time_ + switchtime - config_.delay)))
       shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
-    if (((ros::Time::now() - switch_armor_time_).toSec() < getGimbalSwitchDuration(std::abs(v_yaw))))
+    if (ros::Time::now().toSec() > (switch_armor_time_.toSec() + traject_switch_time_ + switchtime - config_.delay) && abs(filtered_v_yaw_) > 4)
       shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::ALLOW_SHOOT;
-    if (is_in_delay_before_switch_)
-      shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::BAN_SHOOT;
   }
   else
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
@@ -436,6 +522,34 @@ void BulletSolver::judgeShootBeforehand(const ros::Time& time, double v_yaw)
   }
 }
 
+double BulletSolver::planningPoint(ros::Time& time,ros::Time& start_trajectory_time_)
+{
+  double a0=trajectory_function_coefficients.a0;
+  double a1=trajectory_function_coefficients.a1;
+  double a2=trajectory_function_coefficients.a2;
+  double a3=trajectory_function_coefficients.a3;
+  double n_time_ = (time - start_trajectory_time_).toSec();
+  double plansetpoint=a0+a1*n_time_+a2*pow(n_time_,2)+a3*pow(n_time_,3);
+  traject_effort_ff_ = 1.4 - 1.4 * n_time_/switchtime;
+  return plansetpoint;
+}
+
+void BulletSolver::heatCB(const rm_msgs::LocalHeatStateConstPtr& msg)
+{
+  std::lock_guard<std::mutex> lock(heat_mutex_);
+  if (msg->has_shoot && last_shoot_state_ != msg->has_shoot)
+  {
+    shoot_num_ += 1;
+  }
+  last_shoot_state_ = msg->has_shoot;
+  config_ = *config_rt_buffer_.readFromRT();
+  ROS_WARN("clean_shoot_num_ is %d"  , config_.clean_shoot_num_);
+  if (config_.clean_shoot_num_ == 0)
+  {
+    shoot_num_ = 0;
+    ROS_WARN("[Bullet Solver] clean_shoot_num_ is 0");
+  }
+}
 void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t /*unused*/)
 {
   ROS_INFO("[Bullet Solver] Dynamic params change");
@@ -464,6 +578,8 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
     config.track_rotate_target_delay = init_config.track_rotate_target_delay;
     config.track_move_target_delay = init_config.track_move_target_delay;
     config.min_fit_switch_count = init_config.min_fit_switch_count;
+    config.traject_ahead_ = init_config.traject_ahead_;
+    config.clean_shoot_num_ = init_config.clean_shoot_num_;
     dynamic_reconfig_initialized_ = true;
   }
   Config config_non_rt{ .resistance_coff_qd_10 = config.resistance_coff_qd_10,
@@ -487,7 +603,9 @@ void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config,
                         .max_chassis_angular_vel = config.max_chassis_angular_vel,
                         .track_rotate_target_delay = config.track_rotate_target_delay,
                         .track_move_target_delay = config.track_move_target_delay,
-                        .min_fit_switch_count = config.min_fit_switch_count };
+                        .min_fit_switch_count = config.min_fit_switch_count,
+                        .traject_ahead_ = config.traject_ahead_,
+                        .clean_shoot_num_ = config.clean_shoot_num_};
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 }  // namespace rm_gimbal_controllers

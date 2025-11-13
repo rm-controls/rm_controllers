@@ -147,6 +147,11 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   odom2base_.child_frame_id = getBaseFrameID(joint_urdfs_);
   odom2base_.transform.rotation.w = 1.;
 
+  odom2gimbal_traject_des_.header.frame_id = "odom";
+  odom2gimbal_traject_des_.child_frame_id = gimbal_traject_des_frame_id_;
+  odom2gimbal_traject_des_.transform.rotation.w = 1.;
+
+
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
   data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
@@ -167,6 +172,8 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   cmd_gimbal_ = *cmd_rt_buffer_.readFromRT();
   data_track_ = *track_rt_buffer_.readFromNonRT();
   config_ = *config_rt_buffer_.readFromRT();
+  period_ = period;
+  time_ = time;
   try
   {
     odom2gimbal_ = robot_state_handle_.lookupTransform("odom", odom2gimbal_.child_frame_id, time);
@@ -201,15 +208,18 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   moveJoint(time, period);
 }
 
-void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des)
+void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des ,double traject_yaw_des)
 {
-  tf2::Quaternion odom2base, odom2gimbal_des;
+  tf2::Quaternion odom2base, odom2gimbal_des ,odom2gimbal_traject_des;
   tf2::fromMsg(odom2base_.transform.rotation, odom2base);
   odom2gimbal_des.setRPY(0, pitch_des, yaw_des);
+  odom2gimbal_traject_des.setRPY(0, pitch_des, traject_yaw_des);
   tf2::Quaternion base2gimbal_des = odom2base.inverse() * odom2gimbal_des;
+  tf2::Quaternion base2gimbal_traject_des = odom2base.inverse() * odom2gimbal_traject_des;
   for (const auto& it : joint_urdfs_)
     pos_des_in_limit_[it.first] = setDesIntoLimit(base2gimbal_des, it.second, base2gimbal_des);
   odom2gimbal_des_.transform.rotation = tf2::toMsg(odom2base * base2gimbal_des);
+  odom2gimbal_traject_des_.transform.rotation = tf2::toMsg(odom2base * base2gimbal_traject_des);
   odom2gimbal_des_.header.stamp = time;
   robot_state_handle_.setTransform(odom2gimbal_des_, "rm_gimbal_controllers");
 }
@@ -232,7 +242,7 @@ void Controller::rate(const ros::Time& time, const ros::Duration& period)
   {
     double roll{}, pitch{}, yaw{};
     quatToRPY(odom2gimbal_des_.transform.rotation, roll, pitch, yaw);
-    setDes(time, yaw + period.toSec() * cmd_gimbal_.rate_yaw, pitch + period.toSec() * cmd_gimbal_.rate_pitch);
+    setDes(time, yaw + period.toSec() * cmd_gimbal_.rate_yaw, pitch + period.toSec() * cmd_gimbal_.rate_pitch,yaw + period.toSec() * cmd_gimbal_.rate_yaw);
   }
 }
 
@@ -278,7 +288,8 @@ void Controller::track(const ros::Time& time)
   target_vel.z -= chassis_vel_->linear_->z();
   bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, yaw, data_track_.v_yaw,
                                              data_track_.radius_1, data_track_.radius_2, data_track_.dz,
-                                             data_track_.armors_num, chassis_vel_->angular_->z());
+                                             data_track_.armors_num, chassis_vel_->angular_->z(),time_,period_,
+                                             pos_des[2],ctrls_.at(2)->joint_.getVelocity());
   bullet_solver_->judgeShootBeforehand(time, data_track_.v_yaw);
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
@@ -298,7 +309,7 @@ void Controller::track(const ros::Time& time)
   }
 
   if (solve_success)
-    setDes(time, bullet_solver_->getYaw(), bullet_solver_->getPitch());
+    setDes(time, bullet_solver_->getYaw(), bullet_solver_->getPitch(),bullet_solver_->getTrajectYaw());
   else
   {
     odom2gimbal_des_.header.stamp = time;
@@ -330,7 +341,7 @@ void Controller::direct(const ros::Time& time)
   double pitch = -std::atan2(aim_point_odom.z - odom2gimbal_.transform.translation.z,
                              std::sqrt(std::pow(aim_point_odom.x - odom2gimbal_.transform.translation.x, 2) +
                                        std::pow(aim_point_odom.y - odom2gimbal_.transform.translation.y, 2)));
-  setDes(time, yaw, pitch);
+  setDes(time, yaw, pitch,yaw);
 }
 
 void Controller::traj(const ros::Time& time)
@@ -361,7 +372,7 @@ void Controller::traj(const ros::Time& time)
   {
     ROS_WARN("%s", ex.what());
   }
-  setDes(time, traj[2], traj[1]);
+  setDes(time, traj[2], traj[1],traj[2]);
 }
 
 bool Controller::setDesIntoLimit(const tf2::Quaternion& base2gimbal_des, const urdf::JointConstSharedPtr& joint_urdf,
@@ -420,11 +431,13 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
     if (ctrls_.find(2) != ctrls_.end())
       angular_vel.z = ctrls_.at(2)->joint_.getVelocity();
   }
-  double pos_real[3]{ 0. }, pos_des[3]{ 0. }, vel_des[3]{ 0. }, angle_error[3]{ 0. };
   quatToRPY(odom2gimbal_des_.transform.rotation, pos_des[0], pos_des[1], pos_des[2]);
   quatToRPY(odom2gimbal_.transform.rotation, pos_real[0], pos_real[1], pos_real[2]);
+  quatToRPY(odom2gimbal_traject_des_.transform.rotation,traject_pos_des[0],traject_pos_des[1],traject_pos_des[2]);
   for (int i = 0; i < 3; i++)
     angle_error[i] = angles::shortest_angular_distance(pos_real[i], pos_des[i]);
+  for (int i = 0; i < 3; i++)
+    traject_angle_error[i] = angles::shortest_angular_distance(pos_real[i], traject_pos_des[i]);
   if (state_ == RATE)
   {
     vel_des[2] = cmd_gimbal_.rate_yaw;
@@ -483,6 +496,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
       ROS_WARN("%s", ex.what());
     }
   }
+
   for (const auto& in_limit : pos_des_in_limit_)
     if (!in_limit.second)
       vel_des[in_limit.first] = 0.;
@@ -497,10 +511,36 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   if (pid_pos_.find(2) != pid_pos_.end() && ctrls_.find(2) != ctrls_.end())
   {
-    pid_pos_.at(2)->computeCommand(angle_error[2], period);
-    ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
-                             updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
-                             config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
+    if (bullet_solver_->getUsingtraject())
+    {
+      pid_pos_.at(2)->computeCommand(traject_angle_error[2] , period);
+    }
+    else
+    {
+      pid_pos_.at(2)->computeCommand(angle_error[2], period);
+    }
+    if (state_ == TRACK)
+    {
+      if (bullet_solver_ -> getUsingtraject())
+      {
+        ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
+                               updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
+                               config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z + bullet_solver_->getTrajectEffortff());
+      }
+      else
+      {
+        ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
+                               updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
+                               config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
+      }
+    }
+    else
+    {
+      ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
+                               updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
+                               config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
+    }
+
     ctrls_.at(2)->update(time, period);
   }
 
@@ -513,10 +553,12 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
       {
         pub.second->msg_.header.stamp = time;
         pub.second->msg_.set_point = pos_des[pub.first];
+        pub.second->msg_.traject_set_point = traject_pos_des[pub.first];
         pub.second->msg_.set_point_dot = vel_des[pub.first];
         pub.second->msg_.process_value = pos_real[pub.first];
         pub.second->msg_.error = angle_error[pub.first];
         pub.second->msg_.command = pid_pos_[pub.first]->getCurrentCmd();
+        pub.second->msg_.shoot_number = bullet_solver_->getShootnum();
         pub.second->unlockAndPublish();
       }
     }
