@@ -17,11 +17,14 @@ public:
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
 
 private:
-  void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   geometry_msgs::Twist odometry() override;
 
   std::vector<std::shared_ptr<effort_controllers::JointVelocityController>> joints_;
   Eigen::MatrixXd chassis2joints_;
+
+protected:
+  void moveJoint(const ros::Time& time, const ros::Duration& period) override;
+
 };
 
 }  // namespace rm_chassis_controllers
