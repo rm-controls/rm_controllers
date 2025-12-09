@@ -69,6 +69,7 @@ add_library(${PROJECT_NAME}
         src/sentry.cpp
         src/swerve.cpp
         src/balance.cpp
+        src/active_suspension.cpp
 )
 
 ## Specify libraries to link executable targets against
