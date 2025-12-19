@@ -16,7 +16,7 @@ namespace rm_chassis_controllers
    {
     OmniController::init(robot_hw, root_nh, controller_nh);
 
-     active_suspension_sub_=controller_nh.subscribe("is_active_suspension",10,&ActiveSuspensionController::ActiveSuspensionCallBack,this );
+     active_suspension_sub_=controller_nh.subscribe("/cmd_active_suspension",10,&ActiveSuspensionController::ActiveSuspensionCallBack,this );
 
     XmlRpc::XmlRpcValue suspension_legs;
     controller_nh.getParam("suspension_leg", suspension_legs);
@@ -36,7 +36,7 @@ namespace rm_chassis_controllers
     void ActiveSuspensionController::moveJoint(const ros::Time& time, const ros::Duration& period)
     {
       OmniController::moveJoint(time, period);
-      suspension_pos_ = active_suspension_ ? 0.07 : 0.85;
+      suspension_pos_ = active_suspension_ ? 0.0 : 0.85; //0.85
       for (auto& joint : active_suspension_joints_)
       {
         joint->setCommand(suspension_pos_);
@@ -48,9 +48,9 @@ namespace rm_chassis_controllers
       }
 
     }
-    void ActiveSuspensionController::ActiveSuspensionCallBack(const std_msgs::BoolConstPtr& msg)
+    void ActiveSuspensionController::ActiveSuspensionCallBack(const rm_msgs::ChassisActiveSusCmd& msg)
     {
-      active_suspension_ = msg->data;
+      active_suspension_ = msg.is_active_suspension;
     }
 
 }  // namespace rm_chassis_controllers
