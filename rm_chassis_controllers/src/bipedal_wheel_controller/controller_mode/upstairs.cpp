@@ -26,7 +26,7 @@ void Upstairs::execute(BipedalController* controller, const ros::Time& time, con
     detectLegState(x_right_, right_leg_state);
   }
 
-  double theta_des_l{ M_PI_2 - 0.3 }, theta_des_r{ M_PI_2 - 0.3 }, length_des_l{ 0.18 }, length_des_r{ 0.18 };
+  double theta_des_l{ M_PI_2 - 0.6 }, theta_des_r{ M_PI_2 - 0.6 }, length_des_l{ 0.18 }, length_des_r{ 0.18 };
   LegCommand left_cmd = { 0, 0, { 0., 0. } }, right_cmd = { 0, 0, { 0., 0. } };
   left_cmd = computePidLegCommand(length_des_l, theta_des_l, left_pos_, left_spd_, *pid_legs_[0], *pid_thetas_[0],
                                   *pid_thetas_[2], left_angle_, left_leg_state, period);
@@ -35,7 +35,7 @@ void Upstairs::execute(BipedalController* controller, const ros::Time& time, con
   setJointCommands(joint_handles_, left_cmd, right_cmd);
 
   // Exit
-  if (left_pos_[0] < 0.2 && left_pos_[1] > (M_PI_2 - 0.5) && right_pos_[0] < 0.2 && right_pos_[1] > (M_PI_2 - 0.5))
+  if (left_pos_[0] < 0.2 && left_pos_[1] > (M_PI_2 - 0.65) && right_pos_[0] < 0.2 && right_pos_[1] > (M_PI_2 - 0.65))
   {
     controller->pubLegLenStatus(false);
     controller->setMode(BalanceMode::STAND_UP);
