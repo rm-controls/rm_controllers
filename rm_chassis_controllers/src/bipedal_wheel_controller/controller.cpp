@@ -72,6 +72,11 @@ bool BipedalController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   kalmanFilterPtr_ = std::make_shared<KalmanFilter<double>>(A_, B_, H_, Q_, R_);
   kalmanFilterPtr_->clear(X_);
 
+  //  left_leg_angle_lpFilterPtr_ = std::make_shared<LowPassFilter>(100);
+  //  right_leg_angle_lpFilterPtr_ = std::make_shared<LowPassFilter>(100);
+
+  left_leg_angle_vel_lpFilterPtr_ = std::make_shared<LowPassFilter>(60);
+  right_leg_angle_vel_lpFilterPtr_ = std::make_shared<LowPassFilter>(60);
   return true;
 }
 
@@ -91,7 +96,7 @@ void BipedalController::moveJoint(const ros::Time& time, const ros::Duration& pe
 
 void BipedalController::clearStatus()
 {
-  x_left_(2) = x_right_(2) = 0;
+  x_left_(2) = x_right_(2) = -bias_params_->x;
 }
 
 void BipedalController::updateEstimation(const ros::Time& time, const ros::Duration& period)
@@ -129,8 +134,7 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
 
     tf2::Vector3 z_body(0, 0, 1);
     tf2::Vector3 z_world = tf2::quatRotate(odom2base.getRotation(), z_body);
-    overturn_ = z_world.z() < -5.0;
-    overturn_ = !(abs(pitch) < 0.9);
+    overturn_ = !(abs(pitch) < 0.5) && z_world.z() < -3.0;
   }
   catch (tf2::TransformException& ex)
   {
@@ -142,16 +146,16 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
   // vmc
   double left_angle[2]{}, right_angle[2]{}, left_pos[2]{}, left_spd[2]{}, right_pos[2]{}, right_spd[2]{};
   // [0]:hip_vmc_joint [1]:knee_vmc_joint
-  //  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
-  //  left_angle[1] = left_knee_joint_handle_.getPosition();
-  //  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
-  //  right_angle[1] = right_knee_joint_handle_.getPosition();
+  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
+  left_angle[1] = left_knee_joint_handle_.getPosition();
+  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
+  right_angle[1] = right_knee_joint_handle_.getPosition();
 
   // gazebo
-  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
-  left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
-  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
-  right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
+  //  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
+  //  left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
+  //  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
+  //  right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
 
   // [0] is length, [1] is angle
   leg_pos(left_angle[0], left_angle[1], left_pos);
@@ -160,6 +164,15 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
           left_spd);
   leg_spd(right_hip_joint_handle_.getVelocity(), right_knee_joint_handle_.getVelocity(), right_angle[0], right_angle[1],
           right_spd);
+  left_leg_angle_vel_lpFilterPtr_->input(left_spd[1]);
+  right_leg_angle_vel_lpFilterPtr_->input(right_spd[1]);
+  //  left_leg_angle_lpFilterPtr_->input(left_pos[1]);
+  //  right_leg_angle_lpFilterPtr_->input(right_pos[1]);
+
+  //  left_pos[1] = left_leg_angle_lpFilterPtr_->output();
+  //  right_pos[1] = right_leg_angle_lpFilterPtr_->output();
+  left_spd[1] = left_leg_angle_vel_lpFilterPtr_->output();
+  right_spd[1] = right_leg_angle_vel_lpFilterPtr_->output();
 
   // Slippage_detection
   leftWheelVel = (left_wheel_joint_handle_.getVelocity() - angular_vel_base.y + left_spd[1]) * wheel_radius_;
@@ -185,7 +198,7 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
     i++;
   }
   auto x_hat_vel = kalmanFilterPtr_->getState();
-  slip_flag_ = abs(x_hat_vel(0) - wheel_vel_aver) > 1.5;
+  slip_flag_ = abs(x_hat_vel(0) - wheel_vel_aver) > 3.0;
 
   // update state
   x_left_[3] = state_ != RAW ? x_hat_vel(0) : 0;
@@ -207,8 +220,7 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
 
   // ros msg
   rm_msgs::LeggedChassisStatus legged_chassis_status_msg;
-  legged_chassis_status_msg.roll =
-      (left_wheel_joint_handle_.getVelocity() + right_wheel_joint_handle_.getVelocity()) * model_params_->r / 2.0;
+  legged_chassis_status_msg.roll = wheel_vel_aver;
   legged_chassis_status_msg.pitch = x_left_[4];
   legged_chassis_status_msg.d_pitch = x_left_[5];
   legged_chassis_status_msg.yaw = yaw;
@@ -328,6 +340,7 @@ bool BipedalController::setupBiasParams(ros::NodeHandle& controller_nh)
 {
   const std::pair<const char*, double*> tbl[] = {
     { "x_bias", &bias_params_->x },
+    { "theta_bias", &bias_params_->theta },
     { "pitch_bias", &bias_params_->pitch },
     { "roll_bias", &bias_params_->roll },
   };
@@ -414,6 +427,37 @@ void BipedalController::pubLegLenStatus(const bool& is_high_leg_flag)
   std_msgs::Bool msg;
   msg.data = is_high_leg_flag;
   leg_len_status_pub_.publish(msg);
+}
+
+void BipedalController::follow(const ros::Time& time, const ros::Duration& period)
+{
+  if (state_changed_)
+  {
+    state_changed_ = false;
+    ROS_INFO("[Chassis] Enter FOLLOW");
+
+    ChassisBase<rm_control::RobotStateInterface, hardware_interface::ImuSensorInterface,
+                hardware_interface::EffortJointInterface>::recovery();
+    pid_follow_.reset();
+  }
+
+  tfVelToBase(command_source_frame_);
+  try
+  {
+    double roll{}, pitch{}, yaw{};
+    //    double  target_yaw_bias{ 0 };
+    quatToRPY(robot_state_handle_.lookupTransform("base_link", follow_source_frame_, ros::Time(0)).transform.rotation,
+              roll, pitch, yaw);
+    double yawForwardError = angles::shortest_angular_distance(0, yaw);
+    double yawInverseError = angles::shortest_angular_distance(M_PI, yaw);
+    double yawError = abs(yawForwardError) < abs(yawInverseError) ? yawForwardError : yawInverseError;
+    pid_follow_.computeCommand(yawError, period);
+    vel_cmd_.z = pid_follow_.getCurrentCmd() + cmd_rt_buffer_.readFromRT()->cmd_chassis_.follow_vel_des;
+  }
+  catch (tf2::TransformException& ex)
+  {
+    ROS_WARN("%s", ex.what());
+  }
 }
 
 }  // namespace rm_chassis_controllers

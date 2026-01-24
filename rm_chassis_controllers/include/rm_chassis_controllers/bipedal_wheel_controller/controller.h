@@ -11,6 +11,7 @@
 #include <rm_msgs/LQRkMatrix.h>
 #include <rm_msgs/LeggedChassisMode.h>
 #include <rm_common/filters/kalman_filter.h>
+#include <rm_common/filters/lp_filter.h>
 #include <control_toolbox/pid.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -37,6 +38,7 @@ public:
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   void stopping(const ros::Time& time) override;
+  void follow(const ros::Time& time, const ros::Duration& period) override;
 
   // clang-format off
   bool getOverturn() const{ return overturn_; }
@@ -95,6 +97,8 @@ private:
   Eigen::Matrix<double, 2, 2> A_, B_, H_, Q_, R_;
   Eigen::Matrix<double, 2, 1> X_, U_;
   std::shared_ptr<KalmanFilter<double>> kalmanFilterPtr_;
+  std::shared_ptr<LowPassFilter> left_leg_angle_lpFilterPtr_, right_leg_angle_lpFilterPtr_,
+      left_leg_angle_vel_lpFilterPtr_, right_leg_angle_vel_lpFilterPtr_;
 
   Eigen::Matrix<double, STATE_DIM, 1> x_left_{}, x_right_{};
   double default_leg_length_{ 0.2 };
