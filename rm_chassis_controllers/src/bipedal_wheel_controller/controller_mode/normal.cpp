@@ -82,10 +82,10 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
     x_left_ref(3) = x_right_ref(3) = friction_circle_alpha * vel_cmd_.x;
     leg_length_des = controller->getLegCmd();
   }
-  x_left(0) -= 0.07;
-  x_right(0) -= 0.07;
-  x_left(4) -= 0.;
-  x_right(4) -= 0.;
+  x_left(0) -= bias_params_->theta;
+  x_right(0) -= bias_params_->theta;
+  x_left(4) -= bias_params_->pitch;
+  x_right(4) -= bias_params_->pitch;
 
   x_left -= x_left_ref;
   x_right -= x_right_ref;
@@ -234,8 +234,8 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
   //       (((left_pos_[1] + right_pos_[1]) / 2.0f) > 0.5)) &&
   //      controller->getCompleteStand() && abs(vel_cmd_.x) > 1.0 && abs(x_left(3)) > 0.2 &&
   //      ((left_pos_[0] + right_pos_[0]) / 2.0f) > 0.34)
-  if (jump_phase_ == JumpPhase::IDLE && linear_acc_base_.z < -3.0 && controller->getCompleteStand() &&
-      abs(vel_cmd_.x) > 1.0 && abs(x_left(3)) > 0.2 && ((left_pos_[0] + right_pos_[0]) / 2.0f) > 0.34 &&
+  if (jump_phase_ == JumpPhase::IDLE && linear_acc_base_.z < -7.0 && controller->getCompleteStand() &&
+      abs(vel_cmd_.x) > 1.0 && abs(x_left(3)) > 0.2 && ((left_pos_[0] + right_pos_[0]) / 2.0f) > 0.32 &&
       leg_length_des > 0.34)
   {
     leg_length_des = controller->getDefaultLegLength();
