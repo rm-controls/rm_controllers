@@ -543,11 +543,9 @@ void BulletSolver::heatCB(const rm_msgs::LocalHeatStateConstPtr& msg)
   }
   last_shoot_state_ = msg->has_shoot;
   config_ = *config_rt_buffer_.readFromRT();
-  ROS_WARN("clean_shoot_num_ is %d"  , config_.clean_shoot_num_);
   if (config_.clean_shoot_num_ == 0)
   {
     shoot_num_ = 0;
-    ROS_WARN("[Bullet Solver] clean_shoot_num_ is 0");
   }
 }
 void BulletSolver::reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t /*unused*/)
