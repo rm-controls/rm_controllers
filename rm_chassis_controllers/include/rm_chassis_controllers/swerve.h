@@ -41,13 +41,16 @@
 
 #include <rm_common/eigen_types.h>
 #include <effort_controllers/joint_position_controller.h>
+#include "rm_msgs/PowerHeatData.h"
+#include <sensor_msgs/JointState.h>
 
 namespace rm_chassis_controllers
 {
 struct Module
 {
   Vec2<double> position_;
-  double pivot_offset_, wheel_radius_;
+  double pivot_offset_, pivot_buffer_threshold_, pivot_effort_threshold_, pivot_position_error_threshold_,
+      pivot_max_reduce_cnt_, wheel_radius_;
   effort_controllers::JointPositionController* ctrl_pivot_;
   effort_controllers::JointVelocityController* ctrl_wheel_;
 };
@@ -60,8 +63,14 @@ public:
 
 private:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
+  void powerManagerCallback(const rm_msgs::PowerHeatData::ConstPtr& data);
+  bool isPivotBlock(double cur_effort, double position_error, Module module);
+  void reduceTargetPosition(double& target_pos, double& position_error, Module module);
   geometry_msgs::Twist odometry() override;
   std::vector<Module> modules_;
+  ros::Subscriber power_manager_sub_;
+  int chassis_power_buffer_ = 60;
+  int pivot_block_cnt_ = 0;
 };
 
 }  // namespace rm_chassis_controllers

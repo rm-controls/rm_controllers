@@ -63,6 +63,10 @@ bool SwerveController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
 
     Module m{ .position_ = Vec2<double>((double)module.second["position"][0], (double)module.second["position"][1]),
               .pivot_offset_ = module.second["pivot"]["offset"],
+              .pivot_buffer_threshold_ = module.second["pivot"]["buffer_threshold"],
+              .pivot_effort_threshold_ = module.second["pivot"]["effort_threshold"],
+              .pivot_position_error_threshold_ = module.second["pivot"]["position_error_threshold"],
+              .pivot_max_reduce_cnt_ = module.second["pivot"]["max_reduce_cnt"],
               .wheel_radius_ = module.second["wheel"]["radius"],
               .ctrl_pivot_ = new effort_controllers::JointPositionController(),
               .ctrl_wheel_ = new effort_controllers::JointVelocityController() };
@@ -77,6 +81,8 @@ bool SwerveController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
     joint_handles_.push_back(m.ctrl_wheel_->joint_);
     modules_.push_back(m);
   }
+  power_manager_sub_ = root_nh.subscribe<rm_msgs::PowerHeatData>("/rm_referee/power_manager", 10,
+                                                                 &SwerveController::powerManagerCallback, this);
   return true;
 }
 
@@ -92,11 +98,43 @@ void SwerveController::moveJoint(const ros::Time& time, const ros::Duration& per
     // Direction flipping and Stray module mitigation
     double a = angles::shortest_angular_distance(module.ctrl_pivot_->joint_.getPosition(), vel_angle);
     double b = angles::shortest_angular_distance(module.ctrl_pivot_->joint_.getPosition(), vel_angle + M_PI);
-    module.ctrl_pivot_->setCommand(std::abs(a) < std::abs(b) ? vel_angle : vel_angle + M_PI);
+    double target_pos = std::abs(a) < std::abs(b) ? vel_angle : vel_angle + M_PI;
+    double pos_error = angles::shortest_angular_distance(module.ctrl_pivot_->joint_.getPosition(), target_pos);
+    if (chassis_power_buffer_ > module.pivot_buffer_threshold_ &&
+        !isPivotBlock(module.ctrl_pivot_->joint_.getEffort(), pos_error, module))
+    {
+      pivot_block_cnt_ = 0;
+      module.ctrl_pivot_->setCommand(target_pos);
+    }
+    else
+    {
+      reduceTargetPosition(target_pos, pos_error, module);
+      module.ctrl_pivot_->setCommand(target_pos);
+    }
+
     module.ctrl_wheel_->setCommand(vel.norm() / module.wheel_radius_ * std::cos(a));
     module.ctrl_pivot_->update(time, period);
     module.ctrl_wheel_->update(time, period);
   }
+}
+
+bool SwerveController::isPivotBlock(double cur_effort, double position_error, Module module)
+{
+  return abs(cur_effort) > module.pivot_effort_threshold_ &&
+         abs(position_error) > module.pivot_position_error_threshold_;
+}
+
+void SwerveController::reduceTargetPosition(double& target_pos, double& position_error, Module module)
+{
+  pivot_block_cnt_++;
+  if (pivot_block_cnt_ > module.pivot_max_reduce_cnt_)
+    pivot_block_cnt_ = module.pivot_max_reduce_cnt_;
+  double reduce_step_size = position_error / module.pivot_max_reduce_cnt_;
+
+  if (abs(position_error) > abs(pivot_block_cnt_ * reduce_step_size))
+    target_pos -= pivot_block_cnt_ * reduce_step_size;
+  else
+    target_pos = module.ctrl_pivot_->joint_.getPosition();
 }
 
 geometry_msgs::Twist SwerveController::odometry()
@@ -123,6 +161,11 @@ geometry_msgs::Twist SwerveController::odometry()
       vel_modules.angular.z / modules_.size() /
       std::sqrt(std::pow(modules_.begin()->position_.x(), 2) + std::pow(modules_.begin()->position_.y(), 2));
   return vel_data;
+}
+
+void SwerveController::powerManagerCallback(const rm_msgs::PowerHeatData::ConstPtr& data)
+{
+  chassis_power_buffer_ = data->chassis_power_buffer;
 }
 
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::SwerveController, controller_interface::ControllerBase)
