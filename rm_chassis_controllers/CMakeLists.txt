@@ -63,6 +63,11 @@ include_directories(
         ${EIGEN3_INCLUDE_DIR}
 )
 
+file(GLOB_RECURSE BIPEDAL_SOURCES
+        "src/bipedal_wheel_controller/*.cpp"
+        "src/bipedal_wheel_controller/*.c"
+)
+
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
         src/chassis_base.cpp
@@ -71,20 +76,7 @@ add_library(${PROJECT_NAME}
         src/swerve.cpp
         src/balance.cpp
 
-        src/bipedal_wheel_controller/vmc/leg_conv.c
-        src/bipedal_wheel_controller/vmc/leg_pos.c
-        src/bipedal_wheel_controller/vmc/leg_spd.c
-        src/bipedal_wheel_controller/dynamics/gen_A.c
-        src/bipedal_wheel_controller/dynamics/gen_B.c
-        src/bipedal_wheel_controller/controller_mode/mode_base.cpp
-        src/bipedal_wheel_controller/controller_mode/mode_manager.cpp
-        src/bipedal_wheel_controller/controller_mode/stand_up.cpp
-        src/bipedal_wheel_controller/controller_mode/sit_down.cpp
-        src/bipedal_wheel_controller/controller_mode/recover.cpp
-        src/bipedal_wheel_controller/controller_mode/normal.cpp
-        src/bipedal_wheel_controller/controller_mode/upstairs.cpp
-        src/bipedal_wheel_controller/controller.cpp
-        src/bipedal_wheel_controller/series_legged_vmc_controller.cpp
+        ${BIPEDAL_SOURCES}
 )
 
 ## Specify libraries to link executable targets against
