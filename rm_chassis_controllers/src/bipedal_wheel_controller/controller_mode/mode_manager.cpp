@@ -42,8 +42,8 @@ ModeManager::ModeManager(ros::NodeHandle& controller_nh,
                                                                                 &pid_theta_diff_, &pid_roll_)));
   mode_map_.insert(
       std::make_pair(BalanceMode::STAND_UP, std::make_unique<StandUp>(joint_handles, pid_legs_stand_up_, pid_thetas_)));
-  mode_map_.insert(
-      std::make_pair(BalanceMode::RECOVER, std::make_unique<Recover>(joint_handles, pid_legs_stand_up_, pid_thetas_)));
+  mode_map_.insert(std::make_pair(BalanceMode::RECOVER, std::make_unique<Recover>(joint_handles, pid_legs_stand_up_,
+                                                                                  pid_thetas_, &pid_theta_diff_)));
   mode_map_.insert(std::make_pair(BalanceMode::SIT_DOWN, std::make_unique<SitDown>(joint_handles, pid_wheels_)));
   mode_map_.insert(std::make_pair(BalanceMode::UPSTAIRS,
                                   std::make_unique<Upstairs>(joint_handles, pid_legs_stand_up_, pid_thetas_)));
