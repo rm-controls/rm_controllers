@@ -48,6 +48,7 @@ public:
   const std::shared_ptr<ModelParams>& getModelParams() const { return model_params_; }
   const std::shared_ptr<ControlParams>& getControlParams() const { return control_params_; }
   const std::shared_ptr<BiasParams>& getBiasParams() const { return bias_params_; }
+  const std::shared_ptr<LegStateThresholdParams>& getLegThresholdParams() const { return leg_threshold_params_; }
   double getLegCmd() const{ return legCmd_; }
   double getJumpCmd() const{ return jumpCmd_; }
   int getBaseState() const{ return state_; }
@@ -74,6 +75,7 @@ private:
   bool setupLQR(ros::NodeHandle& controller_nh);
   bool setupControlParams(ros::NodeHandle& controller_nh);
   bool setupBiasParams(ros::NodeHandle& controller_nh);
+  bool setupThresholdParams(ros::NodeHandle& controller_nh);
   void polyfit(const std::vector<Eigen::Matrix<double, 2, 6>>& Ks, const std::vector<double>& L0s,
                Eigen::Matrix<double, 4, 12>& coeffs);
   geometry_msgs::Twist odometry() override;
@@ -84,6 +86,7 @@ private:
   std::shared_ptr<ModelParams> model_params_;
   std::shared_ptr<ControlParams> control_params_;
   std::shared_ptr<BiasParams> bias_params_;
+  std::shared_ptr<LegStateThresholdParams> leg_threshold_params_;
 
   int balance_mode_ = BalanceMode::SIT_DOWN;
   bool balance_state_changed_ = false;

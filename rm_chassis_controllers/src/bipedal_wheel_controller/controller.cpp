@@ -40,9 +40,10 @@ bool BipedalController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   model_params_ = std::make_shared<ModelParams>();
   control_params_ = std::make_shared<ControlParams>();
   bias_params_ = std::make_shared<BiasParams>();
+  leg_threshold_params_ = std::make_shared<LegStateThresholdParams>();
 
   if (!setupModelParams(controller_nh) || !setupLQR(controller_nh) || !setupBiasParams(controller_nh) ||
-      !setupControlParams(controller_nh))
+      !setupControlParams(controller_nh) || !setupThresholdParams(controller_nh))
     return false;
 
   auto legCmdCallback = [this](const rm_msgs::LegCmd::ConstPtr& msg) {
@@ -60,10 +61,12 @@ bool BipedalController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   x_right_.setZero();
 
   // Slippage detection
-  A_ << 1, 0, 0, 1;
+  A_ << 1, 0.0, 0, 1;
   H_ << 1, 0, 0, 1;
   Q_ << 1, 0, 0, 1;
   R_ << 200, 0, 0, 200;
+  //  Q_ << 25, 0, 0, 2000;
+  //  R_ << 800, 0, 0, 0.01;
   R_wheel_ = R_(0, 0);
   slip_R_wheel_ = slip_alpha_ * R_wheel_;
   B_.setZero();
@@ -134,7 +137,7 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
 
     tf2::Vector3 z_body(0, 0, 1);
     tf2::Vector3 z_world = tf2::quatRotate(odom2base.getRotation(), z_body);
-    overturn_ = !(abs(pitch) < 0.5) && z_world.z() < -3.0;
+    overturn_ = abs(pitch) > 0.65 && z_world.z() < 0.0;
   }
   catch (tf2::TransformException& ex)
   {
@@ -146,16 +149,16 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
   // vmc
   double left_angle[2]{}, right_angle[2]{}, left_pos[2]{}, left_spd[2]{}, right_pos[2]{}, right_spd[2]{};
   // [0]:hip_vmc_joint [1]:knee_vmc_joint
-  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
-  left_angle[1] = left_knee_joint_handle_.getPosition();
-  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
-  right_angle[1] = right_knee_joint_handle_.getPosition();
+  //  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
+  //  left_angle[1] = left_knee_joint_handle_.getPosition();
+  //  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
+  //  right_angle[1] = right_knee_joint_handle_.getPosition();
 
   // gazebo
-  //  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
-  //  left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
-  //  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
-  //  right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
+  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
+  left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
+  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
+  right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
 
   // [0] is length, [1] is angle
   leg_pos(left_angle[0], left_angle[1], left_pos);
@@ -175,7 +178,7 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
   right_spd[1] = right_leg_angle_vel_lpFilterPtr_->output();
 
   // Slippage_detection
-  leftWheelVel = (left_wheel_joint_handle_.getVelocity() - angular_vel_base.y + left_spd[1]) * wheel_radius_;
+  leftWheelVel = (left_wheel_joint_handle_.getVelocity() + angular_vel_base.y + left_spd[1]) * wheel_radius_;
   rightWheelVel = (right_wheel_joint_handle_.getVelocity() + angular_vel_base.y + right_spd[1]) * wheel_radius_;
   leftWheelVelAbsolute =
       leftWheelVel + left_pos[0] * left_spd[1] * cos(left_pos[1] + pitch_) + left_spd[0] * sin(left_pos[1] + pitch_);
@@ -189,12 +192,12 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
     i = 0;
     X_(0) = wheel_vel_aver;
     X_(1) = linear_acc_base.x;
-    kalmanFilterPtr_->predict(U_, R_);
-    kalmanFilterPtr_->update(X_);
+    kalmanFilterPtr_->predict(U_);
+    kalmanFilterPtr_->update(X_, R_);
   }
   else
   {
-    kalmanFilterPtr_->predict(U_, R_);
+    kalmanFilterPtr_->predict(U_);
     i++;
   }
   auto x_hat_vel = kalmanFilterPtr_->getState();
@@ -202,7 +205,7 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
 
   // update state
   x_left_[3] = state_ != RAW ? x_hat_vel(0) : 0;
-  if (abs(x_left_[3]) <= 0.5f && abs(vel_cmd_.x) <= 0.1f)
+  if (abs(x_left_[3]) <= 0.6f && abs(vel_cmd_.x) <= 0.1f)
   {
     x_left_[2] += state_ != RAW ? x_left_[3] * period.toSec() : 0;
   }
@@ -354,6 +357,7 @@ bool BipedalController::setupBiasParams(ros::NodeHandle& controller_nh)
   return true;
 }
 
+// [will unused]
 bool BipedalController::setupControlParams(ros::NodeHandle& controller_nh)
 {
   if (!controller_nh.getParam("jumpOverTime", control_params_->jumpOverTime_) ||
@@ -361,6 +365,23 @@ bool BipedalController::setupControlParams(ros::NodeHandle& controller_nh)
       !controller_nh.getParam("p3", control_params_->p3_) || !controller_nh.getParam("p4", control_params_->p4_))
   {
     ROS_ERROR("Load param fail, check the resist of jump_over_time, p1, p2, p3, p4");
+    return false;
+  }
+  return true;
+}
+
+bool BipedalController::setupThresholdParams(ros::NodeHandle& controller_nh)
+{
+  if (!controller_nh.getParam("under_lower_threshold", leg_threshold_params_->under_lower) ||
+      !controller_nh.getParam("under_upper_threshold", leg_threshold_params_->under_upper) ||
+      !controller_nh.getParam("front_lower_threshold", leg_threshold_params_->front_lower) ||
+      !controller_nh.getParam("front_upper_threshold", leg_threshold_params_->front_upper) ||
+      !controller_nh.getParam("behind_lower_threshold", leg_threshold_params_->behind_lower) ||
+      !controller_nh.getParam("behind_upper_threshold", leg_threshold_params_->behind_upper) ||
+      !controller_nh.getParam("upstair_exit_threshold", leg_threshold_params_->upstair_exit_threshold))
+  {
+    ROS_ERROR("Load threshold param fail, check the resist of  "
+              "under_threshold, front_threshold, behind_threshold");
     return false;
   }
   return true;

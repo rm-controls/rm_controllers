@@ -100,7 +100,7 @@ protected:
    * @param time The current time.
    * @param period The time passed since the last call to update.
    */
-  void follow(const ros::Time& time, const ros::Duration& period);
+  virtual void follow(const ros::Time& time, const ros::Duration& period);
   /** @brief The mode TWIST: Just moving chassis.
    *
    * The mode TWIST: Chassis will move independent and will not effect by gimbal's move.

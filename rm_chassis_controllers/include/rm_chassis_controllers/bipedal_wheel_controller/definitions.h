@@ -38,8 +38,20 @@ struct ControlParams
 struct BiasParams
 {
   double x;
+  double theta;
   double pitch;
   double roll;
+};
+
+struct LegStateThresholdParams
+{
+  double under_lower;
+  double under_upper;
+  double front_lower;
+  double front_upper;
+  double behind_lower;
+  double behind_upper;
+  double upstair_exit_threshold;
 };
 
 struct LegCommand

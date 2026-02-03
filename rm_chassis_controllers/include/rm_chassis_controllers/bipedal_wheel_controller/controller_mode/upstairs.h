@@ -25,8 +25,16 @@ public:
   }
 
 private:
+  /**
+   * Detect the leg state before stand up: UNDER, FRONT, BEHIND
+   * @param x
+   * @param leg_state
+   */
+  void detectLegState(const Eigen::Matrix<double, STATE_DIM, 1>& x, int& leg_state);
+
   std::vector<hardware_interface::JointHandle*> joint_handles_;
   std::vector<control_toolbox::Pid*> pid_legs_, pid_thetas_;
   int left_leg_state, right_leg_state;
+  std::shared_ptr<LegStateThresholdParams> leg_state_threshold_;
 };
 }  // namespace rm_chassis_controllers

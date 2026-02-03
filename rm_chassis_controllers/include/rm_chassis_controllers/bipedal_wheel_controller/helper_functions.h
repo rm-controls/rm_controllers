@@ -55,33 +55,6 @@ inline void generateAB(const std::shared_ptr<ModelParams>& model_params, Eigen::
 }
 
 /**
- * Detect the leg state before stand up: UNDER, FRONT, BEHIND
- * @param x
- * @param leg_state
- */
-inline void detectLegState(const Eigen::Matrix<double, STATE_DIM, 1>& x, int& leg_state)
-{
-  if (x[0] > -M_PI / 2 + 0.7 && x[0] < (M_PI / 2 - 1.4))
-    leg_state = LegState::UNDER;
-  else if ((x[0] < -M_PI / 2 + 0.7 && x[0] > -M_PI) || (x[0] < M_PI && x[0] > M_PI - 0.5))
-    leg_state = LegState::FRONT;
-  else if (x[0] > (M_PI / 2 - 1.4) && x[0] < M_PI - 0.5)
-    leg_state = LegState::BEHIND;
-  switch (leg_state)
-  {
-    case LegState::UNDER:
-      ROS_INFO("[balance] x[0]: %.3f Leg state: UNDER", x[0]);
-      break;
-    case LegState::FRONT:
-      ROS_INFO("[balance] x[0]: %.3f Leg state: FRONT", x[0]);
-      break;
-    case LegState::BEHIND:
-      ROS_INFO("[balance] x[0]: %.3f Leg state: BEHIND", x[0]);
-      break;
-  }
-}
-
-/**
  * Compute the leg command using PID controllers
  * @param desired_length
  * @param desired_angle
@@ -104,13 +77,12 @@ inline LegCommand computePidLegCommand(double desired_length, double desired_ang
   if (!overturn)
   {
     if (leg_state == LegState::BEHIND)
+    {
       cmd.torque = angle_pid.computeCommand(-angles::shortest_angular_distance(desired_angle, leg_pos[1]), period);
+    }
     else
     {
-      if ((leg_pos[1] > M_PI_2 - 0.3 && leg_pos[1] < M_PI_2 + 0.3))
-        cmd.torque = angle_pid.computeCommand(-angles::shortest_angular_distance(desired_angle, leg_pos[1]), period);
-      else
-        cmd.torque = angle_vel_pid.computeCommand(-4 - leg_spd[1], period);
+      cmd.torque = angle_vel_pid.computeCommand(-5 - leg_spd[1], period);
     }
   }
   else
@@ -121,13 +93,45 @@ inline LegCommand computePidLegCommand(double desired_length, double desired_ang
     }
     else
     {
-      cmd.torque = angle_vel_pid.computeCommand(-4 - leg_spd[1], period);
+      cmd.torque = angle_vel_pid.computeCommand(-5 - leg_spd[1], period);
     }
   }
   leg_conv(cmd.force, cmd.torque, leg_angle[0], leg_angle[1], cmd.input);
   return cmd;
 }
 
+inline LegCommand computePidAngleVelLegCommand(double desired_length, double desired_leg_angle_vel, double leg_pos[2],
+                                               double leg_spd[2], control_toolbox::Pid& length_pid,
+                                               control_toolbox::Pid& angle_vel_pid, const double* leg_angle,
+                                               const ros::Duration& period, double feedforward_force = 0.0f)
+{
+  LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
+  cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
+  cmd.torque = angle_vel_pid.computeCommand(desired_leg_angle_vel - leg_spd[1], period);
+  leg_conv(cmd.force, 10 * desired_leg_angle_vel + cmd.torque, leg_angle[0], leg_angle[1], cmd.input);
+  return cmd;
+}
+
+inline LegCommand computePidAngleLegCommand(double desired_length, double desired_leg_angle, double leg_pos[2],
+                                            control_toolbox::Pid& length_pid, control_toolbox::Pid& angle_pid,
+                                            const double* leg_angle, const ros::Duration& period,
+                                            double feedforward_force = 0.0f)
+{
+  LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
+  cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
+  cmd.torque = angle_pid.computeCommand(-angles::shortest_angular_distance(desired_leg_angle, leg_pos[1]), period);
+  leg_conv(cmd.force, cmd.torque, leg_angle[0], leg_angle[1], cmd.input);
+  return cmd;
+}
+inline LegCommand computePidLenLegCommand(double desired_length, double leg_pos[2], control_toolbox::Pid& length_pid,
+                                          const double* leg_angle, const ros::Duration& period,
+                                          double feedforward_force = 0.0f)
+{
+  LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
+  cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
+  leg_conv(cmd.force, 0.0, leg_angle[0], leg_angle[1], cmd.input);
+  return cmd;
+}
 /**
  * Set joint commands to the joint handles
  * @param joints
