@@ -9,7 +9,6 @@
 #include <effort_controllers/joint_position_controller.h>
 #include <rm_msgs/ChassisActiveSusCmd.h>
 
-
 namespace rm_chassis_controllers
 {
     class ActiveSuspensionController : public OmniController
@@ -28,6 +27,19 @@ namespace rm_chassis_controllers
         ros::Subscriber active_suspension_sub_;
 
         double suspension_pos_;
+        double feed_forward_offset;
+        double feed_forward_effort;
+        double pos;
+        double stretch_coff_A_;
+        double stretch_coff_k_;
+        double shrink_coff_A_;
+        double shrink_coff_k_;
+        double feedforward_effect_time_;
+        double static_effort ;
+        int count_;
+        bool state_change_;
+        ros::Time state_change_time;
+
 
       enum
       {
@@ -35,7 +47,10 @@ namespace rm_chassis_controllers
           MID,
           UP
       };
-      int state_ = DOWN;
+
+        int state_ = DOWN;
+        int last_state_ = DOWN;
+        int check_state_ = DOWN;
 
   };
 }

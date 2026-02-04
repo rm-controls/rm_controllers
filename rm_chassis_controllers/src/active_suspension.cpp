@@ -20,6 +20,12 @@ namespace rm_chassis_controllers
 
         XmlRpc::XmlRpcValue suspension_legs;
         controller_nh.getParam("suspension_leg", suspension_legs);
+        feed_forward_offset = getParam(controller_nh, "feed_forward_offset", 0.);
+        stretch_coff_A_ = getParam(controller_nh,"stretch_coff_A_",0.);
+        stretch_coff_k_ = getParam(controller_nh,"stretch_coff_k_",0.);
+        shrink_coff_A_ = getParam(controller_nh,"shrink_coff_A_",0.);
+        shrink_coff_k_ = getParam(controller_nh,"shrink_coff_k_",0.);
+        feedforward_effect_time_ = getParam(controller_nh,"feedforward_effect_time_",0.);
 
         for (const auto& suspension_leg : suspension_legs)
         {
@@ -39,25 +45,71 @@ namespace rm_chassis_controllers
         switch (state_)
         {
           case DOWN:
-            suspension_pos_ = 0.0;
+            suspension_pos_ = -0.05;
+            static_effort = -6.0;
             break;
           case MID:
-            suspension_pos_ = 0.4;
+            suspension_pos_ = 0.3;
+            static_effort = 8.0;
             break;
           case UP:
-            suspension_pos_ = 0.85;
+            suspension_pos_ = 0.80;
+            static_effort = 0.0;
             break;
-     }
+        }
+        if (state_ != check_state_)
+        {
+          count_ =0;
+          last_state_ =  check_state_;
+        }
+        if (last_state_ - state_ == -2 || ((last_state_ - state_ == - 1) && (state_ ==2)))
+        {
+          count_ ++;
+          if (count_ == 1)
+          {
+            state_change_time = ros::Time::now();
+          }
+          feed_forward_effort =  2 * (stretch_coff_A_ + stretch_coff_k_ * pos);
+        }
+        else if ( last_state_ - state_ == -1 && state_ == 1)
+        {
+          count_ ++;
+          if (count_ == 1)
+          {
+            state_change_time = ros::Time::now();
+          }
+          feed_forward_effort = stretch_coff_A_ - 45.0 * pos;
+        }
+        else if (last_state_ - state_ == 1 || last_state_ - state_ == 2)
+        {
+          count_ ++;
+          if (count_ == 1)
+          {
+            state_change_time = ros::Time::now();
+          }
+          feed_forward_effort = shrink_coff_A_ + shrink_coff_k_ * pos;
+        }
+        else
+        {
+          feed_forward_effort = 0.0;
+        }
+
         for (auto& joint : active_suspension_joints_)
         {
             joint->setCommand(suspension_pos_);
             joint->update(time, period);
-            double pos = joint->getPosition();
+            pos = joint->getPosition();
             auto cmd = joint->joint_.getCommand();
-            cmd += 25 - pos*25.88;
-            joint->joint_.setCommand(cmd);
 
+            cmd += feed_forward_effort + feed_forward_offset + static_effort;
+            joint->joint_.setCommand(cmd);
         }
+        if (ros::Time::now().toSec() - state_change_time.toSec() > feedforward_effect_time_)
+        {
+          last_state_ = state_;
+          count_ = 0;
+        }
+        check_state_ = state_;
     }
     void ActiveSuspensionController::ActiveSuspensionCallBack(const rm_msgs::ChassisActiveSusCmd& msg)
     {
