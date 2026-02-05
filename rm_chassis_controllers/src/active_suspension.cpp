@@ -25,6 +25,14 @@ namespace rm_chassis_controllers
         stretch_coff_k_ = getParam(controller_nh,"stretch_coff_k_",0.);
         shrink_coff_A_ = getParam(controller_nh,"shrink_coff_A_",0.);
         shrink_coff_k_ = getParam(controller_nh,"shrink_coff_k_",0.);
+
+
+        suspension_pos_DOWN_ = getParam(controller_nh,"suspension_pos_DOWN_",0.);
+        suspension_pos_MID_ = getParam(controller_nh,"suspension_pos_MID_",0.);
+        suspension_pos_UP_ = getParam(controller_nh,"suspension_pos_UP_",0.);
+        static_effort_DOWN_ = getParam(controller_nh,"static_effort_DOWN_",0.);
+        static_effort_MID_ = getParam(controller_nh,"static_effort_MID_",0.);
+        static_effort_UP_ = getParam(controller_nh,"static_effort_UP_",0.);
         feedforward_effect_time_ = getParam(controller_nh,"feedforward_effect_time_",0.);
 
         for (const auto& suspension_leg : suspension_legs)
@@ -45,15 +53,15 @@ namespace rm_chassis_controllers
         switch (state_)
         {
           case DOWN:
-            suspension_pos_ = -0.05;
+            suspension_pos_ = suspension_pos_DOWN_;
             static_effort = -6.0;
             break;
           case MID:
-            suspension_pos_ = 0.3;
+            suspension_pos_ = suspension_pos_MID_;
             static_effort = 8.0;
             break;
           case UP:
-            suspension_pos_ = 0.80;
+            suspension_pos_ = suspension_pos_UP_;
             static_effort = 0.0;
             break;
         }

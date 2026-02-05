@@ -30,6 +30,12 @@ namespace rm_chassis_controllers
         double feed_forward_offset;
         double feed_forward_effort;
         double pos;
+		double suspension_pos_DOWN_;
+		double suspension_pos_MID_;
+		double suspension_pos_UP_;
+        double static_effort_DOWN_;
+        double static_effort_MID_;
+        double static_effort_UP_;
         double stretch_coff_A_;
         double stretch_coff_k_;
         double shrink_coff_A_;
