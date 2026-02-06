@@ -76,7 +76,7 @@ inline LegCommand computePidLegCommand(double desired_length, double desired_ang
   cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
   if (!overturn)
   {
-    if (leg_state == LegState::BEHIND)
+    if (leg_state == LegState::BEHIND || leg_state == LegState::UNDER)
     {
       cmd.torque = angle_pid.computeCommand(-angles::shortest_angular_distance(desired_angle, leg_pos[1]), period);
     }
@@ -85,17 +85,17 @@ inline LegCommand computePidLegCommand(double desired_length, double desired_ang
       cmd.torque = angle_vel_pid.computeCommand(-5 - leg_spd[1], period);
     }
   }
-  else
-  {
-    if (leg_state == LegState::FRONT)
-    {
-      cmd.torque = angle_pid.computeCommand(-angles::shortest_angular_distance(desired_angle, leg_pos[1]), period);
-    }
-    else
-    {
-      cmd.torque = angle_vel_pid.computeCommand(-5 - leg_spd[1], period);
-    }
-  }
+  //  else
+  //  {
+  //    if (leg_state == LegState::FRONT)
+  //    {
+  //      cmd.torque = angle_pid.computeCommand(-angles::shortest_angular_distance(desired_angle, leg_pos[1]), period);
+  //    }
+  //    else
+  //    {
+  //      cmd.torque = angle_vel_pid.computeCommand(-5 - leg_spd[1], period);
+  //    }
+  //  }
   leg_conv(cmd.force, cmd.torque, leg_angle[0], leg_angle[1], cmd.input);
   return cmd;
 }

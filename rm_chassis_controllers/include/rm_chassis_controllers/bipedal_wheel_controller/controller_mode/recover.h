@@ -35,21 +35,11 @@ class Recover : public ModeBase
     KneeOnGround
   } LegState;
 
-  typedef struct
-  {
-    int recovery_state;
-    int countdown;
-    int leg_state;
-  } LegRecoveryState;
-
 public:
   Recover(const std::vector<hardware_interface::JointHandle*>& joint_handles,
           const std::vector<control_toolbox::Pid*>& pid_legs, const std::vector<control_toolbox::Pid*>& pid_thetas,
           control_toolbox::Pid* pid_theta_diff);
   void execute(BipedalController* controller, const ros::Time& time, const ros::Duration& period) override;
-  void LegRecovery(LegCommand& cmd, LegRecoveryState& leg_recovery, const LegRecoveryState& other_leg_recovery,
-                   double* leg_pos, double* leg_spd, const double* leg_angle, control_toolbox::Pid& length_pid,
-                   control_toolbox::Pid& angle_vel_pid, control_toolbox::Pid& angle_pid, const ros::Duration& period);
   inline void detectChassisStateToRecover();
   const char* name() const override
   {
@@ -60,7 +50,6 @@ private:
   std::vector<hardware_interface::JointHandle*> joint_handles_;
   std::vector<control_toolbox::Pid*> pid_legs_, pid_thetas_;
   control_toolbox::Pid* pid_theta_diff_;
-  LegRecoveryState left_recovery_{ STOP, 500, KneeOnGround }, right_recovery_{ STOP, 500, KneeOnGround };
   double leg_recovery_velocity_{ 2.0 }, threshold_{ 0.05 }, leg_theta_diff_{ 0.0 }, desired_leg_length_{ 0.36 };
   const double leg_recovery_velocity_const_{ 2.0 };
   RecoveryChassisState recovery_chassis_state_{ ForwardSlip };

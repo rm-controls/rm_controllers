@@ -20,8 +20,6 @@ void Recover::execute(BipedalController* controller, const ros::Time& time, cons
   {
     ROS_INFO("[balance] Enter RECOVER");
     detectd_flag = false;
-    left_recovery_.recovery_state = STOP;
-    right_recovery_.recovery_state = STOP;
     controller->setStateChange(true);
   }
 
@@ -29,8 +27,6 @@ void Recover::execute(BipedalController* controller, const ros::Time& time, cons
   if (!detectd_flag && abs(x_left_[1]) < 0.1 && abs(x_left_[5]) < 0.1)
   {
     detectChassisStateToRecover();
-    left_recovery_.recovery_state = INITIALIZED;
-    right_recovery_.recovery_state = INITIALIZED;
     detectd_flag = true;
     leg_recovery_velocity_ =
         recovery_chassis_state_ == BackwardSlip ? -leg_recovery_velocity_const_ : leg_recovery_velocity_const_;
