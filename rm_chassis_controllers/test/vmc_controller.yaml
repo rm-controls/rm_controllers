@@ -8,8 +8,10 @@ controllers:
   vmc_controller:
     type: rm_chassis_controllers/VMCController
     vmc_bias_angle: 1.57
-    spring_force: 75.0
-    pid_length: { p: 800.0, i: 0, d: 20, i_clamp_max: 20.0, i_clamp_min: -20.0, antiwindup: true, publish_state: true }
+    spring_force: 0.0
+    pid_length: { p: 800.0, i: 0, d: 25, i_clamp_max: 20.0, i_clamp_min: -20.0, antiwindup: true, publish_state: true }
     pid_angle: { p: 30.0, i: 0, d: 2, i_clamp_max: 15.0, i_clamp_min: -15.0, antiwindup: true, publish_state: true }
     thigh_joint: left_hip_joint
     knee_joint: left_knee_joint
+    l1: 0.218
+    l2: 0.26

@@ -18,6 +18,8 @@
 #include "bipedal_wheel_controller/vmc/leg_pos.h"
 #include "bipedal_wheel_controller/vmc/leg_spd.h"
 
+#include "bipedal_wheel_controller/vmc/VMC.h"
+
 #include <utility>
 
 namespace rm_chassis_controllers
@@ -47,6 +49,8 @@ private:
 
   double vmcBiasAngle_, spring_force_;
   double lengthCmd_, angleCmd_;
+
+  std::unique_ptr<VMC> vmcPtr_;
 
   ros::Publisher statePublisher_, jointCmdStatePublisher_;
   ros::Subscriber cmdLegLengthSubscriber_, cmdLegAngleSubscriber_;

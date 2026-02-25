@@ -49,6 +49,14 @@ bool VMCController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle&
     ROS_ERROR("Load param fail, check the resist of spring_force");
     return false;
   }
+  double l1, l2;
+  if (!controller_nh.getParam("l1", l1) || !controller_nh.getParam("l2", l2))
+  {
+    ROS_ERROR("Load param fail, check the resist of l1 or l2");
+    return false;
+  }
+  vmcPtr_ = std::make_unique<VMC>(l1, l2, 0);
+
   jointThigh_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(thighJoint);
   jointKnee_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(kneeJoint);
   return true;
@@ -66,14 +74,14 @@ void VMCController::update(const ros::Time& time, const ros::Duration& period)
 
   // series leg vmc
   // gazebo
-  //  thigh_angle = jointThigh_.getPosition() + M_PI_2;
-  //  knee_angle = jointKnee_.getPosition() - M_PI_2;
+  thigh_angle = jointThigh_.getPosition() + M_PI_2;
+  knee_angle = jointKnee_.getPosition() - M_PI_2;
 
   // five link vmc
-  thigh_angle = jointThigh_.getPosition() + M_PI;
-  knee_angle = jointKnee_.getPosition();
-  leg_pos(thigh_angle, knee_angle, position);
-  leg_spd(jointThigh_.getVelocity(), jointKnee_.getVelocity(), thigh_angle, knee_angle, speed);
+  //  thigh_angle = jointThigh_.getPosition() + M_PI;
+  //  knee_angle = jointKnee_.getPosition();
+  vmcPtr_->leg_pos(thigh_angle, knee_angle, position);
+  vmcPtr_->leg_spd(jointThigh_.getVelocity(), jointKnee_.getVelocity(), thigh_angle, knee_angle, speed);
 
   double effortCmd[2], jointCmd[2];
   static double angleSinCmd_ = 0;
@@ -88,7 +96,7 @@ void VMCController::update(const ros::Time& time, const ros::Duration& period)
   effortCmd[0] = pidLength_.computeCommand(lengthCmd_ - position[0], period) - spring_force_;
   effortCmd[1] = pidAngle_.computeCommand(angle_error, period);
 
-  leg_conv(effortCmd[0], effortCmd[1], thigh_angle, knee_angle, jointCmd);
+  vmcPtr_->leg_conv(effortCmd[0], effortCmd[1], thigh_angle, knee_angle, jointCmd);
   std_msgs::Float64MultiArray state;
   state.data.push_back(thigh_angle);
   state.data.push_back(knee_angle);
