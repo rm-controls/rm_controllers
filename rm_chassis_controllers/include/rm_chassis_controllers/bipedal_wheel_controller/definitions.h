@@ -51,6 +51,7 @@ struct LegStateThresholdParams
   double front_upper;
   double behind_lower;
   double behind_upper;
+  double upstair_des_theta;
   double upstair_exit_threshold;
 };
 

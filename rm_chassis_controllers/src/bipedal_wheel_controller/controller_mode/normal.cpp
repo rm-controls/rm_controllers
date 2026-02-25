@@ -231,8 +231,8 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
 
   // upstairs
   if (jump_phase_ == JumpPhase::IDLE && linear_acc_base_.z < -7.0 && controller->getCompleteStand() &&
-      abs(vel_cmd_.x) > 1.0 && abs(x_left(3)) > 0.2 && ((left_pos_[0] + right_pos_[0]) / 2.0f) > 0.32 &&
-      leg_length_des > 0.34)
+      abs(vel_cmd_.x) > 0.1 && abs(x_left(3)) > 0.1 && ((left_pos_[0] + right_pos_[0]) / 2.0f) > 0.30 &&
+      leg_length_des > 0.30)
   {
     leg_length_des = controller->getDefaultLegLength();
     controller->setMode(BalanceMode::UPSTAIRS);
@@ -243,7 +243,7 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
   }
 
   // Protection
-  if ((controller->getCompleteStand() && (abs(x_left(4)) > 0.95 || abs(x_left(0)) > 0.8 || abs(roll_) > 1.3)) ||
+  if (abs(x_left(4)) > 0.6 || abs(x_left(0)) > 1.0 || abs(x_right(0)) > 1.0 || abs(roll_) > 1.0 ||
       controller->getOverturn() || controller->getBaseState() == 4)
   {
     leg_length_des = controller->getDefaultLegLength();

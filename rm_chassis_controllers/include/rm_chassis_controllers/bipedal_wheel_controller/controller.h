@@ -10,6 +10,7 @@
 #include <rm_msgs/LeggedLQRStatus.h>
 #include <rm_msgs/LQRkMatrix.h>
 #include <rm_msgs/LeggedChassisMode.h>
+#include <rm_msgs/LeggedUpstairStatus.h>
 #include <rm_common/filters/kalman_filter.h>
 #include <rm_common/filters/lp_filter.h>
 #include <control_toolbox/pid.h>
@@ -38,7 +39,7 @@ public:
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   void stopping(const ros::Time& time) override;
-  void follow(const ros::Time& time, const ros::Duration& period) override;
+  //  void follow(const ros::Time& time, const ros::Duration& period) override;
 
   // clang-format off
   bool getOverturn() const{ return overturn_; }
@@ -65,7 +66,7 @@ public:
                     Eigen::Matrix<double, STATE_DIM, 1> left_ref, Eigen::Matrix<double, STATE_DIM, 1> right_ref,
                     Eigen::Matrix<double, CONTROL_DIM, 1> u_left, Eigen::Matrix<double, CONTROL_DIM, 1> u_right,
                     Eigen::Matrix<double, CONTROL_DIM, 1> F_leg_, const bool unstick[2]) const;
-  void pubLegLenStatus(const bool& is_high_leg_flag);
+void pubLegLenStatus(const bool& upstair_flag);
   // clang-format on
   void clearStatus();
 
@@ -122,7 +123,7 @@ private:
 
   // ROS Interface
   ros::Subscriber leg_cmd_sub_;
-  ros::Publisher unstick_pub_, leg_len_status_pub_;
+  ros::Publisher unstick_pub_, upstair_status_pub_;
   ros::Publisher legged_chassis_status_pub_, legged_chassis_mode_pub_;
   ros::Publisher lqr_status_pub_;
   ros::Time cmd_update_time_;

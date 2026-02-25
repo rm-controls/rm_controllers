@@ -28,6 +28,7 @@ void Upstairs::execute(BipedalController* controller, const ros::Time& time, con
   }
 
   double theta_des_l{ M_PI_2 - 0.6 }, theta_des_r{ M_PI_2 - 0.6 }, length_des_l{ 0.18 }, length_des_r{ 0.18 };
+  theta_des_l = theta_des_r = leg_state_threshold_->upstair_des_theta;
   LegCommand left_cmd = { 0, 0, { 0., 0. } }, right_cmd = { 0, 0, { 0., 0. } };
   left_cmd = computePidLegCommand(length_des_l, theta_des_l, left_pos_, left_spd_, *pid_legs_[0], *pid_thetas_[0],
                                   *pid_thetas_[2], left_angle_, left_leg_state, period);
@@ -39,7 +40,7 @@ void Upstairs::execute(BipedalController* controller, const ros::Time& time, con
   if (left_pos_[0] < 0.2 && left_pos_[1] > leg_state_threshold_->upstair_exit_threshold && right_pos_[0] < 0.2 &&
       right_pos_[1] > leg_state_threshold_->upstair_exit_threshold)
   {
-    controller->pubLegLenStatus(false);
+    controller->pubLegLenStatus(true);
     controller->setMode(BalanceMode::STAND_UP);
     controller->setStateChange(false);
     ROS_INFO("[balance] Exit Upstairs");
