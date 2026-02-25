@@ -28,14 +28,14 @@ void StandUp::execute(BipedalController* controller, const ros::Time& time, cons
   }
 
   auto model_params_ = controller->getModelParams();
-  double spring_force = -model_params_->f_spring;
+  spring_force_ = -model_params_->f_spring;
   LegCommand left_cmd = { 0, 0, { 0., 0. } }, right_cmd = { 0, 0, { 0., 0. } };
   setUpLegMotion(x_left_, right_leg_state, left_pos_[0], left_pos_[1], left_leg_state, theta_des_l, length_des_l);
   setUpLegMotion(x_right_, left_leg_state, right_pos_[0], right_pos_[1], right_leg_state, theta_des_r, length_des_r);
   left_cmd = computePidLegCommand(length_des_l, theta_des_l, left_pos_, left_spd_, *pid_legs_[0], *pid_thetas_[0],
-                                  *pid_thetas_[2], left_angle_, left_leg_state, period, spring_force);
+                                  *pid_thetas_[2], left_angle_, left_leg_state, period, spring_force_);
   right_cmd = computePidLegCommand(length_des_r, theta_des_r, right_pos_, right_spd_, *pid_legs_[1], *pid_thetas_[1],
-                                   *pid_thetas_[3], right_angle_, right_leg_state, period, spring_force);
+                                   *pid_thetas_[3], right_angle_, right_leg_state, period, spring_force_);
 
   setJointCommands(joint_handles_, left_cmd, right_cmd);
 
@@ -58,11 +58,19 @@ void StandUp::setUpLegMotion(const Eigen::Matrix<double, STATE_DIM, 1>& x, const
   switch (leg_state)
   {
     case LegState::UNDER:
-      theta_des = M_PI / 2 - 0.35;
-      length_des = 0.36;
-      if (leg_length > 0.35)
+      if (spring_force_ > 0)
       {
-        leg_state = LegState::FRONT;
+        theta_des = M_PI / 2 - 0.35;
+        length_des = 0.36;
+        if (leg_length > 0.35)
+        {
+          leg_state = LegState::FRONT;
+        }
+      }
+      else
+      {
+        theta_des = 0.0;
+        length_des = 0.18;
       }
       break;
     case LegState::FRONT:
@@ -74,7 +82,7 @@ void StandUp::setUpLegMotion(const Eigen::Matrix<double, STATE_DIM, 1>& x, const
     case LegState::BEHIND:
       theta_des = leg_theta;
       length_des = leg_length;
-      if (other_leg_state == LegState::BEHIND)
+      if (other_leg_state != LegState::FRONT)
       {
         length_des = 0.18;
         if (leg_length < 0.3)

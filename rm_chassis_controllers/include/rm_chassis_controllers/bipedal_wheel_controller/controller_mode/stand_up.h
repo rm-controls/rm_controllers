@@ -37,6 +37,7 @@ private:
   std::vector<control_toolbox::Pid*> pid_legs_, pid_thetas_;
   int left_leg_state, right_leg_state;
   double theta_des_l, theta_des_r, length_des_l, length_des_r;
+  double spring_force_{};
   std::shared_ptr<LegStateThresholdParams> leg_state_threshold_;
 };
 }  // namespace rm_chassis_controllers
