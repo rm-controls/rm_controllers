@@ -41,6 +41,8 @@ struct BiasParams
   double theta;
   double pitch;
   double roll;
+  double raw_pitch;
+  double raw_theta;
 };
 
 struct LegStateThresholdParams
@@ -84,6 +86,18 @@ enum BalanceMode
   SIT_DOWN,
   RECOVER,
   UPSTAIRS,
+};
+
+enum
+{
+  LEFT = 0,
+  RIGHT,
+};
+
+enum
+{
+  LEG_T = 0,
+  LEG_Tp
 };
 
 constexpr std::array<std::pair<JumpPhase, const double>, 3> jumpLengthDes = {
