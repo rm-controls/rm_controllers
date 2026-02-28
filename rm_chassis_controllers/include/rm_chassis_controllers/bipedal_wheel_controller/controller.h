@@ -39,7 +39,6 @@ public:
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   void stopping(const ros::Time& time) override;
-  //  void follow(const ros::Time& time, const ros::Duration& period) override;
 
   // clang-format off
   bool getOverturn() const{ return overturn_; }

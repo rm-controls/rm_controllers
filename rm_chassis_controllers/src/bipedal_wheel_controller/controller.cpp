@@ -341,12 +341,12 @@ bool BipedalController::setupLQR(ros::NodeHandle& controller_nh)
 
 bool BipedalController::setupBiasParams(ros::NodeHandle& controller_nh)
 {
-  const std::pair<const char*, double*> tbl[] = {
-    { "x_bias", &bias_params_->x },
-    { "theta_bias", &bias_params_->theta },
-    { "pitch_bias", &bias_params_->pitch },
-    { "roll_bias", &bias_params_->roll },
-  };
+  const std::pair<const char*, double*> tbl[] = { { "x_bias", &bias_params_->x },
+                                                  { "theta_bias", &bias_params_->theta },
+                                                  { "pitch_bias", &bias_params_->pitch },
+                                                  { "roll_bias", &bias_params_->roll },
+                                                  { "raw_pitch_bias", &bias_params_->raw_pitch },
+                                                  { "raw_theta_bias", &bias_params_->raw_theta } };
 
   for (const auto& e : tbl)
     if (!controller_nh.getParam(e.first, *e.second))
@@ -450,52 +450,6 @@ void BipedalController::pubLegLenStatus(const bool& upstair_flag)
   msg.upstair_flag = upstair_flag;
   upstair_status_pub_.publish(msg);
 }
-
-// void BipedalController::follow(const ros::Time& time, const ros::Duration& period)
-//{
-//   static bool follow_source_frame_changed_{ false };
-//   static std::string last_follow_source_frame_{ follow_source_frame_ };
-//   if (state_changed_)
-//   {
-//     state_changed_ = false;
-//     ROS_INFO("[Chassis] Enter FOLLOW");
-//
-//     ChassisBase<rm_control::RobotStateInterface, hardware_interface::ImuSensorInterface,
-//                 hardware_interface::EffortJointInterface>::recovery();
-//     pid_follow_.reset();
-//   }
-//
-//   tfVelToBase(command_source_frame_);
-//   try
-//   {
-//     double roll{}, pitch{}, yaw{};
-//     //    double  target_yaw_bias{ 0 };
-//     quatToRPY(robot_state_handle_.lookupTransform("base_link", follow_source_frame_, ros::Time(0)).transform.rotation,
-//               roll, pitch, yaw);
-//     double yawForwardError = angles::shortest_angular_distance(0, yaw);
-//     double yawInverseError = angles::shortest_angular_distance(M_PI, yaw);
-//     double yawError = abs(yawForwardError) < abs(yawInverseError) ? yawForwardError : yawInverseError;
-//     if (follow_source_frame_ != last_follow_source_frame_)
-//     {
-//       follow_source_frame_changed_ = true;
-//     }
-//     if (follow_source_frame_changed_)
-//     {
-//       yawError = yawForwardError;
-//       if (abs(yawError) < 0.1)
-//       {
-//         follow_source_frame_changed_ = false;
-//       }
-//     }
-//     pid_follow_.computeCommand(yawError, period);
-//     vel_cmd_.z = pid_follow_.getCurrentCmd() + cmd_rt_buffer_.readFromRT()->cmd_chassis_.follow_vel_des;
-//   }
-//   catch (tf2::TransformException& ex)
-//   {
-//     ROS_WARN("%s", ex.what());
-//   }
-//   last_follow_source_frame_ = follow_source_frame_;
-// }
 
 }  // namespace rm_chassis_controllers
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::BipedalController, controller_interface::ControllerBase)
