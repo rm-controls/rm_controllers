@@ -155,24 +155,24 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
   // vmc
   double left_angle[2]{}, right_angle[2]{}, left_pos[2]{}, left_spd[2]{}, right_pos[2]{}, right_spd[2]{};
   // [0]:hip_vmc_joint [1]:knee_vmc_joint
-  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
-  left_angle[1] = left_knee_joint_handle_.getPosition();
-  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
-  right_angle[1] = right_knee_joint_handle_.getPosition();
+  //  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
+  //  left_angle[1] = left_knee_joint_handle_.getPosition();
+  //  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
+  //  right_angle[1] = right_knee_joint_handle_.getPosition();
 
   // gazebo
-  //  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
-  //  left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
-  //  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
-  //  right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
+  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
+  left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
+  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
+  right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
 
   // [0] is length, [1] is angle
-  leg_pos(left_angle[0], left_angle[1], left_pos);
-  leg_pos(right_angle[0], right_angle[1], right_pos);
-  leg_spd(left_hip_joint_handle_.getVelocity(), left_knee_joint_handle_.getVelocity(), left_angle[0], left_angle[1],
-          left_spd);
-  leg_spd(right_hip_joint_handle_.getVelocity(), right_knee_joint_handle_.getVelocity(), right_angle[0], right_angle[1],
-          right_spd);
+  vmc_->leg_pos(left_angle[0], left_angle[1], left_pos);
+  vmc_->leg_pos(right_angle[0], right_angle[1], right_pos);
+  vmc_->leg_spd(left_hip_joint_handle_.getVelocity(), left_knee_joint_handle_.getVelocity(), left_angle[0],
+                left_angle[1], left_spd);
+  vmc_->leg_spd(right_hip_joint_handle_.getVelocity(), right_knee_joint_handle_.getVelocity(), right_angle[0],
+                right_angle[1], right_spd);
   left_leg_angle_vel_lpFilterPtr_->input(left_spd[1]);
   right_leg_angle_vel_lpFilterPtr_->input(right_spd[1]);
   //  left_leg_angle_lpFilterPtr_->input(left_pos[1]);
@@ -294,6 +294,14 @@ bool BipedalController::setupModelParams(ros::NodeHandle& controller_nh)
       ROS_ERROR("Param %s not given (namespace: %s)", e.first, controller_nh.getNamespace().c_str());
       return false;
     }
+
+  double l1, l2;
+  if (!controller_nh.getParam("l1", l1) || !controller_nh.getParam("l2", l2))
+  {
+    ROS_ERROR("Param %s or %s not given (namespace: %s)", "l1", "l2", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  vmc_ = std::make_shared<VMC>(l1, l2);
 
   if (!controller_nh.getParam("default_leg_length", default_leg_length_))
   {

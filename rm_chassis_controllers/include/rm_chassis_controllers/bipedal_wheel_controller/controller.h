@@ -28,6 +28,7 @@
 #include "bipedal_wheel_controller/helper_functions.h"
 #include "bipedal_wheel_controller/definitions.h"
 #include "bipedal_wheel_controller/controller_mode/mode_manager.h"
+#include "bipedal_wheel_controller/vmc/VMC.h"
 
 namespace rm_chassis_controllers
 {
@@ -47,7 +48,6 @@ public:
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
   void stopping(const ros::Time& time) override;
-
   // clang-format off
   bool getOverturn() const{ return overturn_; }
   bool getStateChange() const{ return balance_state_changed_; }
@@ -64,6 +64,7 @@ public:
   geometry_msgs::Vector3 getVelCmd(){ return vel_cmd_; }
   bool getMoveFlag() const{ return move_flag_; }
   void setMoveFlag(const bool& move_flag) { move_flag_ = move_flag; }
+  VMCPtr& getVMCPtr(){ return vmc_; }
   void setStateChange(bool state){ balance_state_changed_ = state; }
   void setCompleteStand(bool state){ complete_stand_ = state; }
   void setJumpCmd(bool cmd){ jumpCmd_ = cmd; }
@@ -102,6 +103,7 @@ private:
   int balance_mode_ = BalanceMode::SIT_DOWN;
   bool balance_state_changed_ = false;
   std::unique_ptr<ModeManager> mode_manager_;
+  VMCPtr vmc_;
 
   // Slippage_detection
   double leftWheelVel{}, rightWheelVel{}, leftWheelVelAbsolute{}, rightWheelVelAbsolute{}, slip_alpha_{ 2.0 },

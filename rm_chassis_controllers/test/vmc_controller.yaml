@@ -13,5 +13,9 @@ controllers:
     pid_angle: { p: 30.0, i: 0, d: 2, i_clamp_max: 15.0, i_clamp_min: -15.0, antiwindup: true, publish_state: true }
     thigh_joint: left_hip_joint
     knee_joint: left_knee_joint
+    # series_legged1
     l1: 0.218
     l2: 0.26
+    # series_legged2
+#    l1: 0.21
+#    l2: 0.248
