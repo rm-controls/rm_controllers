@@ -48,7 +48,7 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
   // PID
   double T_yaw = pid_yaw_vel_->computeCommand(friction_circle_alpha * vel_cmd_.z - angular_vel_base_.z, period);
   double T_theta_diff = pid_theta_diff_->computeCommand(right_pos_[1] - left_pos_[1], period);
-  double T_roll = pid_roll_->computeCommand(0. - roll_, period);
+  double F_roll = pid_roll_->computeCommand(0. - roll_, period);
 
   // LQR
   Matrix<double, 4, 12> coeffs_ = controller->getCoeffs();
@@ -115,9 +115,9 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
     double left_length_des = controller->getCompleteStand() ? leg_length_des : controller->getDefaultLegLength();
     double right_length_des = controller->getCompleteStand() ? leg_length_des : controller->getDefaultLegLength();
     F_leg[LEFT] = pid_legs_[LEFT]->computeCommand(left_length_des - current_leg_length, period) - F_inertia +
-                  gravity * cos(left_pos_[1]) + T_roll - spring_force;
+                  gravity * cos(left_pos_[1]) + F_roll - spring_force;
     F_leg[RIGHT] = pid_legs_[RIGHT]->computeCommand(right_length_des - current_leg_length, period) + F_inertia +
-                   gravity * cos(right_pos_[1]) - T_roll - spring_force;
+                   gravity * cos(right_pos_[1]) - F_roll - spring_force;
   }
   else
   {
@@ -129,9 +129,9 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
       case JumpPhase::LEG_RETRACTION:
         ROS_INFO("[balance] ENTER LEG_RETRACTION");
         F_leg(LEFT) = pid_legs_[LEFT]->computeCommand(leg_length_des - current_leg_length, period) +
-                      gravity * cos(left_pos_[1]) + T_roll - spring_force;
+                      gravity * cos(left_pos_[1]) + F_roll - spring_force;
         F_leg(RIGHT) = pid_legs_[RIGHT]->computeCommand(leg_length_des - current_leg_length, period) +
-                       gravity * cos(left_pos_[1]) - T_roll - spring_force;
+                       gravity * cos(left_pos_[1]) - F_roll - spring_force;
         if (current_leg_length < leg_length_des + 0.01)
         {
           jumpTime_++;
@@ -207,16 +207,16 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
   F_N(RIGHT) = rightSupportForceAveragePtr_->output();
   controller->pubLQRStatus(-x_left, -x_right, x_left_ref, x_right_ref, u_left, u_right, F_N, unstick);
 
-  //  left_unstick = false;
-  //  right_unstick = false;
   updateUnstick(left_unstick, right_unstick);
 
   if (controller->getCompleteStand() && left_unstick && jump_phase_ != JumpPhase::LEG_RETRACTION)
   {
+    F_leg[LEFT] -= F_roll;
     u_left = k_left_unstick * (-x_left);
   }
   if (controller->getCompleteStand() && right_unstick && jump_phase_ != JumpPhase::LEG_RETRACTION)
   {
+    F_leg[RIGHT] += F_roll;
     u_right = k_right_unstick * (-x_right);
   }
 
