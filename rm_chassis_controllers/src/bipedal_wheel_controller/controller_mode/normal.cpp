@@ -93,8 +93,6 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
   u_left = k_left * (-x_left);
   u_right = k_right * (-x_right);
 
-  //  std::cout << "leg_len:" << left_pos_[0] << std::endl << k_left << std::endl;
-
   // Compute leg thrust
   auto model_params_ = controller->getModelParams();
   auto control_params_ = controller->getControlParams();
@@ -222,8 +220,8 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
 
   // Control
   double left_T[2], right_T[2];
-  leg_conv(F_leg[LEFT], u_left(1) + T_theta_diff, left_angle_[0], left_angle_[1], left_T);
-  leg_conv(F_leg[RIGHT], u_right(1) - T_theta_diff, right_angle_[0], right_angle_[1], right_T);
+  controller->getVMCPtr()->leg_conv(F_leg[LEFT], u_left(1) + T_theta_diff, left_angle_[0], left_angle_[1], left_T);
+  controller->getVMCPtr()->leg_conv(F_leg[RIGHT], u_right(1) - T_theta_diff, right_angle_[0], right_angle_[1], right_T);
   double left_wheel_cmd = left_unstick ? 0. : u_left(0) - T_yaw;
   double right_wheel_cmd = right_unstick ? 0. : u_right(0) + T_yaw;
   LegCommand left_cmd = { F_leg[LEFT], u_left[1], { left_T[0], left_T[1] } },
