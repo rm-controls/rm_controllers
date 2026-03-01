@@ -48,9 +48,16 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <rm_chassis_controllers/PowerLimitConfig.h>
 
 namespace rm_chassis_controllers
 {
+struct PowerLimitParams
+{
+  double velocity_coeff{};
+  double effort_coeff{};
+  double power_offset{};
+};
 struct Command
 {
   geometry_msgs::Twist cmd_vel_;
@@ -141,6 +148,7 @@ protected:
    */
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
   void outsideOdomCallback(const nav_msgs::Odometry::ConstPtr& msg);
+  void powerLimitReconfigCB(rm_chassis_controllers::PowerLimitConfig& config, uint32_t level);
 
   rm_control::RobotStateHandle robot_state_handle_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
@@ -172,6 +180,10 @@ protected:
   geometry_msgs::Vector3 vel_cmd_{};  // x, y
   control_toolbox::Pid pid_follow_;
 
+  dynamic_reconfigure::Server<rm_chassis_controllers::PowerLimitConfig>* power_limit_srv_{};
+  realtime_tools::RealtimeBuffer<PowerLimitParams> power_limit_rt_buffer_;
+  PowerLimitParams power_config_{};
+  bool power_limit_reconfig_initialized_{ false };
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
   rm_common::TfRtBroadcaster tf_broadcaster_{};
   ros::Subscriber outside_odom_sub_;

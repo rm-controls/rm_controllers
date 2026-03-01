@@ -46,6 +46,12 @@ bool BipedalController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
       !setupControlParams(controller_nh) || !setupThresholdParams(controller_nh))
     return false;
 
+  d_srv_ =
+      new dynamic_reconfigure::Server<rm_chassis_controllers::LQRWeightConfig>(ros::NodeHandle(controller_nh, "lqr"));
+  dynamic_reconfigure::Server<rm_chassis_controllers::LQRWeightConfig>::CallbackType cb =
+      boost::bind(&BipedalController::reconfigCB, this, _1, _2);
+  d_srv_->setCallback(cb);
+
   auto legCmdCallback = [this](const rm_msgs::LegCmd::ConstPtr& msg) {
     legCmd_ = msg->leg_length;
     jumpCmd_ = msg->jump;
@@ -149,16 +155,16 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
   // vmc
   double left_angle[2]{}, right_angle[2]{}, left_pos[2]{}, left_spd[2]{}, right_pos[2]{}, right_spd[2]{};
   // [0]:hip_vmc_joint [1]:knee_vmc_joint
-  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
-  left_angle[1] = left_knee_joint_handle_.getPosition();
-  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
-  right_angle[1] = right_knee_joint_handle_.getPosition();
+  // left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
+  // left_angle[1] = left_knee_joint_handle_.getPosition();
+  // right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
+  // right_angle[1] = right_knee_joint_handle_.getPosition();
 
   // gazebo
-  //  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
-  //  left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
-  //  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
-  //  right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
+   left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
+   left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
+   right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
+   right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
 
   // [0] is length, [1] is angle
   leg_pos(left_angle[0], left_angle[1], left_pos);
@@ -223,7 +229,7 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
 
   // ros msg
   rm_msgs::LeggedChassisStatus legged_chassis_status_msg;
-  legged_chassis_status_msg.roll = wheel_vel_aver;
+  legged_chassis_status_msg.roll = roll;
   legged_chassis_status_msg.pitch = x_left_[4];
   legged_chassis_status_msg.d_pitch = x_left_[5];
   legged_chassis_status_msg.yaw = yaw;
@@ -336,6 +342,17 @@ bool BipedalController::setupLQR(ros::NodeHandle& controller_nh)
     ks.push_back(k);
   }
   polyfit(ks, lengths, coeffs_);
+
+  config_.Q_theta = q_.diagonal()(0);
+  config_.Q_d_theta = q_.diagonal()(1);
+  config_.Q_x = q_.diagonal()(2);
+  config_.Q_dx = q_.diagonal()(3);
+  config_.Q_phi = q_.diagonal()(4);
+  config_.Q_d_phi = q_.diagonal()(5);
+  config_.R_T = r_.diagonal()(0);
+  config_.R_Tp = r_.diagonal()(1);
+  config_rt_buffer_.initRT(config_);
+
   return true;
 }
 
@@ -449,6 +466,55 @@ void BipedalController::pubLegLenStatus(const bool& upstair_flag)
   rm_msgs::LeggedUpstairStatus msg;
   msg.upstair_flag = upstair_flag;
   upstair_status_pub_.publish(msg);
+}
+
+void BipedalController::reconfigCB(rm_chassis_controllers::LQRWeightConfig& config, uint32_t /*level*/)
+{
+  ROS_INFO("[LQR] Dynamic params change");
+  if (!dynamic_reconfig_initialized_)
+  {
+    LQRConfig init_config = *config_rt_buffer_.readFromNonRT();
+    config.Q_theta = init_config.Q_theta;
+    config.Q_d_theta = init_config.Q_d_theta;
+    config.Q_x = init_config.Q_x;
+    config.Q_dx = init_config.Q_dx;
+    config.Q_phi = init_config.Q_phi;
+    config.Q_d_phi = init_config.Q_d_phi;
+    config.R_T = init_config.R_T;
+    config.R_Tp = init_config.R_Tp;
+    dynamic_reconfig_initialized_ = true;
+  }
+  LQRConfig config_non_rt{ .Q_theta = config.Q_theta,
+                           .Q_d_theta = config.Q_d_theta,
+                           .Q_x = config.Q_x,
+                           .Q_dx = config.Q_dx,
+                           .Q_phi = config.Q_phi,
+                           .Q_d_phi = config.Q_d_phi,
+                           .R_T = config.R_T,
+                           .R_Tp = config.R_Tp };
+  config_rt_buffer_.writeFromNonRT(config_non_rt);
+
+  q_.diagonal() << config.Q_theta, config.Q_d_theta, config.Q_x, config.Q_dx, config.Q_phi, config.Q_d_phi;
+  r_.diagonal() << config.R_T, config.R_Tp;
+
+  std::vector<double> lengths;
+  std::vector<Eigen::Matrix<double, CONTROL_DIM, STATE_DIM>> ks;
+  for (int i = 10; i < 40; i++)
+  {
+    double length = i / 100.;
+    lengths.push_back(length);
+    Eigen::Matrix<double, STATE_DIM, STATE_DIM> a{};
+    Eigen::Matrix<double, STATE_DIM, CONTROL_DIM> b{};
+    generateAB(model_params_, a, b, length);
+    Lqr<double> lqr(a, b, q_, r_);
+    if (!lqr.computeK())
+    {
+      ROS_ERROR("Failed to compute K of LQR.");
+    }
+    Eigen::Matrix<double, CONTROL_DIM, STATE_DIM> k = lqr.getK();
+    ks.push_back(k);
+  }
+  polyfit(ks, lengths, coeffs_);
 }
 
 }  // namespace rm_chassis_controllers
