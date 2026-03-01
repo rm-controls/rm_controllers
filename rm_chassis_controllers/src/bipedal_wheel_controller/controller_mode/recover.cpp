@@ -42,16 +42,16 @@ void Recover::execute(BipedalController* controller, const ros::Time& time, cons
     T_theta_diff = pid_theta_diff_->computeCommand(leg_theta_diff_, period);
     left_cmd.force = pid_legs_[0]->computeCommand(desired_leg_length_ - left_pos_[0], period) + feedforward_force;
     right_cmd.force = pid_legs_[1]->computeCommand(desired_leg_length_ - right_pos_[0], period) + feedforward_force;
-    leg_conv(left_cmd.force, T_theta_diff, left_angle_[0], left_angle_[1], left_cmd.input);
-    leg_conv(right_cmd.force, -T_theta_diff, right_angle_[0], right_angle_[1], right_cmd.input);
+    controller->getVMCPtr()->leg_conv(left_cmd.force, T_theta_diff, left_angle_[0], left_angle_[1], left_cmd.input);
+    controller->getVMCPtr()->leg_conv(right_cmd.force, -T_theta_diff, right_angle_[0], right_angle_[1], right_cmd.input);
     if (abs(leg_theta_diff_) < 0.1)
     {
       left_cmd.torque = pid_thetas_[2]->computeCommand(leg_recovery_velocity_ - left_spd_[1], period);
       right_cmd.torque = pid_thetas_[3]->computeCommand(leg_recovery_velocity_ - right_spd_[1], period);
-      leg_conv(left_cmd.force, 10 * leg_recovery_velocity_ + left_cmd.torque + T_theta_diff, left_angle_[0],
-               left_angle_[1], left_cmd.input);
-      leg_conv(right_cmd.force, 10 * leg_recovery_velocity_ + right_cmd.torque - T_theta_diff, right_angle_[0],
-               right_angle_[1], right_cmd.input);
+      controller->getVMCPtr()->leg_conv(left_cmd.force, 10 * leg_recovery_velocity_ + left_cmd.torque + T_theta_diff,
+                                        left_angle_[0], left_angle_[1], left_cmd.input);
+      controller->getVMCPtr()->leg_conv(right_cmd.force, 10 * leg_recovery_velocity_ + right_cmd.torque - T_theta_diff,
+                                        right_angle_[0], right_angle_[1], right_cmd.input);
     }
   }
   setJointCommands(joint_handles_, left_cmd, right_cmd);
