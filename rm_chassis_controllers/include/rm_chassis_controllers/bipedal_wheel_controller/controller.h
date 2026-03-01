@@ -22,6 +22,8 @@
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
 #include "rm_chassis_controllers/chassis_base.h"
+#include <dynamic_reconfigure/server.h>
+#include <rm_chassis_controllers/LQRWeightConfig.h>
 
 #include "bipedal_wheel_controller/helper_functions.h"
 #include "bipedal_wheel_controller/definitions.h"
@@ -31,6 +33,12 @@
 namespace rm_chassis_controllers
 {
 using Eigen::Matrix;
+
+struct LQRConfig
+{
+  double Q_theta{}, Q_d_theta{}, Q_x{}, Q_dx{}, Q_phi{}, Q_d_phi{};
+  double R_T{}, R_Tp{};
+};
 
 class BipedalController : public ChassisBase<rm_control::RobotStateInterface, hardware_interface::ImuSensorInterface,
                                              hardware_interface::EffortJointInterface>
@@ -80,6 +88,9 @@ private:
   void polyfit(const std::vector<Eigen::Matrix<double, 2, 6>>& Ks, const std::vector<double>& L0s,
                Eigen::Matrix<double, 4, 12>& coeffs);
   geometry_msgs::Twist odometry() override;
+
+  void reconfigCB(rm_chassis_controllers::LQRWeightConfig& config, uint32_t level);
+
   Eigen::Matrix<double, 4, CONTROL_DIM * STATE_DIM> coeffs_;
   Eigen::Matrix<double, STATE_DIM, STATE_DIM> q_{};
   Eigen::Matrix<double, CONTROL_DIM, CONTROL_DIM> r_{};
@@ -123,6 +134,10 @@ private:
   bool jumpCmd_{ false };
 
   // ROS Interface
+  dynamic_reconfigure::Server<rm_chassis_controllers::LQRWeightConfig>* d_srv_;
+  realtime_tools::RealtimeBuffer<LQRConfig> config_rt_buffer_;
+  LQRConfig config_{};
+  bool dynamic_reconfig_initialized_{ false };
   ros::Subscriber leg_cmd_sub_;
   ros::Publisher unstick_pub_, upstair_status_pub_;
   ros::Publisher legged_chassis_status_pub_, legged_chassis_mode_pub_;

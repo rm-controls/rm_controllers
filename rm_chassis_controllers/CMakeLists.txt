@@ -21,9 +21,15 @@ find_package(catkin REQUIRED
         tf2_geometry_msgs
         nav_msgs
         angles
+        dynamic_reconfigure
 )
 
 find_package(Eigen3 REQUIRED)
+
+generate_dynamic_reconfigure_options(
+  cfg/LQRWeight.cfg
+  cfg/PowerLimit.cfg 
+)
 
 ###################################
 ## catkin specific configuration ##
@@ -48,6 +54,7 @@ catkin_package(
         tf2_geometry_msgs
         nav_msgs
         angles
+        dynamic_reconfigure
         LIBRARIES ${PROJECT_NAME}
 )
 
@@ -75,7 +82,6 @@ add_library(${PROJECT_NAME}
         src/sentry.cpp
         src/swerve.cpp
         src/balance.cpp
-
         ${BIPEDAL_SOURCES}
 )
 
@@ -83,6 +89,8 @@ add_library(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
 )
+
+add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencfg)
 
 #############
 ## Install ##

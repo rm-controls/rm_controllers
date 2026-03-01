@@ -117,6 +117,17 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     if (!pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow")))
       return false;
 
+  // dynamic reconfigure
+  power_config_.power_offset = power_offset_;
+  power_config_.effort_coeff = effort_coeff_;
+  power_config_.velocity_coeff = velocity_coeff_;
+  power_limit_rt_buffer_.initRT(power_config_);
+  power_limit_srv_ = new dynamic_reconfigure::Server<rm_chassis_controllers::PowerLimitConfig>(
+      ros::NodeHandle(controller_nh, "power_limit"));
+  dynamic_reconfigure::Server<rm_chassis_controllers::PowerLimitConfig>::CallbackType cb =
+      boost::bind(&ChassisBase<T...>::powerLimitReconfigCB, this, _1, _2);
+  power_limit_srv_->setCallback(cb);
+
   return true;
 }
 
@@ -382,9 +393,35 @@ void ChassisBase<T...>::recovery()
 }
 
 template <typename... T>
+void ChassisBase<T...>::powerLimitReconfigCB(rm_chassis_controllers::PowerLimitConfig& config, uint32_t /*level*/)
+{
+  ROS_INFO("[Power Limit] Dynamic params change");
+  if (!power_limit_reconfig_initialized_)
+  {
+    PowerLimitParams init_config = *power_limit_rt_buffer_.readFromNonRT();
+    config.velocity_coeff = init_config.velocity_coeff;
+    config.effort_coeff = init_config.effort_coeff;
+    config.power_offset = init_config.power_offset;
+    power_limit_reconfig_initialized_ = true;
+    return;
+  }
+
+  PowerLimitParams config_non_rt;
+  config_non_rt.velocity_coeff = config.velocity_coeff;
+  config_non_rt.effort_coeff = config.effort_coeff;
+  config_non_rt.power_offset = config.power_offset;
+  power_limit_rt_buffer_.writeFromNonRT(config_non_rt);
+}
+
+template <typename... T>
 void ChassisBase<T...>::powerLimit()
 {
   double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
+  power_config_ = *power_limit_rt_buffer_.readFromRT();
+
+  double velocity_coeff = power_config_.velocity_coeff;
+  double effort_coeff = power_config_.effort_coeff;
+  double power_offset = power_config_.power_offset;
   // Three coefficients of a quadratic equation in one variable
   double a = 0., b = 0., c = 0.;
   for (const auto& joint : joint_handles_)
@@ -398,8 +435,8 @@ void ChassisBase<T...>::powerLimit()
       c += square(real_vel);
     }
   }
-  a *= effort_coeff_;
-  c = c * velocity_coeff_ - power_offset_ - power_limit;
+  a *= effort_coeff;
+  c = c * velocity_coeff - power_offset - power_limit;
   // Root formula for quadratic equation in one variable
   double zoom_coeff = (square(b) - 4 * a * c) > 0 ? ((-b + sqrt(square(b) - 4 * a * c)) / (2 * a)) : 0.;
   for (auto joint : joint_handles_)
