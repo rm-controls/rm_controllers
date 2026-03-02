@@ -64,7 +64,7 @@ public:
   geometry_msgs::Vector3 getVelCmd(){ return vel_cmd_; }
   bool getMoveFlag() const{ return move_flag_; }
   void setMoveFlag(const bool& move_flag) { move_flag_ = move_flag; }
-  VMCPtr& getVMCPtr(){ return vmc_; }
+  inline VMCPtr& getVMCPtr() { return vmc_; }
   void setStateChange(bool state){ balance_state_changed_ = state; }
   void setCompleteStand(bool state){ complete_stand_ = state; }
   void setJumpCmd(bool cmd){ jumpCmd_ = cmd; }
@@ -74,7 +74,7 @@ public:
                     Eigen::Matrix<double, STATE_DIM, 1> left_ref, Eigen::Matrix<double, STATE_DIM, 1> right_ref,
                     Eigen::Matrix<double, CONTROL_DIM, 1> u_left, Eigen::Matrix<double, CONTROL_DIM, 1> u_right,
                     Eigen::Matrix<double, CONTROL_DIM, 1> F_leg_, const bool unstick[2]) const;
-void pubLegLenStatus(const bool& upstair_flag);
+  void pubLegLenStatus(const bool& upstair_flag);
   // clang-format on
   void clearStatus();
 
