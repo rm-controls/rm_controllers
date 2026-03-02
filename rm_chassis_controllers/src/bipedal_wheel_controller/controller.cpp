@@ -249,6 +249,7 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
 
   rm_msgs::LeggedChassisMode legged_chassis_mode_msg;
   legged_chassis_mode_msg.mode = balance_mode_;
+  legged_chassis_mode_msg.mode_name = mode_manager_->getModeImpl()->name();
   legged_chassis_mode_pub_.publish(legged_chassis_mode_msg);
 
   mode_manager_->getModeImpl()->updateEstimation(x_left_, x_right_);
