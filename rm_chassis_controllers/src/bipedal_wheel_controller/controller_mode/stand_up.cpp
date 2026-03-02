@@ -23,6 +23,7 @@ void StandUp::execute(BipedalController* controller, const ros::Time& time, cons
     controller->setStateChange(true);
     controller->setCompleteStand(false);
     leg_state_threshold_ = controller->getLegThresholdParams();
+    vmcPtr_ = controller->getVMCPtr();
     StandUp::detectLegState(x_left_, left_leg_state);
     StandUp::detectLegState(x_right_, right_leg_state);
   }
@@ -118,5 +119,25 @@ inline void StandUp::detectLegState(const Eigen::Matrix<double, STATE_DIM, 1>& x
       ROS_INFO("[balance] x[0]: %.3f Leg state: BEHIND", x[0]);
       break;
   }
+}
+
+inline LegCommand StandUp::computePidLegCommand(double desired_length, double desired_angle, double leg_pos[2],
+                                                double leg_spd[2], control_toolbox::Pid& length_pid,
+                                                control_toolbox::Pid& angle_pid, control_toolbox::Pid& angle_vel_pid,
+                                                const double* leg_angle, const int& leg_state,
+                                                const ros::Duration& period, double feedforward_force)
+{
+  LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
+  cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
+  if (leg_state == LegState::BEHIND || leg_state == LegState::UNDER)
+  {
+    cmd.torque = angle_pid.computeCommand(-angles::shortest_angular_distance(desired_angle, leg_pos[1]), period);
+  }
+  else
+  {
+    cmd.torque = angle_vel_pid.computeCommand(-5 - leg_spd[1], period);
+  }
+  vmcPtr_->leg_conv(cmd.force, cmd.torque, leg_angle[0], leg_angle[1], cmd.input);
+  return cmd;
 }
 }  // namespace rm_chassis_controllers

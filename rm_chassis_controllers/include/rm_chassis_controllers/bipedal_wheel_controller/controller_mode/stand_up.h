@@ -9,6 +9,7 @@
 
 #include "bipedal_wheel_controller/controller_mode/mode_base.h"
 #include "bipedal_wheel_controller/definitions.h"
+#include "bipedal_wheel_controller/vmc/VMC.h"
 
 namespace rm_chassis_controllers
 {
@@ -33,11 +34,30 @@ private:
    * @param leg_state
    */
   void detectLegState(const Eigen::Matrix<double, STATE_DIM, 1>& x, int& leg_state);
+  /**
+   * Compute the leg command using PID controllers
+   * @param desired_length
+   * @param desired_angle
+   * @param current_length
+   * @param current_angle
+   * @param length_pid
+   * @param angle_pid
+   * @param leg_angle
+   * @param period
+   * @param feedforward_force
+   * @return
+   */
+  inline LegCommand computePidLegCommand(double desired_length, double desired_angle, double leg_pos[2],
+                                         double leg_spd[2], control_toolbox::Pid& length_pid,
+                                         control_toolbox::Pid& angle_pid, control_toolbox::Pid& angle_vel_pid,
+                                         const double* leg_angle, const int& leg_state, const ros::Duration& period,
+                                         double feedforward_force = 0.0f);
   std::vector<hardware_interface::JointHandle*> joint_handles_;
   std::vector<control_toolbox::Pid*> pid_legs_, pid_thetas_;
   int left_leg_state, right_leg_state;
   double theta_des_l, theta_des_r, length_des_l, length_des_r;
   double spring_force_{};
   std::shared_ptr<LegStateThresholdParams> leg_state_threshold_;
+  VMCPtr vmcPtr_;
 };
 }  // namespace rm_chassis_controllers
