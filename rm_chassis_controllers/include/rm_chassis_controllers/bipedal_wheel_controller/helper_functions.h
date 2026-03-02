@@ -64,13 +64,16 @@ inline void generateAB(const std::shared_ptr<ModelParams>& model_params, Eigen::
  * @param angle_pid
  * @param leg_angle
  * @param period
+ * @param feedforward_force
+ * @param overturn
  * @return
  */
-inline LegCommand computePidLegCommand(double desired_length, double desired_angle, double leg_pos[2],
-                                       double leg_spd[2], control_toolbox::Pid& length_pid,
-                                       control_toolbox::Pid& angle_pid, control_toolbox::Pid& angle_vel_pid,
-                                       const double* leg_angle, const int& leg_state, const ros::Duration& period,
-                                       double feedforward_force = 0.0f, const bool& overturn = false)
+[[maybe_unused]] inline LegCommand computePidLegCommand(double desired_length, double desired_angle, double leg_pos[2],
+                                                        double leg_spd[2], control_toolbox::Pid& length_pid,
+                                                        control_toolbox::Pid& angle_pid,
+                                                        control_toolbox::Pid& angle_vel_pid, const double* leg_angle,
+                                                        const int& leg_state, const ros::Duration& period,
+                                                        double feedforward_force = 0.0f, const bool& overturn = false)
 {
   LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
   cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
@@ -89,10 +92,10 @@ inline LegCommand computePidLegCommand(double desired_length, double desired_ang
   return cmd;
 }
 
-inline LegCommand computePidAngleVelLegCommand(double desired_length, double desired_leg_angle_vel, double leg_pos[2],
-                                               double leg_spd[2], control_toolbox::Pid& length_pid,
-                                               control_toolbox::Pid& angle_vel_pid, const double* leg_angle,
-                                               const ros::Duration& period, double feedforward_force = 0.0f)
+[[maybe_unused]] inline LegCommand
+computePidAngleVelLegCommand(double desired_length, double desired_leg_angle_vel, double leg_pos[2], double leg_spd[2],
+                             control_toolbox::Pid& length_pid, control_toolbox::Pid& angle_vel_pid,
+                             const double* leg_angle, const ros::Duration& period, double feedforward_force = 0.0f)
 {
   LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
   cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
@@ -101,10 +104,11 @@ inline LegCommand computePidAngleVelLegCommand(double desired_length, double des
   return cmd;
 }
 
-inline LegCommand computePidAngleLegCommand(double desired_length, double desired_leg_angle, double leg_pos[2],
-                                            control_toolbox::Pid& length_pid, control_toolbox::Pid& angle_pid,
-                                            const double* leg_angle, const ros::Duration& period,
-                                            double feedforward_force = 0.0f)
+[[maybe_unused]] inline LegCommand computePidAngleLegCommand(double desired_length, double desired_leg_angle,
+                                                             double leg_pos[2], control_toolbox::Pid& length_pid,
+                                                             control_toolbox::Pid& angle_pid, const double* leg_angle,
+                                                             const ros::Duration& period,
+                                                             double feedforward_force = 0.0f)
 {
   LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
   cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
@@ -112,15 +116,16 @@ inline LegCommand computePidAngleLegCommand(double desired_length, double desire
   leg_conv(cmd.force, cmd.torque, leg_angle[0], leg_angle[1], cmd.input);
   return cmd;
 }
-inline LegCommand computePidLenLegCommand(double desired_length, double leg_pos[2], control_toolbox::Pid& length_pid,
-                                          const double* leg_angle, const ros::Duration& period,
-                                          double feedforward_force = 0.0f)
+[[maybe_unused]] inline LegCommand computePidLenLegCommand(double desired_length, double leg_pos[2],
+                                                           control_toolbox::Pid& length_pid, const double* leg_angle,
+                                                           const ros::Duration& period, double feedforward_force = 0.0f)
 {
   LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
   cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
   leg_conv(cmd.force, 0.0, leg_angle[0], leg_angle[1], cmd.input);
   return cmd;
 }
+
 /**
  * Set joint commands to the joint handles
  * @param joints
