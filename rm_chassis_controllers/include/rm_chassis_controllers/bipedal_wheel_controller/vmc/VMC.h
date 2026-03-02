@@ -1,6 +1,8 @@
 //
 // Created by wk on 2026/2/25.
 //
+#pragma once
+
 #include <memory>
 
 namespace rm_chassis_controllers
