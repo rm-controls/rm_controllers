@@ -112,10 +112,12 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
   {
     double left_length_des = controller->getCompleteStand() ? leg_length_des : controller->getDefaultLegLength();
     double right_length_des = controller->getCompleteStand() ? leg_length_des : controller->getDefaultLegLength();
-    F_leg[LEFT] = pid_legs_[LEFT]->computeCommand(left_length_des - current_leg_length, period) - F_inertia +
-                  gravity * cos(left_pos_[1]) + F_roll - spring_force;
-    F_leg[RIGHT] = pid_legs_[RIGHT]->computeCommand(right_length_des - current_leg_length, period) + F_inertia +
-                   gravity * cos(right_pos_[1]) - F_roll - spring_force;
+    double F_pid_left = pid_legs_[LEFT]->computeCommand(left_length_des - current_leg_length, period);
+    double F_pid_right = pid_legs_[RIGHT]->computeCommand(right_length_des - current_leg_length, period);
+    F_pid_left = abs(F_pid_left) > 90 ? std::copysign(1, F_pid_left) * 90 : F_pid_left;
+    F_pid_right = abs(F_pid_right) > 90 ? std::copysign(1, F_pid_right) * 90 : F_pid_right;
+    F_leg[LEFT] = F_pid_left - F_inertia + gravity * cos(left_pos_[1]) + F_roll - spring_force;
+    F_leg[RIGHT] = F_pid_right + F_inertia + gravity * cos(right_pos_[1]) - F_roll - spring_force;
   }
   else
   {
@@ -125,6 +127,7 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
     switch (jump_phase_)
     {
       case JumpPhase::LEG_RETRACTION:
+      {
         ROS_INFO("[balance] ENTER LEG_RETRACTION");
         F_leg(LEFT) = pid_legs_[LEFT]->computeCommand(leg_length_des - current_leg_length, period) +
                       gravity * cos(left_pos_[1]) + F_roll - spring_force;
@@ -140,6 +143,7 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
           jump_phase_ = JumpPhase::JUMP_UP;
         }
         break;
+      }
       case JumpPhase::JUMP_UP:
         ROS_INFO("[balance] ENTER JUMP_UP");
         //        F_leg(0) = control_params_->p1_ * pow(left_pos_[0], 3) + control_params_->p2_ * pow(left_pos_[0], 2) +
@@ -229,7 +233,7 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
 
   // upstairs
   if (jump_phase_ == JumpPhase::IDLE && linear_acc_base_.z < -7.0 && controller->getCompleteStand() &&
-      abs(vel_cmd_.x) > 0.1 && abs(x_left(3)) > 0.1 && ((left_pos_[0] + right_pos_[0]) / 2.0f) > 0.30 &&
+      abs(vel_cmd_.x) > 0.1 && abs(x_left(3)) > 0.1 && ((left_pos_[0] + right_pos_[0]) / 2.0f) > 0.3 &&
       leg_length_des > 0.30)
   {
     leg_length_des = controller->getDefaultLegLength();
@@ -241,7 +245,7 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
   }
 
   // Protection
-  if (abs(x_left(4)) > 0.6 || abs(x_left(0)) > 1.0 || abs(x_right(0)) > 1.0 || abs(roll_) > 1.0 ||
+  if (abs(x_left(4)) > 0.6 || abs(x_left(0)) > 0.7 || abs(x_right(0)) > 0.7 || abs(roll_) > 1.0 ||
       controller->getOverturn() || controller->getBaseState() == 4)
   {
     leg_length_des = controller->getDefaultLegLength();
