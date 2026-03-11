@@ -27,7 +27,7 @@ public:
 private:
   void setUpLegMotion(const Eigen::Matrix<double, STATE_DIM, 1>& x, const int& other_leg_state,
                       const double& leg_length, const double& leg_theta, int& leg_state, double& theta_des,
-                      double& length_des);
+                      double& length_des, bool& stop_flag);
   /**
    * Detect the leg state before stand up: UNDER, FRONT, BEHIND
    * @param x
@@ -57,6 +57,7 @@ private:
   int left_leg_state, right_leg_state;
   double theta_des_l, theta_des_r, length_des_l, length_des_r;
   double spring_force_{};
+  bool left_stop_{ false }, right_stop_{ false };
   std::shared_ptr<LegStateThresholdParams> leg_state_threshold_;
   VMCPtr vmcPtr_;
 };
