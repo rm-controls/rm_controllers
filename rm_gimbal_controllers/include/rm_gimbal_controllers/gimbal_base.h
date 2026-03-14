@@ -137,15 +137,14 @@ public:
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
   void starting(const ros::Time& time) override;
   void update(const ros::Time& time, const ros::Duration& period) override;
-  void setDes(const ros::Time& time, double yaw_des, double pitch_des,double traject_yaw_des );
+  void setDes(const ros::Time& time, double yaw_des, double pitch_des,double traject_yaw_des, bool update_yaw = true, bool update_pitch = true);
 
 private:
   void rate(const ros::Time& time, const ros::Duration& period);
   void track(const ros::Time& time);
   void direct(const ros::Time& time);
   void traj(const ros::Time& time);
-  bool setDesIntoLimit(const tf2::Quaternion& base2gimbal_des, const urdf::JointConstSharedPtr& joint_urdf,
-                       tf2::Quaternion& base2new_des);
+  bool setDesIntoLimit(double& angle, const urdf::JointConstSharedPtr& joint_urdf, bool update, double current_angle);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   void updateChassisVel();
   double feedForward(const ros::Time& time);
