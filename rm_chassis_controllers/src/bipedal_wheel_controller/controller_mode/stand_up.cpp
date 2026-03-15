@@ -90,8 +90,8 @@ void StandUp::setUpLegMotion(const Eigen::Matrix<double, STATE_DIM, 1>& x, const
       {
         stop_flag = false;
         length_des = 0.18;
-        if (leg_length < 0.3)
-          theta_des = 0.0;
+        if (leg_length < 0.21)
+          theta_des = -0.1;
       }
       break;
   }
@@ -133,6 +133,7 @@ inline LegCommand StandUp::computePidLegCommand(double desired_length, double de
 {
   LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
   cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
+  cmd.force = abs(cmd.force) > 250 ? std::copysign(1, cmd.force) * 250 : cmd.force;
   if (leg_state == LegState::BEHIND || leg_state == LegState::UNDER)
   {
     cmd.torque = angle_pid.computeCommand(-angles::shortest_angular_distance(desired_angle, leg_pos[1]), period);

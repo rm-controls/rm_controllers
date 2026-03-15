@@ -56,13 +56,19 @@ bool BipedalController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     legCmd_ = msg->leg_length;
     jumpCmd_ = msg->jump;
   };
-  leg_cmd_sub_ = controller_nh.subscribe<rm_msgs::LegCmd>("/leg_cmd", 1, legCmdCallback);
+  leg_cmd_sub_ = controller_nh.subscribe<rm_msgs::LegCmd>("/leg_cmd", 10, legCmdCallback);
 
   unstick_pub_ = controller_nh.advertise<std_msgs::Bool>("unstick", 1);
   upstair_status_pub_ = controller_nh.advertise<rm_msgs::LeggedUpstairStatus>("upstair_status", 1);
-  legged_chassis_status_pub_ = controller_nh.advertise<rm_msgs::LeggedChassisStatus>("legged_chassis_status", 1);
-  legged_chassis_mode_pub_ = controller_nh.advertise<rm_msgs::LeggedChassisMode>("legged_chassis_mode", 1);
-  lqr_status_pub_ = controller_nh.advertise<rm_msgs::LeggedLQRStatus>("lqr_status", 1);
+  legged_chassis_status_pub_.reset((new realtime_tools::RealtimePublisher<rm_msgs::LeggedChassisStatus>(
+      controller_nh, "legged_chassis_status", 100)));
+  legged_chassis_mode_pub_.reset(
+      (new realtime_tools::RealtimePublisher<rm_msgs::LeggedChassisMode>(controller_nh, "legged_chassis_mode", 10)));
+  lqr_status_pub_.reset(
+      (new realtime_tools::RealtimePublisher<rm_msgs::LeggedLQRStatus>(controller_nh, "lqr_status", 100)));
+  //  legged_chassis_status_pub_ = controller_nh.advertise<rm_msgs::LeggedChassisStatus>("legged_chassis_status", 1);
+  //  legged_chassis_mode_pub_ = controller_nh.advertise<rm_msgs::LeggedChassisMode>("legged_chassis_mode", 1);
+  //  lqr_status_pub_ = controller_nh.advertise<rm_msgs::LeggedLQRStatus>("lqr_status", 1);
   x_left_.setZero();
   x_right_.setZero();
 
@@ -93,10 +99,16 @@ void BipedalController::moveJoint(const ros::Time& time, const ros::Duration& pe
 {
   if (!balance_state_changed_)
     mode_manager_->switchMode(balance_mode_);
-  if (getBaseState() == 4)
+  if (getBaseState() == rm_msgs::ChassisCmd::FALLEN)
   {
     balance_mode_ = SIT_DOWN;
     mode_manager_->switchMode(SIT_DOWN);
+  }
+  else if (!overturn_ && getBaseState() == rm_msgs::ChassisCmd::RECOVERY)
+  {
+    overturn_ = true;
+    balance_mode_ = RECOVER;
+    mode_manager_->switchMode(RECOVER);
   }
   updateEstimation(time, period);
   mode_manager_->getModeImpl()->execute(this, time, period);
@@ -155,16 +167,16 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
   // vmc
   double left_angle[2]{}, right_angle[2]{}, left_pos[2]{}, left_spd[2]{}, right_pos[2]{}, right_spd[2]{};
   // [0]:hip_vmc_joint [1]:knee_vmc_joint
-  //  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
-  //  left_angle[1] = left_knee_joint_handle_.getPosition();
-  //  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
-  //  right_angle[1] = right_knee_joint_handle_.getPosition();
+  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
+  left_angle[1] = left_knee_joint_handle_.getPosition();
+  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
+  right_angle[1] = right_knee_joint_handle_.getPosition();
 
   // gazebo
-  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
-  left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
-  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
-  right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
+  //  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
+  //  left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
+  //  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
+  //  right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
 
   // [0] is length, [1] is angle
   vmc_->leg_pos(left_angle[0], left_angle[1], left_pos);
@@ -227,30 +239,33 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
   x_right_[0] = (right_pos[1] + pitch);
   x_right_[1] = right_spd[1] + angular_vel_base.y;
 
-  // ros msg
-  rm_msgs::LeggedChassisStatus legged_chassis_status_msg;
-  legged_chassis_status_msg.roll = roll;
-  legged_chassis_status_msg.pitch = x_left_[4];
-  legged_chassis_status_msg.d_pitch = x_left_[5];
-  legged_chassis_status_msg.yaw = yaw;
-  legged_chassis_status_msg.d_yaw = angular_vel_base.z;
-  legged_chassis_status_msg.left_leg_length = left_pos[0];
-  legged_chassis_status_msg.right_leg_length = right_pos[0];
-  legged_chassis_status_msg.x = x_left_[2];
-  legged_chassis_status_msg.x_dot = x_left_[3];
-  legged_chassis_status_msg.left_leg_theta = x_left_[0];
-  legged_chassis_status_msg.left_leg_theta_dot = x_left_[1];
-  legged_chassis_status_msg.right_leg_theta = x_right_[0];
-  legged_chassis_status_msg.right_leg_theta_dot = x_right_[1];
-  legged_chassis_status_msg.linear_acc_base.push_back(linear_acc_base.x);
-  legged_chassis_status_msg.linear_acc_base.push_back(linear_acc_base.y);
-  legged_chassis_status_msg.linear_acc_base.push_back(linear_acc_base.z);
-  legged_chassis_status_pub_.publish(legged_chassis_status_msg);
+  if (legged_chassis_status_pub_->trylock())
+  {
+    legged_chassis_status_pub_->msg_.roll = roll;
+    legged_chassis_status_pub_->msg_.pitch = x_left_[4];
+    legged_chassis_status_pub_->msg_.d_pitch = x_left_[5];
+    legged_chassis_status_pub_->msg_.yaw = yaw;
+    legged_chassis_status_pub_->msg_.d_yaw = angular_vel_base.z;
+    legged_chassis_status_pub_->msg_.left_leg_length = left_pos[0];
+    legged_chassis_status_pub_->msg_.right_leg_length = right_pos[0];
+    legged_chassis_status_pub_->msg_.x = x_left_[2];
+    legged_chassis_status_pub_->msg_.x_dot = x_left_[3];
+    legged_chassis_status_pub_->msg_.left_leg_theta = x_left_[0];
+    legged_chassis_status_pub_->msg_.left_leg_theta_dot = x_left_[1];
+    legged_chassis_status_pub_->msg_.right_leg_theta = x_right_[0];
+    legged_chassis_status_pub_->msg_.right_leg_theta_dot = x_right_[1];
+    legged_chassis_status_pub_->msg_.linear_acc_base.push_back(linear_acc_base.x);
+    legged_chassis_status_pub_->msg_.linear_acc_base.push_back(linear_acc_base.y);
+    legged_chassis_status_pub_->msg_.linear_acc_base.push_back(linear_acc_base.z);
+    legged_chassis_status_pub_->unlockAndPublish();
+  }
 
-  rm_msgs::LeggedChassisMode legged_chassis_mode_msg;
-  legged_chassis_mode_msg.mode = balance_mode_;
-  legged_chassis_mode_msg.mode_name = mode_manager_->getModeImpl()->name();
-  legged_chassis_mode_pub_.publish(legged_chassis_mode_msg);
+  if (legged_chassis_mode_pub_->trylock())
+  {
+    legged_chassis_mode_pub_->msg_.mode = balance_mode_;
+    legged_chassis_mode_pub_->msg_.mode_name = mode_manager_->getModeImpl()->name();
+    legged_chassis_mode_pub_->unlockAndPublish();
+  }
 
   mode_manager_->getModeImpl()->updateEstimation(x_left_, x_right_);
   mode_manager_->getModeImpl()->updateLegKinematics(left_angle, right_angle, left_pos, left_spd, right_pos, right_spd);
@@ -452,22 +467,25 @@ void BipedalController::pubLQRStatus(Eigen::Matrix<double, STATE_DIM, 1> left_er
                                      Eigen::Matrix<double, CONTROL_DIM, 1> u_right,
                                      Eigen::Matrix<double, CONTROL_DIM, 1> F_leg_, const bool unstick[2]) const
 {
-  rm_msgs::LeggedLQRStatus msg;
-  for (int i = 0; i < 6; ++i)
+  if (lqr_status_pub_->trylock())
   {
-    msg.left_leg_error.push_back(left_error(i));
-    msg.right_leg_error.push_back(right_error(i));
-    msg.left_leg_ref.push_back(left_ref(i));
-    msg.right_leg_ref.push_back(right_ref(i));
+    int temp{};
+    for (temp = 0; temp < 6; ++temp)
+    {
+      lqr_status_pub_->msg_.left_leg_error.push_back(left_error(temp));
+      lqr_status_pub_->msg_.right_leg_error.push_back(right_error(temp));
+      lqr_status_pub_->msg_.left_leg_ref.push_back(left_ref(temp));
+      lqr_status_pub_->msg_.right_leg_ref.push_back(right_ref(temp));
+    }
+    for (temp = 0; temp < 2; ++temp)
+    {
+      lqr_status_pub_->msg_.left_leg_u.push_back(u_left(temp));
+      lqr_status_pub_->msg_.right_leg_u.push_back(u_right(temp));
+      lqr_status_pub_->msg_.F_leg.push_back(F_leg_[temp]);
+      lqr_status_pub_->msg_.unstick.push_back(unstick[temp]);
+    }
+    lqr_status_pub_->unlockAndPublish();
   }
-  for (int i = 0; i < 2; ++i)
-  {
-    msg.left_leg_u.push_back(u_left(i));
-    msg.right_leg_u.push_back(u_right(i));
-    msg.F_leg.push_back(F_leg_[i]);
-    msg.unstick.push_back(unstick[i]);
-  }
-  lqr_status_pub_.publish(msg);
 }
 
 void BipedalController::pubLegLenStatus(const bool& upstair_flag)

@@ -50,8 +50,8 @@ private:
   std::vector<hardware_interface::JointHandle*> joint_handles_;
   std::vector<control_toolbox::Pid*> pid_legs_, pid_thetas_;
   control_toolbox::Pid* pid_theta_diff_;
-  double leg_recovery_velocity_{ 2.0 }, threshold_{ 0.05 }, leg_theta_diff_{ 0.0 }, desired_leg_length_{ 0.36 };
-  const double leg_recovery_velocity_const_{ 2.0 };
+  double leg_recovery_velocity_{ 5.0 }, threshold_{ 0.05 }, leg_theta_diff_{ 0.0 }, desired_leg_length_{ 0.38 };
+  const double leg_recovery_velocity_const_{ 5.0 };
   RecoveryChassisState recovery_chassis_state_{ ForwardSlip };
   bool detectd_flag{ false };
 };

@@ -33,7 +33,8 @@ void Recover::execute(BipedalController* controller, const ros::Time& time, cons
   }
 
   LegCommand left_cmd = { 0, 0, { 0., 0. } }, right_cmd = { 0, 0, { 0., 0. } };
-  leg_theta_diff_ = angles::shortest_angular_distance(left_pos_[1], right_pos_[1]);
+  //  leg_theta_diff_ = angles::shortest_angular_distance(left_pos_[1], right_pos_[1]);
+  leg_theta_diff_ = right_pos_[1] - left_pos_[1];
   double T_theta_diff{ 0.0 }, feedforward_force{ 0.0 };
   if (controller->getBaseState() != 4)
   {
@@ -44,13 +45,13 @@ void Recover::execute(BipedalController* controller, const ros::Time& time, cons
     right_cmd.force = pid_legs_[1]->computeCommand(desired_leg_length_ - right_pos_[0], period) + feedforward_force;
     controller->getVMCPtr()->leg_conv(left_cmd.force, T_theta_diff, left_angle_[0], left_angle_[1], left_cmd.input);
     controller->getVMCPtr()->leg_conv(right_cmd.force, -T_theta_diff, right_angle_[0], right_angle_[1], right_cmd.input);
-    if (abs(leg_theta_diff_) < 0.1)
+    if (abs(leg_theta_diff_) < 0.3)
     {
       left_cmd.torque = pid_thetas_[2]->computeCommand(leg_recovery_velocity_ - left_spd_[1], period);
       right_cmd.torque = pid_thetas_[3]->computeCommand(leg_recovery_velocity_ - right_spd_[1], period);
-      controller->getVMCPtr()->leg_conv(left_cmd.force, 10 * leg_recovery_velocity_ + left_cmd.torque + T_theta_diff,
+      controller->getVMCPtr()->leg_conv(left_cmd.force, 5 * leg_recovery_velocity_ + left_cmd.torque + T_theta_diff,
                                         left_angle_[0], left_angle_[1], left_cmd.input);
-      controller->getVMCPtr()->leg_conv(right_cmd.force, 10 * leg_recovery_velocity_ + right_cmd.torque - T_theta_diff,
+      controller->getVMCPtr()->leg_conv(right_cmd.force, 5 * leg_recovery_velocity_ + right_cmd.torque - T_theta_diff,
                                         right_angle_[0], right_angle_[1], right_cmd.input);
     }
   }
@@ -61,6 +62,7 @@ void Recover::execute(BipedalController* controller, const ros::Time& time, cons
   {
     controller->setMode(BalanceMode::STAND_UP);
     controller->setStateChange(false);
+    controller->clearRecoveryFlag();
     ROS_INFO("[balance] Exit RECOVER");
   }
 }

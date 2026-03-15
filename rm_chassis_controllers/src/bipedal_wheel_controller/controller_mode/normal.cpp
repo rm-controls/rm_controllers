@@ -96,6 +96,7 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
   // Compute leg thrust
   auto model_params_ = controller->getModelParams();
   auto control_params_ = controller->getControlParams();
+  //  auto f_spring_force = [](double l) { return ((2094.45f * l - 3091.28f) * l + 1408.375f) * l - 80.91f; };
   double gravity = model_params_->f_gravity, current_leg_length = (left_pos_[0] + right_pos_[0]) / 2.0f,
          spring_force = model_params_->f_spring;
   double F_inertia = model_params_->M * friction_circle;
@@ -114,8 +115,8 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
     double right_length_des = controller->getCompleteStand() ? leg_length_des : controller->getDefaultLegLength();
     double F_pid_left = pid_legs_[LEFT]->computeCommand(left_length_des - current_leg_length, period);
     double F_pid_right = pid_legs_[RIGHT]->computeCommand(right_length_des - current_leg_length, period);
-    F_pid_left = abs(F_pid_left) > 90 ? std::copysign(1, F_pid_left) * 90 : F_pid_left;
-    F_pid_right = abs(F_pid_right) > 90 ? std::copysign(1, F_pid_right) * 90 : F_pid_right;
+    F_pid_left = abs(F_pid_left) > 150 ? std::copysign(1, F_pid_left) * 150 : F_pid_left;
+    F_pid_right = abs(F_pid_right) > 150 ? std::copysign(1, F_pid_right) * 150 : F_pid_right;
     F_leg[LEFT] = F_pid_left - F_inertia + gravity * cos(left_pos_[1]) + F_roll - spring_force;
     F_leg[RIGHT] = F_pid_right + F_inertia + gravity * cos(right_pos_[1]) - F_roll - spring_force;
   }
@@ -210,7 +211,7 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
   controller->pubLQRStatus(-x_left, -x_right, x_left_ref, x_right_ref, u_left, u_right, F_N, unstick);
 
   updateUnstick(left_unstick, right_unstick);
-
+  left_unstick = right_unstick = false;
   if (controller->getCompleteStand() && left_unstick && jump_phase_ != JumpPhase::LEG_RETRACTION)
   {
     F_leg[LEFT] -= F_roll;
@@ -245,7 +246,7 @@ void Normal::execute(BipedalController* controller, const ros::Time& time, const
   }
 
   // Protection
-  if (abs(x_left(4)) > 0.6 || abs(x_left(0)) > 0.7 || abs(x_right(0)) > 0.7 || abs(roll_) > 1.0 ||
+  if (abs(x_left(4)) > 0.6 || abs(x_left(0)) > 0.9 || abs(x_right(0)) > 0.9 || abs(roll_) > 1.0 ||
       controller->getOverturn() || controller->getBaseState() == 4)
   {
     leg_length_des = controller->getDefaultLegLength();

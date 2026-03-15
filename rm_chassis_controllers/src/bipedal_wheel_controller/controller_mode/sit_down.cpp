@@ -27,7 +27,7 @@ void SitDown::execute(BipedalController* controller, const ros::Time& time, cons
   setJointCommands(joint_handles_, left_cmd, right_cmd, left_wheel_cmd, right_wheel_cmd);
 
   // Exit
-  if (abs(x_left_(1)) < 0.1 && abs(x_left_(5)) < 0.2 && controller->getBaseState() != 4)
+  if (abs(x_left_(1)) < 0.1 && controller->getBaseState() != 4)
   {
     if (!controller->getOverturn())
       controller->setMode(BalanceMode::STAND_UP);

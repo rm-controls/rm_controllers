@@ -69,6 +69,7 @@ public:
   void setCompleteStand(bool state){ complete_stand_ = state; }
   void setJumpCmd(bool cmd){ jumpCmd_ = cmd; }
   void setMode(int mode){ balance_mode_ = mode; }
+  inline void clearRecoveryFlag() { overturn_ = false; }
   void pubState();
   void pubLQRStatus(Eigen::Matrix<double, STATE_DIM, 1> left_error, Eigen::Matrix<double, STATE_DIM, 1> right_error,
                     Eigen::Matrix<double, STATE_DIM, 1> left_ref, Eigen::Matrix<double, STATE_DIM, 1> right_ref,
@@ -140,8 +141,9 @@ private:
   bool dynamic_reconfig_initialized_{ false };
   ros::Subscriber leg_cmd_sub_;
   ros::Publisher unstick_pub_, upstair_status_pub_;
-  ros::Publisher legged_chassis_status_pub_, legged_chassis_mode_pub_;
-  ros::Publisher lqr_status_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::LeggedChassisStatus>> legged_chassis_status_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::LeggedChassisMode>> legged_chassis_mode_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::LeggedLQRStatus>> lqr_status_pub_;
   ros::Time cmd_update_time_;
 };
 }  // namespace rm_chassis_controllers

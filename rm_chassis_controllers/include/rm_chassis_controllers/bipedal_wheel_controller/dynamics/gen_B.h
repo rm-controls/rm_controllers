@@ -19,7 +19,8 @@ extern "C" {
 /* Function Declarations */
 extern void gen_B(double Im, double Ip, double Iw, double L, double Lm, double M, double R, double l, double mp,
                   double mw, double B[12]);
-
+extern void gen_B_leg_offset(double Im, double Ip, double Iw, double L, double Lm, double M, double R, double g,
+                             double l, double mp, double mw, double theta_l0, double B[12]);
 #ifdef __cplusplus
 }
 #endif

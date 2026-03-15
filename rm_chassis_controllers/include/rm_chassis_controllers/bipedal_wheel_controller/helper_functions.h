@@ -33,10 +33,18 @@ inline void generateAB(const std::shared_ptr<ModelParams>& model_params, Eigen::
   double A[36] = { 0. }, B[12]{ 0. };
   double L = leg_length * model_params->L_weight;
   double Lm = leg_length * model_params->Lm_weight;
+  //  auto theta_from_length = [](double L) -> double {
+  //    return -23.36693691 * L * L * L + 24.76241959 * L * L - 11.65313741 * L + 2.49258628;
+  //  };
+  //  double theta_L = theta_from_length(leg_length);
   gen_A(model_params->i_m, model_params->i_p, model_params->i_w, L, Lm, model_params->M, model_params->r,
         model_params->g, model_params->l, model_params->m_p, model_params->m_w, A);
   gen_B(model_params->i_m, model_params->i_p, model_params->i_w, L, Lm, model_params->M, model_params->r,
         model_params->l, model_params->m_p, model_params->m_w, B);
+  //  gen_A_leg_offset(model_params->i_m, model_params->i_p, model_params->i_w, L, Lm, model_params->M, model_params->r,
+  //                   model_params->g, model_params->l, model_params->m_p, model_params->m_w, theta_L, A);
+  //  gen_B_leg_offset(model_params->i_m, model_params->i_p, model_params->i_w, L, Lm, model_params->M, model_params->r,
+  //                   model_params->g, model_params->l, model_params->m_p, model_params->m_w, theta_L, B);
 
   // clang-format off
   a<< 0.  ,1.,0.,0.,0.   ,0.,

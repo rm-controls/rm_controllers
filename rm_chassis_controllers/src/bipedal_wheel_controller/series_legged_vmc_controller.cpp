@@ -74,12 +74,12 @@ void VMCController::update(const ros::Time& time, const ros::Duration& period)
 
   // series leg vmc
   // gazebo
-  thigh_angle = jointThigh_.getPosition() + M_PI_2;
-  knee_angle = jointKnee_.getPosition() - M_PI_2;
+  //  thigh_angle = jointThigh_.getPosition() + M_PI_2;
+  //  knee_angle = jointKnee_.getPosition() - M_PI_2;
 
   // five link vmc
-  //  thigh_angle = jointThigh_.getPosition() + M_PI;
-  //  knee_angle = jointKnee_.getPosition();
+  thigh_angle = jointThigh_.getPosition() + M_PI;
+  knee_angle = jointKnee_.getPosition();
   vmcPtr_->leg_pos(thigh_angle, knee_angle, position);
   vmcPtr_->leg_spd(jointThigh_.getVelocity(), jointKnee_.getVelocity(), thigh_angle, knee_angle, speed);
 
