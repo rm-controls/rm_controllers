@@ -52,12 +52,6 @@
 
 namespace rm_chassis_controllers
 {
-struct PowerLimitParams
-{
-  double velocity_coeff{};
-  double effort_coeff{};
-  double power_offset{};
-};
 struct Command
 {
   geometry_msgs::Twist cmd_vel_;
@@ -181,9 +175,7 @@ protected:
   control_toolbox::Pid pid_follow_;
 
   dynamic_reconfigure::Server<rm_chassis_controllers::PowerLimitConfig>* power_limit_srv_{};
-  realtime_tools::RealtimeBuffer<PowerLimitParams> power_limit_rt_buffer_;
-  PowerLimitParams power_config_{};
-  bool power_limit_reconfig_initialized_{ false };
+  realtime_tools::RealtimeBuffer<rm_chassis_controllers::PowerLimitConfig> power_limit_rt_buffer_;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
   rm_common::TfRtBroadcaster tf_broadcaster_{};
   ros::Subscriber outside_odom_sub_;
