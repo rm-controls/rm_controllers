@@ -117,6 +117,13 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     if (!pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow")))
       return false;
 
+  // dynamic reconfigure
+  power_limit_srv_ = new dynamic_reconfigure::Server<rm_chassis_controllers::PowerLimitConfig>(
+      ros::NodeHandle(controller_nh, "power"));
+  dynamic_reconfigure::Server<rm_chassis_controllers::PowerLimitConfig>::CallbackType cb =
+      boost::bind(&ChassisBase<T...>::powerLimitReconfigCB, this, _1, _2);
+  power_limit_srv_->setCallback(cb);
+
   return true;
 }
 
@@ -385,6 +392,12 @@ template <typename... T>
 void ChassisBase<T...>::powerLimit()
 {
   double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
+  const auto& power_config = *power_limit_rt_buffer_.readFromRT();
+
+  double vel_coeff = power_config.vel_coeff;
+  double effort_coeff = power_config.effort_coeff;
+  double power_offset = power_config.power_offset;
+
   // Three coefficients of a quadratic equation in one variable
   double a = 0., b = 0., c = 0.;
   for (const auto& joint : joint_handles_)
@@ -398,8 +411,8 @@ void ChassisBase<T...>::powerLimit()
       c += square(real_vel);
     }
   }
-  a *= effort_coeff_;
-  c = c * velocity_coeff_ - power_offset_ - power_limit;
+  a *= effort_coeff;
+  c = c * vel_coeff - power_offset - power_limit;
   // Root formula for quadratic equation in one variable
   double zoom_coeff = (square(b) - 4 * a * c) > 0 ? ((-b + sqrt(square(b) - 4 * a * c)) / (2 * a)) : 0.;
   for (auto joint : joint_handles_)
@@ -456,6 +469,13 @@ void ChassisBase<T...>::outsideOdomCallback(const nav_msgs::Odometry::ConstPtr& 
 {
   odom_buffer_.writeFromNonRT(*msg);
   topic_update_ = true;
+}
+
+template <typename... T>
+void ChassisBase<T...>::powerLimitReconfigCB(rm_chassis_controllers::PowerLimitConfig& config, uint32_t /*level*/)
+{
+  ROS_INFO("[Power Limit] Dynamic params change");
+  power_limit_rt_buffer_.writeFromNonRT(config);
 }
 
 }  // namespace rm_chassis_controllers

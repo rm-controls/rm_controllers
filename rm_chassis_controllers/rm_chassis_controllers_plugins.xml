@@ -32,6 +32,20 @@
             EffortJointInterface type of hardware interface.
         </description>
     </class>
-
+    <class name="rm_chassis_controllers/BipedalController"
+           type="rm_chassis_controllers::BipedalController"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+            The BalanceController is RoboMaster SeriesLegged standard robot SeriesLegged controller. It expects a
+            EffortJointInterface type of hardware interface.
+        </description>
+    </class>
+    <class name="rm_chassis_controllers/VMCController"
+           type="rm_chassis_controllers::VMCController"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+            The two link vmc controller.
+        </description>
+    </class>
 
 </library>
