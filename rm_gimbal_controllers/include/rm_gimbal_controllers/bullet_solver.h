@@ -147,13 +147,13 @@ private:
   double last_yaw_{}, filtered_yaw_{} ;
   double gimbal_switch_duration_{};
   double yaw_subtract_;
-  double switch_armor_angle;
+  double switch_armor_angle{};
   double filtered_v_yaw_{};
-  double switchtime;
-  double traject_effort_ff_;
-  double traject_switch_time_;
-  double switche_time_yaw_;
-  double traject_max_acc_;
+  double switchtime{};
+  double traject_effort_ff_{};
+  double traject_switch_time_{};
+  double switche_time_yaw_{};
+  double traject_max_acc_{};
   int shoot_num_ = 0;
   int shoot_beforehand_cmd_{};
   int count_;
@@ -168,9 +168,9 @@ private:
   bool is_in_delay_before_switch_{};
   bool dynamic_reconfig_initialized_{};
   bool change_armor = false;
-  bool using_traject_;
-  bool last_shoot_state_ ;
-  bool is_aheading_two_;
+  bool using_traject_{};
+  bool last_shoot_state_ {};
+  bool is_aheading_two_{};
 
   geometry_msgs::Point after_traject_output_yaw_{};
   geometry_msgs::Point target_pos_{};
