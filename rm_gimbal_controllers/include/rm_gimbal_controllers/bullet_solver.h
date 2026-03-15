@@ -42,6 +42,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <visualization_msgs/Marker.h>
 #include <rm_gimbal_controllers/BulletSolverConfig.h>
+#include <rm_msgs/BulletSolverData.h>
 #include <dynamic_reconfigure/server.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/eigen_types.h>
@@ -50,16 +51,29 @@
 #include <std_msgs/Float64.h>
 #include <rm_msgs/TrackData.h>
 #include <rm_msgs/ShootBeforehandCmd.h>
+#include <rm_msgs/LocalHeatState.h>
 
 namespace rm_gimbal_controllers
 {
 struct Config
 {
   double resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16, resistance_coff_qd_18,
-      resistance_coff_qd_30, g, delay, wait_next_armor_delay, wait_diagonal_armor_delay, dt, timeout, max_switch_angle,
-      min_switch_angle, switch_angle_offset, switch_duration_scale, switch_duration_rate, switch_duration_offset,
-      min_shoot_beforehand_vel, max_chassis_angular_vel, track_rotate_target_delay, track_move_target_delay;
+      resistance_coff_qd_30, g, delay, center_delay, max_switch_angle, switch_angle_offset, switch_duration_scale,
+      switch_duration_rate, switch_duration_offset, min_shoot_beforehand_vel, track_rotate_target_delay,
+      track_move_target_delay;
   int min_fit_switch_count;
+  int max_selected_armor_;
+  double traject_ahead_;
+  int clean_shoot_num_;
+  double end_pos_offset, move_switch_time_coff_;
+};
+struct TrajectoryFunctionCoefficients
+{
+  double a0, a1, a2, a3;
+};
+struct TrajectoryLimitParams
+{
+  double start_pos, end_pos, start_vel, end_vel;
 };
 
 class BulletSolver
@@ -68,7 +82,7 @@ public:
   explicit BulletSolver(ros::NodeHandle& controller_nh);
 
   bool solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw, double v_yaw,
-             double r1, double r2, double dz, int armors_num, double chassis_angular_vel_z);
+             double r1, double r2, double dz, int armors_num, double start_vel);
   double getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw, double r1,
                         double r2, double dz, int armors_num, double yaw_real, double pitch_real, double bullet_speed);
   double getResistanceCoefficient(double bullet_speed) const;
@@ -80,6 +94,26 @@ public:
   {
     return -output_pitch_;
   }
+  double getTrajectYaw() const
+  {
+    return traject_output_yaw_;
+  }
+  bool getUsingtraject() const
+  {
+    return using_traject_;
+  }
+  int getShootnum() const
+  {
+    return shoot_num_;
+  }
+  double getTrajectEffortff() const
+  {
+    return traject_effort_ff_;
+  }
+  bool getTrackTarget()
+  {
+    return track_target_;
+  }
   double getGimbalSwitchDuration(double v_yaw);
   void getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
                                  geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
@@ -88,6 +122,8 @@ public:
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
   void identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
+  double planningPoint(ros::Time& time, ros::Time& start_trajectory_time_);
+  void heatCB(const rm_msgs::LocalHeatStateConstPtr& msg);
   ~BulletSolver() = default;
 
 private:
@@ -95,28 +131,56 @@ private:
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>> shoot_beforehand_cmd_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> fly_time_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::BulletSolverData>> bullet_solver_pub;
   ros::Subscriber identified_target_change_sub_;
+  ros::Subscriber shoot_state_sub_;
   ros::Time switch_armor_time_{};
   realtime_tools::RealtimeBuffer<Config> config_rt_buffer_;
   dynamic_reconfigure::Server<rm_gimbal_controllers::BulletSolverConfig>* d_srv_{};
   Config config_{};
   double max_track_target_vel_;
-  double output_yaw_{}, output_pitch_{};
+  double output_yaw_{}, output_pitch_{}, traject_output_yaw_{};
   double bullet_speed_{}, resistance_coff_{};
   double fly_time_;
   double switch_hysteresis_;
   double last_yaw_{}, filtered_yaw_{};
   double gimbal_switch_duration_{};
+  double yaw_subtract_;
+  double switch_armor_angle{};
+  double filtered_v_yaw_{};
+  double switchtime{};
+  double traject_effort_ff_{};
+  double traject_switch_time_{};
+  double switche_time_yaw_{};
+  double traject_max_acc_{};
+  int shoot_num_ = 0;
   int shoot_beforehand_cmd_{};
-  int selected_armor_;
   int count_;
+  int next_count_;
+  int traject_count_;
+  int ban_shoot_count_ = 0;
+  int selected_armor_ = 0;
+  int last_selected_armor_ = 0;
+
   bool track_target_ = true;
   bool identified_target_change_ = true;
   bool is_in_delay_before_switch_{};
   bool dynamic_reconfig_initialized_{};
+  bool change_armor = false;
+  bool using_traject_{};
+  bool last_shoot_state_{};
+  bool is_aheading_two_{};
 
+  geometry_msgs::Point after_traject_output_yaw_{};
   geometry_msgs::Point target_pos_{};
   visualization_msgs::Marker marker_desire_;
   visualization_msgs::Marker marker_real_;
+  ros::Time start_using_traject_time;
+  ros::Time ban_shoot_time_;
+
+  TrajectoryFunctionCoefficients trajectory_function_coefficients;
+  TrajectoryLimitParams stauts_limit_;
+
+  mutable std::mutex heat_mutex_;
 };
 }  // namespace rm_gimbal_controllers

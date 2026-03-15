@@ -297,15 +297,8 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd)
     {
       for (size_t j = 0; j < ctrls_friction_[i].size(); j++)
       {
-        // Used to distinguish the front and rear friction wheels.
-        if (j == 0)
-          ctrls_friction_[i][j]->setCommand(
-              wheel_speed_directions_[i][j] *
-              (cmd_.wheel_speed + config_.extra_wheel_speed + cmd_.wheels_speed_offset_back));
-        if (j == 1)
-          ctrls_friction_[i][j]->setCommand(
-              wheel_speed_directions_[i][j] *
-              (cmd_.wheel_speed + config_.extra_wheel_speed + cmd_.wheels_speed_offset_front));
+        ctrls_friction_[i][j]->setCommand(wheel_speed_directions_[i][j] *
+                                          (cmd_.wheel_speed + config_.extra_wheel_speed + wheel_speed_offsets_[i][j]));
       }
     }
   }
@@ -341,7 +334,7 @@ void Controller::normalize()
     enter_ready_ = false;
   }
   else
-    ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() - 0.01) / push_angle));
+    ctrl_trigger_.setCommand(push_angle * std::floor((ctrl_trigger_.joint_.getPosition() - 0.08) / push_angle));
 }
 
 void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& period)
