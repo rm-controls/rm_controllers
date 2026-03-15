@@ -24,7 +24,6 @@ private:
 
 protected:
   void moveJoint(const ros::Time& time, const ros::Duration& period) override;
-
 };
 
 }  // namespace rm_chassis_controllers

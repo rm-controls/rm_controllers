@@ -151,7 +151,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   odom2gimbal_traject_des_.child_frame_id = gimbal_traject_des_frame_id_;
   odom2gimbal_traject_des_.transform.rotation.w = 1.;
 
-
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
   data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/track", 1, &Controller::trackCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
@@ -327,7 +326,7 @@ void Controller::track(const ros::Time& time)
   }
 
   if (solve_success)
-    setDes(time, bullet_solver_->getYaw(), bullet_solver_->getPitch(),bullet_solver_->getTrajectYaw());
+    setDes(time, bullet_solver_->getYaw(), bullet_solver_->getPitch(), bullet_solver_->getTrajectYaw());
   else
   {
     odom2gimbal_des_.header.stamp = time;

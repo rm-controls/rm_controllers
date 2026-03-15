@@ -14,40 +14,40 @@
 
 namespace rm_chassis_controllers
 {
-    enum class State
-    {
-        DOWN = 0,
-        MID = 1,
-        UP = 2
-    };
+enum class State
+{
+  DOWN = 0,
+  MID = 1,
+  UP = 2
+};
 
-    class ActiveSuspensionController : public OmniController
-    {
-    public:
-        ActiveSuspensionController() = default;
-        bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
-        void ActiveSuspensionCallBack(const rm_msgs::ChassisActiveSusCmd& msg);
+class ActiveSuspensionController : public OmniController
+{
+public:
+  ActiveSuspensionController() = default;
+  bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
+  void ActiveSuspensionCallBack(const rm_msgs::ChassisActiveSusCmd& msg);
 
-    private:
-        void moveJoint(const ros::Time& time, const ros::Duration& period) override;
+private:
+  void moveJoint(const ros::Time& time, const ros::Duration& period) override;
 
-        std::vector<std::shared_ptr<effort_controllers::JointPositionController>> active_suspension_joints_;
-        std::vector<hardware_interface::JointHandle> active_suspension_joint_handles_{};
+  std::vector<std::shared_ptr<effort_controllers::JointPositionController>> active_suspension_joints_;
+  std::vector<hardware_interface::JointHandle> active_suspension_joint_handles_{};
 
-        ros::Subscriber active_suspension_sub_;
-        double current_pos_{0.};
-        double target_pos_{0.};
-        double feedforward_offset{0.};
-        double feedforward_effort{0.};
-        double stretch_coff_A_{0.};
-        double stretch_coff_k_{0.};
-        double shrink_coff_A_{0.};
-        double shrink_coff_k_{0.};
-        double feedforward_effect_time_{0.};
-        double static_effort{0.} ;
+  ros::Subscriber active_suspension_sub_;
+  double current_pos_{ 0. };
+  double target_pos_{ 0. };
+  double feedforward_offset{ 0. };
+  double feedforward_effort{ 0. };
+  double stretch_coff_A_{ 0. };
+  double stretch_coff_k_{ 0. };
+  double shrink_coff_A_{ 0. };
+  double shrink_coff_k_{ 0. };
+  double feedforward_effect_time_{ 0. };
+  double static_effort{ 0. };
 
-        ros::Time feedforward_timer;
-        State current_state_{State::DOWN};
-        State last_state_{State::DOWN};
-  };
-}
+  ros::Time feedforward_timer;
+  State current_state_{ State::DOWN };
+  State last_state_{ State::DOWN };
+};
+}  // namespace rm_chassis_controllers
