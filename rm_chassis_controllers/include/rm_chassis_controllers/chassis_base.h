@@ -49,6 +49,7 @@
 #include <nav_msgs/Odometry.h>
 #include <rm_msgs/ChassisActiveSusCmd.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <rm_chassis_controllers/PowerLimitConfig.h>
 
 namespace rm_chassis_controllers
 {
@@ -102,7 +103,7 @@ protected:
    * @param time The current time.
    * @param period The time passed since the last call to update.
    */
-  void follow(const ros::Time& time, const ros::Duration& period);
+  virtual void follow(const ros::Time& time, const ros::Duration& period);
   /** @brief The mode TWIST: Just moving chassis.
    *
    * The mode TWIST: Chassis will move independent and will not effect by gimbal's move.
@@ -143,6 +144,7 @@ protected:
    */
   void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
   void outsideOdomCallback(const nav_msgs::Odometry::ConstPtr& msg);
+  void powerLimitReconfigCB(rm_chassis_controllers::PowerLimitConfig& config, uint32_t level);
 
   rm_control::RobotStateHandle robot_state_handle_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
@@ -174,6 +176,8 @@ protected:
   geometry_msgs::Vector3 vel_cmd_{};  // x, y
   control_toolbox::Pid pid_follow_;
 
+  dynamic_reconfigure::Server<rm_chassis_controllers::PowerLimitConfig>* power_limit_srv_{};
+  realtime_tools::RealtimeBuffer<rm_chassis_controllers::PowerLimitConfig> power_limit_rt_buffer_;
   std::shared_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry> > odom_pub_;
   rm_common::TfRtBroadcaster tf_broadcaster_{};
   ros::Subscriber outside_odom_sub_;
