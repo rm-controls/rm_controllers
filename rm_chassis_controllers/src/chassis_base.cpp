@@ -155,7 +155,7 @@ void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& perio
   else
     follow_source_frame_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_.follow_source_frame;
   if (cmd_rt_buffer_.readFromRT()->cmd_chassis_.command_source_frame.empty())
-    command_source_frame_ = "bask_link";
+    command_source_frame_ = "base_link";
   else
     command_source_frame_ = cmd_rt_buffer_.readFromRT()->cmd_chassis_.command_source_frame;
 
