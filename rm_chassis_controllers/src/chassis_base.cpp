@@ -173,10 +173,10 @@ void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& perio
       raw();
       break;
     case FOLLOW:
-      raw();
+      follow(time, period);
       break;
     case TWIST:
-      raw();
+      twist(time, period);
       break;
   }
 
