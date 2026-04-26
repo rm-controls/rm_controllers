@@ -49,6 +49,7 @@
 #include <rm_msgs/GimbalPosState.h>
 #include <rm_gimbal_controllers/GimbalBaseConfig.h>
 #include <rm_gimbal_controllers/bullet_solver.h>
+#include <rm_gimbal_controllers/ballistic_solver.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <Eigen/Eigen>
 #include <control_toolbox/pid.h>
@@ -56,21 +57,22 @@
 #include <dynamic_reconfigure/server.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <unordered_map>
+#include <nav_msgs/Odometry.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <std_msgs/Float32MultiArray.h>
 
 namespace rm_gimbal_controllers
 {
 struct GimbalConfig
 {
-  double yaw_k_v_, pitch_k_v_;
-  double chassis_comp_a_, chassis_comp_b_, chassis_comp_c_,
-      chassis_comp_d_;  // sine wave compensation, a * sin(b * chassis_angular_z + c) + d
-  double accel_pitch_{}, accel_yaw_{};
+  double yaw_k_v_{}, pitch_k_v_{}, accel_pitch_{}, accel_yaw_{};
+  double chassis_comp_a_{}, chassis_comp_b_{}, chassis_comp_c_{}, chassis_comp_d_{};
 };
 
 class ChassisVel
 {
 public:
-  ChassisVel(const ros::NodeHandle& nh)
+  explicit ChassisVel(const ros::NodeHandle& nh)
   {
     double num_data;
     nh.param("num_data", num_data, 20.0);
@@ -125,8 +127,8 @@ public:
   }
 
 private:
-  bool is_debug_;
-  int loop_count_;
+  bool is_debug_{};
+  int loop_count_{};
   std::shared_ptr<realtime_tools::RealtimePublisher<geometry_msgs::Twist>> real_pub_{}, filtered_pub_{};
 };
 
@@ -150,10 +152,12 @@ private:
   bool setDesIntoLimit(double& angle, const urdf::JointConstSharedPtr& joint_urdf, bool update, double current_angle);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   void updateChassisVel();
-  double feedForward(const ros::Time& time);
+  void updateBallisticSolution(const ros::Time& time);
+  double gravityFeedForward(const ros::Time& time);
   double updateCompensation(double chassis_vel_angular_z);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
+  void ballisticSolverRequestCB(const std_msgs::BoolConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t);
   std::string getGimbalFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs);
   std::string getBaseFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs);
@@ -165,17 +169,23 @@ private:
   std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs_;
   std::unordered_map<int, bool> pos_des_in_limit_;
   bool has_imu_ = true;
+  double ballistic_yaw_{}, ballistic_pitch_{};
 
   std::shared_ptr<BulletSolver> bullet_solver_;
+  std::shared_ptr<BallisticSolver> ballistic_solver_;
 
   // ROS Interface
   ros::Time last_publish_time_{};
+  ros::Time last_ballistic_publish_time_{};
   std::unordered_map<int, std::unique_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>>> pos_state_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<std_msgs::Float32MultiArray>> ballistic_solution_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_track_sub_;
+  ros::Subscriber ballistic_solver_request_sub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TrackData> track_rt_buffer_;
+  realtime_tools::RealtimeBuffer<std_msgs::Bool> ballistic_track_rt_buffer_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
   rm_msgs::TrackData data_track_;
@@ -185,16 +195,17 @@ private:
   int loop_count_{};
 
   // Transform
-  geometry_msgs::TransformStamped odom2gimbal_des_, odom2gimbal_, odom2base_, last_odom2base_, odom2gimbal_traject_des_;
+  geometry_msgs::TransformStamped odom2gimbal_des_, odom2gimbal_, odom2base_, last_odom2base_, base2gimbal_,
+      odom2gimbal_traject_des_;
 
   // Gravity Compensation
   geometry_msgs::Vector3 mass_origin_;
-  double gravity_;
-  bool enable_gravity_compensation_;
+  double gravity_{};
+  bool enable_gravity_compensation_{};
 
   // Chassis
   std::shared_ptr<ChassisVel> chassis_vel_;
-  double chassis_compensation_;
+  double chassis_compensation_{};
 
   bool dynamic_reconfig_initialized_{};
   GimbalConfig config_{};
@@ -210,13 +221,9 @@ private:
   };
   int state_ = RATE;
   bool start_ = false;
-
-  ros::Duration period_;
-  ros::Time time_;
   double pos_real[3]{ 0. };
   double pos_des[3]{ 0. }, vel_des[3]{ 0. }, angle_error[3]{ 0. }, traject_pos_des[3]{ 0. },
       traject_angle_error[3]{ 0. };
-  double last_acc_yaw = 0;
 };
 
 }  // namespace rm_gimbal_controllers

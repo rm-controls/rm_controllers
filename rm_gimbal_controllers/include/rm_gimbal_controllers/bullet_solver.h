@@ -65,7 +65,7 @@ struct Config
   int max_selected_armor_;
   double traject_ahead_;
   int clean_shoot_num_;
-  double end_pos_offset, move_switch_time_coff_;
+  double end_pos_offset;
 };
 struct TrajectoryFunctionCoefficients
 {
@@ -146,30 +146,27 @@ private:
   double last_yaw_{}, filtered_yaw_{};
   double gimbal_switch_duration_{};
   double yaw_subtract_;
-  double switch_armor_angle{};
+  double switch_armor_angle;
   double filtered_v_yaw_{};
-  double switchtime{};
-  double traject_effort_ff_{};
-  double traject_switch_time_{};
-  double switche_time_yaw_{};
-  double traject_max_acc_{};
+  double switchtime;
+  double traject_effort_ff_;
+  double traject_switch_time_;
+  double switche_time_yaw_;
+  double traject_max_acc_;
   int shoot_num_ = 0;
   int shoot_beforehand_cmd_{};
   int count_;
-  int next_count_;
   int traject_count_;
   int ban_shoot_count_ = 0;
   int selected_armor_ = 0;
-  int last_selected_armor_ = 0;
 
   bool track_target_ = true;
   bool identified_target_change_ = true;
   bool is_in_delay_before_switch_{};
   bool dynamic_reconfig_initialized_{};
   bool change_armor = false;
-  bool using_traject_{};
-  bool last_shoot_state_{};
-  bool is_aheading_two_{};
+  bool using_traject_;
+  bool last_shoot_state_;
 
   geometry_msgs::Point after_traject_output_yaw_{};
   geometry_msgs::Point target_pos_{};
