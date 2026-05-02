@@ -58,7 +58,7 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
     .center_delay = getParam(controller_nh, "center_delay", 0.0),
     .max_switch_angle = getParam(controller_nh, "max_switch_angle", 40.0),
     .switch_angle_offset = getParam(controller_nh, "switch_angle_offset", 0.0),
-    .min_shoot_beforehand_vel = getParam(controller_nh, "min_shoot_beforehand_vel", 3.0),
+    .min_shoot_beforehand_vel = getParam(controller_nh, "min_shoot_beforehand_vel", 2.5),
     .track_rotate_target_delay = getParam(controller_nh, "track_rotate_target_delay", 0.),
     .track_move_target_delay = getParam(controller_nh, "track_move_target_delay", 0.),
     .yaw_max_acc = getParam(controller_nh, "yaw_max_acc", 60.),
@@ -254,8 +254,8 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
     double error = 999;
     if (track_target_)
     {
-      target_pos_[i].x = pos_x[i] - r * cos(yaw_[i] + selected_armor_[i] * M_PI / 2);
-      target_pos_[i].y = pos_y[i] - r * sin(yaw_[i] + selected_armor_[i] * M_PI / 2);
+      target_pos_[i].x = pos_x[i] - r * cos(yaw_[i] + selected_armor_[i] * 2 * M_PI / armors_num);
+      target_pos_[i].y = pos_y[i] - r * sin(yaw_[i] + selected_armor_[i] * 2 * M_PI / armors_num);
     }
     else
     {
