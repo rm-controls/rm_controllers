@@ -240,6 +240,7 @@ void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des,
 
 void Controller::rate(const ros::Time& time, const ros::Duration& period)
 {
+  bullet_solver_->CleanTrackCount();
   if (state_changed_)
   {  // on enter
     state_changed_ = false;
@@ -310,7 +311,7 @@ void Controller::track(const ros::Time& time)
   bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, yaw, data_track_.v_yaw,
                                              data_track_.radius_1, data_track_.radius_2, data_track_.dz,
                                              data_track_.armors_num, gimbal_real_z_vel_, data_track_.id);
-  bullet_solver_->judgeShootBeforehand(time, data_track_.v_yaw);
+  bullet_solver_->judgeShootBeforehand(time, data_track_.v_yaw, data_track_.id);
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {

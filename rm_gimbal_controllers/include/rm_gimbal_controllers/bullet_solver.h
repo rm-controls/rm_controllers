@@ -58,9 +58,9 @@ namespace rm_gimbal_controllers
 struct Config
 {
   double resistance_coff_qd_1, resistance_coff_qd_10, resistance_coff_qd_15, resistance_coff_qd_16,
-      resistance_coff_qd_18, resistance_coff_qd_30, resistance_coff_qd_800, g, delay, center_delay, max_switch_angle,
-      switch_angle_offset, min_shoot_beforehand_vel, track_rotate_target_delay, track_move_target_delay, yaw_max_acc,
-      track_rotate_outpost_delay;
+      resistance_coff_qd_18, resistance_coff_qd_30, resistance_coff_qd_800, g, delay, outpost_delay, center_delay,
+      max_switch_angle, switch_angle_offset, outpost_switch_angle_offset, min_shoot_beforehand_vel,
+      track_rotate_target_delay, track_move_target_delay, yaw_max_acc, track_rotate_outpost_delay;
   int min_fit_switch_count, traject_start_fit_;
   double traject_ahead_;
   int clean_shoot_num_;
@@ -82,9 +82,10 @@ public:
   explicit BulletSolver(ros::NodeHandle& controller_nh);
 
   bool solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double bullet_speed, double yaw, double v_yaw,
-             double r1, double r2, double dz, int armors_num, double start_vel, double track_id);
+             double r1, double r2, double dz, double armors_num, double start_vel, double track_id);
   double getGimbalError(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw, double r1,
-                        double r2, double dz, int armors_num, double yaw_real, double pitch_real, double bullet_speed);
+                        double r2, double dz, double armors_num, double yaw_real, double pitch_real,
+                        double bullet_speed);
   double getResistanceCoefficient(double target_distance) const;
   double getYaw() const
   {
@@ -118,10 +119,14 @@ public:
   {
     return track_target_;
   }
+  void CleanTrackCount()
+  {
+    track_count_ = 0;
+  }
   void getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
                                  geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
-                                 double r1, double r2, double dz, int armors_num);
-  void judgeShootBeforehand(const ros::Time& time, double v_yaw);
+                                 double r1, double r2, double dz, double armors_num);
+  void judgeShootBeforehand(const ros::Time& time, double v_yaw, int id);
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
   void identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
@@ -168,7 +173,8 @@ private:
   int ban_shoot_count_{};
   int selected_armor_[150] = {};
   int last_selected_armor_ = {};
-  bool track_target_ = true;
+  bool track_target_ = false;
+  int track_count_{};
   bool identified_target_change_ = true;
   bool dynamic_reconfig_initialized_{};
   bool using_traject_{};
