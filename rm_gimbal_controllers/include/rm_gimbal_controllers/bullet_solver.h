@@ -123,10 +123,14 @@ public:
   {
     track_count_ = 0;
   }
+  double getFlyTime()
+  {
+    return fly_time_[0];
+  }
   void getSelectedArmorPosAndVel(geometry_msgs::Point& armor_pos, geometry_msgs::Vector3& armor_vel,
                                  geometry_msgs::Point pos, geometry_msgs::Vector3 vel, double yaw, double v_yaw,
                                  double r1, double r2, double dz, double armors_num);
-  void judgeShootBeforehand(const ros::Time& time, double v_yaw, int id);
+  uint8_t judgeShootBeforehand(double v_yaw, int id);
   void bulletModelPub(const geometry_msgs::TransformStamped& odom2pitch, const ros::Time& time);
   void identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::BulletSolverConfig& config, uint32_t);
@@ -137,7 +141,6 @@ public:
 private:
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_desire_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<visualization_msgs::Marker>> path_real_pub_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>> shoot_beforehand_cmd_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> fly_time_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::BulletSolverData>> bullet_solver_pub;
   ros::Subscriber identified_target_change_sub_;
@@ -165,6 +168,7 @@ private:
   double last_output_yaw_{};
   double traject_vel_{};
   double r_traject_{};
+  double intital_yaw_{};
 
   int shoot_num_{};
   int shoot_beforehand_cmd_{};

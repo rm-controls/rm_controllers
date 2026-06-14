@@ -100,8 +100,6 @@ BulletSolver::BulletSolver(ros::NodeHandle& controller_nh)
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_desire", 10));
   path_real_pub_.reset(
       new realtime_tools::RealtimePublisher<visualization_msgs::Marker>(controller_nh, "model_real", 10));
-  shoot_beforehand_cmd_pub_.reset(
-      new realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>(controller_nh, "shoot_beforehand_cmd", 10));
   fly_time_pub_.reset(new realtime_tools::RealtimePublisher<std_msgs::Float64>(controller_nh, "fly_time", 10));
   bullet_solver_pub.reset(
       new realtime_tools::RealtimePublisher<rm_msgs::BulletSolverData>(controller_nh, "bullet_solver_data", 10));
@@ -123,6 +121,10 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
                          double v_yaw, double r1, double r2, double dz, double armors_num, double start_vel,
                          double track_id)
 {
+  while (yaw > M_PI / 2)
+    yaw -= M_PI;
+  while (yaw < -M_PI / 2)
+    yaw += M_PI;
   if (armors_num == 3)
   {
     armors_num = 3.6;
@@ -604,7 +606,7 @@ void BulletSolver::identifiedTargetChangeCB(const std_msgs::BoolConstPtr& msg)
   }
 }
 
-void BulletSolver::judgeShootBeforehand(const ros::Time& time, double v_yaw, int id)
+uint8_t BulletSolver::judgeShootBeforehand(double v_yaw, int id)
 {
   if (!track_target_)
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
@@ -643,12 +645,7 @@ void BulletSolver::judgeShootBeforehand(const ros::Time& time, double v_yaw, int
   }
   else
     shoot_beforehand_cmd_ = rm_msgs::ShootBeforehandCmd::JUDGE_BY_ERROR;
-  if (shoot_beforehand_cmd_pub_->trylock())
-  {
-    shoot_beforehand_cmd_pub_->msg_.stamp = time;
-    shoot_beforehand_cmd_pub_->msg_.cmd = shoot_beforehand_cmd_;
-    shoot_beforehand_cmd_pub_->unlockAndPublish();
-  }
+  return static_cast<uint8_t>(shoot_beforehand_cmd_);
 }
 
 double BulletSolver::planningPoint(ros::Time& time, ros::Time& start_trajectory_time_, double v_yaw)

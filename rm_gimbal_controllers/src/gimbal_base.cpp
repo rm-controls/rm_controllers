@@ -36,6 +36,7 @@
 //
 #include "rm_gimbal_controllers/gimbal_base.h"
 
+#include <cmath>
 #include <string>
 #include <angles/angles.h>
 #include <rm_common/ros_utilities.h>
@@ -66,6 +67,26 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   chassis_vel_ = std::make_shared<ChassisVel>(chassis_vel_nh);
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   bullet_solver_ = std::make_shared<BulletSolver>(nh_bullet_solver);
+  std::string track_solver_type;
+  controller_nh.param<std::string>("track_solver_type", track_solver_type, "bullet_solver");
+  if (track_solver_type == "external_aim")
+  {
+    track_solver_type_ = TrackSolverType::EXTERNAL_MPC_AIM;
+    ROS_WARN("[Gimbal] track_solver_type=external_aim is deprecated, using external_mpc_aim instead");
+  }
+  else if (track_solver_type == "external_mpc_aim")
+  {
+    track_solver_type_ = TrackSolverType::EXTERNAL_MPC_AIM;
+    ROS_INFO("[Gimbal] TRACK mode uses external MPC aim solver");
+  }
+  else if (track_solver_type != "bullet_solver")
+  {
+    track_solver_type_ = TrackSolverType::BULLET_SOLVER;
+    ROS_WARN("[Gimbal] Unknown track_solver_type '%s', falling back to bullet_solver", track_solver_type.c_str());
+  }
+  controller_nh.param("external_aim_timeout", external_aim_timeout_, 0.1);
+  std::string external_mpc_aim_topic;
+  controller_nh.param<std::string>("external_mpc_aim_topic", external_mpc_aim_topic, "/sp_vision/mpc_gimbal_aim");
 
   config_ = { .yaw_k_v_ = getParam(controller_nh, "controllers/yaw/k_v", 0.),
               .pitch_k_v_ = getParam(controller_nh, "controllers/pitch/k_v", 0.),
@@ -154,10 +175,21 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   odom2gimbal_traject_des_.child_frame_id = gimbal_traject_des_frame_id_;
   odom2gimbal_traject_des_.transform.rotation.w = 1.;
 
+  rm_msgs::GimbalCmd default_cmd;
+  rm_msgs::TrackData default_track;
+  rm_msgs::MPCGimbalAimCmd default_aim;
+  cmd_rt_buffer_.initRT(default_cmd);
+  track_rt_buffer_.initRT(default_track);
+  gimbal_aim_rt_buffer_.initRT(default_aim);
+
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
-  data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/track", 1, &Controller::trackCB, this);
+  data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/sp_vision/track", 1, &Controller::trackCB, this);
+  mpc_gimbal_aim_sub_ =
+      controller_nh.subscribe<rm_msgs::MPCGimbalAimCmd>(external_mpc_aim_topic, 1, &Controller::mpcGimbalAimCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
+  shoot_beforehand_cmd_pub_.reset(
+      new realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>(controller_nh, "shoot_beforehand_cmd", 10));
 
   return true;
 }
@@ -173,6 +205,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
 {
   cmd_gimbal_ = *cmd_rt_buffer_.readFromRT();
   data_track_ = *track_rt_buffer_.readFromNonRT();
+  gimbal_aim_ = *gimbal_aim_rt_buffer_.readFromRT();
   config_ = *config_rt_buffer_.readFromRT();
   period_ = period;
   time_ = time;
@@ -198,7 +231,10 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
       rate(time, period);
       break;
     case TRACK:
-      track(time);
+      if (track_solver_type_ == TrackSolverType::EXTERNAL_MPC_AIM)
+        externalAimTrack(time);
+      else
+        track(time);
       break;
     case DIRECT:
       direct(time);
@@ -270,6 +306,14 @@ void Controller::rate(const ros::Time& time, const ros::Duration& period)
 
 void Controller::track(const ros::Time& time)
 {
+  external_aim_active_ = false;
+  if (data_track_.header.stamp.toSec() - time.toSec() > 0.5)
+  {
+    state_ = RATE;
+    state_changed_ = true;
+    rate(time, period_);
+    return;
+  }
   if (state_changed_)
   {  // on enter
     state_changed_ = false;
@@ -311,7 +355,7 @@ void Controller::track(const ros::Time& time)
   bool solve_success = bullet_solver_->solve(target_pos, target_vel, cmd_gimbal_.bullet_speed, yaw, data_track_.v_yaw,
                                              data_track_.radius_1, data_track_.radius_2, data_track_.dz,
                                              data_track_.armors_num, gimbal_real_z_vel_, data_track_.id);
-  bullet_solver_->judgeShootBeforehand(time, data_track_.v_yaw, data_track_.id);
+  publishShootBeforehand(time, bullet_solver_->judgeShootBeforehand(data_track_.v_yaw, data_track_.id));
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
@@ -335,6 +379,58 @@ void Controller::track(const ros::Time& time)
   {
     odom2gimbal_des_.header.stamp = time;
     robot_state_handle_.setTransform(odom2gimbal_des_, "rm_gimbal_controllers");
+  }
+}
+
+bool Controller::externalAimIsFresh(const ros::Time& time) const
+{
+  if (!gimbal_aim_.valid || gimbal_aim_.header.stamp.isZero())
+    return false;
+  const double age = (time - gimbal_aim_.header.stamp).toSec();
+  return age >= -external_aim_timeout_ && age <= external_aim_timeout_;
+}
+
+void Controller::externalAimTrack(const ros::Time& time)
+{
+  if (state_changed_)
+  {
+    state_changed_ = false;
+    ROS_INFO("[Gimbal] Enter TRACK with external aim");
+  }
+
+  external_aim_active_ = externalAimIsFresh(time);
+  if (external_aim_active_)
+  {
+    setDes(time, gimbal_aim_.target_yaw, gimbal_aim_.pitch, gimbal_aim_.yaw);
+    publishShootBeforehand(time, gimbal_aim_.shoot_cmd == 1 ? rm_msgs::ShootBeforehandCmd::ALLOW_SHOOT :
+                                                              rm_msgs::ShootBeforehandCmd::BAN_SHOOT);
+  }
+  else
+  {
+    odom2gimbal_des_.header.stamp = time;
+    robot_state_handle_.setTransform(odom2gimbal_des_, "rm_gimbal_controllers");
+    publishShootBeforehand(time, rm_msgs::ShootBeforehandCmd::BAN_SHOOT);
+  }
+
+  if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
+  {
+    if (error_pub_->trylock())
+    {
+      error_pub_->msg_.stamp = time;
+      error_pub_->msg_.error = external_aim_active_ && std::isfinite(gimbal_aim_.error) ? gimbal_aim_.error : 1.0;
+      error_pub_->unlockAndPublish();
+    }
+    last_publish_time_ = time;
+  }
+}
+
+void Controller::publishShootBeforehand(const ros::Time& time, uint8_t cmd)
+{
+  if (shoot_beforehand_cmd_pub_ && shoot_beforehand_cmd_pub_->trylock())
+  {
+    shoot_beforehand_cmd_pub_->msg_.stamp = time;
+    shoot_beforehand_cmd_pub_->msg_.cmd = cmd;
+    shoot_beforehand_cmd_pub_->unlockAndPublish();
   }
 }
 
@@ -469,59 +565,75 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   else if (state_ == TRACK)
   {
-    geometry_msgs::Point target_pos;
-    geometry_msgs::Vector3 target_vel;
-    if (data_track_.id != 12)
+    if (track_solver_type_ == TrackSolverType::EXTERNAL_MPC_AIM)
     {
-      geometry_msgs::Point pos = data_track_.position;
-      double yaw = data_track_.yaw + data_track_.v_yaw * ((time - data_track_.header.stamp).toSec());
-      pos.x += data_track_.velocity.x * (time - data_track_.header.stamp).toSec();
-      pos.y += data_track_.velocity.y * (time - data_track_.header.stamp).toSec();
-      pos.z += data_track_.velocity.z * (time - data_track_.header.stamp).toSec();
-      bullet_solver_->getSelectedArmorPosAndVel(target_pos, target_vel, pos, data_track_.velocity, yaw,
-                                                data_track_.v_yaw, data_track_.radius_1, data_track_.radius_2,
-                                                data_track_.dz, data_track_.armors_num);
+      if (external_aim_active_ && externalAimIsFresh(time))
+      {
+        vel_des[2] = gimbal_aim_.yaw_rate;
+        vel_des[1] = gimbal_aim_.pitch_rate;
+      }
+      else
+      {
+        vel_des[2] = 0.;
+        vel_des[1] = 0.;
+      }
     }
     else
     {
-      target_pos = data_track_.position;
-      target_vel = data_track_.velocity;
-    }
-    target_vel.x -= chassis_vel_->linear_->x();
-    target_vel.y -= chassis_vel_->linear_->y();
-    target_vel.z -= chassis_vel_->linear_->z();
-    tf2::Vector3 target_pos_tf, target_vel_tf;
-    try
-    {
-      geometry_msgs::TransformStamped transform;
-      if (joint_urdfs_.find(2) != joint_urdfs_.end())
+      geometry_msgs::Point target_pos;
+      geometry_msgs::Vector3 target_vel;
+      if (data_track_.id != 12)
       {
-        transform = robot_state_handle_.lookupTransform(odom2base_.child_frame_id, data_track_.header.frame_id,
-                                                        data_track_.header.stamp);
-        tf2::doTransform(target_pos, target_pos, transform);
-        tf2::doTransform(target_vel, target_vel, transform);
-        tf2::fromMsg(target_pos, target_pos_tf);
-        tf2::fromMsg(target_vel, target_vel_tf);
-        vel_des[2] = target_pos_tf.cross(target_vel_tf).z() / std::pow((target_pos_tf.length()), 2);
+        geometry_msgs::Point pos = data_track_.position;
+        double yaw = data_track_.yaw + data_track_.v_yaw * ((time - data_track_.header.stamp).toSec());
+        pos.x += data_track_.velocity.x * (time - data_track_.header.stamp).toSec();
+        pos.y += data_track_.velocity.y * (time - data_track_.header.stamp).toSec();
+        pos.z += data_track_.velocity.z * (time - data_track_.header.stamp).toSec();
+        bullet_solver_->getSelectedArmorPosAndVel(target_pos, target_vel, pos, data_track_.velocity, yaw,
+                                                  data_track_.v_yaw, data_track_.radius_1, data_track_.radius_2,
+                                                  data_track_.dz, data_track_.armors_num);
       }
-      if (bullet_solver_->getUsingtraject() && bullet_solver_->getTrackTarget())
+      else
       {
-        vel_des[2] = bullet_solver_->getTrajectVel();
+        target_pos = data_track_.position;
+        target_vel = data_track_.velocity;
       }
-      if (joint_urdfs_.find(1) != joint_urdfs_.end())
+      target_vel.x -= chassis_vel_->linear_->x();
+      target_vel.y -= chassis_vel_->linear_->y();
+      target_vel.z -= chassis_vel_->linear_->z();
+      tf2::Vector3 target_pos_tf, target_vel_tf;
+      try
       {
-        transform = robot_state_handle_.lookupTransform(joint_urdfs_.at(1)->parent_link_name,
-                                                        data_track_.header.frame_id, data_track_.header.stamp);
-        tf2::doTransform(target_pos, target_pos, transform);
-        tf2::doTransform(target_vel, target_vel, transform);
-        tf2::fromMsg(target_pos, target_pos_tf);
-        tf2::fromMsg(target_vel, target_vel_tf);
-        vel_des[1] = target_pos_tf.cross(target_vel_tf).y() / std::pow((target_pos_tf.length()), 2);
+        geometry_msgs::TransformStamped transform;
+        if (joint_urdfs_.find(2) != joint_urdfs_.end())
+        {
+          transform = robot_state_handle_.lookupTransform(odom2base_.child_frame_id, data_track_.header.frame_id,
+                                                          data_track_.header.stamp);
+          tf2::doTransform(target_pos, target_pos, transform);
+          tf2::doTransform(target_vel, target_vel, transform);
+          tf2::fromMsg(target_pos, target_pos_tf);
+          tf2::fromMsg(target_vel, target_vel_tf);
+          vel_des[2] = target_pos_tf.cross(target_vel_tf).z() / std::pow((target_pos_tf.length()), 2);
+        }
+        if (bullet_solver_->getUsingtraject() && bullet_solver_->getTrackTarget())
+        {
+          vel_des[2] = bullet_solver_->getTrajectVel();
+        }
+        if (joint_urdfs_.find(1) != joint_urdfs_.end())
+        {
+          transform = robot_state_handle_.lookupTransform(joint_urdfs_.at(1)->parent_link_name,
+                                                          data_track_.header.frame_id, data_track_.header.stamp);
+          tf2::doTransform(target_pos, target_pos, transform);
+          tf2::doTransform(target_vel, target_vel, transform);
+          tf2::fromMsg(target_pos, target_pos_tf);
+          tf2::fromMsg(target_vel, target_vel_tf);
+          vel_des[1] = target_pos_tf.cross(target_vel_tf).y() / std::pow((target_pos_tf.length()), 2);
+        }
       }
-    }
-    catch (tf2::TransformException& ex)
-    {
-      ROS_WARN("%s", ex.what());
+      catch (tf2::TransformException& ex)
+      {
+        ROS_WARN("%s", ex.what());
+      }
     }
   }
 
@@ -676,6 +788,11 @@ void Controller::trackCB(const rm_msgs::TrackDataConstPtr& msg)
   if (msg->id == 0)
     return;
   track_rt_buffer_.writeFromNonRT(*msg);
+}
+
+void Controller::mpcGimbalAimCB(const rm_msgs::MPCGimbalAimCmdConstPtr& msg)
+{
+  gimbal_aim_rt_buffer_.writeFromNonRT(*msg);
 }
 
 void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t /*unused*/)
