@@ -129,6 +129,7 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   {
     armors_num = 3.6;
   }
+
   config_ = *config_rt_buffer_.readFromRT();
   bullet_speed_ = bullet_speed;
   if (abs(yaw - last_yaw_) > 1.)
@@ -148,6 +149,8 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
       track_target_ = false;
     else if (std::abs(filtered_v_yaw_) <= max_track_target_vel_ - switch_hysteresis_)
       track_target_ = true;
+    if (sqrt(pow(pos.x, 2) + pow(pos.y, 2)) < 1.2)
+      track_target_ = false;
   }
 
   if (identified_target_change_)
@@ -365,7 +368,7 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
 
   if (start_traject_ && using_traject_)
   {
-    traject_max_acc_ = 200.;
+    traject_max_acc_ = 400.;
     switchtime = 0.05;
     while (abs(traject_max_acc_) > config_.yaw_max_acc)
     {
