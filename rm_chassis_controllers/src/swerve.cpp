@@ -185,15 +185,13 @@ void SwerveController::stateJudge()
     }
     return;
   }
-  double cos_pitch{}, sin_pitch{};
+  double sin_pitch{};
   if (abs(pitch_) > 0.12)
   {
-    cos_pitch = cos(pitch_);
     sin_pitch = sin(pitch_);
   }
   else
   {
-    cos_pitch = 1.0;
     sin_pitch = 0.0;
   }
 
@@ -205,22 +203,22 @@ void SwerveController::stateJudge()
     {
       if (module.ctrl_wheel_->getJointName().find("left") != std::string::npos)
       {
-        wheel_power_limitor_.K_angle[i] = cos_pitch + sin_pitch;
+        wheel_power_limitor_.K_angle[i] = 1 + sin_pitch;
       }
       if (module.ctrl_wheel_->getJointName().find("right") != std::string::npos)
       {
-        wheel_power_limitor_.K_angle[i] = cos_pitch + sin_pitch;
+        wheel_power_limitor_.K_angle[i] = 1 + sin_pitch;
       }
     }
     if (module.ctrl_wheel_->joint_.getName().find("back") != std::string::npos)
     {
       if (module.ctrl_wheel_->getJointName().find("left") != std::string::npos)
       {
-        wheel_power_limitor_.K_angle[i] = cos_pitch - sin_pitch;
+        wheel_power_limitor_.K_angle[i] = 1 - sin_pitch;
       }
       if (module.ctrl_wheel_->getJointName().find("right") != std::string::npos)
       {
-        wheel_power_limitor_.K_angle[i] = cos_pitch - sin_pitch;
+        wheel_power_limitor_.K_angle[i] = 1 - sin_pitch;
       }
     }
   }
@@ -268,7 +266,7 @@ void SwerveController::powerLimit()
       auto& joint = module.ctrl_pivot_->joint_;
       double A = pivot_power_limitor_.effort_coeff;
       double B = pivot_power_limitor_.omiga[i];
-      double C = square(pivot_power_limitor_.omiga[i]) * pivot_power_limitor_.vel_coeff +
+      double C = abs(pivot_power_limitor_.omiga[i]) * pivot_power_limitor_.vel_coeff +
                  pivot_power_limitor_.power_offset / 4 - pivot_power_limitor_.power_limit[i];
       double Delta = square(B) - 4 * A * C;
       if (!std::isfinite(Delta) || Delta < 0.0)
@@ -295,7 +293,7 @@ void SwerveController::powerLimit()
       auto& joint = module.ctrl_wheel_->joint_;
       double A = wheel_power_limitor_.effort_coeff;
       double B = wheel_power_limitor_.omiga[i];
-      double C = square(wheel_power_limitor_.omiga[i]) * wheel_power_limitor_.vel_coeff +
+      double C = abs(wheel_power_limitor_.omiga[i]) * wheel_power_limitor_.vel_coeff +
                  wheel_power_limitor_.power_offset / 4 - wheel_power_limitor_.power_limit[i];
       double Delta = square(B) - 4 * A * C;
       if (!std::isfinite(Delta) || Delta < 0.0)
@@ -342,12 +340,12 @@ void SwerveController::updatePowerStatus()
     double real_torque = motor_lp_filters_[0][i]->output();
 
     epivot_power += real_torque * real_vel + pivot_power_limitor_.effort_coeff * square(real_torque) +
-                    pivot_power_limitor_.vel_coeff * square(real_vel);
+                    pivot_power_limitor_.vel_coeff * abs(real_vel);
     cpivot_power += cmd_torque * real_vel + pivot_power_limitor_.effort_coeff * square(cmd_torque) +
-                    pivot_power_limitor_.vel_coeff * square(real_vel);
+                    pivot_power_limitor_.vel_coeff * abs(real_vel);
 
     pivot_power_limitor_.power_in[i] = cmd_torque * real_vel + pivot_power_limitor_.effort_coeff * square(cmd_torque) +
-                                       pivot_power_limitor_.vel_coeff * square(real_vel);
+                                       pivot_power_limitor_.vel_coeff * abs(real_vel);
   }
 
   pivot_power_limitor_.cmd_power = cpivot_power + pivot_power_limitor_.power_offset;
@@ -372,12 +370,12 @@ void SwerveController::updatePowerStatus()
     wheel_power_limitor_.err_sum += abs(wheel_power_limitor_.err[i]);
 
     ewheel_power += real_torque * real_vel + wheel_power_limitor_.effort_coeff * square(real_torque) +
-                    wheel_power_limitor_.vel_coeff * square(real_vel);
+                    wheel_power_limitor_.vel_coeff * abs(real_vel);
     cwheel_power += cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
-                    wheel_power_limitor_.vel_coeff * square(real_vel);
+                    wheel_power_limitor_.vel_coeff * abs(real_vel);
 
     wheel_power_limitor_.power_in[i] = cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
-                                       wheel_power_limitor_.vel_coeff * square(real_vel);
+                                       wheel_power_limitor_.vel_coeff * abs(real_vel);
   }
   wheel_power_limitor_.cmd_power = cwheel_power + wheel_power_limitor_.power_offset;
   wheel_power_limitor_.estimated_power = ewheel_power + wheel_power_limitor_.power_offset;
@@ -393,12 +391,12 @@ void SwerveController::updatePowerStatus()
     Eigen::Matrix<double, 4, 1> x;
     x(0) = square(pivot_power_limitor_.torque[0]) + square(pivot_power_limitor_.torque[1]) +
            square(pivot_power_limitor_.torque[2]) + square(pivot_power_limitor_.torque[3]);
-    x(1) = square(pivot_power_limitor_.omiga[0]) + square(pivot_power_limitor_.omiga[1]) +
-           square(pivot_power_limitor_.omiga[2]) + square(pivot_power_limitor_.omiga[3]);
+    x(1) = abs(pivot_power_limitor_.omiga[0]) + abs(pivot_power_limitor_.omiga[1]) +
+           abs(pivot_power_limitor_.omiga[2]) + abs(pivot_power_limitor_.omiga[3]);
     x(2) = square(wheel_power_limitor_.torque[0]) + square(wheel_power_limitor_.torque[1]) +
            square(wheel_power_limitor_.torque[2]) + square(wheel_power_limitor_.torque[3]);
-    x(3) = square(wheel_power_limitor_.omiga[0]) + square(wheel_power_limitor_.omiga[1]) +
-           square(wheel_power_limitor_.omiga[2]) + square(wheel_power_limitor_.omiga[3]);
+    x(3) = abs(wheel_power_limitor_.omiga[0]) + abs(wheel_power_limitor_.omiga[1]) +
+           abs(wheel_power_limitor_.omiga[2]) + abs(wheel_power_limitor_.omiga[3]);
     rls_->setU(all_in);
     rls_->setX(x);
     rls_->setY(chassis_power_);

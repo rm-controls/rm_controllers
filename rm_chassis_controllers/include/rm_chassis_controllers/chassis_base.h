@@ -157,7 +157,7 @@ protected:
    *
    * @param from The father frame.
    */
-  void tfVelToBase(const std::string& from);
+  void tfVelToBase(const std::string& from, double yaw_offset = 0.);
   /** @brief To limit the chassis power according to current power limit.
    *
    * Receive power limit from command. Set max_effort command to chassis to avoid exceed power limit.
@@ -226,6 +226,7 @@ protected:
   double twist_angular_{ M_PI / 6 };
   double max_odom_vel_{ 10.0 };
   double timeout_{ 0.1 };
+  double raw_yaw_feedforward_k_{ 0.0 };
   double chassis_power_{ 0.0 };
   bool capacity_update_flag_{ false };
   bool use_rls_{ false };

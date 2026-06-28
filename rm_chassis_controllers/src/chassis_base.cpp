@@ -58,6 +58,7 @@ void ChassisBase<T...>::initialize_parameters(ros::NodeHandle& controller_nh)
     controller_nh.getParam("twist_angular", twist_angular_);
     controller_nh.getParam("max_odom_vel", max_odom_vel_);
     controller_nh.getParam("timeout", timeout_);
+    raw_yaw_feedforward_k_ = getParam(controller_nh, "raw_yaw_feedforward_k", 0.0);
 
     if (controller_nh.hasParam("pid_follow"))
       pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow"));
@@ -274,7 +275,12 @@ void ChassisBase<T...>::raw()
 
     recovery();
   }
-  tfVelToBase(command_source_frame_);
+  double yaw_offset;
+  if (command_source_frame_ == "yaw")
+    yaw_offset = raw_yaw_feedforward_k_ * vel_cmd_.z;
+  else
+    yaw_offset = 0.;
+  tfVelToBase(command_source_frame_, yaw_offset);
 }
 
 template <typename... T>
@@ -471,11 +477,22 @@ void ChassisBase<T...>::updatePowerStatus()
 }
 
 template <typename... T>
-void ChassisBase<T...>::tfVelToBase(const std::string& from)
+void ChassisBase<T...>::tfVelToBase(const std::string& from, double yaw_offset)
 {
   try
   {
-    tf2::doTransform(vel_cmd_, vel_cmd_, robot_state_handle_.lookupTransform("base_link", from, ros::Time(0)));
+    geometry_msgs::TransformStamped transform = robot_state_handle_.lookupTransform("base_link", from, ros::Time(0));
+    if (std::abs(yaw_offset) > 1e-9)
+    {
+      tf2::Quaternion rotation;
+      tf2::fromMsg(transform.transform.rotation, rotation);
+      tf2::Quaternion yaw_feedforward;
+      yaw_feedforward.setRPY(0., 0., yaw_offset);
+      rotation *= yaw_feedforward;
+      rotation.normalize();
+      transform.transform.rotation = tf2::toMsg(rotation);
+    }
+    tf2::doTransform(vel_cmd_, vel_cmd_, transform);
   }
   catch (tf2::TransformException& ex)
   {

@@ -2,6 +2,8 @@
 // Created by qiayuan on 2022/7/29.
 //
 
+#include <algorithm>
+#include <cmath>
 #include <string>
 #include <Eigen/QR>
 
@@ -122,15 +124,13 @@ void OmniController::stateJudge()
     }
     return;
   }
-  double cos_pitch{}, sin_pitch{};
+  double sin_pitch{};
   if (abs(pitch_) > 0.12)
   {
-    cos_pitch = cos(pitch_);
     sin_pitch = sin(pitch_);
   }
   else
   {
-    cos_pitch = 1.0;
     sin_pitch = 0.0;
   }
 
@@ -142,22 +142,22 @@ void OmniController::stateJudge()
     {
       if (ctl->getJointName().find("left") != std::string::npos)
       {
-        wheel_power_limitor_.K_angle[i] = cos_pitch + sin_pitch;
+        wheel_power_limitor_.K_angle[i] = 1 + sin_pitch;
       }
       if (ctl->getJointName().find("right") != std::string::npos)
       {
-        wheel_power_limitor_.K_angle[i] = cos_pitch + sin_pitch;
+        wheel_power_limitor_.K_angle[i] = 1 + sin_pitch;
       }
     }
     if (ctl->joint_.getName().find("back") != std::string::npos)
     {
       if (ctl->getJointName().find("left") != std::string::npos)
       {
-        wheel_power_limitor_.K_angle[i] = cos_pitch - sin_pitch;
+        wheel_power_limitor_.K_angle[i] = 1 - sin_pitch;
       }
       if (ctl->getJointName().find("right") != std::string::npos)
       {
-        wheel_power_limitor_.K_angle[i] = cos_pitch - sin_pitch;
+        wheel_power_limitor_.K_angle[i] = 1 - sin_pitch;
       }
     }
   }
@@ -198,7 +198,7 @@ void OmniController::powerLimit()
       auto& joint = ctl->joint_;
       double A = wheel_power_limitor_.effort_coeff;
       double B = wheel_power_limitor_.omiga[i];
-      double C = square(wheel_power_limitor_.omiga[i]) * wheel_power_limitor_.vel_coeff +
+      double C = abs(wheel_power_limitor_.omiga[i]) * wheel_power_limitor_.vel_coeff +
                  wheel_power_limitor_.power_offset / 4 - wheel_power_limitor_.power_limit[i];
       double Delta = square(B) - 4 * A * C;
       if (!std::isfinite(Delta) || Delta < 0.0)
@@ -251,12 +251,12 @@ void OmniController::updatePowerStatus()
     wheel_power_limitor_.err_sum += abs(wheel_power_limitor_.err[i]);
 
     ewheel_power += real_torque * real_vel + wheel_power_limitor_.effort_coeff * square(real_torque) +
-                    wheel_power_limitor_.vel_coeff * square(real_vel);
+                    wheel_power_limitor_.vel_coeff * abs(real_vel);
     cwheel_power += cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
-                    wheel_power_limitor_.vel_coeff * square(real_vel);
+                    wheel_power_limitor_.vel_coeff * abs(real_vel);
 
     wheel_power_limitor_.power_in[i] = cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
-                                       wheel_power_limitor_.vel_coeff * square(real_vel);
+                                       wheel_power_limitor_.vel_coeff * abs(real_vel);
   }
   wheel_power_limitor_.cmd_power = cwheel_power + wheel_power_limitor_.power_offset;
   wheel_power_limitor_.estimated_power = ewheel_power + wheel_power_limitor_.power_offset;
@@ -264,7 +264,7 @@ void OmniController::updatePowerStatus()
   double estimated_total_power = wheel_power_limitor_.estimated_power;
   double cmd_total_power = wheel_power_limitor_.cmd_power;
 
-  if (capacity_update_flag_ && use_rls_)
+  if (capacity_update_flag_ && use_rls_ && estimated_total_power > 0)
   {
     // Update Rls.
     double all_in = limit(estimated_total_power, -power_limit, power_limit);
@@ -272,8 +272,8 @@ void OmniController::updatePowerStatus()
     Eigen::Matrix<double, 2, 1> x;
     x(0) = square(wheel_power_limitor_.torque[0]) + square(wheel_power_limitor_.torque[1]) +
            square(wheel_power_limitor_.torque[2]) + square(wheel_power_limitor_.torque[3]);
-    x(1) = square(wheel_power_limitor_.omiga[0]) + square(wheel_power_limitor_.omiga[1]) +
-           square(wheel_power_limitor_.omiga[2]) + square(wheel_power_limitor_.omiga[3]);
+    x(1) = abs(wheel_power_limitor_.omiga[0]) + abs(wheel_power_limitor_.omiga[1]) +
+           abs(wheel_power_limitor_.omiga[2]) + abs(wheel_power_limitor_.omiga[3]);
     rls_->setU(all_in);
     rls_->setX(x);
     rls_->setY(chassis_power_);
