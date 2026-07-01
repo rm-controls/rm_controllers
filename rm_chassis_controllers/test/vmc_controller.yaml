@@ -7,15 +7,27 @@ controllers:
     publish_rate: 100
   vmc_controller:
     type: rm_chassis_controllers/VMCController
-    vmc_bias_angle: 1.57
-    spring_force: 100.0
+    vmc_bias_angle: 0.0
+    leg_gravity_compensation_debug: true
+    leg_mass: 1.95
+    LM_weight: 0.6
+    spring_force: 450.0
+    s2: 0.0486
+    s3: 0.20
+    alpha_s: 0.2448
+
+    #    spring_force: 200.0
+    #    spring_force: 0.0
+    #    s2: 0.0775
+    #    s3: 0.205
+    #    alpha_s: 0.2
     pid_length: { p: 800.0, i: 0, d: 35, i_clamp_max: 20.0, i_clamp_min: -20.0, antiwindup: true, publish_state: true }
     pid_angle: { p: 30.0, i: 0, d: 2, i_clamp_max: 15.0, i_clamp_min: -15.0, antiwindup: true, publish_state: true }
     thigh_joint: left_hip_joint
     knee_joint: left_knee_joint
     # series_legged1
-    l1: 0.218
-    l2: 0.26
+    #    l1: 0.218
+    #    l2: 0.26
     # series_legged2
-#    l1: 0.21
-#    l2: 0.248
+    l1: 0.21
+    l2: 0.248
