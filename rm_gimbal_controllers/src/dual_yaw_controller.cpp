@@ -96,7 +96,7 @@ void DualYawController::updateYawJoint(const ros::Time& time, const ros::Duratio
   double base_yaw_set_point = getTrackArmorSetPoint(time, armor_set_point) ? armor_set_point : pos_des[2];
   double base_yaw_error = angles::shortest_angular_distance(base_yaw_pos_real, base_yaw_set_point);
   base_yaw_pid_pos_->computeCommand(base_yaw_error, period);
-  base_yaw_ctrl_->setCommand(base_yaw_pid_pos_->getCurrentCmd() + base_yaw_ctrl_->joint_.getVelocity() - angular_vel.z);
+  base_yaw_ctrl_->setCommand(base_yaw_pid_pos_->getCurrentCmd() - chassis_vel_->angular_->z());
   base_yaw_ctrl_->update(time, period);
   publishBaseYawState(time, base_yaw_pos_real, base_yaw_set_point, vel_des, base_yaw_error);
 }
