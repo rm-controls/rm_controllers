@@ -129,7 +129,6 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   {
     armors_num = 3.6;
   }
-
   config_ = *config_rt_buffer_.readFromRT();
   bullet_speed_ = bullet_speed;
   if (abs(yaw - last_yaw_) > 1.)
@@ -201,10 +200,10 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
       switch_armor_angle = acos(r1 / target_rho) - config_.outpost_switch_angle_offset;
     }
     yaw_subtract_ = yaw_[i] - output_yaw_central;
-    while (yaw_subtract_ > M_PI)
-      yaw_subtract_ -= 2 * M_PI;
-    while (yaw_subtract_ < -M_PI)
-      yaw_subtract_ += 2 * M_PI;
+    // while (yaw_subtract_ > M_PI)
+    //   yaw_subtract_ -= 2 * M_PI;
+    // while (yaw_subtract_ < -M_PI)
+    //   yaw_subtract_ += 2 * M_PI;
     double after_fly_yaw_subtract_ = yaw_subtract_ + v_yaw * rough_fly_time;
     if (abs(v_yaw) < 2.)
       selected_armor_[i] = 0;
@@ -454,6 +453,7 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
     bullet_solver_pub->msg_.traject_acc_ = traject_effort_ff_;
     bullet_solver_pub->msg_.traject_vel_ = filtered_vel_des;
     bullet_solver_pub->msg_.using_traject_ = using_traject_;
+    bullet_solver_pub->msg_.test_number[0] = yaw_[0];
     bullet_solver_pub->unlockAndPublish();
   }
   return true;

@@ -169,6 +169,8 @@ private:
   double traject_vel_{};
   double r_traject_{};
   double intital_yaw_{};
+  geometry_msgs::Vector3 pos_acc_{};
+  geometry_msgs::Vector3 filter_vel_[3]{};
 
   int shoot_num_{};
   int shoot_beforehand_cmd_{};

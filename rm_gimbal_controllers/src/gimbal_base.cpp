@@ -50,8 +50,7 @@ namespace rm_gimbal_controllers
 bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh)
 {
   XmlRpc::XmlRpcValue xml_rpc_value;
-  bool enable_feedforward;
-  enable_feedforward = controller_nh.getParam("feedforward", xml_rpc_value);
+  const bool enable_feedforward = controller_nh.getParam("feedforward", xml_rpc_value);
   if (enable_feedforward)
   {
     ROS_ASSERT(xml_rpc_value.hasMember("mass_origin"));
@@ -88,48 +87,55 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   std::string external_mpc_aim_topic;
   controller_nh.param<std::string>("external_mpc_aim_topic", external_mpc_aim_topic, "/sp_vision/mpc_gimbal_aim");
 
-  config_ = { .yaw_k_v_ = getParam(controller_nh, "controllers/yaw/k_v", 0.),
-              .pitch_k_v_ = getParam(controller_nh, "controllers/pitch/k_v", 0.),
-              .chassis_comp_a_ = getParam(controller_nh, "controllers/yaw/chassis_comp_a", 0.),
-              .chassis_comp_b_ = getParam(controller_nh, "controllers/yaw/chassis_comp_b", 0.),
-              .chassis_comp_c_ = getParam(controller_nh, "controllers/yaw/chassis_comp_c", 0.),
-              .chassis_comp_d_ = getParam(controller_nh, "controllers/yaw/chassis_comp_d", 0.),
-              .accel_pitch_ = getParam(controller_nh, "controllers/pitch/accel", 99.),
-              .accel_yaw_ = getParam(controller_nh, "controllers/yaw/accel", 99.) };
+  config_ = {
+    .yaw_k_v_ = getParam(controller_nh, "controllers/yaw/k_v", 0.),
+    .pitch_k_v_ = getParam(controller_nh, "controllers/pitch/k_v", 0.),
+    .accel_pitch_ = getParam(controller_nh, "controllers/pitch/accel", 99.),
+    .accel_yaw_ = getParam(controller_nh, "controllers/yaw/accel", 99.),
+    .chassis_comp_a_ = getParam(controller_nh, "controllers/yaw/chassis_comp_a", 0.),
+    .chassis_comp_b_ = getParam(controller_nh, "controllers/yaw/chassis_comp_b", 0.),
+    .chassis_comp_c_ = getParam(controller_nh, "controllers/yaw/chassis_comp_c", 0.),
+    .chassis_comp_d_ = getParam(controller_nh, "controllers/yaw/chassis_comp_d", 0.),
+    .moment_of_inertia_ = getParam(controller_nh, "controllers/moment_of_inertia", 0.),
+  };
+
   config_rt_buffer_.initRT(config_);
   d_srv_ = new dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>(controller_nh);
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>::CallbackType cb =
       [this](auto&& PH1, auto&& PH2) { reconfigCB(PH1, PH2); };
   d_srv_->setCallback(cb);
+  std::string target_is_armor_topic;
+  controller_nh.param<std::string>("target_is_armor_topic", target_is_armor_topic, "/vision/target_is_armor");
+  controller_nh.param("initial_target_is_armor", target_is_armor_, true);
+  target_is_armor_pub_ = root_nh.advertise<std_msgs::Bool>(target_is_armor_topic, 1, true);
+  publishTargetIsArmor();
+  TrackSolver_type_srv_ = root_nh.advertiseService("/Processor/status_change", &Controller::TrackSolver_typeCB, this);
 
   hardware_interface::EffortJointInterface* effort_joint_interface =
       robot_hw->get<hardware_interface::EffortJointInterface>();
   if (controller_nh.getParam("controllers", xml_rpc_value))
   {
+    // Get URDF info about joint
+    urdf::Model urdf;
+    if (!urdf.initParamWithNodeHandle("robot_description", controller_nh))
+    {
+      ROS_ERROR("Failed to parse urdf file");
+      return false;
+    }
     for (const auto& it : xml_rpc_value)
     {
       ros::NodeHandle nh = ros::NodeHandle(controller_nh, "controllers/" + it.first);
       ros::NodeHandle nh_pid_pos = ros::NodeHandle(controller_nh, "controllers/" + it.first + "/pid_pos");
-
-      // Get URDF info about joint
-      urdf::Model urdf;
-      int axis;
-      if (!urdf.initParamWithNodeHandle("robot_description", controller_nh))
-      {
-        ROS_ERROR("Failed to parse urdf file");
-        return false;
-      }
       auto joint_urdf = urdf.getJoint(getParam(nh, "joint", std::string()));
       if (!joint_urdf)
       {
         ROS_ERROR("Could not find joint in urdf");
         return false;
       }
-      else
-      {
-        axis = (joint_urdf->axis.x == 1) * 0 + (joint_urdf->axis.y == 1) * 1 + (joint_urdf->axis.z == 1) * 2;
-        joint_urdfs_.insert(std::make_pair(axis, joint_urdf));
-      }
+      const int axis = (joint_urdf->axis.x == 1) * 0 + (joint_urdf->axis.y == 1) * 1 + (joint_urdf->axis.z == 1) * 2;
+      if (!shouldInitializeController(it.first, joint_urdf, axis))
+        continue;
+      joint_urdfs_.insert(std::make_pair(axis, joint_urdf));
       ctrls_.insert(std::make_pair(axis, std::make_unique<effort_controllers::JointVelocityController>()));
       pid_pos_.insert(std::make_pair(axis, std::make_unique<control_toolbox::Pid>()));
       pos_des_in_limit_.insert(std::make_pair(axis, true));
@@ -142,22 +148,18 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   }
 
   robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
-  if (!controller_nh.hasParam("imu_name"))
-    has_imu_ = false;
+  has_imu_ = controller_nh.hasParam("imu_name");
   if (has_imu_)
   {
     imu_name_ = getParam(controller_nh, "imu_name", static_cast<std::string>("gimbal_imu"));
     hardware_interface::ImuSensorInterface* imu_sensor_interface =
         robot_hw->get<hardware_interface::ImuSensorInterface>();
     imu_sensor_handle_ = imu_sensor_interface->getHandle(imu_name_);
+    ROS_WARN_ONCE("has imu");
   }
   else
   {
     ROS_INFO("Param imu_name has not set, use motors' data instead of imu.");
-  }
-  if (has_imu_)
-  {
-    ROS_WARN_ONCE("has imu");
   }
 
   gimbal_des_frame_id_ = getGimbalFrameID(joint_urdfs_) + "_des";
@@ -207,8 +209,6 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   data_track_ = *track_rt_buffer_.readFromNonRT();
   gimbal_aim_ = *gimbal_aim_rt_buffer_.readFromRT();
   config_ = *config_rt_buffer_.readFromRT();
-  period_ = period;
-  time_ = time;
   try
   {
     odom2gimbal_ = robot_state_handle_.lookupTransform("odom", odom2gimbal_.child_frame_id, time);
@@ -231,10 +231,10 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
       rate(time, period);
       break;
     case TRACK:
-      if (track_solver_type_ == TrackSolverType::EXTERNAL_MPC_AIM)
+      if (track_solver_type_ == TrackSolverType::EXTERNAL_MPC_AIM && target_is_armor_)
         externalAimTrack(time);
       else
-        track(time);
+        track(time, period);
       break;
     case DIRECT:
       direct(time);
@@ -244,6 +244,17 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
       break;
   }
   moveJoint(time, period);
+}
+
+bool Controller::shouldInitializeController(const std::string& /*name*/,
+                                            const urdf::JointConstSharedPtr& /*joint_urdf*/, int /*axis*/) const
+{
+  return true;
+}
+
+bool Controller::shouldApplyJointLimit(int /*axis*/) const
+{
+  return true;
 }
 
 void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des, double traject_yaw_des,
@@ -263,7 +274,10 @@ void Controller::setDes(const ros::Time& time, double yaw_des, double pitch_des,
   for (const auto& it : joint_urdfs_)
   {
     bool update = (it.first == 1) ? update_pitch : ((it.first == 2) ? update_yaw : true);
-    pos_des_in_limit_[it.first] = setDesIntoLimit(des_rpy[it.first], it.second, update, current_rpy[it.first]);
+    if (shouldApplyJointLimit(it.first))
+      pos_des_in_limit_[it.first] = setDesIntoLimit(des_rpy[it.first], it.second, update, current_rpy[it.first]);
+    else
+      pos_des_in_limit_[it.first] = true;
   }
 
   base2gimbal_des.setRPY(des_rpy[0], des_rpy[1], des_rpy[2]);
@@ -293,25 +307,23 @@ void Controller::rate(const ros::Time& time, const ros::Duration& period)
   {
     double roll{}, pitch{}, yaw{};
     quatToRPY(odom2gimbal_des_.transform.rotation, roll, pitch, yaw);
-
+    // determine whether to update yaw and pitch
     bool pitch_needs_update = std::abs(cmd_gimbal_.rate_pitch) > 1e-6;
     bool yaw_needs_update = std::abs(cmd_gimbal_.rate_yaw) > 1e-6;
-
     double new_yaw = yaw_needs_update ? (yaw + period.toSec() * cmd_gimbal_.rate_yaw) : yaw;
     double new_pitch = pitch_needs_update ? (pitch + period.toSec() * cmd_gimbal_.rate_pitch) : pitch;
-
     setDes(time, new_yaw, new_pitch, new_yaw, yaw_needs_update, pitch_needs_update);
   }
 }
 
-void Controller::track(const ros::Time& time)
+void Controller::track(const ros::Time& time, const ros::Duration& period)
 {
   external_aim_active_ = false;
   if (data_track_.header.stamp.toSec() - time.toSec() > 0.5)
   {
     state_ = RATE;
     state_changed_ = true;
-    rate(time, period_);
+    rate(time, period);
     return;
   }
   if (state_changed_)
@@ -495,16 +507,13 @@ void Controller::traj(const ros::Time& time)
 bool Controller::setDesIntoLimit(double& angle, const urdf::JointConstSharedPtr& joint_urdf, bool update,
                                  double current_angle)
 {
-  // 如果不需要更新该轴，保持当前值不变
   if (!update)
   {
     angle = current_angle;
     return true;
   }
-
   double upper_limit = joint_urdf->limits ? joint_urdf->limits->upper : 1e16;
   double lower_limit = joint_urdf->limits ? joint_urdf->limits->lower : -1e16;
-
   if ((angle <= upper_limit && angle >= lower_limit) ||
       (angles::two_pi_complement(angle) <= upper_limit && angles::two_pi_complement(angle) >= lower_limit))
   {
@@ -512,7 +521,6 @@ bool Controller::setDesIntoLimit(double& angle, const urdf::JointConstSharedPtr&
   }
   else
   {
-    // 超限时，钳位到最近的限位值
     angle = std::abs(angles::shortest_angular_distance(angle, upper_limit)) <
                     std::abs(angles::shortest_angular_distance(angle, lower_limit)) ?
                 upper_limit :
@@ -555,9 +563,10 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   quatToRPY(odom2gimbal_.transform.rotation, pos_real[0], pos_real[1], pos_real[2]);
   quatToRPY(odom2gimbal_traject_des_.transform.rotation, traject_pos_des[0], traject_pos_des[1], traject_pos_des[2]);
   for (int i = 0; i < 3; i++)
+  {
     angle_error[i] = angles::shortest_angular_distance(pos_real[i], pos_des[i]);
-  for (int i = 0; i < 3; i++)
     traject_angle_error[i] = angles::shortest_angular_distance(pos_real[i], traject_pos_des[i]);
+  }
   if (state_ == RATE)
   {
     vel_des[2] = cmd_gimbal_.rate_yaw;
@@ -565,7 +574,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   }
   else if (state_ == TRACK)
   {
-    if (track_solver_type_ == TrackSolverType::EXTERNAL_MPC_AIM)
+    if (track_solver_type_ == TrackSolverType::EXTERNAL_MPC_AIM && target_is_armor_)
     {
       if (external_aim_active_ && externalAimIsFresh(time))
       {
@@ -604,11 +613,10 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
       tf2::Vector3 target_pos_tf, target_vel_tf;
       try
       {
-        geometry_msgs::TransformStamped transform;
         if (joint_urdfs_.find(2) != joint_urdfs_.end())
         {
-          transform = robot_state_handle_.lookupTransform(odom2base_.child_frame_id, data_track_.header.frame_id,
-                                                          data_track_.header.stamp);
+          geometry_msgs::TransformStamped transform = robot_state_handle_.lookupTransform(
+              odom2base_.child_frame_id, data_track_.header.frame_id, data_track_.header.stamp);
           tf2::doTransform(target_pos, target_pos, transform);
           tf2::doTransform(target_vel, target_vel, transform);
           tf2::fromMsg(target_pos, target_pos_tf);
@@ -621,8 +629,8 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
         }
         if (joint_urdfs_.find(1) != joint_urdfs_.end())
         {
-          transform = robot_state_handle_.lookupTransform(joint_urdfs_.at(1)->parent_link_name,
-                                                          data_track_.header.frame_id, data_track_.header.stamp);
+          geometry_msgs::TransformStamped transform = robot_state_handle_.lookupTransform(
+              joint_urdfs_.at(1)->parent_link_name, data_track_.header.frame_id, data_track_.header.stamp);
           tf2::doTransform(target_pos, target_pos, transform);
           tf2::doTransform(target_vel, target_vel, transform);
           tf2::fromMsg(target_pos, target_pos_tf);
@@ -640,49 +648,9 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   for (const auto& in_limit : pos_des_in_limit_)
     if (!in_limit.second)
       vel_des[in_limit.first] = 0.;
-
-  if (pid_pos_.find(1) != pid_pos_.end() && ctrls_.find(1) != ctrls_.end())
-  {
-    pid_pos_.at(1)->computeCommand(angle_error[1], period);
-    ctrls_.at(1)->setCommand(pid_pos_.at(1)->getCurrentCmd() + config_.pitch_k_v_ * vel_des[1] +
-                             ctrls_.at(1)->joint_.getVelocity() - angular_vel.y);
-    ctrls_.at(1)->update(time, period);
-    ctrls_.at(1)->joint_.setCommand(ctrls_.at(1)->joint_.getCommand() + feedForward(time));
-  }
-  if (pid_pos_.find(2) != pid_pos_.end() && ctrls_.find(2) != ctrls_.end())
-  {
-    if (state_ == TRACK)
-    {
-      pid_pos_.at(2)->computeCommand(traject_angle_error[2], period);
-    }
-    else
-    {
-      pid_pos_.at(2)->computeCommand(angle_error[2], period);
-    }
-    if (state_ == TRACK)
-    {
-      if (bullet_solver_->getUsingtraject() && bullet_solver_->getTrackTarget())
-      {
-        ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
-                                 updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
-                                 config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
-      }
-      else
-      {
-        ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
-                                 updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
-                                 config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
-      }
-    }
-    else
-    {
-      ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
-                               updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
-                               config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
-    }
-
-    ctrls_.at(2)->update(time, period);
-  }
+  updatePitchJoint(time, period, angular_vel, vel_des, angle_error);
+  updateYawJoint(time, period, angular_vel, pos_real, pos_des, pos_des_temp, vel_des, angle_error, traject_pos_des,
+                 traject_angle_error);
 
   // publish state
   if (loop_count_ % 10 == 0)
@@ -706,7 +674,7 @@ void Controller::moveJoint(const ros::Time& time, const ros::Duration& period)
   loop_count_++;
 }
 
-double Controller::feedForward(const ros::Time& time)
+double Controller::gravityFeedForward(const ros::Time& time)
 {
   if (joint_urdfs_.find(1) != joint_urdfs_.end())
   {
@@ -748,7 +716,78 @@ void Controller::updateChassisVel()
   last_odom2base_ = odom2base_;
 }
 
-std::string Controller::getGimbalFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs)
+void Controller::updatePitchJoint(const ros::Time& time, const ros::Duration& period,
+                                  const geometry_msgs::Vector3& angular_vel, const double vel_des[3],
+                                  const double angle_error[3])
+{
+  if (pid_pos_.find(1) != pid_pos_.end() && ctrls_.find(1) != ctrls_.end())
+  {
+    pid_pos_.at(1)->computeCommand(angle_error[1], period);
+    ctrls_.at(1)->setCommand(pid_pos_.at(1)->getCurrentCmd() + config_.pitch_k_v_ * vel_des[1] +
+                             ctrls_.at(1)->joint_.getVelocity() - angular_vel.y);
+    ctrls_.at(1)->update(time, period);
+    ctrls_.at(1)->joint_.setCommand(ctrls_.at(1)->joint_.getCommand() + gravityFeedForward(time));
+  }
+}
+
+void Controller::updateYawJoint(const ros::Time& time, const ros::Duration& period,
+                                const geometry_msgs::Vector3& angular_vel, const double /*pos_real*/[3],
+                                const double /*pos_des*/[3], const double /*pos_des_temp*/[3], const double vel_des[3],
+                                const double angle_error[3], const double /*traject_pos_des*/[3],
+                                const double traject_angle_error[3])
+{
+  if (pid_pos_.find(2) == pid_pos_.end() || ctrls_.find(2) == ctrls_.end())
+    return;
+
+  updateGimbalYawController(time, period, angular_vel, *ctrls_.at(2), *pid_pos_.at(2), config_.yaw_k_v_, vel_des,
+                            angle_error, traject_angle_error);
+}
+
+void Controller::updateGimbalYawController(const ros::Time& time, const ros::Duration& period,
+                                           const geometry_msgs::Vector3& angular_vel,
+                                           effort_controllers::JointVelocityController& ctrl,
+                                           control_toolbox::Pid& pid_pos, double k_v, const double vel_des[3],
+                                           const double angle_error[3], const double traject_angle_error[3])
+{
+  if (state_ == TRACK)
+  {
+    pid_pos_.at(2)->computeCommand(traject_angle_error[2], period);
+  }
+  else
+  {
+    pid_pos_.at(2)->computeCommand(angle_error[2], period);
+  }
+  if (state_ == TRACK)
+  {
+    if (track_solver_type_ == TrackSolverType::EXTERNAL_MPC_AIM && target_is_armor_)
+    {
+      ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
+                               updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
+                               config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
+      ctrls_.at(2)->update(time, period);
+      auto cmd = ctrls_.at(2)->joint_.getCommand();
+      cmd = config_.moment_of_inertia_ * gimbal_aim_.yaw_acc + cmd;
+      ROS_WARN("cmd is %f, yaw_acc is %f", cmd, gimbal_aim_.yaw_acc);
+      ctrls_.at(2)->joint_.setCommand(cmd);
+    }
+    else
+    {
+      ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
+                               updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
+                               config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
+    }
+  }
+  else
+  {
+    ctrls_.at(2)->setCommand(pid_pos_.at(2)->getCurrentCmd() -
+                             updateCompensation(chassis_vel_->angular_->z()) * chassis_vel_->angular_->z() +
+                             config_.yaw_k_v_ * vel_des[2] + ctrls_.at(2)->joint_.getVelocity() - angular_vel.z);
+  }
+
+  ctrls_.at(2)->update(time, period);
+}
+
+std::string Controller::getGimbalFrameID(const std::unordered_map<int, urdf::JointConstSharedPtr>& joint_urdfs)
 {
   if (joint_urdfs.find(1) != joint_urdfs.end())
     return joint_urdfs.at(1)->child_link_name.c_str();
@@ -759,7 +798,7 @@ std::string Controller::getGimbalFrameID(std::unordered_map<int, urdf::JointCons
   return std::string();
 }
 
-std::string Controller::getBaseFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs)
+std::string Controller::getBaseFrameID(const std::unordered_map<int, urdf::JointConstSharedPtr>& joint_urdfs)
 {
   if (joint_urdfs.find(2) != joint_urdfs.end())
     return joint_urdfs.at(2)->parent_link_name.c_str();
@@ -795,6 +834,24 @@ void Controller::mpcGimbalAimCB(const rm_msgs::MPCGimbalAimCmdConstPtr& msg)
   gimbal_aim_rt_buffer_.writeFromNonRT(*msg);
 }
 
+bool Controller::TrackSolver_typeCB(rm_msgs::StatusChangeRequest& req, rm_msgs::StatusChangeResponse& res)
+{
+  const bool previous = target_is_armor_;
+  target_is_armor_ = req.target == rm_msgs::StatusChangeRequest::ARMOR;
+  publishTargetIsArmor();
+  if (previous != target_is_armor_)
+    ROS_INFO("[Gimbal] armor vision pipeline %s", target_is_armor_ ? "enabled" : "disabled");
+  res.switch_is_success = true;
+  return true;
+}
+
+void Controller::publishTargetIsArmor()
+{
+  std_msgs::Bool msg;
+  msg.data = target_is_armor_;
+  target_is_armor_pub_.publish(msg);
+}
+
 void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t /*unused*/)
 {
   ROS_INFO("[Gimbal Base] Dynamic params change");
@@ -809,16 +866,18 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     config.chassis_comp_d_ = init_config.chassis_comp_d_;
     config.accel_pitch_ = init_config.accel_pitch_;
     config.accel_yaw_ = init_config.accel_yaw_;
+    config.moment_of_inertia_ = init_config.moment_of_inertia_;
     dynamic_reconfig_initialized_ = true;
   }
   GimbalConfig config_non_rt{ .yaw_k_v_ = config.yaw_k_v_,
                               .pitch_k_v_ = config.pitch_k_v_,
+                              .accel_pitch_ = config.accel_pitch_,
+                              .accel_yaw_ = config.accel_yaw_,
                               .chassis_comp_a_ = config.chassis_comp_a_,
                               .chassis_comp_b_ = config.chassis_comp_b_,
                               .chassis_comp_c_ = config.chassis_comp_c_,
                               .chassis_comp_d_ = config.chassis_comp_d_,
-                              .accel_pitch_ = config.accel_pitch_,
-                              .accel_yaw_ = config.accel_yaw_ };
+                              .moment_of_inertia_ = config.moment_of_inertia_ };
   config_rt_buffer_.writeFromNonRT(config_non_rt);
 }
 
