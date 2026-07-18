@@ -50,7 +50,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     if (!receive_imu_msg_)
       tf_broadcaster_.sendTransform(source2target_msg_);
   }
-  AssemblyErrorPub(time);
+  AssemblyErrorPub(time);  // Accurate only for yaw offsets in multiples of 90 degrees.
 }
 
 bool Controller::getTransform(const ros::Time& time, geometry_msgs::TransformStamped& source2target, const double x,
