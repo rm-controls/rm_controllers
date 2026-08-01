@@ -185,6 +185,9 @@ void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& perio
     case TWIST:
       twist(time, period);
       break;
+    case FALLEN:
+      fallen();
+      break;
   }
 
   ramp_w_->setAcc(cmd_chassis.accel.angular.z);
@@ -281,6 +284,23 @@ void ChassisBase<T...>::raw()
   else
     yaw_offset = 0.;
   tfVelToBase(command_source_frame_, yaw_offset);
+}
+
+template <typename... T>
+void ChassisBase<T...>::fallen()
+{
+  if (state_changed_)
+  {
+    state_changed_ = false;
+    ROS_INFO("[Chassis] Enter FALLEN");
+  }
+
+  ramp_x_->clear();
+  ramp_y_->clear();
+  ramp_w_->clear();
+  vel_cmd_.x = 0.;
+  vel_cmd_.y = 0.;
+  vel_cmd_.z = 0.;
 }
 
 template <typename... T>

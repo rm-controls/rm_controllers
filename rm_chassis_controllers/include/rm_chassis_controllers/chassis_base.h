@@ -153,6 +153,7 @@ protected:
   /** @brief Set chassis velocity to zero.
    */
   void recovery();
+  void fallen();
   /** @brief Transform tf velocity to base link frame.
    *
    * @param from The father frame.
@@ -260,7 +261,8 @@ protected:
   {
     RAW,
     FOLLOW,
-    TWIST
+    TWIST,
+    FALLEN
   };
 };
 
