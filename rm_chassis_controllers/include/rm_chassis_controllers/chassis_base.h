@@ -259,10 +259,10 @@ protected:
 
   enum
   {
-    RAW,
-    FOLLOW,
-    TWIST,
-    FALLEN
+    RAW = 0,
+    FOLLOW = 1,
+    TWIST = 2,
+    FALLEN = 4
   };
 };
 
