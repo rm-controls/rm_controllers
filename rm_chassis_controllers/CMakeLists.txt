@@ -28,7 +28,6 @@ find_package(Eigen3 REQUIRED)
 
 generate_dynamic_reconfigure_options(
   cfg/LQRWeight.cfg
-  cfg/PowerLimit.cfg
 )
 
 ###################################

@@ -64,9 +64,9 @@ void BallisticSolver::solver(const geometry_msgs::TransformStamped& base2gimbal,
     double error_after_step = error_function(current_pitch + config.newton_pitch_epsilon);
     double error_derivative = (error_after_step - error) / config.newton_pitch_epsilon;
     double pitch_adjustment = error / error_derivative;
-    pitch_adjustment = (pitch_adjustment < -config.max_newton_step) ? -config.max_newton_step :
-                       (pitch_adjustment > config.max_newton_step)  ? config.max_newton_step :
-                                                                      pitch_adjustment;
+    pitch_adjustment = (pitch_adjustment < -config.max_newton_step) ?
+                           -config.max_newton_step :
+                           (pitch_adjustment > config.max_newton_step) ? config.max_newton_step : pitch_adjustment;
     double update_pitch = current_pitch - pitch_adjustment;
     double update_error = error_function(update_pitch);
     if (std::abs(update_error) < config.newton_convergence_tol)

@@ -35,12 +35,6 @@
 // Created by huakang on 2021/3/21.
 //
 #include "rm_chassis_controllers/chassis_base.h"
-#include <rm_common/ros_utilities.h>
-#include <rm_common/math_utilities.h>
-#include <rm_common/ori_tool.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <angles/angles.h>
-#include <hardware_interface/imu_sensor_interface.h>
 
 namespace rm_chassis_controllers
 {
@@ -49,80 +43,93 @@ template class ChassisBase<rm_control::RobotStateInterface, hardware_interface::
                            hardware_interface::EffortJointInterface>;
 
 template <typename... T>
+void ChassisBase<T...>::initialize_parameters(ros::NodeHandle& controller_nh)
+{
+  try
+  {
+    controller_nh.getParam("publish_rate", publish_rate_);
+    controller_nh.getParam("publish_map_tf", publish_map_tf_);
+    controller_nh.getParam("publish_odom_tf", publish_odom_tf_);
+    controller_nh.getParam("gravity_estimation_offset", gravity_estimation_offset_);
+    controller_nh.getParam("slam_topic", slam_topic_);
+    controller_nh.getParam("localization_topic", localization_topic_);
+
+    controller_nh.getParam("wheel_radius", wheel_radius_);
+    controller_nh.getParam("twist_angular", twist_angular_);
+    controller_nh.getParam("max_odom_vel", max_odom_vel_);
+    controller_nh.getParam("timeout", timeout_);
+    raw_yaw_feedforward_k_ = getParam(controller_nh, "raw_yaw_feedforward_k", 0.0);
+
+    if (controller_nh.hasParam("pid_follow"))
+      pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow"));
+  }
+  catch (std::exception& e)
+  {
+    ROS_ERROR("Chassis parameter initialization failed: %s", e.what());
+  }
+}
+template <typename... T>
 bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh,
                              ros::NodeHandle& controller_nh)
 {
-  if (!controller_nh.getParam("publish_rate", publish_rate_) || !controller_nh.getParam("timeout", timeout_) ||
-      !controller_nh.getParam("power/vel_coeff", velocity_coeff_) ||
-      !controller_nh.getParam("power/effort_coeff", effort_coeff_) ||
-      !controller_nh.getParam("power/power_offset", power_offset_))
-  {
-    ROS_ERROR("Some chassis params doesn't given (namespace: %s)", controller_nh.getNamespace().c_str());
-    return false;
-  }
-  pitch_angle_threshold_ = getParam(controller_nh, "pitch_angle_threshold", -0.25);
-  scale_ = getParam(controller_nh, "scale", 1.);
-  enable_uphill_acceleration_ = getParam(controller_nh, "enable_uphill_acceleration", false);
-  wheel_radius_ = getParam(controller_nh, "wheel_radius", 0.02);
-  twist_angular_ = getParam(controller_nh, "twist_angular", M_PI / 6);
-  max_odom_vel_ = getParam(controller_nh, "max_odom_vel", 0);
-  enable_odom_tf_ = getParam(controller_nh, "enable_odom_tf", true);
-  publish_odom_tf_ = getParam(controller_nh, "publish_odom_tf", false);
-
-  // Get and check params for covariances
-  XmlRpc::XmlRpcValue twist_cov_list;
-  controller_nh.getParam("twist_covariance_diagonal", twist_cov_list);
-  ROS_ASSERT(twist_cov_list.getType() == XmlRpc::XmlRpcValue::TypeArray);
-  ROS_ASSERT(twist_cov_list.size() == 6);
-  for (int i = 0; i < twist_cov_list.size(); ++i)
-    ROS_ASSERT(twist_cov_list[i].getType() == XmlRpc::XmlRpcValue::TypeDouble);
-
+  initialize_parameters(controller_nh);
   robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
 
-  // Setup odometry realtime publisher + odom message constant fields
-  odom_pub_.reset(new realtime_tools::RealtimePublisher<nav_msgs::Odometry>(root_nh, "odom", 100));
-  odom_pub_->msg_.header.frame_id = "odom";
-  odom_pub_->msg_.child_frame_id = "base_link";
-  odom_pub_->msg_.twist.covariance = { static_cast<double>(twist_cov_list[0]), 0., 0., 0., 0., 0., 0.,
-                                       static_cast<double>(twist_cov_list[1]), 0., 0., 0., 0., 0., 0.,
-                                       static_cast<double>(twist_cov_list[2]), 0., 0., 0., 0., 0., 0.,
-                                       static_cast<double>(twist_cov_list[3]), 0., 0., 0., 0., 0., 0.,
-                                       static_cast<double>(twist_cov_list[4]), 0., 0., 0., 0., 0., 0.,
-                                       static_cast<double>(twist_cov_list[5]) };
-
-  ramp_x_ = new RampFilter<double>(0, 0.001);
-  ramp_y_ = new RampFilter<double>(0, 0.001);
-  ramp_w_ = new RampFilter<double>(0, 0.001);
-
-  // init odom tf
-  if (enable_odom_tf_)
-  {
-    odom2base_.header.frame_id = "odom";
-    odom2base_.header.stamp = ros::Time::now();
-    odom2base_.child_frame_id = "base_link";
-    odom2base_.transform.rotation.w = 1;
-    tf_broadcaster_.init(root_nh);
-    tf_broadcaster_.sendTransform(odom2base_);
-  }
-  world2odom_.setRotation(tf2::Quaternion::getIdentity());
-
-  outside_odom_sub_ =
-      controller_nh.subscribe<nav_msgs::Odometry>("/odometry", 10, &ChassisBase::outsideOdomCallback, this);
+  cmd_vel_sub_ = root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisBase::cmdVelCallback, this);
   cmd_chassis_sub_ =
       controller_nh.subscribe<rm_msgs::ChassisCmd>("/cmd_chassis", 1, &ChassisBase::cmdChassisCallback, this);
-  cmd_vel_sub_ = root_nh.subscribe<geometry_msgs::Twist>("cmd_vel", 1, &ChassisBase::cmdVelCallback, this);
+  slam_sub_ = controller_nh.subscribe<nav_msgs::Odometry>(slam_topic_, 10, &ChassisBase::slamCallback, this);
+  localization_sub_ = controller_nh.subscribe<geometry_msgs::TransformStamped>(
+      localization_topic_, 10, &ChassisBase::localizationCallback, this);
+  capacity_sub_ = root_nh.subscribe<rm_msgs::PowerManagementSampleAndStatusData>(capacity_topic_, 10,
+                                                                                 &ChassisBase::capacityCallback, this);
 
-  if (controller_nh.hasParam("pid_follow"))
-    if (!pid_follow_.init(ros::NodeHandle(controller_nh, "pid_follow")))
-      return false;
+  // Setup real_power from capacity publishers.
+  auto chassis_power_publisher =
+      std::make_unique<realtime_tools::RealtimePublisher<std_msgs::Float64>>(controller_nh, "power/chassis_power", 100);
+  this->chassis_power_pub_ = std::move(chassis_power_publisher);
 
-  // dynamic reconfigure
-  power_limit_srv_ = new dynamic_reconfigure::Server<rm_chassis_controllers::PowerLimitConfig>(
-      ros::NodeHandle(controller_nh, "power"));
-  dynamic_reconfigure::Server<rm_chassis_controllers::PowerLimitConfig>::CallbackType cb =
-      boost::bind(&ChassisBase<T...>::powerLimitReconfigCB, this, _1, _2);
-  power_limit_srv_->setCallback(cb);
+  // Setup odometry realtime publisher + odom message constant fields
+  auto odometry_publisher =
+      std::make_unique<realtime_tools::RealtimePublisher<nav_msgs::Odometry>>(root_nh, "odom", 100);
+  this->odometry_rt_pub_ = std::move(odometry_publisher);
+  odometry_rt_pub_->msg_.header.frame_id = robot_odom_frame_id_;
+  odometry_rt_pub_->msg_.child_frame_id = robot_base_frame_id_;
+  odometry_rt_pub_->msg_.twist.covariance = { 0.001, 0., 0.,    0., 0.,    0., 0., 0.001, 0., 0.,    0., 0.,
+                                              0.,    0., 0.001, 0., 0.,    0., 0., 0.,    0., 0.001, 0., 0.,
+                                              0.,    0., 0.,    0., 0.001, 0., 0., 0.,    0., 0.,    0., 0.001 };
+
+  ramp_x_ = std::make_unique<RampFilter<double>>(0, 0.001);
+  ramp_y_ = std::make_unique<RampFilter<double>>(0, 0.001);
+  ramp_w_ = std::make_unique<RampFilter<double>>(0, 0.001);
+
+  if (publish_map_tf_)
+  {
+    global_map2robot_odom_.header.stamp = ros::Time::now();
+    global_map2robot_odom_.header.frame_id = global_map_frame_id_;
+    global_map2robot_odom_.child_frame_id = robot_odom_frame_id_;
+    global_map2robot_odom_.transform.rotation.w = 1;
+    brcst4global_map2robot_odom_.init(root_nh);
+    brcst4global_map2robot_odom_.sendTransform(global_map2robot_odom_);
+
+    global_map2camera_init_.header.stamp = ros::Time::now();
+    global_map2camera_init_.header.frame_id = global_map_frame_id_;
+    global_map2camera_init_.child_frame_id = "camera_init";
+    global_map2camera_init_.transform.rotation.w = 1;
+    brcst4global_map2camera_init_.init(root_nh);
+    brcst4global_map2camera_init_.sendTransform(global_map2camera_init_);
+  }
+
+  if (publish_odom_tf_)
+  {
+    robot_odom2robot_base_.header.stamp = ros::Time::now();
+    robot_odom2robot_base_.header.frame_id = robot_odom_frame_id_;
+    robot_odom2robot_base_.child_frame_id = robot_base_frame_id_;
+    global_map2robot_odom_.transform.rotation.w = 1;
+    brcst4robot_odom2robot_base_.init(root_nh);
+    brcst4robot_odom2robot_base_.sendTransform(robot_odom2robot_base_);
+  }
 
   return true;
 }
@@ -178,6 +185,9 @@ void ChassisBase<T...>::update(const ros::Time& time, const ros::Duration& perio
     case TWIST:
       twist(time, period);
       break;
+    case FALLEN:
+      fallen();
+      break;
   }
 
   ramp_w_->setAcc(cmd_chassis.accel.angular.z);
@@ -204,8 +214,9 @@ void ChassisBase<T...>::follow(const ros::Time& time, const ros::Duration& perio
   try
   {
     double roll{}, pitch{}, yaw{};
-    quatToRPY(robot_state_handle_.lookupTransform("base_link", follow_source_frame_, ros::Time(0)).transform.rotation,
-              roll, pitch, yaw);
+    quatToRPY(
+        robot_state_handle_.lookupTransform(robot_base_frame_id_, follow_source_frame_, ros::Time(0)).transform.rotation,
+        roll, pitch, yaw);
     double follow_error = angles::shortest_angular_distance(yaw, 0);
     pid_follow_.computeCommand(-follow_error, period);
     vel_cmd_.z = pid_follow_.getCurrentCmd() + cmd_rt_buffer_.readFromRT()->cmd_chassis_.follow_vel_des;
@@ -231,7 +242,8 @@ void ChassisBase<T...>::twist(const ros::Time& time, const ros::Duration& period
   try
   {
     double roll{}, pitch{}, yaw{};
-    quatToRPY(robot_state_handle_.lookupTransform("base_link", command_source_frame_, ros::Time(0)).transform.rotation,
+    quatToRPY(robot_state_handle_.lookupTransform(robot_base_frame_id_, command_source_frame_, ros::Time(0))
+                  .transform.rotation,
               roll, pitch, yaw);
 
     double angle[4] = { -0.785, 0.785, 2.355, -2.355 };
@@ -266,116 +278,202 @@ void ChassisBase<T...>::raw()
 
     recovery();
   }
-  tfVelToBase(command_source_frame_);
+  double yaw_offset;
+  if (command_source_frame_ == "yaw")
+    yaw_offset = raw_yaw_feedforward_k_ * vel_cmd_.z;
+  else
+    yaw_offset = 0.;
+  tfVelToBase(command_source_frame_, yaw_offset);
+}
+
+template <typename... T>
+void ChassisBase<T...>::fallen()
+{
+  if (state_changed_)
+  {
+    state_changed_ = false;
+    ROS_INFO("[Chassis] Enter FALLEN");
+  }
+
+  ramp_x_->clear();
+  ramp_y_->clear();
+  ramp_w_->clear();
+  vel_cmd_.x = 0.;
+  vel_cmd_.y = 0.;
+  vel_cmd_.z = 0.;
 }
 
 template <typename... T>
 void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& period)
 {
-  geometry_msgs::Twist vel_base = odometry();  // on base_link frame
-  if (enable_odom_tf_)
+  if (publish_map_tf_)
   {
-    geometry_msgs::Vector3 linear_vel_odom, angular_vel_odom;
-    try
+    if (!odom_initialized_)
     {
-      odom2base_ = robot_state_handle_.lookupTransform("odom", "base_link", ros::Time(0));
-      tf2::Quaternion q;
-      tf2::fromMsg(odom2base_.transform.rotation, q);
-      tf2::Matrix3x3(q).getEulerYPR(yaw_, pitch_, roll_);
-    }
-    catch (tf2::TransformException& ex)
-    {
-      tf_broadcaster_.sendTransform(odom2base_);  // TODO: For some reason, the sendTransform in init sometime not work?
-      ROS_WARN("%s", ex.what());
-      return;
-    }
-    odom2base_.header.stamp = time;
-    // integral vel to pos and angle
-    tf2::doTransform(vel_base.linear, linear_vel_odom, odom2base_);
-    tf2::doTransform(vel_base.angular, angular_vel_odom, odom2base_);
-    double length =
-        std::sqrt(std::pow(linear_vel_odom.x, 2) + std::pow(linear_vel_odom.y, 2) + std::pow(linear_vel_odom.z, 2));
-    if (length < max_odom_vel_)
-    {
-      // avoid nan vel
-      odom2base_.transform.translation.x += linear_vel_odom.x * period.toSec();
-      odom2base_.transform.translation.y += linear_vel_odom.y * period.toSec();
-      odom2base_.transform.translation.z += linear_vel_odom.z * period.toSec();
-    }
-    length =
-        std::sqrt(std::pow(angular_vel_odom.x, 2) + std::pow(angular_vel_odom.y, 2) + std::pow(angular_vel_odom.z, 2));
-    if (length > 0.001)
-    {  // avoid nan quat
-      tf2::Quaternion odom2base_quat, trans_quat;
-      tf2::fromMsg(odom2base_.transform.rotation, odom2base_quat);
-      trans_quat.setRotation(tf2::Vector3(angular_vel_odom.x / length, angular_vel_odom.y / length,
-                                          angular_vel_odom.z / length),
-                             length * period.toSec());
-      odom2base_quat = trans_quat * odom2base_quat;
-      odom2base_quat.normalize();
-      odom2base_.transform.rotation = tf2::toMsg(odom2base_quat);
-    }
-  }
-
-  if (topic_update_)
-  {
-    auto* odom_msg = odom_buffer_.readFromRT();
-
-    tf2::Transform world2sensor;
-    world2sensor.setOrigin(
-        tf2::Vector3(odom_msg->pose.pose.position.x, odom_msg->pose.pose.position.y, odom_msg->pose.pose.position.z));
-    world2sensor.setRotation(tf2::Quaternion(odom_msg->pose.pose.orientation.x, odom_msg->pose.pose.orientation.y,
-                                             odom_msg->pose.pose.orientation.z, odom_msg->pose.pose.orientation.w));
-
-    if (world2odom_.getRotation() == tf2::Quaternion::getIdentity())  // First received
-    {
-      tf2::Transform odom2sensor;
       try
       {
-        geometry_msgs::TransformStamped tf_msg =
-            robot_state_handle_.lookupTransform("odom", "livox_frame", odom_msg->header.stamp);
-        tf2::fromMsg(tf_msg.transform, odom2sensor);
+        geometry_msgs::TransformStamped global_map2lidar_odom =
+            robot_state_handle_.lookupTransform(robot_base_frame_id_, lidar_base_frame_id_, ros::Time(0));
+        T_global_map2lidar_odom_.setOrigin(tf2::Vector3(global_map2lidar_odom.transform.translation.x,
+                                                        global_map2lidar_odom.transform.translation.y,
+                                                        global_map2lidar_odom.transform.translation.z));
+        if (gravity_estimation_offset_)
+        {
+          T_global_map2lidar_odom_.setRotation(tf2::Quaternion(0, 0, 0, 1));
+          global_map2camera_init_.transform.translation = global_map2lidar_odom.transform.translation;
+        }
+        else
+        {
+          T_global_map2lidar_odom_.setRotation(
+              tf2::Quaternion(global_map2lidar_odom.transform.rotation.x, global_map2lidar_odom.transform.rotation.y,
+                              global_map2lidar_odom.transform.rotation.z, global_map2lidar_odom.transform.rotation.w));
+          global_map2camera_init_.transform = global_map2lidar_odom.transform;
+        }
+        odom_initialized_ = true;
       }
-      catch (tf2::TransformException& ex)
+      catch (...)
       {
-        ROS_WARN("%s", ex.what());
-        return;
+        ROS_WARN("Failed to init robot_odom2lidar_odom.");
       }
-      world2odom_ = world2sensor * odom2sensor.inverse();
     }
-    tf2::Transform base2sensor;
-    try
+
+    if (localization_updated_)
     {
-      geometry_msgs::TransformStamped tf_msg =
-          robot_state_handle_.lookupTransform("base_link", "livox_frame", odom_msg->header.stamp);
-      tf2::fromMsg(tf_msg.transform, base2sensor);
+      try
+      {
+        localization_updated_ = false;
+        const auto& localization = localization_rt_buffer_.readFromRT();
+        T_global_map2lidar_odom_.setOrigin(tf2::Vector3(localization->transform.translation.x,
+                                                        localization->transform.translation.y,
+                                                        localization->transform.translation.z));
+        T_global_map2lidar_odom_.setRotation(
+            tf2::Quaternion(localization->transform.rotation.x, localization->transform.rotation.y,
+                            localization->transform.rotation.z, localization->transform.rotation.w));
+        global_map2camera_init_.transform = tf2::toMsg(T_global_map2lidar_odom_);
+      }
+      catch (...)
+      {
+        ROS_WARN("Failed to update localization offset.");
+      }
     }
-    catch (tf2::TransformException& ex)
+    ros::Time tmp_time = ros::Time::now();
+
+    if (slam_updated_)
     {
-      ROS_WARN("%s", ex.what());
-      return;
+      try
+      {
+        slam_updated_ = false;
+        const auto& slam = slam_rt_buffer_.readFromRT();
+        tmp_time = slam->header.stamp;
+        T_lidar_odom2lidar_base_.setOrigin(
+            tf2::Vector3(slam->pose.pose.position.x, slam->pose.pose.position.y, slam->pose.pose.position.z));
+        T_lidar_odom2lidar_base_.setRotation(
+            tf2::Quaternion(slam->pose.pose.orientation.x, slam->pose.pose.orientation.y, slam->pose.pose.orientation.z,
+                            slam->pose.pose.orientation.w));
+
+        robot_base2lidar_base_ =
+            robot_state_handle_.lookupTransform(robot_base_frame_id_, lidar_base_frame_id_, slam->header.stamp);
+        T_robot_base2lidar_base_.setOrigin(tf2::Vector3(robot_base2lidar_base_.transform.translation.x,
+                                                        robot_base2lidar_base_.transform.translation.y,
+                                                        robot_base2lidar_base_.transform.translation.z));
+        T_robot_base2lidar_base_.setRotation(
+            tf2::Quaternion(robot_base2lidar_base_.transform.rotation.x, robot_base2lidar_base_.transform.rotation.y,
+                            robot_base2lidar_base_.transform.rotation.z, robot_base2lidar_base_.transform.rotation.w));
+
+        auto tmp_robot_odom2robot_base =
+            robot_state_handle_.lookupTransform(robot_odom_frame_id_, robot_base_frame_id_, slam->header.stamp);
+
+        T_robot_odom_2robot_base_.setOrigin(tf2::Vector3(tmp_robot_odom2robot_base.transform.translation.x,
+                                                         tmp_robot_odom2robot_base.transform.translation.y,
+                                                         tmp_robot_odom2robot_base.transform.translation.z));
+        T_robot_odom_2robot_base_.setRotation(tf2::Quaternion(
+            tmp_robot_odom2robot_base.transform.rotation.x, tmp_robot_odom2robot_base.transform.rotation.y,
+            tmp_robot_odom2robot_base.transform.rotation.z, tmp_robot_odom2robot_base.transform.rotation.w));
+
+        T_global_map2robot_odom_ = T_global_map2lidar_odom_ * T_lidar_odom2lidar_base_ *
+                                   T_robot_base2lidar_base_.inverse() * T_robot_odom_2robot_base_.inverse();
+
+        global_map2robot_odom_.transform = tf2::toMsg(T_global_map2robot_odom_);
+      }
+      catch (...)
+      {
+        ROS_WARN("Failed to update global_map2robot_odom.");
+      }
     }
-    tf2::Transform odom2base = world2odom_.inverse() * world2sensor * base2sensor.inverse();
-    odom2base_.transform.translation.x = odom2base.getOrigin().x();
-    odom2base_.transform.translation.y = odom2base.getOrigin().y();
-    odom2base_.transform.translation.z = odom2base.getOrigin().z();
-    topic_update_ = false;
+    global_map2robot_odom_.header.stamp = tmp_time;
+    global_map2camera_init_.header.stamp = tmp_time;
   }
 
-  robot_state_handle_.setTransform(odom2base_, "rm_chassis_controllers");
+  if (publish_odom_tf_)
+  {
+    try
+    {
+      robot_odom2robot_base_ =
+          robot_state_handle_.lookupTransform(robot_odom_frame_id_, robot_base_frame_id_, ros::Time(0));
+      robot_odom2robot_base_.header.stamp = time;
+      geometry_msgs::Twist vel_base = odometry();  // on base_link frame
+      geometry_msgs::Vector3 linear_vel_odom, angular_vel_odom;
+      tf2::doTransform(vel_base.linear, linear_vel_odom, robot_odom2robot_base_);
+      tf2::doTransform(vel_base.angular, angular_vel_odom, robot_odom2robot_base_);
+
+      double length =
+          std::sqrt(std::pow(linear_vel_odom.x, 2) + std::pow(linear_vel_odom.y, 2) + std::pow(linear_vel_odom.z, 2));
+      if (length < max_odom_vel_)
+      {  // avoid nan vel
+        robot_odom2robot_base_.transform.translation.x += linear_vel_odom.x * period.toSec();
+        robot_odom2robot_base_.transform.translation.y += linear_vel_odom.y * period.toSec();
+        robot_odom2robot_base_.transform.translation.z += linear_vel_odom.z * period.toSec();
+      }
+      length = std::sqrt(std::pow(angular_vel_odom.x, 2) + std::pow(angular_vel_odom.y, 2) +
+                         std::pow(angular_vel_odom.z, 2));
+      if (length > 0.001)
+      {  // avoid nan quat
+        tf2::Quaternion odom2base_quat, trans_quat;
+        tf2::fromMsg(robot_odom2robot_base_.transform.rotation, odom2base_quat);
+        trans_quat.setRotation(tf2::Vector3(angular_vel_odom.x / length, angular_vel_odom.y / length,
+                                            angular_vel_odom.z / length),
+                               length * period.toSec());
+        odom2base_quat = trans_quat * odom2base_quat;
+        odom2base_quat.normalize();
+        robot_odom2robot_base_.transform.rotation = tf2::toMsg(odom2base_quat);
+      }
+
+      quatToRPY(robot_odom2robot_base_.transform.rotation, roll_, pitch_, yaw_);
+
+      robot_state_handle_.setTransform(robot_odom2robot_base_, "rm_chassis_controllers");
+
+      odometry_rt_pub_->msg_.header.stamp = time;
+      odometry_rt_pub_->msg_.pose.pose.position.x = robot_odom2robot_base_.transform.translation.x;
+      odometry_rt_pub_->msg_.pose.pose.position.y = robot_odom2robot_base_.transform.translation.y;
+      odometry_rt_pub_->msg_.pose.pose.orientation.x = robot_odom2robot_base_.transform.rotation.x;
+      odometry_rt_pub_->msg_.pose.pose.orientation.y = robot_odom2robot_base_.transform.rotation.y;
+      odometry_rt_pub_->msg_.pose.pose.orientation.z = robot_odom2robot_base_.transform.rotation.z;
+      odometry_rt_pub_->msg_.pose.pose.orientation.w = robot_odom2robot_base_.transform.rotation.w;
+      odometry_rt_pub_->msg_.twist.twist.linear.x = linear_vel_odom.x;
+      odometry_rt_pub_->msg_.twist.twist.linear.y = linear_vel_odom.y;
+      odometry_rt_pub_->msg_.twist.twist.angular.z = angular_vel_odom.z;
+    }
+    catch (...)
+    {
+      ROS_WARN("Failed to update robot_odom2robot_base.");
+    }
+  }
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
-    if (odom_pub_->trylock())
+    if (publish_map_tf_)
     {
-      odom_pub_->msg_.header.stamp = time;
-      odom_pub_->msg_.twist.twist.linear.x = vel_base.linear.x;
-      odom_pub_->msg_.twist.twist.linear.y = vel_base.linear.y;
-      odom_pub_->msg_.twist.twist.angular.z = vel_base.angular.z;
-      odom_pub_->unlockAndPublish();
+      brcst4global_map2robot_odom_.sendTransform(global_map2robot_odom_);
+      brcst4global_map2camera_init_.sendTransform(global_map2camera_init_);
     }
-    if (enable_odom_tf_ && publish_odom_tf_)
-      tf_broadcaster_.sendTransform(odom2base_);
+
+    if (publish_odom_tf_)
+    {
+      brcst4robot_odom2robot_base_.sendTransform(robot_odom2robot_base_);
+      if (odometry_rt_pub_->trylock())
+        odometry_rt_pub_->unlockAndPublish();
+    }
+
     last_publish_time_ = time;
   }
 }
@@ -391,57 +489,30 @@ void ChassisBase<T...>::recovery()
 template <typename... T>
 void ChassisBase<T...>::powerLimit()
 {
-  double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
-  const auto& power_config = *power_limit_rt_buffer_.readFromRT();
-
-  double vel_coeff = power_config.vel_coeff;
-  double effort_coeff = power_config.effort_coeff;
-  double power_offset = power_config.power_offset;
-
-  // Three coefficients of a quadratic equation in one variable
-  double a = 0., b = 0., c = 0.;
-  for (const auto& joint : joint_handles_)
-  {
-    double cmd_effort = joint.getCommand();
-    double real_vel = joint.getVelocity();
-    if (joint.getName().find("wheel") != std::string::npos)  // The pivot joint of swerve drive doesn't need power limit
-    {
-      a += square(cmd_effort);
-      b += std::abs(cmd_effort * real_vel);
-      c += square(real_vel);
-    }
-  }
-  a *= effort_coeff;
-  c = c * vel_coeff - power_offset - power_limit;
-  // Root formula for quadratic equation in one variable
-  double zoom_coeff = (square(b) - 4 * a * c) > 0 ? ((-b + sqrt(square(b) - 4 * a * c)) / (2 * a)) : 0.;
-  for (auto joint : joint_handles_)
-    if (joint.getName().find("wheel") != std::string::npos)
-    {
-      if (pitch_ < pitch_angle_threshold_ && enable_uphill_acceleration_)
-      {
-        if (joint.getName().find("back") != std::string::npos)
-        {
-          joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff * scale_);
-        }
-        if (joint.getName().find("front") != std::string::npos)
-        {
-          joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
-        }
-      }
-      else
-      {
-        joint.setCommand(zoom_coeff > 1 ? joint.getCommand() : joint.getCommand() * zoom_coeff);
-      }
-    }
 }
 
 template <typename... T>
-void ChassisBase<T...>::tfVelToBase(const std::string& from)
+void ChassisBase<T...>::updatePowerStatus()
+{
+}
+
+template <typename... T>
+void ChassisBase<T...>::tfVelToBase(const std::string& from, double yaw_offset)
 {
   try
   {
-    tf2::doTransform(vel_cmd_, vel_cmd_, robot_state_handle_.lookupTransform("base_link", from, ros::Time(0)));
+    geometry_msgs::TransformStamped transform = robot_state_handle_.lookupTransform("base_link", from, ros::Time(0));
+    if (std::abs(yaw_offset) > 1e-9)
+    {
+      tf2::Quaternion rotation;
+      tf2::fromMsg(transform.transform.rotation, rotation);
+      tf2::Quaternion yaw_feedforward;
+      yaw_feedforward.setRPY(0., 0., yaw_offset);
+      rotation *= yaw_feedforward;
+      rotation.normalize();
+      transform.transform.rotation = tf2::toMsg(rotation);
+    }
+    tf2::doTransform(vel_cmd_, vel_cmd_, transform);
   }
   catch (tf2::TransformException& ex)
   {
@@ -465,17 +536,29 @@ void ChassisBase<T...>::cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg
 }
 
 template <typename... T>
-void ChassisBase<T...>::outsideOdomCallback(const nav_msgs::Odometry::ConstPtr& msg)
+void ChassisBase<T...>::slamCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
-  odom_buffer_.writeFromNonRT(*msg);
-  topic_update_ = true;
+  slam_rt_buffer_.writeFromNonRT(*msg);
+  slam_updated_ = true;
 }
 
 template <typename... T>
-void ChassisBase<T...>::powerLimitReconfigCB(rm_chassis_controllers::PowerLimitConfig& config, uint32_t /*level*/)
+void ChassisBase<T...>::localizationCallback(const geometry_msgs::TransformStamped::ConstPtr& msg)
 {
-  ROS_INFO("[Power Limit] Dynamic params change");
-  power_limit_rt_buffer_.writeFromNonRT(config);
+  localization_rt_buffer_.writeFromNonRT(*msg);
+  localization_updated_ = true;
+}
+
+template <typename... T>
+void ChassisBase<T...>::capacityCallback(const rm_msgs::PowerManagementSampleAndStatusData::ConstPtr& msg)
+{
+  chassis_power_ = msg->chassis_power + msg->capacity_discharge_power;
+  capacity_update_flag_ = true;
+  if (chassis_power_pub_->trylock())
+  {
+    chassis_power_pub_->msg_.data = chassis_power_;
+    chassis_power_pub_->unlockAndPublish();
+  }
 }
 
 }  // namespace rm_chassis_controllers

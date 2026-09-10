@@ -36,7 +36,7 @@
 //
 
 #include "rm_chassis_controllers/swerve.h"
-
+#include "rm_common/math_utilities.h"
 #include <angles/angles.h>
 #include <pluginlib/class_list_macros.hpp>
 
@@ -47,6 +47,55 @@ bool SwerveController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
 {
   if (!ChassisBase::init(robot_hw, root_nh, controller_nh))
     return false;
+
+  // Set init value for RLS and power limiters.
+  try
+  {
+    controller_nh.getParam("power/vel_coeff", wheel_power_limitor_.vel_coeff);
+    controller_nh.getParam("power/effort_coeff", wheel_power_limitor_.effort_coeff);
+    controller_nh.getParam("power/power_offset", wheel_power_limitor_.power_offset);
+    controller_nh.getParam("power/pivot_vel_coeff", pivot_power_limitor_.vel_coeff);
+    controller_nh.getParam("power/pivot_effort_coeff", pivot_power_limitor_.effort_coeff);
+    controller_nh.getParam("power/pivot_power_offset", pivot_power_limitor_.power_offset);
+    controller_nh.getParam("power/pivot_power_ratio", pivot_power_limitor_.ratio);
+    controller_nh.param<bool>("power/use_rls", use_rls_, false);
+    controller_nh.param<bool>("power/use_K_angle", use_K_angle_, false);
+  }
+  catch (const std::exception& e)
+  {
+    ROS_ERROR("Failed to get power limiter parameters: %s", e.what());
+    return false;
+  }
+
+  // pivot don't need err to multiply power.
+  wheel_power_limitor_.err_upper = 500;
+  wheel_power_limitor_.err_lower = 0.01;
+
+  rls_ = std::make_unique<Rls<double>>(4, 1, 0.99999, 1e-5);
+  Eigen::Matrix<double, 4, 1> w;
+  w << pivot_power_limitor_.effort_coeff, pivot_power_limitor_.vel_coeff, wheel_power_limitor_.effort_coeff,
+      wheel_power_limitor_.vel_coeff;
+  rls_->setW(w);
+
+  // 0 for pivot, 1 for wheel. Each module has 4 joints at most.
+  for (auto& filter_group : motor_lp_filters_)
+  {
+    for (auto& filter : filter_group)
+      filter = new LowPassFilter(20);
+  }
+
+  // Setup power publishers.
+  auto epower_publisher =
+      std::make_unique<realtime_tools::RealtimePublisher<std_msgs::Float64>>(controller_nh, "power/estimated", 100);
+  this->epower_pub_ = std::move(epower_publisher);
+  auto cpower_publisher =
+      std::make_unique<realtime_tools::RealtimePublisher<std_msgs::Float64>>(controller_nh, "power/commanded", 100);
+  this->cpower_pub_ = std::move(cpower_publisher);
+  // Todo :add base_imu and base_gyro publishers for better power estimation and detect state.
+  auto base_gyro_publisher = std::make_unique<realtime_tools::RealtimePublisher<geometry_msgs::Vector3Stamped>>(
+      controller_nh, "base_gyro", 100);
+  this->base_gyro_pub_ = std::move(base_gyro_publisher);
+
   XmlRpc::XmlRpcValue modules;
   controller_nh.getParam("modules", modules);
   ROS_ASSERT(modules.getType() == XmlRpc::XmlRpcValue::TypeStruct);
@@ -73,10 +122,11 @@ bool SwerveController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
       return false;
     if (module.second["pivot"].hasMember("offset"))
       m.pivot_offset_ = module.second["pivot"]["offset"];
-    joint_handles_.push_back(m.ctrl_pivot_->joint_);
-    joint_handles_.push_back(m.ctrl_wheel_->joint_);
+    pivot_joint_handles_.push_back(m.ctrl_pivot_->joint_);
+    wheel_joint_handles_.push_back(m.ctrl_wheel_->joint_);
     modules_.push_back(m);
   }
+
   return true;
 }
 
@@ -84,12 +134,12 @@ bool SwerveController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
 
 void SwerveController::moveJoint(const ros::Time& time, const ros::Duration& period)
 {
+  stateJudge();
   Vec2<double> vel_center(vel_cmd_.x, vel_cmd_.y);
   for (auto& module : modules_)
   {
     Vec2<double> vel = vel_center + vel_cmd_.z * Vec2<double>(-module.position_.y(), module.position_.x());
     double vel_angle = std::atan2(vel.y(), vel.x()) + module.pivot_offset_;
-    // Direction flipping and Stray module mitigation
     double a = angles::shortest_angular_distance(module.ctrl_pivot_->joint_.getPosition(), vel_angle);
     double b = angles::shortest_angular_distance(module.ctrl_pivot_->joint_.getPosition(), vel_angle + M_PI);
     module.ctrl_pivot_->setCommand(std::abs(a) < std::abs(b) ? vel_angle : vel_angle + M_PI);
@@ -123,6 +173,253 @@ geometry_msgs::Twist SwerveController::odometry()
       vel_modules.angular.z / modules_.size() /
       std::sqrt(std::pow(modules_.begin()->position_.x(), 2) + std::pow(modules_.begin()->position_.y(), 2));
   return vel_data;
+}
+
+void SwerveController::stateJudge()
+{
+  if (!use_K_angle_)
+  {
+    for (size_t i = 0; i < modules_.size() && i < 4; ++i)
+    {
+      wheel_power_limitor_.K_angle[i] = 1.0;
+    }
+    return;
+  }
+  double sin_pitch{};
+  if (abs(pitch_) > 0.12)
+  {
+    sin_pitch = sin(pitch_);
+  }
+  else
+  {
+    sin_pitch = 0.0;
+  }
+
+  for (size_t i = 0; i < modules_.size() && i < 4; ++i)
+  {
+    auto& module = modules_[i];
+
+    if (module.ctrl_wheel_->joint_.getName().find("front") != std::string::npos)
+    {
+      if (module.ctrl_wheel_->getJointName().find("left") != std::string::npos)
+      {
+        wheel_power_limitor_.K_angle[i] = 1 + sin_pitch;
+      }
+      if (module.ctrl_wheel_->getJointName().find("right") != std::string::npos)
+      {
+        wheel_power_limitor_.K_angle[i] = 1 + sin_pitch;
+      }
+    }
+    if (module.ctrl_wheel_->joint_.getName().find("back") != std::string::npos)
+    {
+      if (module.ctrl_wheel_->getJointName().find("left") != std::string::npos)
+      {
+        wheel_power_limitor_.K_angle[i] = 1 - sin_pitch;
+      }
+      if (module.ctrl_wheel_->getJointName().find("right") != std::string::npos)
+      {
+        wheel_power_limitor_.K_angle[i] = 1 - sin_pitch;
+      }
+    }
+  }
+}
+
+// Ref: https://gitee.com/cod_-control/rmcod2026_-sentry/tree/dev
+// https://github.com/hkustenterprize/RM2024-PowerModule
+
+void SwerveController::powerLimit()
+{
+  updatePowerStatus();
+
+  // multiply K to limit power for wheel joints.
+  if (wheel_power_limitor_.err_sum > wheel_power_limitor_.err_upper)
+  {
+    wheel_power_limitor_.K = 1;
+  }
+  else if (wheel_power_limitor_.err_sum < wheel_power_limitor_.err_lower)
+  {
+    wheel_power_limitor_.K = 0;
+  }
+  else
+  {
+    wheel_power_limitor_.K = 1 - (wheel_power_limitor_.err_sum - wheel_power_limitor_.err_lower) /
+                                     (wheel_power_limitor_.err_upper - wheel_power_limitor_.err_lower);
+  }
+  // Set power limit to each joint according to K.
+  for (int i = 0; i < 4; i++)
+  {
+    double pivot_zoom = abs(pivot_power_limitor_.power_in[i]) / pivot_power_limitor_.cmd_power;
+    pivot_zoom = limit(pivot_zoom, 0.0, 1.0);
+    double wheel_zoom =
+        (wheel_power_limitor_.K * abs(wheel_power_limitor_.err[i]) / wheel_power_limitor_.err_sum) +
+        (1 - wheel_power_limitor_.K) * (abs(wheel_power_limitor_.power_in[i]) / wheel_power_limitor_.cmd_power);
+    wheel_zoom = limit(wheel_zoom, 0.0, 1.0);
+    pivot_power_limitor_.power_limit[i] = pivot_zoom * pivot_power_limitor_.max_power;
+    wheel_power_limitor_.power_limit[i] = wheel_zoom * wheel_power_limitor_.max_power;
+  }
+  // Set command limit according to power limit.
+  if (pivot_power_limitor_.cmd_power > pivot_power_limitor_.max_power)
+  {
+    for (size_t i = 0; i < modules_.size() && i < 4; ++i)
+    {
+      auto& module = modules_[i];
+      auto& joint = module.ctrl_pivot_->joint_;
+      double A = pivot_power_limitor_.effort_coeff;
+      double B = pivot_power_limitor_.omiga[i];
+      double C = abs(pivot_power_limitor_.omiga[i]) * pivot_power_limitor_.vel_coeff +
+                 pivot_power_limitor_.power_offset / 4 - pivot_power_limitor_.power_limit[i];
+      double Delta = square(B) - 4 * A * C;
+      if (!std::isfinite(Delta) || Delta < 0.0)
+        Delta = 0.0;
+      if (Delta >= 0)
+      {
+        double Sqrt = sqrtf(Delta);
+        if (pivot_power_limitor_.torque[i] >= 0)
+          joint.setCommand((-B + Sqrt) / (2 * A));
+        else
+          joint.setCommand((-B - Sqrt) / (2 * A));
+      }
+      else
+      {
+        joint.setCommand((-B) / (2 * A));
+      }
+    }
+  }
+  if (wheel_power_limitor_.cmd_power > wheel_power_limitor_.max_power)
+  {
+    for (size_t i = 0; i < modules_.size() && i < 4; ++i)
+    {
+      auto& module = modules_[i];
+      auto& joint = module.ctrl_wheel_->joint_;
+      double A = wheel_power_limitor_.effort_coeff;
+      double B = wheel_power_limitor_.omiga[i];
+      double C = abs(wheel_power_limitor_.omiga[i]) * wheel_power_limitor_.vel_coeff +
+                 wheel_power_limitor_.power_offset / 4 - wheel_power_limitor_.power_limit[i];
+      double Delta = square(B) - 4 * A * C;
+      if (!std::isfinite(Delta) || Delta < 0.0)
+        Delta = 0.0;
+      if (Delta >= 0)
+      {
+        double Sqrt = sqrtf(Delta);
+        if (wheel_power_limitor_.torque[i] >= 0)
+          joint.setCommand(((-B + Sqrt) / (2 * A)) * wheel_power_limitor_.K_angle[i]);
+        else
+          joint.setCommand(((-B - Sqrt) / (2 * A)) * wheel_power_limitor_.K_angle[i]);
+      }
+      else
+      {
+        joint.setCommand(((-B) / (2 * A)) * wheel_power_limitor_.K_angle[i]);
+      }
+    }
+  }
+  else
+  {
+    for (size_t i = 0; i < modules_.size() && i < 4; ++i)
+    {
+      auto& module = modules_[i];
+      auto& joint = module.ctrl_wheel_->joint_;
+      joint.setCommand(wheel_power_limitor_.torque[i] * wheel_power_limitor_.K_angle[i]);
+    }
+  }
+}
+
+void SwerveController::updatePowerStatus()
+{
+  double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
+
+  pivot_power_limitor_.max_power = pivot_power_limitor_.ratio * power_limit;
+
+  double epivot_power{}, cpivot_power{};
+  for (size_t i = 0; i < modules_.size() && i < 4; ++i)
+  {
+    auto& module = modules_[i];
+
+    double cmd_torque = pivot_power_limitor_.torque[i] = module.ctrl_pivot_->joint_.getCommand();
+    double real_vel = pivot_power_limitor_.omiga[i] = module.ctrl_pivot_->joint_.getVelocity();
+    motor_lp_filters_[0][i]->input(module.ctrl_pivot_->joint_.getEffort());
+    double real_torque = motor_lp_filters_[0][i]->output();
+
+    epivot_power += real_torque * real_vel + pivot_power_limitor_.effort_coeff * square(real_torque) +
+                    pivot_power_limitor_.vel_coeff * abs(real_vel);
+    cpivot_power += cmd_torque * real_vel + pivot_power_limitor_.effort_coeff * square(cmd_torque) +
+                    pivot_power_limitor_.vel_coeff * abs(real_vel);
+
+    pivot_power_limitor_.power_in[i] = cmd_torque * real_vel + pivot_power_limitor_.effort_coeff * square(cmd_torque) +
+                                       pivot_power_limitor_.vel_coeff * abs(real_vel);
+  }
+
+  pivot_power_limitor_.cmd_power = cpivot_power + pivot_power_limitor_.power_offset;
+  pivot_power_limitor_.estimated_power = epivot_power + pivot_power_limitor_.power_offset;
+
+  wheel_power_limitor_.max_power = power_limit - std::abs(pivot_power_limitor_.cmd_power);
+  wheel_power_limitor_.err_sum = 0;
+
+  double ewheel_power{}, cwheel_power{};
+  for (size_t i = 0; i < modules_.size() && i < 4; ++i)
+  {
+    auto& module = modules_[i];
+
+    double cmd_torque = wheel_power_limitor_.torque[i] = module.ctrl_wheel_->joint_.getCommand();
+    double cmd_vel{};
+    module.ctrl_wheel_->getCommand(cmd_vel);
+    double real_vel = wheel_power_limitor_.omiga[i] = module.ctrl_wheel_->joint_.getVelocity();
+    motor_lp_filters_[1][i]->input(module.ctrl_wheel_->joint_.getEffort());
+    double real_torque = motor_lp_filters_[1][i]->output();
+
+    wheel_power_limitor_.err[i] = cmd_vel - real_vel;
+    wheel_power_limitor_.err_sum += abs(wheel_power_limitor_.err[i]);
+
+    ewheel_power += real_torque * real_vel + wheel_power_limitor_.effort_coeff * square(real_torque) +
+                    wheel_power_limitor_.vel_coeff * abs(real_vel);
+    cwheel_power += cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
+                    wheel_power_limitor_.vel_coeff * abs(real_vel);
+
+    wheel_power_limitor_.power_in[i] = cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
+                                       wheel_power_limitor_.vel_coeff * abs(real_vel);
+  }
+  wheel_power_limitor_.cmd_power = cwheel_power + wheel_power_limitor_.power_offset;
+  wheel_power_limitor_.estimated_power = ewheel_power + wheel_power_limitor_.power_offset;
+
+  double estimated_total_power = pivot_power_limitor_.estimated_power + wheel_power_limitor_.estimated_power;
+  double cmd_total_power = pivot_power_limitor_.cmd_power + wheel_power_limitor_.cmd_power;
+
+  if (capacity_update_flag_ && use_rls_)
+  {
+    double all_in = limit(estimated_total_power, -power_limit, power_limit);
+
+    // Update Rls: compute regression vector x and pass actual measured power
+    Eigen::Matrix<double, 4, 1> x;
+    x(0) = square(pivot_power_limitor_.torque[0]) + square(pivot_power_limitor_.torque[1]) +
+           square(pivot_power_limitor_.torque[2]) + square(pivot_power_limitor_.torque[3]);
+    x(1) = abs(pivot_power_limitor_.omiga[0]) + abs(pivot_power_limitor_.omiga[1]) +
+           abs(pivot_power_limitor_.omiga[2]) + abs(pivot_power_limitor_.omiga[3]);
+    x(2) = square(wheel_power_limitor_.torque[0]) + square(wheel_power_limitor_.torque[1]) +
+           square(wheel_power_limitor_.torque[2]) + square(wheel_power_limitor_.torque[3]);
+    x(3) = abs(wheel_power_limitor_.omiga[0]) + abs(wheel_power_limitor_.omiga[1]) +
+           abs(wheel_power_limitor_.omiga[2]) + abs(wheel_power_limitor_.omiga[3]);
+    rls_->setU(all_in);
+    rls_->setX(x);
+    rls_->setY(chassis_power_);
+    rls_->update();  // Internally computes predicted output as x^T * w
+    auto w = rls_->getW();
+    pivot_power_limitor_.effort_coeff = std::max(w(0), 1e-3);
+    pivot_power_limitor_.vel_coeff = std::max(w(1), 1e-3);
+    wheel_power_limitor_.effort_coeff = std::max(w(2), 1e-3);
+    wheel_power_limitor_.vel_coeff = std::max(w(3), 1e-3);
+    capacity_update_flag_ = false;
+  }
+
+  // Publish power status.
+  auto publishPower = [](auto& pub, const double power) {
+    if (pub && pub->trylock())
+    {
+      pub->msg_.data = power;
+      pub->unlockAndPublish();
+    }
+  };
+
+  publishPower(epower_pub_, estimated_total_power);
+  publishPower(cpower_pub_, cmd_total_power);
 }
 
 PLUGINLIB_EXPORT_CLASS(rm_chassis_controllers::SwerveController, controller_interface::ControllerBase)

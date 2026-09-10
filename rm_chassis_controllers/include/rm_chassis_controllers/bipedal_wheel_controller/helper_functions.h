@@ -15,11 +15,25 @@
 
 #include "bipedal_wheel_controller/dynamics/gen_A.h"
 #include "bipedal_wheel_controller/dynamics/gen_B.h"
-#include "bipedal_wheel_controller/vmc/leg_conv.h"
 #include "bipedal_wheel_controller/definitions.h"
 
 namespace rm_chassis_controllers
 {
+static inline double get_LM(const double& l)
+{
+  return 0.218f * l + 0.075f;
+};
+
+static inline double get_i_p(const double& l)
+{
+  return 0.4f * l + 0.07f;
+};
+
+static inline double get_theta_leg_offset(const double& l)
+{
+  return M_PI_4 / 2;
+}
+
 /**
  * Generate continuous-time state space matrices A and B
  * @param model_params
@@ -31,20 +45,30 @@ inline void generateAB(const std::shared_ptr<ModelParams>& model_params, Eigen::
                        Eigen::Matrix<double, STATE_DIM, CONTROL_DIM>& b, double leg_length)
 {
   double A[36] = { 0. }, B[12]{ 0. };
-  double L = leg_length * model_params->L_weight;
-  double Lm = leg_length * model_params->Lm_weight;
+  //  double L = leg_length * model_params->L_weight;
+  //  double Lm = leg_length * model_params->Lm_weight;
+  double Lm = get_LM(leg_length);
+  double L = leg_length - Lm;
+  double i_p = get_i_p(leg_length);
+
   //  auto theta_from_length = [](double L) -> double {
   //    return -23.36693691 * L * L * L + 24.76241959 * L * L - 11.65313741 * L + 2.49258628;
   //  };
   //  double theta_L = theta_from_length(leg_length);
-  gen_A(model_params->i_m, model_params->i_p, model_params->i_w, L, Lm, model_params->M, model_params->r,
-        model_params->g, model_params->l, model_params->m_p, model_params->m_w, A);
-  gen_B(model_params->i_m, model_params->i_p, model_params->i_w, L, Lm, model_params->M, model_params->r,
-        model_params->l, model_params->m_p, model_params->m_w, B);
   //  gen_A_leg_offset(model_params->i_m, model_params->i_p, model_params->i_w, L, Lm, model_params->M, model_params->r,
   //                   model_params->g, model_params->l, model_params->m_p, model_params->m_w, theta_L, A);
   //  gen_B_leg_offset(model_params->i_m, model_params->i_p, model_params->i_w, L, Lm, model_params->M, model_params->r,
   //                   model_params->g, model_params->l, model_params->m_p, model_params->m_w, theta_L, B);
+
+  //  gen_A(model_params->i_m, model_params->i_p, model_params->i_w, L, Lm, model_params->M, model_params->r,
+  //        model_params->g, model_params->l, model_params->m_p, model_params->m_w, A);
+  //  gen_B(model_params->i_m, model_params->i_p, model_params->i_w, L, Lm, model_params->M, model_params->r,
+  //        model_params->l, model_params->m_p, model_params->m_w, B);
+
+  gen_A(model_params->i_m, i_p, model_params->i_w, L, Lm, model_params->M, model_params->r, model_params->g,
+        model_params->l, model_params->m_p, model_params->m_w, A);
+  gen_B(model_params->i_m, i_p, model_params->i_w, L, Lm, model_params->M, model_params->r, model_params->l,
+        model_params->m_p, model_params->m_w, B);
 
   // clang-format off
   a<< 0.  ,1.,0.,0.,0.   ,0.,
@@ -60,78 +84,6 @@ inline void generateAB(const std::shared_ptr<ModelParams>& model_params, Eigen::
       0.  ,0.  ,
       B[5],B[11];
   // clang-format on
-}
-
-/**
- * Compute the leg command using PID controllers
- * @param desired_length
- * @param desired_angle
- * @param current_length
- * @param current_angle
- * @param length_pid
- * @param angle_pid
- * @param leg_angle
- * @param period
- * @param feedforward_force
- * @param overturn
- * @return
- */
-[[maybe_unused]] inline LegCommand computePidLegCommand(double desired_length, double desired_angle, double leg_pos[2],
-                                                        double leg_spd[2], control_toolbox::Pid& length_pid,
-                                                        control_toolbox::Pid& angle_pid,
-                                                        control_toolbox::Pid& angle_vel_pid, const double* leg_angle,
-                                                        const int& leg_state, const ros::Duration& period,
-                                                        double feedforward_force = 0.0f, const bool& overturn = false)
-{
-  LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
-  cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
-  if (!overturn)
-  {
-    if (leg_state == LegState::BEHIND || leg_state == LegState::UNDER)
-    {
-      cmd.torque = angle_pid.computeCommand(-angles::shortest_angular_distance(desired_angle, leg_pos[1]), period);
-    }
-    else
-    {
-      cmd.torque = angle_vel_pid.computeCommand(-5 - leg_spd[1], period);
-    }
-  }
-  leg_conv(cmd.force, cmd.torque, leg_angle[0], leg_angle[1], cmd.input);
-  return cmd;
-}
-
-[[maybe_unused]] inline LegCommand
-computePidAngleVelLegCommand(double desired_length, double desired_leg_angle_vel, double leg_pos[2], double leg_spd[2],
-                             control_toolbox::Pid& length_pid, control_toolbox::Pid& angle_vel_pid,
-                             const double* leg_angle, const ros::Duration& period, double feedforward_force = 0.0f)
-{
-  LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
-  cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
-  cmd.torque = angle_vel_pid.computeCommand(desired_leg_angle_vel - leg_spd[1], period);
-  leg_conv(cmd.force, 10 * desired_leg_angle_vel + cmd.torque, leg_angle[0], leg_angle[1], cmd.input);
-  return cmd;
-}
-
-[[maybe_unused]] inline LegCommand computePidAngleLegCommand(double desired_length, double desired_leg_angle,
-                                                             double leg_pos[2], control_toolbox::Pid& length_pid,
-                                                             control_toolbox::Pid& angle_pid, const double* leg_angle,
-                                                             const ros::Duration& period,
-                                                             double feedforward_force = 0.0f)
-{
-  LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
-  cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
-  cmd.torque = angle_pid.computeCommand(-angles::shortest_angular_distance(desired_leg_angle, leg_pos[1]), period);
-  leg_conv(cmd.force, cmd.torque, leg_angle[0], leg_angle[1], cmd.input);
-  return cmd;
-}
-[[maybe_unused]] inline LegCommand computePidLenLegCommand(double desired_length, double leg_pos[2],
-                                                           control_toolbox::Pid& length_pid, const double* leg_angle,
-                                                           const ros::Duration& period, double feedforward_force = 0.0f)
-{
-  LegCommand cmd{ 0.0, 0.0, { 0.0, 0.0 } };
-  cmd.force = length_pid.computeCommand(desired_length - leg_pos[0], period) + feedforward_force;
-  leg_conv(cmd.force, 0.0, leg_angle[0], leg_angle[1], cmd.input);
-  return cmd;
 }
 
 /**
@@ -169,6 +121,14 @@ inline void quatToRPY(const geometry_msgs::Quaternion& q, double& roll, double& 
   yaw = std::atan2(2 * (q.x * q.y + q.w * q.z), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z);
   pitch = std::asin(as);
   roll = std::atan2(2 * (q.y * q.z + q.w * q.x), q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z);
+}
+
+inline void clamp(double& val, const double& minVal, const double& maxVal)
+{
+  if (val < minVal)
+    val = minVal;
+  if (val > maxVal)
+    val = maxVal;
 }
 
 }  // namespace rm_chassis_controllers
