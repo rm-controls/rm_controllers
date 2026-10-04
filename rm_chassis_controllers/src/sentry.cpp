@@ -56,8 +56,8 @@ bool SentryController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHand
       !ctrl_catapult_joint_.init(effort_joint_interface_, nh_brake))
     return false;
   if_catapult_ = false;
-  joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_wheel_.getJointName()));
-  joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_catapult_joint_.getJointName()));
+  wheel_joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_wheel_.getJointName()));
+  wheel_joint_handles_.push_back(effort_joint_interface_->getHandle(ctrl_catapult_joint_.getJointName()));
   return true;
 }
 
