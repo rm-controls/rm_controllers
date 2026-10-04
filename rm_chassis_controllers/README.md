@@ -119,6 +119,10 @@ sudo rosdep install --from-paths src
 
   Allowed period (in s) between two commands. If the time is exceed this period, the speed of chassis will be set 0.
 
+* **`raw_yaw_feedforward_k`** (double, default: 0.0)
+
+  Yaw feedforward time constant in seconds. Only used in `raw` mode, where the command-frame rotation uses `yaw + k * w` to compensate direction-change lag.
+
 * **`power_offset`** (double)
 
   Fix the difference between theoretical power and actual power.
@@ -245,6 +249,7 @@ sudo rosdep install --from-paths src
       power_offset: -8.41
     twist_angular: 0.5233
     timeout: 0.1
+    raw_yaw_feedforward_k: 0.0
     pid_follow: { p: 5.0, i: 0, d: 0.3, i_max: 0.0, i_min: 0.0, antiwindup: true, publish_state: true }
     twist_covariance_diagonal: [ 0.001, 0.001, 0.001, 0.001, 0.001, 0.001 ]
 
