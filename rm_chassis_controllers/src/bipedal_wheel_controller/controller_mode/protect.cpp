@@ -48,7 +48,7 @@ void Protect::execute(const ros::Time& time, const ros::Duration& period)
   left_wheel_desired_vel = vel_cmd_.x - vel_cmd_.z * chassis_geometry_params->wheel_track;
   right_wheel_desired_vel = vel_cmd_.x + vel_cmd_.z * chassis_geometry_params->wheel_track;
 
-  length_des_l = length_des_r = 0.11f;
+  length_des_l = length_des_r = 0.12f;
   theta_des_l = theta_des_r = 0.0f;
   ramp_length_des_l_->input(length_des_l);
   ramp_angle_des_l_->input(theta_des_l);
@@ -63,8 +63,8 @@ void Protect::execute(const ros::Time& time, const ros::Duration& period)
   double F_pid_left{}, F_pid_right{};
   F_pid_left = pid_legs_[LEFT]->computeCommand(length_des_l - left_pos.L0, period);
   F_pid_right = pid_legs_[RIGHT]->computeCommand(length_des_r - right_pos.L0, period);
-  F_pid_left = abs(F_pid_left) > 200 ? std::copysign(1, F_pid_left) * 200 : F_pid_left;
-  F_pid_right = abs(F_pid_right) > 200 ? std::copysign(1, F_pid_right) * 200 : F_pid_right;
+  F_pid_left = abs(F_pid_left) > 75 ? std::copysign(1, F_pid_left) * 75 : F_pid_left;
+  F_pid_right = abs(F_pid_right) > 75 ? std::copysign(1, F_pid_right) * 75 : F_pid_right;
   left_cmd.force = F_pid_left - controller->f_spring_force(left_pos.L0);
   right_cmd.force = F_pid_right - controller->f_spring_force(right_pos.L0);
   double T_theta_diff = pid_theta_diff_->computeCommand(right_pos.theta - left_pos.theta, period);
@@ -88,8 +88,7 @@ void Protect::execute(const ros::Time& time, const ros::Duration& period)
     controller->setStateChange(false);
     ROS_INFO("[balance] Exit PROTECT");
   }
-  else if (abs(chassis_state.angular_vel.y) < 0.1 && controller->getOverturn() &&
-           controller->getBaseState() != rm_msgs::ChassisCmd::FALLEN)
+  else if (controller->getOverturn() && controller->getBaseState() != rm_msgs::ChassisCmd::FALLEN)
   {
     controller->setStateChange(false);
     controller->setMode(BalanceMode::RECOVER);

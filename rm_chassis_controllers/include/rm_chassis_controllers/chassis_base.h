@@ -47,7 +47,6 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
-#include <rm_msgs/ChassisActiveSusCmd.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <rm_common/ros_utilities.h>
 #include <rm_common/math_utilities.h>
@@ -144,7 +143,7 @@ protected:
   void twist(const ros::Time& time, const ros::Duration& period);
   virtual void moveJoint(const ros::Time& time, const ros::Duration& period) = 0;
   virtual geometry_msgs::Twist odometry() = 0;
-  /** @brief Init frame on base_link. Integral vel to pos and angle.
+  /** @brief Init frame on base_link. Integral vel to current_pos_ and angle.
    *
    * @param time The current time.
    * @param period The time passed since the last call to update.
@@ -187,19 +186,19 @@ protected:
   realtime_tools::RealtimeBuffer<Command> cmd_rt_buffer_{};
   realtime_tools::RealtimeBuffer<nav_msgs::Odometry> slam_rt_buffer_{};
   realtime_tools::RealtimeBuffer<geometry_msgs::TransformStamped> localization_rt_buffer_{};
-  std::unique_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry>> odometry_rt_pub_;
+  std::unique_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry>> odom_pub_;
   std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> cpower_pub_;  // command power publisher
   std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> epower_pub_;  // estimated power publisher
   std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> chassis_power_pub_;  // chassis power publisher
 
   rm_common::TfRtBroadcaster brcst4global_map2robot_odom_{};
-  rm_common::TfRtBroadcaster brcst4robot_odom2robot_base_{};
   rm_common::TfRtBroadcaster brcst4global_map2camera_init_{};
+  rm_common::TfRtBroadcaster brcst4robot_odom2robot_base_{};
 
   geometry_msgs::TransformStamped global_map2robot_odom_{};
+  geometry_msgs::TransformStamped global_map2camera_init_{};
   geometry_msgs::TransformStamped robot_odom2robot_base_{};
   geometry_msgs::TransformStamped robot_base2lidar_base_{};
-  geometry_msgs::TransformStamped global_map2camera_init_{};
 
   tf2::Transform T_global_map2robot_odom_{};
   tf2::Transform T_robot_odom_2robot_base_{};
@@ -217,12 +216,14 @@ protected:
   std::unique_ptr<RampFilter<double>> ramp_y_{ nullptr };
   std::unique_ptr<RampFilter<double>> ramp_w_{ nullptr };
 
-  double roll_{ 0. }, pitch_{ 0. }, yaw_{ 0. };
-
   double publish_rate_{ 100.0 };
   bool publish_map_tf_{ false };
   bool publish_odom_tf_{ false };
+  bool gravity_estimation_offset_{ false };
 
+  double roll_{ 0.0 };
+  double pitch_{ 0.0 };
+  double yaw_{ 0.0 };
   double wheel_radius_{ 0.02 };
   double twist_angular_{ M_PI / 6 };
   double max_odom_vel_{ 10.0 };
@@ -233,7 +234,6 @@ protected:
   bool use_rls_{ false };
   bool use_K_angle_{ false };
 
-  bool gravity_estimation_offset_{ false };
   bool odom_initialized_{ false };
   bool slam_updated_{ false };
   bool localization_updated_{ false };
@@ -246,12 +246,14 @@ protected:
   std::string robot_odom_frame_id_{ "odom" };
   std::string robot_base_frame_id_{ "base_link" };
   std::string lidar_base_frame_id_{ "livox_frame" };
-  std::string slam_topic_{ "/Odometry" };
-  std::string localization_topic_{ "/hdl_global_localization/result" };
+  std::string slam_topic_{ "/slam/odometry" };
+  std::string localization_topic_{ "/shinji/result" };
+
   std::string capacity_topic_{ "/rm_referee/power_management/sample_and_status" };
 
   ros::Time last_publish_time_{};
   geometry_msgs::Vector3 vel_cmd_{};  // x, y
+  std::array<double, 36> twist_covariance_{};
   control_toolbox::Pid pid_follow_{};
 
   Command cmd_struct_{};

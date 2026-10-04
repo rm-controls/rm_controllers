@@ -28,6 +28,12 @@ public:
   }
 
 private:
+  typedef enum
+  {
+    POSITIVE = -1,
+    NEGATIVE = 1
+  } VEL_DIRECTION;
+
   double calculateSupportForce(double F, double Tp, double leg_length, const double& leg_len_spd, double acc_z,
                                Eigen::Matrix<double, STATE_DIM, 1> x, const std::shared_ptr<ModelParams>& model_params,
                                const ros::Duration& period);
@@ -45,6 +51,7 @@ private:
   double unstick_threshold{ 15.0 };
   int jump_phase_ = JumpPhase::IDLE, jumpTime_{ 0 };
   bool x_offset_flag_{ false }, protect_flag_{ false };
+  VEL_DIRECTION vel_direction_{ VEL_DIRECTION::POSITIVE };
   std::shared_ptr<MovingAverageFilter<double>> leftSupportForceAveragePtr_, rightSupportForceAveragePtr_;
 };
 }  // namespace rm_chassis_controllers

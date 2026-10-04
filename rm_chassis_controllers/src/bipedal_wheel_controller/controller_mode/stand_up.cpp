@@ -14,7 +14,7 @@ StandUp::StandUp(BipedalControllerInterface* controller_,
                  const std::vector<control_toolbox::Pid*>& pid_thetas)
   : ModeBase(controller_), joint_handles_(joint_handles), pid_legs_(pid_legs), pid_thetas_(pid_thetas)
 {
-  double leg_len_acc = 50, leg_theta_acc = 7.5;
+  double leg_len_acc = 50, leg_theta_acc = 5.0;
   ramp_length_des_l_ = std::make_shared<RampFilter<double>>(leg_len_acc, 0.001);
   ramp_length_des_r_ = std::make_shared<RampFilter<double>>(leg_len_acc, 0.001);
   ramp_angle_des_l_ = std::make_shared<RampFilter<double>>(leg_theta_acc, 0.001);
@@ -214,7 +214,7 @@ inline LegCommand StandUp::computePidLegCommand(const StandUpLegCommand& leg_com
   Tp_leg_comp = G_leg * l_leg * sin(beta);
 
   double F_pid_force = length_pid.computeCommand(leg_command.desired_length - leg_pos.L0, period);
-  F_pid_force = abs(F_pid_force) > 200 ? std::copysign(1, F_pid_force) * 200 : F_pid_force;
+  F_pid_force = abs(F_pid_force) > 100 ? std::copysign(1, F_pid_force) * 100 : F_pid_force;
   cmd.force = F_pid_force + feedforward_force;
   if (leg_orientation == LegOrientation::BEHIND || leg_orientation == LegOrientation::UNDER)
   {

@@ -3,6 +3,8 @@
 //
 
 #include "bipedal_wheel_controller/controller.h"
+#include "bipedal_wheel_controller/vmc/FiveLinkVMC.h"
+#include "bipedal_wheel_controller/vmc/TwoLinkVMC.h"
 
 #include <angles/angles.h>
 #include <geometry_msgs/Quaternion.h>
@@ -81,7 +83,19 @@ bool BipedalController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   kalmanFilterPtr_ = std::make_shared<KalmanFilter<double>>(A_, B_, H_, Q_, R_);
   kalmanFilterPtr_->clear(X_);
 
+  down_5cm_stair_srv_ =
+      controller_nh.advertiseService("/down_5cm_stair", &BipedalController::down5cmStairSrvCallback, this);
+
   debugPub_ = std::make_shared<DebugDataPublisher>(controller_nh, "debug_data");
+  return true;
+}
+
+bool BipedalController::down5cmStairSrvCallback(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res)
+{
+  (void)req;
+  triggerDown5cmStairAction();
+  res.message = "down_5cm_stair flag set";
+  res.success = true;
   return true;
 }
 
@@ -165,16 +179,16 @@ void BipedalController::updateEstimation(const ros::Time& time, const ros::Durat
 
   //  double left_pos[2]{}, left_spd[2]{}, right_pos[2]{}, right_spd[2]{};
   // [0]:hip_vmc_joint [1]:knee_vmc_joint
-  //  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
-  //  left_angle[1] = left_knee_joint_handle_.getPosition();
-  //  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
-  //  right_angle[1] = right_knee_joint_handle_.getPosition();
+  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI;
+  left_angle[1] = left_knee_joint_handle_.getPosition();
+  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI;
+  right_angle[1] = right_knee_joint_handle_.getPosition();
 
   //  gazebo
-  left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
-  left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
-  right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
-  right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
+  // left_angle[0] = left_hip_joint_handle_.getPosition() + M_PI_2;
+  // left_angle[1] = left_knee_joint_handle_.getPosition() - M_PI_2;
+  // right_angle[0] = right_hip_joint_handle_.getPosition() + M_PI_2;
+  // right_angle[1] = right_knee_joint_handle_.getPosition() - M_PI_2;
 
   // left vmc calc
   leg_state_[LEFT].vmc->calc_jacobian(left_angle[0], left_angle[1]);
@@ -342,8 +356,32 @@ bool BipedalController::setupModelParams(ros::NodeHandle& controller_nh)
     ROS_ERROR("Param %s or %s not given (namespace: %s)", "l1", "l2", controller_nh.getNamespace().c_str());
     return false;
   }
-  leg_state_[LEFT].vmc = std::make_shared<VMC>(l1, l2);
-  leg_state_[RIGHT].vmc = std::make_shared<VMC>(l1, l2);
+
+  const std::string vmc_type = controller_nh.param<std::string>("vmc_type", "two_link");
+  if (vmc_type == "two_link")
+  {
+    leg_state_[LEFT].vmc = std::make_shared<TwoLinkVMC>(l1, l2);
+    leg_state_[RIGHT].vmc = std::make_shared<TwoLinkVMC>(l1, l2);
+  }
+  else if (vmc_type == "five_link")
+  {
+    double l3, l4, l5;
+    if (!controller_nh.getParam("l3", l3) || !controller_nh.getParam("l4", l4) || !controller_nh.getParam("l5", l5))
+    {
+      ROS_ERROR("Params l3, l4 and l5 are required for five_link VMC (namespace: %s)",
+                controller_nh.getNamespace().c_str());
+      return false;
+    }
+    leg_state_[LEFT].vmc = std::make_shared<FiveLinkVMC>(l1, l2, l3, l4, l5);
+    leg_state_[RIGHT].vmc = std::make_shared<FiveLinkVMC>(l1, l2, l3, l4, l5);
+  }
+  else
+  {
+    ROS_ERROR("Unsupported vmc_type '%s'; expected 'two_link' or 'five_link' (namespace: %s)", vmc_type.c_str(),
+              controller_nh.getNamespace().c_str());
+    return false;
+  }
+  ROS_INFO("Using %s VMC", vmc_type.c_str());
 
   if (!controller_nh.getParam("default_leg_length", default_leg_length_))
   {
@@ -442,17 +480,32 @@ bool BipedalController::setupBiasParams(ros::NodeHandle& controller_nh)
       ROS_ERROR("Param %s not given (namespace: %s)", e.first, controller_nh.getNamespace().c_str());
       return false;
     }
+  XmlRpc::XmlRpcValue xml_rpc_value;
+  if (!controller_nh.getParam("leg_theta_offset", xml_rpc_value))
+  {
+    ROS_ERROR("Param %s not given (namespace: %s)", "leg_theta_offset", controller_nh.getNamespace().c_str());
+    return false;
+  }
+  leg_theta_offset_interp_.init(xml_rpc_value);
   return true;
 }
 
 // [will unused]
 bool BipedalController::setupControlParams(ros::NodeHandle& controller_nh)
 {
-  if (!controller_nh.getParam("jumpOverTime", control_params_->jumpOverTime_))
-  {
-    ROS_ERROR("Load param fail, check the resist of jump_over_time");
-    return false;
-  }
+  const std::pair<const char*, double*> tbl[] = {
+    { "jumpOverTime", &control_params_->jumpOverTime_ },
+    { "down5cmStairPitchThreshold", &control_params_->down5cmStairPitchThreshold },
+    { "down5cmStairThetaThreshold", &control_params_->down5cmStairThetaThreshold },
+    { "jump_up_force", &control_params_->jump_up_force },
+    { "off_ground_force", &control_params_->off_ground_force }
+  };
+  for (const auto& e : tbl)
+    if (!controller_nh.getParam(e.first, *e.second))
+    {
+      ROS_ERROR("Param %s not given (namespace: %s)", e.first, controller_nh.getNamespace().c_str());
+      return false;
+    }
   return true;
 }
 
@@ -587,6 +640,9 @@ void BipedalController::reconfigCB(rm_chassis_controllers::LQRWeightConfig& conf
     config.Q_d_phi = init_config.Q_d_phi;
     config.R_T = init_config.R_T;
     config.R_Tp = init_config.R_Tp;
+    config.x_bias = bias_params_->x;
+    config.theta_bias = bias_params_->theta;
+    config.raw_theta_bias = bias_params_->raw_theta;
     dynamic_reconfig_initialized_ = true;
   }
   LQRConfig config_non_rt{ .Q_theta = config.Q_theta,
@@ -633,6 +689,10 @@ void BipedalController::reconfigCB(rm_chassis_controllers::LQRWeightConfig& conf
     }
   }
   std::cout << "len: 0.2m LQR k: " << std::endl << k << std::endl;
+
+  bias_params_->x = config.x_bias;
+  bias_params_->theta = config.theta_bias;
+  bias_params_->raw_theta = config.raw_theta_bias;
 }
 
 double BipedalController::f_spring_force(double L0)

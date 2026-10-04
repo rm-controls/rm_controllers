@@ -44,6 +44,7 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/ros_utilities.h>
+#include <rm_common/filters/filters.h>
 #include <rm_common/filters/lp_filter.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <dynamic_reconfigure/server.h>
@@ -95,6 +96,7 @@ private:
   std::vector<std::vector<std::shared_ptr<control_toolbox::Pid>>> friction_pid_controllers_;
   effort_controllers::JointPositionController ctrl_trigger_;
   LowPassFilter* lp_filter_;
+  RampFilter<double>* wheel_speed_ramp_filter_{};
   int push_per_rotation_{}, count_{};
   double push_wheel_speed_threshold_{};
   double freq_threshold_{};

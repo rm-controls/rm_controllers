@@ -23,11 +23,7 @@ void SitDown::execute(const ros::Time& time, const ros::Duration& period)
   }
 
   auto& chassis_state = controller->getChassisState();
-  //  auto& left_leg_state = controller->getLegState(LEFT);
-  //  auto& right_leg_state = controller->getLegState(RIGHT);
   LegCommand left_cmd = { 0, 0, { 0., 0. } }, right_cmd = { 0, 0, { 0., 0. } };
-  //  double left_wheel_cmd = pid_wheels_[0]->computeCommand(joint_handles_[0]->getVelocity(), period);
-  //  double right_wheel_cmd = pid_wheels_[1]->computeCommand(joint_handles_[1]->getVelocity(), period);
   setJointCommands(joint_handles_, left_cmd, right_cmd);
 
   // Exit

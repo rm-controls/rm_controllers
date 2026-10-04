@@ -2,6 +2,8 @@
 // Created by wiselook on 7/27/25.
 //
 #include "bipedal_wheel_controller/series_legged_vmc_controller.h"
+#include "bipedal_wheel_controller/vmc/TwoLinkVMC.h"
+#include "bipedal_wheel_controller/vmc/FiveLinkVMC.h"
 #include <rm_common/ros_utilities.h>
 #include <pluginlib/class_list_macros.hpp>
 #include <string>
@@ -60,7 +62,8 @@ bool VMCController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle&
   s2_ = controller_nh.param("s2", 0.0775);
   s3_ = controller_nh.param("s3", 0.205);
   alpha_s_ = controller_nh.param("alpha_s", 0.2);
-  vmcPtr_ = std::make_unique<VMC>(l1, l2, 0);
+  // vmcPtr_ = std::make_unique<TwoLinkVMC>(l1, l2);
+  vmcPtr_ = std::make_unique<FiveLinkVMC>(l1, l2, l2, l1, 0);
 
   jointThigh_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(thighJoint);
   jointKnee_ = robot_hw->get<hardware_interface::EffortJointInterface>()->getHandle(kneeJoint);
@@ -162,15 +165,15 @@ void VMCController::update(const ros::Time& time, const ros::Duration& period)
 
 double VMCController::f_spring_force(double L0)
 {
-  //  double l1 = vmcPtr_->getL1(), l2 = vmcPtr_->getL2(), Fs = spring_force_, s2 = s2_, s3 = s3_, alpha_s = alpha_s_;
-  //  double cos_theta3, theta3, ls, Fv;
-  //  cos_theta3 = (l1 * l1 + l2 * l2 - L0 * L0) / (2 * l1 * l2);
-  //  theta3 = acos(cos_theta3);
-  //  ls = sqrt(s2 * s2 + s3 * s3 - 2 * s2 * s3 * cos(theta3 - alpha_s));
-  //  Fv = Fs * (L0 * s2 * s3 * sin(theta3 - alpha_s)) / (ls * l1 * l2 * sin(theta3));
-  //  return Fv;
+  double l1 = vmcPtr_->getL1(), l2 = vmcPtr_->getL2(), Fs = spring_force_, s2 = s2_, s3 = s3_, alpha_s = alpha_s_;
+  double cos_theta3, theta3, ls, Fv;
+  cos_theta3 = (l1 * l1 + l2 * l2 - L0 * L0) / (2 * l1 * l2);
+  theta3 = acos(cos_theta3);
+  ls = sqrt(s2 * s2 + s3 * s3 - 2 * s2 * s3 * cos(theta3 - alpha_s));
+  Fv = Fs * (L0 * s2 * s3 * sin(theta3 - alpha_s)) / (ls * l1 * l2 * sin(theta3));
+  return Fv;
 
-  return ((2094.45f * L0 - 3091.28f) * L0 + 1408.375f) * L0 - 80.91f;
+  // return ((2094.45f * L0 - 3091.28f) * L0 + 1408.375f) * L0 - 80.91f;
 }
 
 }  // namespace rm_chassis_controllers

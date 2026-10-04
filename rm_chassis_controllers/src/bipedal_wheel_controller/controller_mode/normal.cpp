@@ -56,14 +56,19 @@ void Normal::execute(const ros::Time& time, const ros::Duration& period)
 
   auto vel_cmd_ = controller->getVelCmd();
   double current_leg_length = (left_pos.L0 + right_pos.L0) / 2.0f;
+  static double last_vel_cmd_x = vel_cmd_.x;
+  vel_direction_ = (vel_cmd_.x - last_vel_cmd_x) > 0 ? VEL_DIRECTION::POSITIVE :
+                   (vel_cmd_.x - last_vel_cmd_x) < 0 ? VEL_DIRECTION::NEGATIVE :
+                                                       vel_direction_;
+  last_vel_cmd_x = vel_cmd_.x;
   if (abs(chassis_state.x_vel) < 0.1f && abs(vel_cmd_.x) < 0.01f)
   {
     controller->setMoveFlag(false);
     if (x_offset_flag_)
     {
       x_offset_flag_ = false;
-      pos_des_ =
-          current_leg_length * sin(-(left_leg_state.x(THETA) + right_leg_state.x(THETA)) / 2.0f) + bias_params_->x;
+      pos_des_ = current_leg_length * sin(-(left_leg_state.x(THETA) + right_leg_state.x(THETA)) / 2.0f) +
+                 vel_direction_ * bias_params_->x;
     }
   }
 
@@ -102,18 +107,36 @@ void Normal::execute(const ros::Time& time, const ros::Duration& period)
 
   if (controller->getCompleteStand())
   {
-    x_left_ref(POS) = x_right_ref(POS) = pos_des_;
     if (controller->getBaseState() != rm_msgs::ChassisCmd::RAW)
     {
       x_left_ref(VEL) = x_right_ref(VEL) = friction_circle_alpha * vel_cmd_.x;
+      double theta_bias = bias_params_->theta;
+      x_left(THETA) -= theta_bias;
+      x_right(THETA) -= theta_bias;
+      if (!controller->getMoveFlag())
+      {
+        x_offset_flag_ = true;
+      }
+      else
+      {
+        pos_des_ = bias_params_->x;
+      }
     }
     else
     {
-      // raw move but  bug
-      //      x_left_ref(VEL) = x_right_ref(VEL) = vel_cmd_.x;
-      //      x_left_ref(POS) = x_right_ref(POS) = 0.0f;
-      x_left_ref(VEL) = x_right_ref(VEL) = 0.0f;
+      // raw move but bug
+      x_left_ref(POS) = x_right_ref(POS) = 0.0f;
+      x_left_ref(VEL) = x_right_ref(VEL) = vel_cmd_.x;
+      //      x_left_ref(VEL) = x_right_ref(VEL) = 0.0f;
+      const double leg_theta_offset = controller->getLegThetaOffset(current_leg_length);
+      // x_left(THETA) -= bias_params_->raw_theta;
+      // x_right(THETA) -= bias_params_->raw_theta;
+      x_left(THETA) -= leg_theta_offset;
+      x_right(THETA) -= leg_theta_offset;
+      x_left(PITCH) -= bias_params_->raw_pitch;
+      x_right(PITCH) -= bias_params_->raw_pitch;
     }
+    x_left_ref(POS) = x_right_ref(POS) = pos_des_;
     if (protect_flag_)
     {
       x_left_ref(VEL) = x_right_ref(VEL) = 0.0f;
@@ -128,28 +151,12 @@ void Normal::execute(const ros::Time& time, const ros::Duration& period)
   {
     leg_length_des = controller->getDefaultLegLength();
   }
-  if (controller->getBaseState() != rm_msgs::ChassisCmd::RAW)
-  {
-    if (!controller->getMoveFlag())
-    {
-      x_offset_flag_ = true;
-      x_left(THETA) -= bias_params_->theta;
-      x_right(THETA) -= bias_params_->theta;
-    }
-  }
-  else
-  {
-    x_left(THETA) -= bias_params_->raw_theta;
-    x_right(THETA) -= bias_params_->raw_theta;
-    x_left(PITCH) -= bias_params_->raw_pitch;
-    x_right(PITCH) -= bias_params_->raw_pitch;
-  }
 
   x_left -= x_left_ref;
   x_right -= x_right_ref;
 
-  clamp(x_left(VEL), -1.2f, 1.2f);
-  clamp(x_right(VEL), -1.2f, 1.2f);
+  clamp(x_left(VEL), -1.1f, 1.1f);
+  clamp(x_right(VEL), -1.1f, 1.1f);
 
   const double k_pitch = -0.1f, b = 0.35f;
   double pitch_error_clamp = k_pitch * chassis_state.x_vel + b;
@@ -197,7 +204,7 @@ void Normal::execute(const ros::Time& time, const ros::Duration& period)
     F_leg[LEFT] = F_pid_left - F_inertia_left + gravity / cos(left_pos.theta) + F_roll - left_spring_force;
     F_leg[RIGHT] = F_pid_right + F_inertia_right + gravity / cos(right_pos.theta) - F_roll - right_spring_force;
     T_wheel_diff = controller->getBaseState() == rm_msgs::ChassisCmd::RAW ?
-                       pid_wheel_vel_diff_->computeCommand(wheel_vel_diff, period) :
+                       std::copysign(1, vel_cmd_.z) * (pid_wheel_vel_diff_->computeCommand(wheel_vel_diff, period)) :
                        0.0f;
   }
   else
@@ -210,9 +217,9 @@ void Normal::execute(const ros::Time& time, const ros::Duration& period)
       case JumpPhase::LEG_RETRACTION:
       {
         ROS_INFO("[balance] ENTER LEG_RETRACTION");
-        F_leg(LEFT) = pid_legs_[LEFT]->computeCommand(leg_length_des - current_leg_length, period) +
+        F_leg(LEFT) = pid_legs_[LEFT]->computeCommand((leg_length_des - 0.02f) - current_leg_length, period) +
                       gravity / cos(left_pos.theta) + F_roll - left_spring_force;
-        F_leg(RIGHT) = pid_legs_[RIGHT]->computeCommand(leg_length_des - current_leg_length, period) +
+        F_leg(RIGHT) = pid_legs_[RIGHT]->computeCommand((leg_length_des - 0.02f) - current_leg_length, period) +
                        gravity / cos(right_pos.theta) - F_roll - right_spring_force;
         if (current_leg_length < leg_length_des + 0.02f)
         {
@@ -227,13 +234,13 @@ void Normal::execute(const ros::Time& time, const ros::Duration& period)
       }
       case JumpPhase::JUMP_UP:
         ROS_INFO("[balance] ENTER JUMP_UP");
-        F_leg(0) = 300 * (1 - 3 * pow(s_left, 2) + 2 * pow(s_left, 3)) + gravity;
-        F_leg(1) = 300 * (1 - 3 * pow(s_right, 2) + 2 * pow(s_right, 3)) + gravity;
-        if (current_leg_length > leg_length_des)
+        F_leg(LEFT) = control_params_->jump_up_force * (1 - 3 * pow(s_left, 2) + 2 * pow(s_left, 3)) + gravity;
+        F_leg(RIGHT) = control_params_->jump_up_force * (1 - 3 * pow(s_right, 2) + 2 * pow(s_right, 3)) + gravity;
+        if (current_leg_length > leg_length_des - 0.01f)
         {
           jumpTime_++;
         }
-        if (jumpTime_ >= 2)
+        if (jumpTime_ >= 4)
         {
           jumpTime_ = 0;
           jump_phase_ = JumpPhase::OFF_GROUND;
@@ -243,10 +250,12 @@ void Normal::execute(const ros::Time& time, const ros::Duration& period)
         ROS_INFO("[balance] ENTER OFF_GROUND");
         double s_left_flip = 1 - s_left;
         double s_right_flip = 1 - s_left;
-        F_leg(0) = -175 * (1 - 3 * pow(s_left_flip, 2) + 2 * pow(s_left_flip, 3)) - left_spring_force;
-        F_leg(1) = -175 * (1 - 3 * pow(s_right_flip, 2) + 2 * pow(s_right_flip, 3)) - right_spring_force;
+        F_leg(LEFT) = -control_params_->off_ground_force * (1 - 3 * pow(s_left_flip, 2) + 2 * pow(s_left_flip, 3)) -
+                      left_spring_force;
+        F_leg(RIGHT) = -control_params_->off_ground_force * (1 - 3 * pow(s_right_flip, 2) + 2 * pow(s_right_flip, 3)) -
+                       right_spring_force;
 
-        if (current_leg_length < leg_length_des + 0.02f)
+        if (current_leg_length < leg_length_des + 0.03f)
         {
           jumpTime_++;
         }
@@ -347,16 +356,22 @@ void Normal::execute(const ros::Time& time, const ros::Duration& period)
       ROS_INFO("[balance] Exit NORMAL");
     }
   }
+
+  double enter_sitdown_theta_threshold =
+      controller->getDown5cmStairFlag() ? control_params_->down5cmStairThetaThreshold : 1.0;
+  double enter_sitdown_pitch_threshold =
+      controller->getDown5cmStairFlag() ? control_params_->down5cmStairPitchThreshold : 0.6;
   // Protection to sit_down
-  if (abs(x_left(THETA)) > 1.0 || abs(x_right(THETA)) > 1.0 || abs(chassis_state.pitch) > 0.6 ||
-      abs(chassis_state.roll) > 0.8 || controller->getOverturn() || abs(theta_diff) > 1.0 ||
-      controller->getBaseState() == rm_msgs::ChassisCmd::FALLEN)
+  if (abs(x_left(THETA)) > enter_sitdown_theta_threshold || abs(x_right(THETA)) > enter_sitdown_theta_threshold ||
+      abs(chassis_state.pitch) > enter_sitdown_pitch_threshold || abs(chassis_state.roll) > 0.8 ||
+      controller->getOverturn() || abs(theta_diff) > 1.0 || controller->getBaseState() == rm_msgs::ChassisCmd::FALLEN)
   {
     left_leg_state.x(POS) = right_leg_state.x(POS) = 0;
     controller->setMode(BalanceMode::SIT_DOWN);
     controller->setStateChange(false);
     controller->setCompleteStand(false);
     controller->setJumpCmd(false);
+    controller->setDown5cmStairFlag(false);
     setJointCommands(joint_handles_, { 0, 0, { 0., 0. } }, { 0, 0, { 0., 0. } });
     ROS_INFO("[balance] Exit NORMAL");
   }

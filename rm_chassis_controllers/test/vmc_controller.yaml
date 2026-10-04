@@ -8,10 +8,11 @@ controllers:
   vmc_controller:
     type: rm_chassis_controllers/VMCController
     vmc_bias_angle: 0.0
-    leg_gravity_compensation_debug: true
+    leg_gravity_compensation_debug: false
     leg_mass: 1.95
     LM_weight: 0.6
-    spring_force: 450.0
+#    spring_force: 450.0
+    spring_force: 0.0
     s2: 0.0486
     s3: 0.20
     alpha_s: 0.2448

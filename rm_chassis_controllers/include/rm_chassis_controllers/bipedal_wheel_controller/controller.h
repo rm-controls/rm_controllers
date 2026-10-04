@@ -14,6 +14,7 @@
 #include <rm_common/filters/kalman_filter.h>
 #include <rm_common/filters/lp_filter.h>
 #include <rm_common/DebugDataPublisher.h>
+#include <rm_common/linear_interpolation.h>
 #include <control_toolbox/pid.h>
 #include <controller_interface/multi_interface_controller.h>
 #include <geometry_msgs/TwistStamped.h>
@@ -22,6 +23,9 @@
 #include <hardware_interface/joint_command_interface.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Bool.h>
+#include <std_srvs/Trigger.h>
+#include <atomic>
+#include <string>
 #include "rm_chassis_controllers/chassis_base.h"
 #include <dynamic_reconfigure/server.h>
 #include <rm_chassis_controllers/LQRWeightConfig.h>
@@ -71,6 +75,8 @@ public:
   inline void setMoveFlag(const bool& move_flag) override { move_flag_ = move_flag; }
   inline const ChassisState& getChassisState() override { return chassis_state_; };
   inline LegState& getLegState(Side side) override { return leg_state_[side]; };
+  inline bool getDown5cmStairFlag() const override { return down_5cm_stair_flag_.load(std::memory_order_acquire); }
+  inline void setDown5cmStairFlag(bool flag) override { down_5cm_stair_flag_.store(flag, std::memory_order_release); }
   inline void setStateChange(bool state) override { balance_state_changed_ = state; }
   inline void setCompleteStand(bool state) override { complete_stand_ = state; }
   void setJumpCmd(bool cmd) override { jumpCmd_ = cmd; }
@@ -87,6 +93,7 @@ public:
   void pubDebugData(const std::string& name, double value) override{ debugPub_->add(name, value); };
   void setRecoveryLegSpdTurnback(bool recovery_leg_spd_turnback) override { recovery_leg_spd_turnback_ = recovery_leg_spd_turnback; }
   bool getRecoveryLegSpdTurnback() const override { return recovery_leg_spd_turnback_;}
+  double getLegThetaOffset(const double& leg_len) override { return leg_theta_offset_interp_.output(leg_len); }
   // clang-format on
 private:
   void updateEstimation(const ros::Time& time, const ros::Duration& period);
@@ -101,6 +108,11 @@ private:
   bool setupChassisGeometryParams(ros::NodeHandle& controller_nh);
   void polyfit(const std::vector<Eigen::Matrix<double, 2, 6>>& Ks, const std::vector<double>& L0s,
                Eigen::Matrix<double, 4, 12>& coeffs);
+  void triggerDown5cmStairAction()
+  {
+    down_5cm_stair_flag_.store(true, std::memory_order_release);
+  }
+  bool down5cmStairSrvCallback(std_srvs::Trigger::Request& req, std_srvs::Trigger::Response& res);
   geometry_msgs::Twist odometry() override;
 
   void reconfigCB(rm_chassis_controllers::LQRWeightConfig& config, uint32_t level);
@@ -131,9 +143,11 @@ private:
 
   ChassisState chassis_state_;
   LegState leg_state_[2];
-  //  Eigen::Matrix<double, STATE_DIM, 1> x_left_{}, x_right_{};
+  // leg_theta_offset
+  rm_common::LinearInterp leg_theta_offset_interp_;
   double default_leg_length_{ 0.12 };
   bool move_flag_{ false };
+  std::atomic_bool down_5cm_stair_flag_{ false };
   // stand up
   bool complete_stand_ = false, overturn_ = false;
   // recovery
@@ -162,5 +176,6 @@ private:
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::LeggedLQRStatus>> lqr_status_pub_;
   ros::Time cmd_update_time_;
   std::shared_ptr<DebugDataPublisher> debugPub_;
+  ros::ServiceServer down_5cm_stair_srv_;
 };
 }  // namespace rm_chassis_controllers

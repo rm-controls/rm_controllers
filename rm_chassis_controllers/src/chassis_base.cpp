@@ -53,7 +53,6 @@ void ChassisBase<T...>::initialize_parameters(ros::NodeHandle& controller_nh)
     controller_nh.getParam("gravity_estimation_offset", gravity_estimation_offset_);
     controller_nh.getParam("slam_topic", slam_topic_);
     controller_nh.getParam("localization_topic", localization_topic_);
-
     controller_nh.getParam("wheel_radius", wheel_radius_);
     controller_nh.getParam("twist_angular", twist_angular_);
     controller_nh.getParam("max_odom_vel", max_odom_vel_);
@@ -73,6 +72,31 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
                              ros::NodeHandle& controller_nh)
 {
   initialize_parameters(controller_nh);
+  odom_pub_ = std::make_unique<realtime_tools::RealtimePublisher<nav_msgs::Odometry>>(root_nh, "odom", 100);
+  odom_pub_->msg_.header.frame_id = robot_odom_frame_id_;
+  odom_pub_->msg_.child_frame_id = robot_base_frame_id_;
+  XmlRpc::XmlRpcValue twist_covariance_list;
+  if (controller_nh.getParam("twist_covariance_diagonal", twist_covariance_list))
+  {
+    if (twist_covariance_list.getType() != XmlRpc::XmlRpcValue::TypeArray || twist_covariance_list.size() != 6)
+    {
+      ROS_ERROR("twist_covariance_diagonal must be a 6-element array.");
+      return false;
+    }
+    twist_covariance_.fill(0.0);
+    for (int i = 0; i < 6; i++)
+    {
+      if (twist_covariance_list[i].getType() != XmlRpc::XmlRpcValue::TypeDouble &&
+          twist_covariance_list[i].getType() != XmlRpc::XmlRpcValue::TypeInt)
+      {
+        ROS_ERROR("twist_covariance_diagonal[%d] must be numeric.", i);
+        return false;
+      }
+      twist_covariance_[i * 7] = static_cast<double>(twist_covariance_list[i]);
+    }
+    for (size_t i = 0; i < twist_covariance_.size(); ++i)
+      odom_pub_->msg_.twist.covariance[i] = twist_covariance_[i];
+  }
   robot_state_handle_ = robot_hw->get<rm_control::RobotStateInterface>()->getHandle("robot_state");
   effort_joint_interface_ = robot_hw->get<hardware_interface::EffortJointInterface>();
 
@@ -89,16 +113,6 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   auto chassis_power_publisher =
       std::make_unique<realtime_tools::RealtimePublisher<std_msgs::Float64>>(controller_nh, "power/chassis_power", 100);
   this->chassis_power_pub_ = std::move(chassis_power_publisher);
-
-  // Setup odometry realtime publisher + odom message constant fields
-  auto odometry_publisher =
-      std::make_unique<realtime_tools::RealtimePublisher<nav_msgs::Odometry>>(root_nh, "odom", 100);
-  this->odometry_rt_pub_ = std::move(odometry_publisher);
-  odometry_rt_pub_->msg_.header.frame_id = robot_odom_frame_id_;
-  odometry_rt_pub_->msg_.child_frame_id = robot_base_frame_id_;
-  odometry_rt_pub_->msg_.twist.covariance = { 0.001, 0., 0.,    0., 0.,    0., 0., 0.001, 0., 0.,    0., 0.,
-                                              0.,    0., 0.001, 0., 0.,    0., 0., 0.,    0., 0.001, 0., 0.,
-                                              0.,    0., 0.,    0., 0.001, 0., 0., 0.,    0., 0.,    0., 0.001 };
 
   ramp_x_ = std::make_unique<RampFilter<double>>(0, 0.001);
   ramp_y_ = std::make_unique<RampFilter<double>>(0, 0.001);
@@ -121,12 +135,14 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
     brcst4global_map2camera_init_.sendTransform(global_map2camera_init_);
   }
 
+  robot_odom2robot_base_.header.stamp = ros::Time::now();
+  robot_odom2robot_base_.header.frame_id = robot_odom_frame_id_;
+  robot_odom2robot_base_.child_frame_id = robot_base_frame_id_;
+  robot_odom2robot_base_.transform.rotation.w = 1;
+  robot_state_handle_.setTransform(robot_odom2robot_base_, "rm_chassis_controllers");
+
   if (publish_odom_tf_)
   {
-    robot_odom2robot_base_.header.stamp = ros::Time::now();
-    robot_odom2robot_base_.header.frame_id = robot_odom_frame_id_;
-    robot_odom2robot_base_.child_frame_id = robot_base_frame_id_;
-    global_map2robot_odom_.transform.rotation.w = 1;
     brcst4robot_odom2robot_base_.init(root_nh);
     brcst4robot_odom2robot_base_.sendTransform(robot_odom2robot_base_);
   }
@@ -306,28 +322,31 @@ void ChassisBase<T...>::fallen()
 template <typename... T>
 void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& period)
 {
+  const geometry_msgs::Twist vel_base = odometry();  // on base_link frame
   if (publish_map_tf_)
   {
     if (!odom_initialized_)
     {
       try
       {
-        geometry_msgs::TransformStamped global_map2lidar_odom =
+        robot_base2lidar_base_ =
             robot_state_handle_.lookupTransform(robot_base_frame_id_, lidar_base_frame_id_, ros::Time(0));
-        T_global_map2lidar_odom_.setOrigin(tf2::Vector3(global_map2lidar_odom.transform.translation.x,
-                                                        global_map2lidar_odom.transform.translation.y,
-                                                        global_map2lidar_odom.transform.translation.z));
+        T_global_map2lidar_odom_.setOrigin(tf2::Vector3(robot_base2lidar_base_.transform.translation.x,
+                                                        robot_base2lidar_base_.transform.translation.y,
+                                                        robot_base2lidar_base_.transform.translation.z));
         if (gravity_estimation_offset_)
         {
           T_global_map2lidar_odom_.setRotation(tf2::Quaternion(0, 0, 0, 1));
-          global_map2camera_init_.transform.translation = global_map2lidar_odom.transform.translation;
+          global_map2camera_init_.transform.translation.x = T_global_map2lidar_odom_.getOrigin().x();
+          global_map2camera_init_.transform.translation.y = T_global_map2lidar_odom_.getOrigin().y();
+          global_map2camera_init_.transform.translation.z = T_global_map2lidar_odom_.getOrigin().z();
         }
         else
         {
-          T_global_map2lidar_odom_.setRotation(
-              tf2::Quaternion(global_map2lidar_odom.transform.rotation.x, global_map2lidar_odom.transform.rotation.y,
-                              global_map2lidar_odom.transform.rotation.z, global_map2lidar_odom.transform.rotation.w));
-          global_map2camera_init_.transform = global_map2lidar_odom.transform;
+          T_global_map2lidar_odom_.setRotation(tf2::Quaternion(
+              robot_base2lidar_base_.transform.rotation.x, robot_base2lidar_base_.transform.rotation.y,
+              robot_base2lidar_base_.transform.rotation.z, robot_base2lidar_base_.transform.rotation.w));
+          global_map2camera_init_.transform = tf2::toMsg(T_global_map2lidar_odom_);
         }
         odom_initialized_ = true;
       }
@@ -356,7 +375,6 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
         ROS_WARN("Failed to update localization offset.");
       }
     }
-    ros::Time tmp_time = ros::Time::now();
 
     if (slam_updated_)
     {
@@ -364,15 +382,12 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
       {
         slam_updated_ = false;
         const auto& slam = slam_rt_buffer_.readFromRT();
-        tmp_time = slam->header.stamp;
         T_lidar_odom2lidar_base_.setOrigin(
             tf2::Vector3(slam->pose.pose.position.x, slam->pose.pose.position.y, slam->pose.pose.position.z));
         T_lidar_odom2lidar_base_.setRotation(
             tf2::Quaternion(slam->pose.pose.orientation.x, slam->pose.pose.orientation.y, slam->pose.pose.orientation.z,
                             slam->pose.pose.orientation.w));
 
-        robot_base2lidar_base_ =
-            robot_state_handle_.lookupTransform(robot_base_frame_id_, lidar_base_frame_id_, slam->header.stamp);
         T_robot_base2lidar_base_.setOrigin(tf2::Vector3(robot_base2lidar_base_.transform.translation.x,
                                                         robot_base2lidar_base_.transform.translation.y,
                                                         robot_base2lidar_base_.transform.translation.z));
@@ -380,19 +395,15 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
             tf2::Quaternion(robot_base2lidar_base_.transform.rotation.x, robot_base2lidar_base_.transform.rotation.y,
                             robot_base2lidar_base_.transform.rotation.z, robot_base2lidar_base_.transform.rotation.w));
 
-        auto tmp_robot_odom2robot_base =
-            robot_state_handle_.lookupTransform(robot_odom_frame_id_, robot_base_frame_id_, slam->header.stamp);
-
-        T_robot_odom_2robot_base_.setOrigin(tf2::Vector3(tmp_robot_odom2robot_base.transform.translation.x,
-                                                         tmp_robot_odom2robot_base.transform.translation.y,
-                                                         tmp_robot_odom2robot_base.transform.translation.z));
-        T_robot_odom_2robot_base_.setRotation(tf2::Quaternion(
-            tmp_robot_odom2robot_base.transform.rotation.x, tmp_robot_odom2robot_base.transform.rotation.y,
-            tmp_robot_odom2robot_base.transform.rotation.z, tmp_robot_odom2robot_base.transform.rotation.w));
+        T_robot_odom_2robot_base_.setOrigin(tf2::Vector3(robot_odom2robot_base_.transform.translation.x,
+                                                         robot_odom2robot_base_.transform.translation.y,
+                                                         robot_odom2robot_base_.transform.translation.z));
+        T_robot_odom_2robot_base_.setRotation(
+            tf2::Quaternion(robot_odom2robot_base_.transform.rotation.x, robot_odom2robot_base_.transform.rotation.y,
+                            robot_odom2robot_base_.transform.rotation.z, robot_odom2robot_base_.transform.rotation.w));
 
         T_global_map2robot_odom_ = T_global_map2lidar_odom_ * T_lidar_odom2lidar_base_ *
                                    T_robot_base2lidar_base_.inverse() * T_robot_odom_2robot_base_.inverse();
-
         global_map2robot_odom_.transform = tf2::toMsg(T_global_map2robot_odom_);
       }
       catch (...)
@@ -400,79 +411,71 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
         ROS_WARN("Failed to update global_map2robot_odom.");
       }
     }
-    global_map2robot_odom_.header.stamp = tmp_time;
-    global_map2camera_init_.header.stamp = tmp_time;
+    global_map2robot_odom_.header.stamp = time;
+    global_map2camera_init_.header.stamp = time;
   }
 
-  if (publish_odom_tf_)
+  try
   {
-    try
-    {
-      robot_odom2robot_base_ =
-          robot_state_handle_.lookupTransform(robot_odom_frame_id_, robot_base_frame_id_, ros::Time(0));
-      robot_odom2robot_base_.header.stamp = time;
-      geometry_msgs::Twist vel_base = odometry();  // on base_link frame
-      geometry_msgs::Vector3 linear_vel_odom, angular_vel_odom;
-      tf2::doTransform(vel_base.linear, linear_vel_odom, robot_odom2robot_base_);
-      tf2::doTransform(vel_base.angular, angular_vel_odom, robot_odom2robot_base_);
+    robot_odom2robot_base_ =
+        robot_state_handle_.lookupTransform(robot_odom_frame_id_, robot_base_frame_id_, ros::Time(0));
+    robot_odom2robot_base_.header.stamp = time;
+    geometry_msgs::Vector3 linear_vel_odom, angular_vel_odom;
+    tf2::doTransform(vel_base.linear, linear_vel_odom, robot_odom2robot_base_);
+    tf2::doTransform(vel_base.angular, angular_vel_odom, robot_odom2robot_base_);
 
-      double length =
-          std::sqrt(std::pow(linear_vel_odom.x, 2) + std::pow(linear_vel_odom.y, 2) + std::pow(linear_vel_odom.z, 2));
-      if (length < max_odom_vel_)
-      {  // avoid nan vel
-        robot_odom2robot_base_.transform.translation.x += linear_vel_odom.x * period.toSec();
-        robot_odom2robot_base_.transform.translation.y += linear_vel_odom.y * period.toSec();
-        robot_odom2robot_base_.transform.translation.z += linear_vel_odom.z * period.toSec();
-      }
-      length = std::sqrt(std::pow(angular_vel_odom.x, 2) + std::pow(angular_vel_odom.y, 2) +
-                         std::pow(angular_vel_odom.z, 2));
-      if (length > 0.001)
-      {  // avoid nan quat
-        tf2::Quaternion odom2base_quat, trans_quat;
-        tf2::fromMsg(robot_odom2robot_base_.transform.rotation, odom2base_quat);
-        trans_quat.setRotation(tf2::Vector3(angular_vel_odom.x / length, angular_vel_odom.y / length,
-                                            angular_vel_odom.z / length),
-                               length * period.toSec());
-        odom2base_quat = trans_quat * odom2base_quat;
-        odom2base_quat.normalize();
-        robot_odom2robot_base_.transform.rotation = tf2::toMsg(odom2base_quat);
-      }
-
-      quatToRPY(robot_odom2robot_base_.transform.rotation, roll_, pitch_, yaw_);
-
-      robot_state_handle_.setTransform(robot_odom2robot_base_, "rm_chassis_controllers");
-
-      odometry_rt_pub_->msg_.header.stamp = time;
-      odometry_rt_pub_->msg_.pose.pose.position.x = robot_odom2robot_base_.transform.translation.x;
-      odometry_rt_pub_->msg_.pose.pose.position.y = robot_odom2robot_base_.transform.translation.y;
-      odometry_rt_pub_->msg_.pose.pose.orientation.x = robot_odom2robot_base_.transform.rotation.x;
-      odometry_rt_pub_->msg_.pose.pose.orientation.y = robot_odom2robot_base_.transform.rotation.y;
-      odometry_rt_pub_->msg_.pose.pose.orientation.z = robot_odom2robot_base_.transform.rotation.z;
-      odometry_rt_pub_->msg_.pose.pose.orientation.w = robot_odom2robot_base_.transform.rotation.w;
-      odometry_rt_pub_->msg_.twist.twist.linear.x = linear_vel_odom.x;
-      odometry_rt_pub_->msg_.twist.twist.linear.y = linear_vel_odom.y;
-      odometry_rt_pub_->msg_.twist.twist.angular.z = angular_vel_odom.z;
+    double length =
+        std::sqrt(std::pow(linear_vel_odom.x, 2) + std::pow(linear_vel_odom.y, 2) + std::pow(linear_vel_odom.z, 2));
+    if (length < max_odom_vel_)
+    {  // avoid nan vel
+      robot_odom2robot_base_.transform.translation.x += linear_vel_odom.x * period.toSec();
+      robot_odom2robot_base_.transform.translation.y += linear_vel_odom.y * period.toSec();
+      robot_odom2robot_base_.transform.translation.z += linear_vel_odom.z * period.toSec();
     }
-    catch (...)
-    {
-      ROS_WARN("Failed to update robot_odom2robot_base.");
+    length =
+        std::sqrt(std::pow(angular_vel_odom.x, 2) + std::pow(angular_vel_odom.y, 2) + std::pow(angular_vel_odom.z, 2));
+    if (length > 0.001)
+    {  // avoid nan quat
+      tf2::Quaternion odom2base_quat, trans_quat;
+      tf2::fromMsg(robot_odom2robot_base_.transform.rotation, odom2base_quat);
+      trans_quat.setRotation(tf2::Vector3(angular_vel_odom.x / length, angular_vel_odom.y / length,
+                                          angular_vel_odom.z / length),
+                             length * period.toSec());
+      odom2base_quat = trans_quat * odom2base_quat;
+      odom2base_quat.normalize();
+      robot_odom2robot_base_.transform.rotation = tf2::toMsg(odom2base_quat);
     }
+    quatToRPY(robot_odom2robot_base_.transform.rotation, roll_, pitch_, yaw_);
+    robot_state_handle_.setTransform(robot_odom2robot_base_, "rm_chassis_controllers");
+  }
+  catch (...)
+  {
+    ROS_WARN("Failed to update robot_odom2robot_base.");
   }
 
   if (publish_rate_ > 0.0 && last_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
   {
+    if (odom_pub_ && odom_pub_->trylock())
+    {
+      odom_pub_->msg_.header.stamp = time;
+      odom_pub_->msg_.header.frame_id = robot_odom_frame_id_;
+      odom_pub_->msg_.child_frame_id = robot_base_frame_id_;
+      odom_pub_->msg_.pose.pose.position.x = robot_odom2robot_base_.transform.translation.x;
+      odom_pub_->msg_.pose.pose.position.y = robot_odom2robot_base_.transform.translation.y;
+      odom_pub_->msg_.pose.pose.position.z = robot_odom2robot_base_.transform.translation.z;
+      odom_pub_->msg_.pose.pose.orientation = robot_odom2robot_base_.transform.rotation;
+      odom_pub_->msg_.twist.twist = vel_base;
+      odom_pub_->unlockAndPublish();
+    }
+
     if (publish_map_tf_)
     {
-      brcst4global_map2robot_odom_.sendTransform(global_map2robot_odom_);
       brcst4global_map2camera_init_.sendTransform(global_map2camera_init_);
+      brcst4global_map2robot_odom_.sendTransform(global_map2robot_odom_);
     }
 
     if (publish_odom_tf_)
-    {
       brcst4robot_odom2robot_base_.sendTransform(robot_odom2robot_base_);
-      if (odometry_rt_pub_->trylock())
-        odometry_rt_pub_->unlockAndPublish();
-    }
 
     last_publish_time_ = time;
   }

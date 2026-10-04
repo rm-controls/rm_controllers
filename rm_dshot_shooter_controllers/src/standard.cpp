@@ -117,6 +117,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     friction_pid_controllers_.push_back(pid_controllers_temp);
   }
   lp_filter_ = new LowPassFilter(controller_nh);
+  // Ramp filter: acc=200 rad/s², dt=0.001s → per-step limit = 0.2 rad/s
+  // Scales: 0→900 RPM(94.25 rad/s) in ~0.47s at 1kHz control loop
+  wheel_speed_ramp_filter_ = new RampFilter<double>(200.0, 0.001);
   ros::NodeHandle nh_trigger = ros::NodeHandle(controller_nh, "trigger");
   return ctrl_trigger_.init(effort_joint_interface_, nh_trigger);
 }
@@ -125,6 +128,7 @@ void Controller::starting(const ros::Time& /*time*/)
 {
   state_ = STOP;
   state_changed_ = true;
+  wheel_speed_ramp_filter_->clear();
 }
 
 void Controller::update(const ros::Time& time, const ros::Duration& period)
@@ -281,6 +285,8 @@ void Controller::block(const ros::Time& time, const ros::Duration& period)
 
 void Controller::setSpeed(const rm_msgs::ShootCmd& cmd, const ros::Duration& period)
 {
+  wheel_speed_ramp_filter_->input(cmd_.wheel_speed);
+  double ramped_wheel_speed = wheel_speed_ramp_filter_->output();
   for (size_t i = 0; i < ctrls_friction_.size(); i++)
   {
     for (size_t j = 0; j < ctrls_friction_[i].size(); j++)
@@ -289,11 +295,11 @@ void Controller::setSpeed(const rm_msgs::ShootCmd& cmd, const ros::Duration& per
       // Used to distinguish the front and rear friction wheels.
       if (j == 0)
       {
-        target_speed = cmd_.wheel_speed + config_.extra_wheel_speed + cmd_.wheels_speed_offset_back;
+        target_speed = ramped_wheel_speed + config_.extra_wheel_speed + cmd_.wheels_speed_offset_back;
       }
       else if (j == 1)
       {
-        target_speed = cmd_.wheel_speed + config_.extra_wheel_speed + cmd_.wheels_speed_offset_front;
+        target_speed = ramped_wheel_speed + config_.extra_wheel_speed + cmd_.wheels_speed_offset_front;
       }
       double current_speed = ctrls_friction_[i][j]->joint_.getVelocity();
       double error = target_speed - current_speed;
@@ -353,7 +359,8 @@ void Controller::judgeBulletShoot(const ros::Time& time, const ros::Duration& pe
   double friction_change_speed_derivative = friction_change_speed - last_friction_change_speed_;
   if (state_ != STOP)
   {
-    if (friction_change_speed_derivative > 0 && has_shoot_)
+    if (friction_change_speed_derivative > 0 && has_shoot_ &&
+        friction_change_speed > config_.wheel_speed_raise_threshold)
       has_shoot_ = false;
     if (friction_change_speed < -config_.wheel_speed_drop_threshold && !has_shoot_ &&
         friction_change_speed_derivative < 0)

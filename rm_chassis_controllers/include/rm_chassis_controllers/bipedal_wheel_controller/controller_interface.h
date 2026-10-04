@@ -36,6 +36,8 @@ public:
   virtual void setMoveFlag(const bool& move_flag) = 0;
   virtual const ChassisState& getChassisState() = 0;
   virtual LegState& getLegState(Side side) = 0;
+  virtual bool getDown5cmStairFlag() const = 0;
+  virtual void setDown5cmStairFlag(bool flag) = 0;
   virtual void setCompleteStand(bool state) = 0;
   virtual void setJumpCmd(bool cmd) = 0;
   virtual double f_spring_force(double L0) = 0;
@@ -50,6 +52,7 @@ public:
   virtual void pubDebugData(const std::string& name, double value) = 0;
   virtual bool getRecoveryLegSpdTurnback() const = 0;
   virtual void setRecoveryLegSpdTurnback(bool recovery_leg_spd_turnback) = 0;
+  virtual double getLegThetaOffset(const double& leg_len) = 0;
 };
 
 }  // namespace rm_chassis_controllers

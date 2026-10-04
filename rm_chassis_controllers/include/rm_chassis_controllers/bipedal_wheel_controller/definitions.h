@@ -46,12 +46,18 @@ struct SpringParams
 struct ControlParams
 {
   double jumpOverTime_;
+  double down5cmStairPitchThreshold;
+  double down5cmStairThetaThreshold;
+  double jump_up_force;
+  double off_ground_force;
 };
 
 struct BiasParams
 {
   double x;
   double theta;
+  double mid_leg_len_theta;
+  double high_leg_len_theta;
   double pitch;
   double roll;
   double raw_pitch;
