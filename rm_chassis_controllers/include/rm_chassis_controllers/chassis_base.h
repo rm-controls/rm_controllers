@@ -182,7 +182,7 @@ protected:
 
   rm_control::RobotStateHandle robot_state_handle_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
-  std::vector<hardware_interface::JointHandle> wheel_joint_handles_{};
+  std::vector<hardware_interface::JointHandle> joint_handles_{};
   realtime_tools::RealtimeBuffer<Command> cmd_rt_buffer_{};
   realtime_tools::RealtimeBuffer<nav_msgs::Odometry> slam_rt_buffer_{};
   realtime_tools::RealtimeBuffer<geometry_msgs::TransformStamped> localization_rt_buffer_{};
