@@ -48,7 +48,6 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <rm_chassis_controllers/PowerLimitConfig.h>
 #include <rm_common/ros_utilities.h>
 #include <rm_common/math_utilities.h>
 #include <rm_common/ori_tool.h>
@@ -153,11 +152,12 @@ protected:
   /** @brief Set chassis velocity to zero.
    */
   void recovery();
+  void fallen();
   /** @brief Transform tf velocity to base link frame.
    *
    * @param from The father frame.
    */
-  void tfVelToBase(const std::string& from);
+  void tfVelToBase(const std::string& from, double yaw_offset = 0.);
   /** @brief To limit the chassis power according to current power limit.
    *
    * Receive power limit from command. Set max_effort command to chassis to avoid exceed power limit.
@@ -182,7 +182,7 @@ protected:
 
   rm_control::RobotStateHandle robot_state_handle_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
-  std::vector<hardware_interface::JointHandle> joint_handles_{};
+  std::vector<hardware_interface::JointHandle> wheel_joint_handles_{};
   realtime_tools::RealtimeBuffer<Command> cmd_rt_buffer_{};
   realtime_tools::RealtimeBuffer<nav_msgs::Odometry> slam_rt_buffer_{};
   realtime_tools::RealtimeBuffer<geometry_msgs::TransformStamped> localization_rt_buffer_{};
@@ -228,6 +228,7 @@ protected:
   double twist_angular_{ M_PI / 6 };
   double max_odom_vel_{ 10.0 };
   double timeout_{ 0.1 };
+  double raw_yaw_feedforward_k_{ 0.0 };
   double chassis_power_{ 0.0 };
   bool capacity_update_flag_{ false };
   bool use_rls_{ false };
@@ -260,9 +261,10 @@ protected:
 
   enum
   {
-    RAW,
-    FOLLOW,
-    TWIST
+    RAW = 0,
+    FOLLOW = 1,
+    TWIST = 2,
+    FALLEN = 4
   };
 };
 
