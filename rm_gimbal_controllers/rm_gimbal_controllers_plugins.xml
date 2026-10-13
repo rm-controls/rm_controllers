@@ -8,4 +8,11 @@
     </description>
   </class>
 
+  <class name="rm_gimbal_controllers/DualYawController" type="rm_gimbal_controllers::DualYawController"
+         base_class_type="controller_interface::ControllerBase">
+    <description>
+      The DualYawController controls base_yaw, yaw and pitch from one GimbalCmd source.
+    </description>
+  </class>
+
 </library>
