@@ -6,7 +6,7 @@
 
 namespace rm_chassis_controllers
 {
-ModeManager::ModeManager(ros::NodeHandle& controller_nh,
+ModeManager::ModeManager(BipedalControllerInterface* controller, ros::NodeHandle& controller_nh,
                          const std::vector<hardware_interface::JointHandle*>& joint_handles)
 {
   const std::pair<const char*, control_toolbox::Pid*> pids[] = {
@@ -23,6 +23,7 @@ ModeManager::ModeManager(ros::NodeHandle& controller_nh,
     { "pid_right_wheel_vel", &pid_right_wheel_vel_ },
     { "pid_left_leg_stand_up", &pid_left_leg_stand_up_ },
     { "pid_right_leg_stand_up", &pid_right_leg_stand_up_ },
+    { "pid_wheel_vel_diff", &pid_wheel_vel_diff_ },
   };
   for (const auto& e : pids)
     if (controller_nh.hasParam(e.first) && !e.second->init(ros::NodeHandle(controller_nh, e.first)))
@@ -38,14 +39,22 @@ ModeManager::ModeManager(ros::NodeHandle& controller_nh,
   pid_legs_stand_up_.push_back(&pid_left_leg_stand_up_);
   pid_legs_stand_up_.push_back(&pid_right_leg_stand_up_);
 
-  mode_map_.insert(std::make_pair(BalanceMode::NORMAL, std::make_unique<Normal>(joint_handles, pid_legs_, &pid_yaw_vel_,
-                                                                                &pid_theta_diff_, &pid_roll_)));
+  mode_map_.insert(std::make_pair(BalanceMode::NORMAL,
+                                  std::make_unique<Normal>(controller, joint_handles, pid_legs_, &pid_yaw_vel_,
+                                                           &pid_theta_diff_, &pid_roll_, &pid_wheel_vel_diff_)));
+  mode_map_.insert(std::make_pair(BalanceMode::STAND_UP, std::make_unique<StandUp>(controller, joint_handles,
+                                                                                   pid_legs_stand_up_, pid_thetas_)));
   mode_map_.insert(
-      std::make_pair(BalanceMode::STAND_UP, std::make_unique<StandUp>(joint_handles, pid_legs_stand_up_, pid_thetas_)));
-  mode_map_.insert(std::make_pair(BalanceMode::RECOVER, std::make_unique<Recover>(joint_handles, pid_legs_stand_up_,
-                                                                                  pid_thetas_, &pid_theta_diff_)));
-  mode_map_.insert(std::make_pair(BalanceMode::SIT_DOWN, std::make_unique<SitDown>(joint_handles, pid_wheels_)));
-  mode_map_.insert(std::make_pair(BalanceMode::UPSTAIRS,
-                                  std::make_unique<Upstairs>(joint_handles, pid_legs_stand_up_, pid_thetas_)));
+      std::make_pair(BalanceMode::RECOVER, std::make_unique<Recover>(controller, joint_handles, pid_legs_stand_up_,
+                                                                     pid_thetas_, &pid_theta_diff_)));
+  mode_map_.insert(
+      std::make_pair(BalanceMode::SIT_DOWN, std::make_unique<SitDown>(controller, joint_handles, pid_wheels_)));
+  mode_map_.insert(std::make_pair(BalanceMode::UPSTAIRS, std::make_unique<Upstairs>(controller, joint_handles,
+                                                                                    pid_legs_stand_up_, pid_thetas_)));
+  mode_map_.insert(std::make_pair(BalanceMode::UPSTAIRS, std::make_unique<Upstairs>(controller, joint_handles,
+                                                                                    pid_legs_stand_up_, pid_thetas_)));
+  mode_map_.insert(
+      std::make_pair(BalanceMode::PROTECT, std::make_unique<Protect>(controller, joint_handles, pid_legs_, pid_thetas_,
+                                                                     pid_wheels_, &pid_theta_diff_, &pid_yaw_vel_)));
 }
 }  // namespace rm_chassis_controllers

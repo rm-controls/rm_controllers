@@ -12,13 +12,16 @@
 #include "bipedal_wheel_controller/controller_mode/recover.h"
 #include "bipedal_wheel_controller/controller_mode/normal.h"
 #include "bipedal_wheel_controller/controller_mode/upstairs.h"
+#include "bipedal_wheel_controller/controller_mode/protect.h"
+#include "bipedal_wheel_controller/controller_interface.h"
 
 namespace rm_chassis_controllers
 {
 class ModeManager
 {
 public:
-  ModeManager(ros::NodeHandle& controller_nh, const std::vector<hardware_interface::JointHandle*>& joint_handles);
+  ModeManager(BipedalControllerInterface* controller, ros::NodeHandle& controller_nh,
+              const std::vector<hardware_interface::JointHandle*>& joint_handles);
   virtual ~ModeManager() = default;
   void switchMode(int mode)
   {
@@ -36,7 +39,7 @@ private:
   control_toolbox::Pid pid_yaw_vel_, pid_left_leg_, pid_right_leg_, pid_theta_diff_, pid_roll_;
   control_toolbox::Pid pid_left_leg_stand_up_, pid_right_leg_stand_up_;
   control_toolbox::Pid pid_left_leg_theta_, pid_right_leg_theta_, pid_left_leg_theta_vel_, pid_right_leg_theta_vel_;
-  control_toolbox::Pid pid_left_wheel_vel_, pid_right_wheel_vel_;
+  control_toolbox::Pid pid_left_wheel_vel_, pid_right_wheel_vel_, pid_wheel_vel_diff_;
   std::vector<control_toolbox::Pid*> pid_wheels_, pid_legs_, pid_thetas_, pid_legs_stand_up_;
 };
 }  // namespace rm_chassis_controllers
