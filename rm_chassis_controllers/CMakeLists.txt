@@ -75,6 +75,14 @@ file(GLOB_RECURSE BIPEDAL_SOURCES
         "src/bipedal_wheel_controller/*.c"
 )
 
+set(VMC_SOURCES
+        src/bipedal_wheel_controller/vmc/VMC.cpp
+        src/bipedal_wheel_controller/vmc/TwoLinkVMC.cpp
+        src/bipedal_wheel_controller/vmc/FiveLinkVMC.cpp
+)
+list(APPEND BIPEDAL_SOURCES ${VMC_SOURCES})
+list(REMOVE_DUPLICATES BIPEDAL_SOURCES)
+
 ## Declare cpp executables
 add_library(${PROJECT_NAME}
         src/chassis_base.cpp

@@ -15,9 +15,10 @@ namespace rm_chassis_controllers
 class SitDown : public ModeBase
 {
 public:
-  explicit SitDown(const std::vector<hardware_interface::JointHandle*>& joint_handles,
+  explicit SitDown(BipedalControllerInterface* controller_,
+                   const std::vector<hardware_interface::JointHandle*>& joint_handles,
                    const std::vector<control_toolbox::Pid*>& pid_wheels);
-  void execute(BipedalController* controller, const ros::Time& time, const ros::Duration& period) override;
+  void execute(const ros::Time& time, const ros::Duration& period) override;
   const char* name() const override
   {
     return "SIT_DOWN";
