@@ -180,11 +180,11 @@ protected:
   double gravityFeedForward(const ros::Time& time);
   void updateChassisVel();
   void updateBallisticSolution(const ros::Time& time);
-  double gravityFeedForward(const ros::Time& time);
   double updateCompensation(double chassis_vel_angular_z);
   void publishShootBeforehand(const ros::Time& time, uint8_t cmd);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
+  void ballisticSolverRequestCB(const std_msgs::BoolConstPtr& msg);
   void mpcGimbalAimCB(const rm_msgs::MPCGimbalAimCmdConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t);
   bool TrackSolver_typeCB(rm_msgs::StatusChangeRequest& req, rm_msgs::StatusChangeResponse& res);
