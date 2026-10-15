@@ -66,6 +66,9 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   chassis_vel_ = std::make_shared<ChassisVel>(chassis_vel_nh);
   ros::NodeHandle nh_bullet_solver = ros::NodeHandle(controller_nh, "bullet_solver");
   bullet_solver_ = std::make_shared<BulletSolver>(nh_bullet_solver);
+  ros::NodeHandle nh_ballistic_solver = ros::NodeHandle(controller_nh, "ballistic_solver");
+  ballistic_solver_ = std::make_shared<BallisticSolver>(nh_ballistic_solver);
+
   std::string track_solver_type;
   controller_nh.param<std::string>("track_solver_type", track_solver_type, "bullet_solver");
   if (track_solver_type == "external_aim")
@@ -172,7 +175,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   odom2base_.header.frame_id = "odom";
   odom2base_.child_frame_id = getBaseFrameID(joint_urdfs_);
   odom2base_.transform.rotation.w = 1.;
-
   odom2gimbal_traject_des_.header.frame_id = "odom";
   odom2gimbal_traject_des_.child_frame_id = gimbal_traject_des_frame_id_;
   odom2gimbal_traject_des_.transform.rotation.w = 1.;
@@ -186,12 +188,16 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 
   cmd_gimbal_sub_ = controller_nh.subscribe<rm_msgs::GimbalCmd>("command", 1, &Controller::commandCB, this);
   data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/sp_vision/track", 1, &Controller::trackCB, this);
+  ballistic_solver_request_sub_ = controller_nh.subscribe<std_msgs::Bool>("/ballistic_solver_request", 1,
+                                                                          &Controller::ballisticSolverRequestCB, this);
   mpc_gimbal_aim_sub_ =
       controller_nh.subscribe<rm_msgs::MPCGimbalAimCmd>(external_mpc_aim_topic, 1, &Controller::mpcGimbalAimCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
   shoot_beforehand_cmd_pub_.reset(
       new realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>(controller_nh, "shoot_beforehand_cmd", 10));
+  ballistic_solution_pub_.reset(
+      new realtime_tools::RealtimePublisher<std_msgs::Float32MultiArray>(controller_nh, "ballistic_solution", 100));
 
   return true;
 }
@@ -213,12 +219,14 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
   {
     odom2gimbal_ = robot_state_handle_.lookupTransform("odom", odom2gimbal_.child_frame_id, time);
     odom2base_ = robot_state_handle_.lookupTransform("odom", odom2base_.child_frame_id, time);
+    base2gimbal_ = robot_state_handle_.lookupTransform(odom2base_.child_frame_id, odom2gimbal_.child_frame_id, time);
   }
   catch (tf2::TransformException& ex)
   {
     ROS_WARN_THROTTLE(5, "%s\n", ex.what());
     return;
   }
+  updateBallisticSolution(time);
   updateChassisVel();
   if (state_ != cmd_gimbal_.mode)
   {
@@ -716,6 +724,21 @@ void Controller::updateChassisVel()
   last_odom2base_ = odom2base_;
 }
 
+void Controller::updateBallisticSolution(const ros::Time& time)
+{
+  if (publish_rate_ > 0.0 && last_ballistic_publish_time_ + ros::Duration(1.0 / publish_rate_) < time)
+  {
+    if (ballistic_solution_pub_->trylock())
+    {
+      std_msgs::Float32MultiArray data;
+      data.data.emplace_back(ballistic_yaw_);
+      data.data.emplace_back(ballistic_pitch_);
+      ballistic_solution_pub_->msg_.data = data.data;
+      ballistic_solution_pub_->unlockAndPublish();
+    }
+    last_ballistic_publish_time_ = time;
+  }
+}
 void Controller::updatePitchJoint(const ros::Time& time, const ros::Duration& period,
                                   const geometry_msgs::Vector3& angular_vel, const double vel_des[3],
                                   const double angle_error[3])
@@ -829,6 +852,13 @@ void Controller::trackCB(const rm_msgs::TrackDataConstPtr& msg)
   track_rt_buffer_.writeFromNonRT(*msg);
 }
 
+void Controller::ballisticSolverRequestCB(const std_msgs::BoolConstPtr& msg)
+{
+  ballistic_track_rt_buffer_.writeFromNonRT(*msg);
+  bool ballistic_solver_request = msg->data;
+  if (ballistic_solver_request)
+    ballistic_solver_->solver(base2gimbal_, ballistic_yaw_, ballistic_pitch_);
+}
 void Controller::mpcGimbalAimCB(const rm_msgs::MPCGimbalAimCmdConstPtr& msg)
 {
   gimbal_aim_rt_buffer_.writeFromNonRT(*msg);
@@ -860,6 +890,8 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     GimbalConfig init_config = *config_rt_buffer_.readFromNonRT();  // config init use yaml
     config.yaw_k_v_ = init_config.yaw_k_v_;
     config.pitch_k_v_ = init_config.pitch_k_v_;
+    config.accel_pitch_ = init_config.accel_pitch_;
+    config.accel_yaw_ = init_config.accel_yaw_;
     config.chassis_comp_a_ = init_config.chassis_comp_a_;
     config.chassis_comp_b_ = init_config.chassis_comp_b_;
     config.chassis_comp_c_ = init_config.chassis_comp_c_;

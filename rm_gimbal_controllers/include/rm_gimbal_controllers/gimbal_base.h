@@ -50,6 +50,7 @@
 #include <rm_msgs/GimbalPosState.h>
 #include <rm_gimbal_controllers/GimbalBaseConfig.h>
 #include <rm_gimbal_controllers/bullet_solver.h>
+#include <rm_gimbal_controllers/ballistic_solver.h>
 #include <tf2_eigen/tf2_eigen.h>
 #include <Eigen/Eigen>
 #include <control_toolbox/pid.h>
@@ -60,6 +61,9 @@
 #include <rm_msgs/StatusChange.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
+#include <nav_msgs/Odometry.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <std_msgs/Float32MultiArray.h>
 
 namespace rm_gimbal_controllers
 {
@@ -175,6 +179,8 @@ protected:
   void moveJoint(const ros::Time& time, const ros::Duration& period);
   double gravityFeedForward(const ros::Time& time);
   void updateChassisVel();
+  void updateBallisticSolution(const ros::Time& time);
+  double gravityFeedForward(const ros::Time& time);
   double updateCompensation(double chassis_vel_angular_z);
   void publishShootBeforehand(const ros::Time& time, uint8_t cmd);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
@@ -191,8 +197,10 @@ protected:
   std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs_;
   std::unordered_map<int, bool> pos_des_in_limit_;
   bool has_imu_ = true;
+  double ballistic_yaw_{}, ballistic_pitch_{};
 
   std::shared_ptr<BulletSolver> bullet_solver_;
+  std::shared_ptr<BallisticSolver> ballistic_solver_;
   double gimbal_real_z_vel_{};
   enum class TrackSolverType
   {
@@ -205,17 +213,21 @@ protected:
 
   // ROS Interface
   ros::Time last_publish_time_{};
+  ros::Time last_ballistic_publish_time_{};
   ros::Time last_track_time_{};
   std::unordered_map<int, std::unique_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>>> pos_state_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<std_msgs::Float32MultiArray>> ballistic_solution_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>> shoot_beforehand_cmd_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_track_sub_;
+  ros::Subscriber ballistic_solver_request_sub_;
   ros::Subscriber mpc_gimbal_aim_sub_;
   ros::ServiceServer TrackSolver_type_srv_;
   ros::Publisher target_is_armor_pub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TrackData> track_rt_buffer_;
+  realtime_tools::RealtimeBuffer<std_msgs::Bool> ballistic_track_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::MPCGimbalAimCmd> gimbal_aim_rt_buffer_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
@@ -227,7 +239,8 @@ protected:
   int loop_count_{};
 
   // Transform
-  geometry_msgs::TransformStamped odom2gimbal_des_, odom2gimbal_, odom2base_, last_odom2base_, odom2gimbal_traject_des_;
+  geometry_msgs::TransformStamped odom2gimbal_des_, odom2gimbal_, odom2base_, last_odom2base_, base2gimbal_,
+      odom2gimbal_traject_des_;
 
   // Gravity Compensation
   geometry_msgs::Vector3 mass_origin_;
