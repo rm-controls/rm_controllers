@@ -51,6 +51,10 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
 {
   XmlRpc::XmlRpcValue xml_rpc_value;
   const bool enable_feedforward = controller_nh.getParam("feedforward", xml_rpc_value);
+  controller_nh.param("external_aim_timeout", external_aim_timeout_, 0.1);
+  controller_nh.param("initial_target_is_armor", target_is_armor_, true);
+  publishTargetIsArmor();
+
   if (enable_feedforward)
   {
     ROS_ASSERT(xml_rpc_value.hasMember("mass_origin"));
@@ -86,9 +90,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
     track_solver_type_ = TrackSolverType::BULLET_SOLVER;
     ROS_WARN("[Gimbal] Unknown track_solver_type '%s', falling back to bullet_solver", track_solver_type.c_str());
   }
-  controller_nh.param("external_aim_timeout", external_aim_timeout_, 0.1);
-  std::string external_mpc_aim_topic;
-  controller_nh.param<std::string>("external_mpc_aim_topic", external_mpc_aim_topic, "/sp_vision/mpc_gimbal_aim");
 
   config_ = {
     .yaw_k_v_ = getParam(controller_nh, "controllers/yaw/k_v", 0.),
@@ -107,11 +108,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   dynamic_reconfigure::Server<rm_gimbal_controllers::GimbalBaseConfig>::CallbackType cb =
       [this](auto&& PH1, auto&& PH2) { reconfigCB(PH1, PH2); };
   d_srv_->setCallback(cb);
-  std::string target_is_armor_topic;
-  controller_nh.param<std::string>("target_is_armor_topic", target_is_armor_topic, "/vision/target_is_armor");
-  controller_nh.param("initial_target_is_armor", target_is_armor_, true);
-  target_is_armor_pub_ = root_nh.advertise<std_msgs::Bool>(target_is_armor_topic, 1, true);
-  publishTargetIsArmor();
   TrackSolver_type_srv_ = root_nh.advertiseService("/Processor/status_change", &Controller::TrackSolver_typeCB, this);
 
   hardware_interface::EffortJointInterface* effort_joint_interface =
@@ -190,14 +186,15 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   data_track_sub_ = controller_nh.subscribe<rm_msgs::TrackData>("/sp_vision/track", 1, &Controller::trackCB, this);
   ballistic_solver_request_sub_ = controller_nh.subscribe<std_msgs::Bool>("/ballistic_solver_request", 1,
                                                                           &Controller::ballisticSolverRequestCB, this);
-  mpc_gimbal_aim_sub_ =
-      controller_nh.subscribe<rm_msgs::MPCGimbalAimCmd>(external_mpc_aim_topic, 1, &Controller::mpcGimbalAimCB, this);
+  mpc_gimbal_aim_sub_ = controller_nh.subscribe<rm_msgs::MPCGimbalAimCmd>("/sp_vision/mpc_gimbal_aim", 1,
+                                                                          &Controller::mpcGimbalAimCB, this);
   publish_rate_ = getParam(controller_nh, "publish_rate", 100.);
   error_pub_.reset(new realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>(controller_nh, "error", 100));
   shoot_beforehand_cmd_pub_.reset(
       new realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>(controller_nh, "shoot_beforehand_cmd", 10));
   ballistic_solution_pub_.reset(
       new realtime_tools::RealtimePublisher<std_msgs::Float32MultiArray>(controller_nh, "ballistic_solution", 100));
+  target_is_armor_pub_ = root_nh.advertise<std_msgs::Bool>("/vision/target_is_armor", 1, true);
 
   return true;
 }
@@ -896,7 +893,6 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     config.chassis_comp_b_ = init_config.chassis_comp_b_;
     config.chassis_comp_c_ = init_config.chassis_comp_c_;
     config.chassis_comp_d_ = init_config.chassis_comp_d_;
-    config.accel_pitch_ = init_config.accel_pitch_;
     config.accel_yaw_ = init_config.accel_yaw_;
     config.moment_of_inertia_ = init_config.moment_of_inertia_;
     dynamic_reconfig_initialized_ = true;
