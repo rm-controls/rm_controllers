@@ -442,18 +442,7 @@ bool BulletSolver::solve(geometry_msgs::Point pos, geometry_msgs::Vector3 vel, d
   last_output_yaw_ = traject_output_yaw_;
   if (bullet_solver_pub->trylock())
   {
-    for (int i = 0; i < 150; ++i)
-    {
-      bullet_solver_pub->msg_.selected_armor_[i] = static_cast<int16_t>(selected_armor_[i]);
-      bullet_solver_pub->msg_.count_number_[i] = static_cast<int16_t>(count_[i]);
-    }
-    bullet_solver_pub->msg_.start_vel = stauts_limit_.start_vel;
-    bullet_solver_pub->msg_.switchtime = switchtime;
-    bullet_solver_pub->msg_.traject_output_yaw_ = traject_output_yaw_;
     bullet_solver_pub->msg_.traject_acc_ = traject_effort_ff_;
-    bullet_solver_pub->msg_.traject_vel_ = filtered_vel_des;
-    bullet_solver_pub->msg_.using_traject_ = using_traject_;
-    bullet_solver_pub->msg_.test_number[0] = yaw_[0];
     bullet_solver_pub->unlockAndPublish();
   }
   return true;
