@@ -53,7 +53,6 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   const bool enable_feedforward = controller_nh.getParam("feedforward", xml_rpc_value);
   controller_nh.param("external_aim_timeout", external_aim_timeout_, 0.1);
   controller_nh.param("initial_target_is_armor", target_is_armor_, true);
-  publishTargetIsArmor();
 
   if (enable_feedforward)
   {
@@ -195,6 +194,8 @@ bool Controller::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& ro
   ballistic_solution_pub_.reset(
       new realtime_tools::RealtimePublisher<std_msgs::Float32MultiArray>(controller_nh, "ballistic_solution", 100));
   target_is_armor_pub_ = root_nh.advertise<std_msgs::Bool>("/vision/target_is_armor", 1, true);
+
+  publishTargetIsArmor();
 
   return true;
 }
