@@ -893,7 +893,6 @@ void Controller::reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uin
     config.chassis_comp_b_ = init_config.chassis_comp_b_;
     config.chassis_comp_c_ = init_config.chassis_comp_c_;
     config.chassis_comp_d_ = init_config.chassis_comp_d_;
-    config.accel_yaw_ = init_config.accel_yaw_;
     config.moment_of_inertia_ = init_config.moment_of_inertia_;
     dynamic_reconfig_initialized_ = true;
   }
