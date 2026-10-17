@@ -10,6 +10,8 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <sensor_msgs/Imu.h>
+#include <rm_msgs/AssemblyErrorData.h>
+#include <realtime_tools/realtime_publisher.h>
 
 namespace rm_orientation_controller
 {
@@ -25,6 +27,7 @@ private:
   bool getTransform(const ros::Time& time, geometry_msgs::TransformStamped& source2target, const double x,
                     const double y, const double z, const double w);
   void imuDataCallback(const sensor_msgs::Imu::ConstPtr& msg);
+  void AssemblyErrorPub(const ros::Time& time);
 
   rm_control::RmImuSensorHandle imu_sensor_;
   rm_control::RobotStateHandle robot_state_;
@@ -38,6 +41,8 @@ private:
   std::string frame_target_;
 
   ros::Subscriber imu_data_sub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::AssemblyErrorData>> assembly_error_pub_;
   bool receive_imu_msg_ = false;
+  int loop_count_{};
 };
 }  // namespace rm_orientation_controller

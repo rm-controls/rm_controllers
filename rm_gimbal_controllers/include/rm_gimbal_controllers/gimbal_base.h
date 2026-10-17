@@ -44,6 +44,7 @@
 #include <rm_common/hardware_interface/robot_state_interface.h>
 #include <rm_common/filters/filters.h>
 #include <rm_msgs/GimbalCmd.h>
+#include <rm_msgs/MPCGimbalAimCmd.h>
 #include <rm_msgs/TrackData.h>
 #include <rm_msgs/GimbalDesError.h>
 #include <rm_msgs/GimbalPosState.h>
@@ -57,6 +58,9 @@
 #include <dynamic_reconfigure/server.h>
 #include <realtime_tools/realtime_publisher.h>
 #include <unordered_map>
+#include <rm_msgs/StatusChange.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Float64.h>
 #include <nav_msgs/Odometry.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <std_msgs/Float32MultiArray.h>
@@ -66,13 +70,15 @@ namespace rm_gimbal_controllers
 struct GimbalConfig
 {
   double yaw_k_v_{}, pitch_k_v_{}, accel_pitch_{}, accel_yaw_{};
-  double chassis_comp_a_{}, chassis_comp_b_{}, chassis_comp_c_{}, chassis_comp_d_{};
+  double chassis_comp_a_{}, chassis_comp_b_{}, chassis_comp_c_{},
+      chassis_comp_d_{};  // sine wave compensation, a * sin(b * chassis_angular_z + c) + d
+  double moment_of_inertia_{};
 };
 
 class ChassisVel
 {
 public:
-  explicit ChassisVel(const ros::NodeHandle& nh)
+  ChassisVel(const ros::NodeHandle& nh)
   {
     double num_data;
     nh.param("num_data", num_data, 20.0);
@@ -141,26 +147,48 @@ public:
   bool init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& root_nh, ros::NodeHandle& controller_nh) override;
   void starting(const ros::Time& time) override;
   void update(const ros::Time& time, const ros::Duration& period) override;
-  void setDes(const ros::Time& time, double yaw_des, double pitch_des, double traject_yaw_des, bool update_yaw = true,
-              bool update_pitch = true);
+  void setDes(const ros::Time& time, double yaw_des, double pitch_des, double traject_yaw_des = 0.,
+              bool update_yaw = true, bool update_pitch = true);
 
-private:
+protected:
+  virtual bool shouldInitializeController(const std::string& name, const urdf::JointConstSharedPtr& joint_urdf,
+                                          int axis) const;
+  virtual bool shouldApplyJointLimit(int axis) const;
+  virtual std::string getGimbalFrameID(const std::unordered_map<int, urdf::JointConstSharedPtr>& joint_urdfs);
+  virtual std::string getBaseFrameID(const std::unordered_map<int, urdf::JointConstSharedPtr>& joint_urdfs);
+  virtual void updatePitchJoint(const ros::Time& time, const ros::Duration& period,
+                                const geometry_msgs::Vector3& angular_vel, const double vel_des[3],
+                                const double angle_error[3]);
+  virtual void updateYawJoint(const ros::Time& time, const ros::Duration& period,
+                              const geometry_msgs::Vector3& angular_vel, const double pos_real[3],
+                              const double pos_des[3], const double pos_des_temp[3], const double vel_des[3],
+                              const double angle_error[3], const double traject_pos_des[3],
+                              const double traject_angle_error[3]);
+  void updateGimbalYawController(const ros::Time& time, const ros::Duration& period,
+                                 const geometry_msgs::Vector3& angular_vel,
+                                 effort_controllers::JointVelocityController& ctrl, control_toolbox::Pid& pid_pos,
+                                 double k_v, const double vel_des[3], const double angle_error[3],
+                                 const double traject_angle_error[3]);
   void rate(const ros::Time& time, const ros::Duration& period);
-  void track(const ros::Time& time);
+  void track(const ros::Time& time, const ros::Duration& period);
+  void externalAimTrack(const ros::Time& time);
   void direct(const ros::Time& time);
   void traj(const ros::Time& time);
+  bool externalAimIsFresh(const ros::Time& time) const;
   bool setDesIntoLimit(double& angle, const urdf::JointConstSharedPtr& joint_urdf, bool update, double current_angle);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
+  double gravityFeedForward(const ros::Time& time);
   void updateChassisVel();
   void updateBallisticSolution(const ros::Time& time);
-  double gravityFeedForward(const ros::Time& time);
   double updateCompensation(double chassis_vel_angular_z);
+  void publishShootBeforehand(const ros::Time& time, uint8_t cmd);
   void commandCB(const rm_msgs::GimbalCmdConstPtr& msg);
   void trackCB(const rm_msgs::TrackDataConstPtr& msg);
   void ballisticSolverRequestCB(const std_msgs::BoolConstPtr& msg);
+  void mpcGimbalAimCB(const rm_msgs::MPCGimbalAimCmdConstPtr& msg);
   void reconfigCB(rm_gimbal_controllers::GimbalBaseConfig& config, uint32_t);
-  std::string getGimbalFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs);
-  std::string getBaseFrameID(std::unordered_map<int, urdf::JointConstSharedPtr> joint_urdfs);
+  bool TrackSolver_typeCB(rm_msgs::StatusChangeRequest& req, rm_msgs::StatusChangeResponse& res);
+  void publishTargetIsArmor();
 
   rm_control::RobotStateHandle robot_state_handle_;
   hardware_interface::ImuSensorHandle imu_sensor_handle_;
@@ -173,22 +201,38 @@ private:
 
   std::shared_ptr<BulletSolver> bullet_solver_;
   std::shared_ptr<BallisticSolver> ballistic_solver_;
+  double gimbal_real_z_vel_{};
+  enum class TrackSolverType
+  {
+    BULLET_SOLVER,
+    EXTERNAL_MPC_AIM
+  };
+  TrackSolverType track_solver_type_{ TrackSolverType::BULLET_SOLVER };
+  double external_aim_timeout_{ 0.1 };
+  bool external_aim_active_{ false };
 
   // ROS Interface
   ros::Time last_publish_time_{};
   ros::Time last_ballistic_publish_time_{};
+  ros::Time last_track_time_{};
   std::unordered_map<int, std::unique_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalPosState>>> pos_state_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::GimbalDesError>> error_pub_;
   std::shared_ptr<realtime_tools::RealtimePublisher<std_msgs::Float32MultiArray>> ballistic_solution_pub_;
+  std::shared_ptr<realtime_tools::RealtimePublisher<rm_msgs::ShootBeforehandCmd>> shoot_beforehand_cmd_pub_;
   ros::Subscriber cmd_gimbal_sub_;
   ros::Subscriber data_track_sub_;
   ros::Subscriber ballistic_solver_request_sub_;
+  ros::Subscriber mpc_gimbal_aim_sub_;
+  ros::ServiceServer TrackSolver_type_srv_;
+  ros::Publisher target_is_armor_pub_;
   realtime_tools::RealtimeBuffer<rm_msgs::GimbalCmd> cmd_rt_buffer_;
   realtime_tools::RealtimeBuffer<rm_msgs::TrackData> track_rt_buffer_;
   realtime_tools::RealtimeBuffer<std_msgs::Bool> ballistic_track_rt_buffer_;
+  realtime_tools::RealtimeBuffer<rm_msgs::MPCGimbalAimCmd> gimbal_aim_rt_buffer_;
 
   rm_msgs::GimbalCmd cmd_gimbal_;
   rm_msgs::TrackData data_track_;
+  rm_msgs::MPCGimbalAimCmd gimbal_aim_;
   std::string gimbal_des_frame_id_{}, imu_name_{}, gimbal_traject_des_frame_id_;
   double publish_rate_{};
   bool state_changed_{};
@@ -221,9 +265,12 @@ private:
   };
   int state_ = RATE;
   bool start_ = false;
+
   double pos_real[3]{ 0. };
   double pos_des[3]{ 0. }, vel_des[3]{ 0. }, angle_error[3]{ 0. }, traject_pos_des[3]{ 0. },
-      traject_angle_error[3]{ 0. };
+      traject_angle_error[3]{ 0. }, pos_des_temp[3]{ 0. };
+  double last_acc_yaw = 0;
+  bool target_is_armor_{ true };
 };
 
 }  // namespace rm_gimbal_controllers
