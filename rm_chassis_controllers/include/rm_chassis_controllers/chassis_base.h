@@ -190,6 +190,8 @@ protected:
   std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> cpower_pub_;  // command power publisher
   std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> epower_pub_;  // estimated power publisher
   std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> chassis_power_pub_;  // chassis power publisher
+  std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> effort_coeff_pub_; //effort coeff publisher on rls
+  std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> velocity_coeff_pub_; //velocity coeff publisher on rls
 
   rm_common::TfRtBroadcaster brcst4global_map2robot_odom_{};
   rm_common::TfRtBroadcaster brcst4global_map2camera_init_{};
