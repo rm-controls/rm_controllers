@@ -178,7 +178,6 @@ protected:
   void initialize_parameters(ros::NodeHandle& controller_nh);
   void slamCallback(const nav_msgs::Odometry::ConstPtr& msg);
   void localizationCallback(const geometry_msgs::TransformStamped::ConstPtr& msg);
-  void capacityCallback(const rm_msgs::PowerManagementSampleAndStatusData::ConstPtr& msg);
 
   rm_control::RobotStateHandle robot_state_handle_{};
   hardware_interface::EffortJointInterface* effort_joint_interface_{};
@@ -187,11 +186,8 @@ protected:
   realtime_tools::RealtimeBuffer<nav_msgs::Odometry> slam_rt_buffer_{};
   realtime_tools::RealtimeBuffer<geometry_msgs::TransformStamped> localization_rt_buffer_{};
   std::unique_ptr<realtime_tools::RealtimePublisher<nav_msgs::Odometry>> odom_pub_;
-  std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> cpower_pub_;  // command power publisher
-  std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> epower_pub_;  // estimated power publisher
-  std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> chassis_power_pub_;  // chassis power publisher
-  std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> effort_coeff_pub_; //effort coeff publisher on rls
-  std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> velocity_coeff_pub_; //velocity coeff publisher on rls
+  std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> command_power_pub_;
+  std::unique_ptr<realtime_tools::RealtimePublisher<std_msgs::Float64>> estimated_power_pub_;
 
   rm_common::TfRtBroadcaster brcst4global_map2robot_odom_{};
   rm_common::TfRtBroadcaster brcst4global_map2camera_init_{};
@@ -212,7 +208,6 @@ protected:
   ros::Subscriber cmd_chassis_sub_;
   ros::Subscriber slam_sub_;
   ros::Subscriber localization_sub_;
-  ros::Subscriber capacity_sub_;
 
   std::unique_ptr<RampFilter<double>> ramp_x_{ nullptr };
   std::unique_ptr<RampFilter<double>> ramp_y_{ nullptr };
@@ -230,9 +225,6 @@ protected:
   double twist_angular_{ M_PI / 6 };
   double max_odom_vel_{ 10.0 };
   double timeout_{ 0.1 };
-  double chassis_power_{ 0.0 };
-  bool capacity_update_flag_{ false };
-  bool use_rls_{ false };
   bool use_K_angle_{ false };
 
   bool odom_initialized_{ false };
@@ -249,8 +241,6 @@ protected:
   std::string lidar_base_frame_id_{ "livox_frame" };
   std::string slam_topic_{ "/slam/odometry" };
   std::string localization_topic_{ "/shinji/result" };
-
-  std::string capacity_topic_{ "/rm_referee/power_management/sample_and_status" };
 
   ros::Time last_publish_time_{};
   geometry_msgs::Vector3 vel_cmd_{};  // x, y

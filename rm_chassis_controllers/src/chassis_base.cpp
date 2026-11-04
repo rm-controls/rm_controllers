@@ -105,13 +105,6 @@ bool ChassisBase<T...>::init(hardware_interface::RobotHW* robot_hw, ros::NodeHan
   slam_sub_ = controller_nh.subscribe<nav_msgs::Odometry>(slam_topic_, 10, &ChassisBase::slamCallback, this);
   localization_sub_ = controller_nh.subscribe<geometry_msgs::TransformStamped>(
       localization_topic_, 10, &ChassisBase::localizationCallback, this);
-  capacity_sub_ = root_nh.subscribe<rm_msgs::PowerManagementSampleAndStatusData>(capacity_topic_, 10,
-                                                                                 &ChassisBase::capacityCallback, this);
-
-  // Setup real_power from capacity publishers.
-  auto chassis_power_publisher =
-      std::make_unique<realtime_tools::RealtimePublisher<std_msgs::Float64>>(controller_nh, "power/chassis_power", 100);
-  this->chassis_power_pub_ = std::move(chassis_power_publisher);
 
   ramp_x_ = std::make_unique<RampFilter<double>>(0, 0.001);
   ramp_y_ = std::make_unique<RampFilter<double>>(0, 0.001);
@@ -513,18 +506,6 @@ void ChassisBase<T...>::localizationCallback(const geometry_msgs::TransformStamp
 {
   localization_rt_buffer_.writeFromNonRT(*msg);
   localization_updated_ = true;
-}
-
-template <typename... T>
-void ChassisBase<T...>::capacityCallback(const rm_msgs::PowerManagementSampleAndStatusData::ConstPtr& msg)
-{
-  chassis_power_ = msg->chassis_power + msg->capacity_discharge_power;
-  capacity_update_flag_ = true;
-  if (chassis_power_pub_->trylock())
-  {
-    chassis_power_pub_->msg_.data = chassis_power_;
-    chassis_power_pub_->unlockAndPublish();
-  }
 }
 
 }  // namespace rm_chassis_controllers

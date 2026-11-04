@@ -6,7 +6,6 @@
 
 #include <Eigen/Dense>
 #include <rm_common/filters/lp_filter.h>
-#include <rm_common/rls.h>
 
 #include "rm_chassis_controllers/chassis_base.h"
 
@@ -31,7 +30,6 @@ private:
   virtual void stateJudge();
 
   std::array<LowPassFilter*, 4> motor_lp_filters_{};
-  std::unique_ptr<Rls<double>> rls_{};
 };
 
 }  // namespace rm_chassis_controllers
