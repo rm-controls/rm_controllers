@@ -55,4 +55,13 @@
         </description>
     </class>
 
+    <class name="rm_chassis_controllers/AutoSuspensionController"
+           type="rm_chassis_controllers::AutoSuspensionController"
+           base_class_type="controller_interface::ControllerBase">
+        <description>
+            The AutoSuspensionController is RoboMaster heavy robot Chassis controller. It expects a
+            EffortJointInterface type of hardware interface.
+        </description>
+    </class>
+
 </library>
