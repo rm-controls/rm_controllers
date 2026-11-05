@@ -43,9 +43,9 @@ bool OmniController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
   auto estimated_power_publisher =
       std::make_unique<realtime_tools::RealtimePublisher<std_msgs::Float64>>(controller_nh, "power/estimated", 100);
   this->estimated_power_pub_ = std::move(estimated_power_publisher);
-  auto command_power_publisher =
+  auto cmd_power_publisher =
       std::make_unique<realtime_tools::RealtimePublisher<std_msgs::Float64>>(controller_nh, "power/commanded", 100);
-  this->command_power_pub_ = std::move(command_power_publisher);
+  this->cmd_power_pub_ = std::move(cmd_power_publisher);
 
   XmlRpc::XmlRpcValue wheels;
   controller_nh.getParam("wheels", wheels);
@@ -228,7 +228,7 @@ void OmniController::updatePowerStatus()
   wheel_power_limitor_.max_power = power_limit;
   wheel_power_limitor_.err_sum = 0;
 
-  double estimated_wheel_power{}, command_wheel_power{};
+  double estimated_wheel_power{}, cmd_wheel_power{};
   for (size_t i = 0; i < joints_.size() && i < 4; ++i)
   {
     auto& ctl = joints_[i];
@@ -245,13 +245,13 @@ void OmniController::updatePowerStatus()
 
     estimated_wheel_power += real_torque * real_vel + wheel_power_limitor_.effort_coeff * square(real_torque) +
                              wheel_power_limitor_.vel_coeff * abs(real_vel);
-    command_wheel_power += cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
-                           wheel_power_limitor_.vel_coeff * abs(real_vel);
+    cmd_wheel_power += cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
+                       wheel_power_limitor_.vel_coeff * abs(real_vel);
 
     wheel_power_limitor_.power_in[i] = cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
                                        wheel_power_limitor_.vel_coeff * abs(real_vel);
   }
-  wheel_power_limitor_.cmd_power = command_wheel_power + wheel_power_limitor_.power_offset;
+  wheel_power_limitor_.cmd_power = cmd_wheel_power + wheel_power_limitor_.power_offset;
   wheel_power_limitor_.estimated_power = estimated_wheel_power + wheel_power_limitor_.power_offset;
 
   double estimated_total_power = wheel_power_limitor_.estimated_power;
@@ -266,7 +266,7 @@ void OmniController::updatePowerStatus()
   };
 
   publishPower(estimated_power_pub_, estimated_total_power);
-  publishPower(command_power_pub_, cmd_total_power);
+  publishPower(cmd_power_pub_, cmd_total_power);
 }
 
 }  // namespace rm_chassis_controllers
