@@ -228,7 +228,7 @@ void OmniController::updatePowerStatus()
   wheel_power_limitor_.max_power = power_limit;
   wheel_power_limitor_.err_sum = 0;
 
-  double ewheel_power{}, cwheel_power{};
+  double estimated_wheel_power{}, command_wheel_power{};
   for (size_t i = 0; i < joints_.size() && i < 4; ++i)
   {
     auto& ctl = joints_[i];
@@ -243,16 +243,16 @@ void OmniController::updatePowerStatus()
     wheel_power_limitor_.err[i] = cmd_vel - real_vel;
     wheel_power_limitor_.err_sum += abs(wheel_power_limitor_.err[i]);
 
-    ewheel_power += real_torque * real_vel + wheel_power_limitor_.effort_coeff * square(real_torque) +
-                    wheel_power_limitor_.vel_coeff * abs(real_vel);
-    cwheel_power += cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
-                    wheel_power_limitor_.vel_coeff * abs(real_vel);
+    estimated_wheel_power += real_torque * real_vel + wheel_power_limitor_.effort_coeff * square(real_torque) +
+                             wheel_power_limitor_.vel_coeff * abs(real_vel);
+    command_wheel_power += cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
+                           wheel_power_limitor_.vel_coeff * abs(real_vel);
 
     wheel_power_limitor_.power_in[i] = cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
                                        wheel_power_limitor_.vel_coeff * abs(real_vel);
   }
-  wheel_power_limitor_.cmd_power = cwheel_power + wheel_power_limitor_.power_offset;
-  wheel_power_limitor_.estimated_power = ewheel_power + wheel_power_limitor_.power_offset;
+  wheel_power_limitor_.cmd_power = command_wheel_power + wheel_power_limitor_.power_offset;
+  wheel_power_limitor_.estimated_power = estimated_wheel_power + wheel_power_limitor_.power_offset;
 
   double estimated_total_power = wheel_power_limitor_.estimated_power;
   double cmd_total_power = wheel_power_limitor_.cmd_power;
