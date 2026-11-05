@@ -48,7 +48,6 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/Odometry.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
-#include <rm_chassis_controllers/PowerLimitConfig.h>
 #include <rm_common/ros_utilities.h>
 #include <rm_common/math_utilities.h>
 #include <rm_common/ori_tool.h>
