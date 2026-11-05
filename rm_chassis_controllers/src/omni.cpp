@@ -2,6 +2,8 @@
 // Created by qiayuan on 2022/7/29.
 //
 
+#include <algorithm>
+#include <cmath>
 #include <string>
 #include <Eigen/QR>
 
@@ -16,6 +18,34 @@ bool OmniController::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
                           ros::NodeHandle& controller_nh)
 {
   ChassisBase::init(robot_hw, root_nh, controller_nh);
+
+  try
+  {
+    controller_nh.getParam("power/vel_coeff", wheel_power_limitor_.vel_coeff);
+    controller_nh.getParam("power/effort_coeff", wheel_power_limitor_.effort_coeff);
+    controller_nh.getParam("power/power_offset", wheel_power_limitor_.power_offset);
+    controller_nh.param<bool>("power/use_K_angle", use_K_angle_, false);
+  }
+  catch (const std::exception& e)
+  {
+    ROS_ERROR("Failed to get power limiter parameters: %s", e.what());
+    return false;
+  }
+
+  wheel_power_limitor_.err_upper = 500;
+  wheel_power_limitor_.err_lower = 0.01;
+
+  for (auto& filter : motor_lp_filters_)
+  {
+    filter = new LowPassFilter(20);
+  }
+
+  auto estimated_power_publisher =
+      std::make_unique<realtime_tools::RealtimePublisher<std_msgs::Float64>>(controller_nh, "power/estimated", 100);
+  this->estimated_power_pub_ = std::move(estimated_power_publisher);
+  auto cmd_power_publisher =
+      std::make_unique<realtime_tools::RealtimePublisher<std_msgs::Float64>>(controller_nh, "power/commanded", 100);
+  this->cmd_power_pub_ = std::move(cmd_power_publisher);
 
   XmlRpc::XmlRpcValue wheels;
   controller_nh.getParam("wheels", wheels);
@@ -75,6 +105,168 @@ geometry_msgs::Twist OmniController::odometry()
   twist.linear.x = vel_chassis(1);
   twist.linear.y = vel_chassis(2);
   return twist;
+}
+
+void OmniController::stateJudge()
+{
+  if (!use_K_angle_)
+  {
+    for (size_t i = 0; i < joints_.size() && i < 4; ++i)
+    {
+      wheel_power_limitor_.K_angle[i] = 1.0;
+    }
+    return;
+  }
+  double sin_pitch{};
+  if (abs(pitch_) > 0.12)
+  {
+    sin_pitch = sin(pitch_);
+  }
+  else
+  {
+    sin_pitch = 0.0;
+  }
+
+  for (size_t i = 0; i < joints_.size() && i < 4; ++i)
+  {
+    auto& ctl = joints_[i];
+
+    if (ctl->joint_.getName().find("front") != std::string::npos)
+    {
+      if (ctl->getJointName().find("left") != std::string::npos)
+      {
+        wheel_power_limitor_.K_angle[i] = 1 + sin_pitch;
+      }
+      if (ctl->getJointName().find("right") != std::string::npos)
+      {
+        wheel_power_limitor_.K_angle[i] = 1 + sin_pitch;
+      }
+    }
+    if (ctl->joint_.getName().find("back") != std::string::npos)
+    {
+      if (ctl->getJointName().find("left") != std::string::npos)
+      {
+        wheel_power_limitor_.K_angle[i] = 1 - sin_pitch;
+      }
+      if (ctl->getJointName().find("right") != std::string::npos)
+      {
+        wheel_power_limitor_.K_angle[i] = 1 - sin_pitch;
+      }
+    }
+  }
+}
+
+void OmniController::powerLimit()
+{
+  updatePowerStatus();
+  stateJudge();
+
+  if (wheel_power_limitor_.err_sum > wheel_power_limitor_.err_upper)
+  {
+    wheel_power_limitor_.K = 1;
+  }
+  else if (wheel_power_limitor_.err_sum < wheel_power_limitor_.err_lower)
+  {
+    wheel_power_limitor_.K = 0;
+  }
+  else
+  {
+    wheel_power_limitor_.K = 1 - (wheel_power_limitor_.err_sum - wheel_power_limitor_.err_lower) /
+                                     (wheel_power_limitor_.err_upper - wheel_power_limitor_.err_lower);
+  }
+
+  for (int i = 0; i < 4; i++)
+  {
+    double wheel_zoom =
+        (wheel_power_limitor_.K * abs(wheel_power_limitor_.err[i]) / wheel_power_limitor_.err_sum) +
+        (1 - wheel_power_limitor_.K) * (abs(wheel_power_limitor_.power_in[i]) / wheel_power_limitor_.cmd_power);
+    wheel_zoom = limit(wheel_zoom, 0.0, 1.0);
+    wheel_power_limitor_.power_limit[i] = wheel_zoom * wheel_power_limitor_.max_power;
+  }
+  if (wheel_power_limitor_.cmd_power > wheel_power_limitor_.max_power)
+  {
+    for (size_t i = 0; i < joints_.size() && i < 4; ++i)
+    {
+      auto& ctl = joints_[i];
+      auto& joint = ctl->joint_;
+      double a = wheel_power_limitor_.effort_coeff;
+      double b = wheel_power_limitor_.omiga[i];
+      double c = abs(wheel_power_limitor_.omiga[i]) * wheel_power_limitor_.vel_coeff +
+                 wheel_power_limitor_.power_offset / 4 - wheel_power_limitor_.power_limit[i];
+      double delta = square(b) - 4 * a * c;
+      if (!std::isfinite(delta) || delta < 0.0)
+        delta = 0.0;
+      if (delta >= 0)
+      {
+        double sqrt = sqrtf(delta);
+        if (wheel_power_limitor_.torque[i] >= 0)
+          joint.setCommand(((-b + sqrt) / (2 * a)) * wheel_power_limitor_.K_angle[i]);
+        else
+          joint.setCommand(((-b - sqrt) / (2 * a)) * wheel_power_limitor_.K_angle[i]);
+      }
+      else
+      {
+        joint.setCommand(((-b) / (2 * a)) * wheel_power_limitor_.K_angle[i]);
+      }
+    }
+  }
+  else
+  {
+    for (size_t i = 0; i < joints_.size() && i < 4; ++i)
+    {
+      auto& ctl = joints_[i];
+      auto& joint = ctl->joint_;
+      joint.setCommand(wheel_power_limitor_.torque[i] * wheel_power_limitor_.K_angle[i]);
+    }
+  }
+}
+
+void OmniController::updatePowerStatus()
+{
+  double power_limit = cmd_rt_buffer_.readFromRT()->cmd_chassis_.power_limit;
+
+  wheel_power_limitor_.max_power = power_limit;
+  wheel_power_limitor_.err_sum = 0;
+
+  double estimated_wheel_power{}, cmd_wheel_power{};
+  for (size_t i = 0; i < joints_.size() && i < 4; ++i)
+  {
+    auto& ctl = joints_[i];
+
+    double cmd_torque = wheel_power_limitor_.torque[i] = ctl->joint_.getCommand();
+    double cmd_vel{};
+    ctl->getCommand(cmd_vel);
+    double real_vel = wheel_power_limitor_.omiga[i] = ctl->joint_.getVelocity();
+    motor_lp_filters_[i]->input(ctl->joint_.getEffort());
+    double real_torque = motor_lp_filters_[i]->output();
+
+    wheel_power_limitor_.err[i] = cmd_vel - real_vel;
+    wheel_power_limitor_.err_sum += abs(wheel_power_limitor_.err[i]);
+
+    estimated_wheel_power += real_torque * real_vel + wheel_power_limitor_.effort_coeff * square(real_torque) +
+                             wheel_power_limitor_.vel_coeff * abs(real_vel);
+    cmd_wheel_power += cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
+                       wheel_power_limitor_.vel_coeff * abs(real_vel);
+
+    wheel_power_limitor_.power_in[i] = cmd_torque * real_vel + wheel_power_limitor_.effort_coeff * square(cmd_torque) +
+                                       wheel_power_limitor_.vel_coeff * abs(real_vel);
+  }
+  wheel_power_limitor_.cmd_power = cmd_wheel_power + wheel_power_limitor_.power_offset;
+  wheel_power_limitor_.estimated_power = estimated_wheel_power + wheel_power_limitor_.power_offset;
+
+  double estimated_total_power = wheel_power_limitor_.estimated_power;
+  double cmd_total_power = wheel_power_limitor_.cmd_power;
+
+  auto publishPower = [](auto& pub, const double power) {
+    if (pub && pub->trylock())
+    {
+      pub->msg_.data = power;
+      pub->unlockAndPublish();
+    }
+  };
+
+  publishPower(estimated_power_pub_, estimated_total_power);
+  publishPower(cmd_power_pub_, cmd_total_power);
 }
 
 }  // namespace rm_chassis_controllers
