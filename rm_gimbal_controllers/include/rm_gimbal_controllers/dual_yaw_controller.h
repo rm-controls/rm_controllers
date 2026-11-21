@@ -23,6 +23,7 @@ protected:
                       const double pos_real[3], const double pos_des[3], const double pos_des_temp[3],
                       const double vel_des[3], const double angle_error[3], const double traject_pos_des[3],
                       const double traject_angle_error[3]) override;
+  void pose(const ros::Time& time, const ros::Duration& period) override;
 
 private:
   bool initBaseYaw(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& controller_nh);
