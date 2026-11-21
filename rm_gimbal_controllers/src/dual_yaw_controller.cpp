@@ -101,15 +101,15 @@ void DualYawController::updateYawJoint(const ros::Time& time, const ros::Duratio
   publishBaseYawState(time, base_yaw_pos_real, base_yaw_set_point, vel_des, base_yaw_error);
 }
 
-void DualYawController::pos(const ros::Time& time, const ros::Duration& period)
+void DualYawController::pose(const ros::Time& time, const ros::Duration& period)
 {
-  Controller::pos(time, period);
+  Controller::pose(time, period);
 
   if (!base_yaw_ctrl_ || !base_yaw_pid_pos_)
     return;
 
   const double joint_pos = base_yaw_ctrl_->joint_.getPosition();
-  const double error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pos_base_yaw);
+  const double error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pose_base_yaw);
   base_yaw_pid_pos_->computeCommand(error, period);
   base_yaw_ctrl_->setCommand(base_yaw_pid_pos_->getCurrentCmd());
   base_yaw_ctrl_->update(time, period);

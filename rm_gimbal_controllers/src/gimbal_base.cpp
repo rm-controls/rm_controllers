@@ -248,8 +248,8 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     case TRAJ:
       traj(time);
       break;
-    case POS:
-      pos(time,period);
+    case POSE:
+      pose(time,period);
       return;
   }
   moveJoint(time, period);
@@ -513,12 +513,12 @@ void Controller::traj(const ros::Time& time)
   setDes(time, traj[2], traj[1], traj[2]);
 }
 
-void Controller::pos(const ros::Time& time, const ros::Duration& period)
+void Controller::pose(const ros::Time& time, const ros::Duration& period)
 {
   if (state_changed_)
   {
     state_changed_ = false;
-    ROS_INFO("[Gimbal] Enter POS");
+    ROS_INFO("[Gimbal] Enter POSE");
   }
 
   for (auto& it : ctrls_)
@@ -528,14 +528,12 @@ void Controller::pos(const ros::Time& time, const ros::Duration& period)
     const double joint_pos = ctrl->joint_.getPosition();
     double error = 0.0;
     if (axis == 1)
-      error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pos_pitch);
+      error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pose_pitch);
     else if (axis == 2)
-      error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pos_yaw);
+      error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pose_yaw);
 
     pid_pos_.at(axis)->computeCommand(error, period);
     ctrl->setCommand(pid_pos_.at(axis)->getCurrentCmd());
-    if (axis == 1)
-      ctrl->joint_.setCommand(ctrl->joint_.getCommand() + gravityFeedForward(time));
     ctrl->update(time, period);
   }
 
