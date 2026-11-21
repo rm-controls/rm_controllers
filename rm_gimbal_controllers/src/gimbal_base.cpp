@@ -528,9 +528,9 @@ void Controller::pos(const ros::Time& time, const ros::Duration& period)
     const double joint_pos = ctrl->joint_.getPosition();
     double error = 0.0;
     if (axis == 1)
-      error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.raw_pitch_pos);
+      error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pos_pitch);
     else if (axis == 2)
-      error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.raw_yaw_pos);
+      error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pos_yaw);
 
     pid_pos_.at(axis)->computeCommand(error, period);
     ctrl->setCommand(pid_pos_.at(axis)->getCurrentCmd());

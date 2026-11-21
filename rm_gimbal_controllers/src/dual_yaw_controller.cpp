@@ -109,7 +109,7 @@ void DualYawController::pos(const ros::Time& time, const ros::Duration& period)
     return;
 
   const double joint_pos = base_yaw_ctrl_->joint_.getPosition();
-  const double error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.raw_base_yaw_pos);
+  const double error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pos_base_yaw);
   base_yaw_pid_pos_->computeCommand(error, period);
   base_yaw_ctrl_->setCommand(base_yaw_pid_pos_->getCurrentCmd());
   base_yaw_ctrl_->update(time, period);
