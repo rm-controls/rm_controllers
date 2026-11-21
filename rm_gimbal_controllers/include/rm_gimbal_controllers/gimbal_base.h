@@ -174,7 +174,7 @@ protected:
   void externalAimTrack(const ros::Time& time);
   void direct(const ros::Time& time);
   void traj(const ros::Time& time);
-  virtual void raw(const ros::Time& time, const ros::Duration& period);
+  virtual void pos(const ros::Time& time, const ros::Duration& period);
   bool externalAimIsFresh(const ros::Time& time) const;
   bool setDesIntoLimit(double& angle, const urdf::JointConstSharedPtr& joint_urdf, bool update, double current_angle);
   void moveJoint(const ros::Time& time, const ros::Duration& period);
@@ -263,7 +263,7 @@ protected:
     TRACK,
     DIRECT,
     TRAJ,
-    RAW
+    POS
   };
   int state_ = RATE;
   bool start_ = false;
