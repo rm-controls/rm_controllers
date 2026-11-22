@@ -349,6 +349,15 @@ void ChassisBase<T...>::updateOdom(const ros::Time& time, const ros::Duration& p
       {
         slam_updated_ = false;
         const auto& slam = slam_rt_buffer_.readFromRT();
+        try
+        {
+          robot_base2lidar_base_ =
+              robot_state_handle_.lookupTransform(robot_base_frame_id_, lidar_base_frame_id_, ros::Time(0));
+        }
+        catch (const tf2::TransformException& ex)
+        {
+          ROS_WARN_THROTTLE(1.0, "Failed to update robot_base2lidar_base: %s", ex.what());
+        }
         T_lidar_odom2lidar_base_.setOrigin(
             tf2::Vector3(slam->pose.pose.position.x, slam->pose.pose.position.y, slam->pose.pose.position.z));
         T_lidar_odom2lidar_base_.setRotation(

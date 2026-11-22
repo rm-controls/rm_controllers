@@ -248,6 +248,9 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
     case TRAJ:
       traj(time);
       break;
+    case POSE:
+      pose(time, period);
+      return;
   }
   moveJoint(time, period);
 }
@@ -508,6 +511,33 @@ void Controller::traj(const ros::Time& time)
     ROS_WARN("%s", ex.what());
   }
   setDes(time, traj[2], traj[1], traj[2]);
+}
+
+void Controller::pose(const ros::Time& time, const ros::Duration& period)
+{
+  if (state_changed_)
+  {
+    state_changed_ = false;
+    ROS_INFO("[Gimbal] Enter POSE");
+  }
+
+  for (auto& it : ctrls_)
+  {
+    const int axis = it.first;
+    auto& ctrl = it.second;
+    const double joint_pos = ctrl->joint_.getPosition();
+    double error = 0.0;
+    if (axis == 1)
+      error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pose_pitch);
+    else if (axis == 2)
+      error = angles::shortest_angular_distance(joint_pos, cmd_gimbal_.pose_yaw);
+
+    pid_pos_.at(axis)->computeCommand(error, period);
+    ctrl->setCommand(pid_pos_.at(axis)->getCurrentCmd());
+    ctrl->update(time, period);
+  }
+
+  odom2gimbal_des_.transform.rotation = odom2gimbal_.transform.rotation;
 }
 
 bool Controller::setDesIntoLimit(double& angle, const urdf::JointConstSharedPtr& joint_urdf, bool update,
