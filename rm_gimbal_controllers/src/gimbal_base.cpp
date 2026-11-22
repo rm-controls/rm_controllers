@@ -249,7 +249,7 @@ void Controller::update(const ros::Time& time, const ros::Duration& period)
       traj(time);
       break;
     case POSE:
-      pose(time,period);
+      pose(time, period);
       return;
   }
   moveJoint(time, period);
