@@ -90,6 +90,7 @@ add_library(${PROJECT_NAME}
         src/swerve.cpp
         src/balance.cpp
         src/active_suspension.cpp
+        src/auto_suspension.cpp
         ${BIPEDAL_SOURCES}
 )
 
